@@ -12,8 +12,14 @@ use tauri_plugin_shell::{
     ShellExt,
 };
 
+#[cfg(target_os = "windows")]
+use std::os::windows::process::CommandExt;
+
 const ENGINE_HOST: &str = "127.0.0.1";
 const ENGINE_START_TIMEOUT: Duration = Duration::from_secs(25);
+
+#[cfg(target_os = "windows")]
+const CREATE_NO_WINDOW: u32 = 0x08000000;
 
 struct EngineState {
     child: Mutex<Option<CommandChild>>,
@@ -155,7 +161,7 @@ fn start_packaged_engine(
     });
 
     if !wait_until_healthy(port) {
-        let _ = child.kill();
+        terminate_engine(child);
         return Err(format!(
             "Packaged ProGrapher Engine did not become healthy within {} seconds",
             ENGINE_START_TIMEOUT.as_secs()
@@ -169,10 +175,37 @@ fn start_packaged_engine(
     Ok((child, port, secret))
 }
 
+#[cfg(target_os = "windows")]
+fn terminate_engine(child: CommandChild) {
+    let pid = child.pid();
+
+    // PyInstaller --onefile runs a parent process and an extracted child
+    // process. Killing only the CommandChild PID can leave the other process
+    // alive. taskkill /T terminates the full process tree.
+    let tree_killed = std::process::Command::new("taskkill.exe")
+        .args(["/PID", &pid.to_string(), "/T", "/F"])
+        .creation_flags(CREATE_NO_WINDOW)
+        .status()
+        .map(|status| status.success())
+        .unwrap_or(false);
+
+    // Fallback to the Tauri handle if taskkill was unavailable or failed.
+    if !tree_killed {
+        let _ = child.kill();
+    }
+}
+
+#[cfg(not(target_os = "windows"))]
+fn terminate_engine(child: CommandChild) {
+    // macOS/Linux behavior remains on the native sidecar kill path for now.
+    // macOS will receive its own process-lifecycle validation on real hardware.
+    let _ = child.kill();
+}
+
 fn stop_engine(state: &EngineState) {
     if let Ok(mut child_guard) = state.child.lock() {
         if let Some(child) = child_guard.take() {
-            let _ = child.kill();
+            terminate_engine(child);
         }
     }
 }
