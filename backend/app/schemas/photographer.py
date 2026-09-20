@@ -26,6 +26,11 @@ class EditsFolderResponse(BaseModel):
     note: str
 
 
+class LightroomPresetResponse(BaseModel):
+    path: str
+    name: str
+
+
 class PhotographerSetupResponse(BaseModel):
     source_type: Literal[
         "lightroom_catalog",
@@ -35,7 +40,9 @@ class PhotographerSetupResponse(BaseModel):
     catalog_path: str | None
     edits_folder_path: str | None
     style_name: str | None
+    preset_path: str | None
     camera_profile: str | None
+    color_profile_mode: Literal["from_source", "explicit"]
     status: Literal[
         "no_profile",
         "data_review",
@@ -50,9 +57,11 @@ class PhotographerSetupResponse(BaseModel):
 class PhotographerSetupOverviewResponse(BaseModel):
     lightroom: LightroomInstallationResponse
     discovered_catalogs: list[str]
+    discovered_presets: list[LightroomPresetResponse]
     setup: PhotographerSetupResponse
     selected_catalog: LightroomCatalogResponse | None
     selected_edits_folder: EditsFolderResponse | None
+    readiness_reasons: list[str]
 
 
 class SelectCatalogRequest(BaseModel):
@@ -61,3 +70,10 @@ class SelectCatalogRequest(BaseModel):
 
 class SelectEditsFolderRequest(BaseModel):
     path: str = Field(min_length=1)
+
+
+class StylePreferencesRequest(BaseModel):
+    style_name: str | None = None
+    preset_path: str | None = None
+    color_profile_mode: Literal["from_source", "explicit"] = "from_source"
+    camera_profile: str | None = None

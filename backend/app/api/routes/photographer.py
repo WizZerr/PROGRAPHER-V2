@@ -4,16 +4,19 @@ from app.schemas.photographer import (
     EditsFolderResponse,
     LightroomCatalogResponse,
     LightroomInstallationResponse,
+    LightroomPresetResponse,
     PhotographerSetupOverviewResponse,
     PhotographerSetupResponse,
     SelectCatalogRequest,
     SelectEditsFolderRequest,
+    StylePreferencesRequest,
 )
 from app.services.photographer_setup_service import (
     choose_catalog,
     choose_edits_folder,
     continue_without_source,
     get_setup_overview,
+    save_style_preferences,
 )
 
 router = APIRouter(prefix="/api/photographer", tags=["photographer"])
@@ -30,12 +33,21 @@ def _response(overview) -> PhotographerSetupOverviewResponse:
             source=overview.lightroom.source,
         ),
         discovered_catalogs=overview.discovered_catalogs,
+        discovered_presets=[
+            LightroomPresetResponse(
+                path=preset.path,
+                name=preset.name,
+            )
+            for preset in overview.discovered_presets
+        ],
         setup=PhotographerSetupResponse(
             source_type=overview.setup.source_type,
             catalog_path=overview.setup.catalog_path,
             edits_folder_path=overview.setup.edits_folder_path,
             style_name=overview.setup.style_name,
+            preset_path=overview.setup.preset_path,
             camera_profile=overview.setup.camera_profile,
+            color_profile_mode=overview.setup.color_profile_mode,
             status=overview.setup.status,
             updated_at=overview.setup.updated_at,
         ),
@@ -62,6 +74,7 @@ def _response(overview) -> PhotographerSetupOverviewResponse:
             if selected_edits_folder
             else None
         ),
+        readiness_reasons=overview.readiness_reasons,
     )
 
 
@@ -108,3 +121,26 @@ def select_edits_folder(
 )
 def no_source() -> PhotographerSetupOverviewResponse:
     return _response(continue_without_source())
+
+
+@router.post(
+    "/setup/style",
+    response_model=PhotographerSetupOverviewResponse,
+)
+def style_preferences(
+    payload: StylePreferencesRequest,
+) -> PhotographerSetupOverviewResponse:
+    try:
+        return _response(
+            save_style_preferences(
+                style_name=payload.style_name,
+                preset_path=payload.preset_path,
+                color_profile_mode=payload.color_profile_mode,
+                camera_profile=payload.camera_profile,
+            )
+        )
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            detail=str(exc),
+        ) from exc

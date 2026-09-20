@@ -18,7 +18,9 @@ class PhotographerSetup:
     catalog_path: str | None
     edits_folder_path: str | None
     style_name: str | None
+    preset_path: str | None
     camera_profile: str | None
+    color_profile_mode: str
     status: str
     updated_at: str | None
 
@@ -44,10 +46,9 @@ class PhotographerSetupStore:
         column_name: str,
         definition: str,
     ) -> None:
-        rows = db.execute(
-            "PRAGMA table_info(photographer_setup)"
-        ).fetchall()
+        rows = db.execute("PRAGMA table_info(photographer_setup)").fetchall()
         columns = {row["name"] for row in rows}
+
         if column_name not in columns:
             db.execute(
                 f"ALTER TABLE photographer_setup "
@@ -64,16 +65,24 @@ class PhotographerSetupStore:
                     catalog_path TEXT,
                     edits_folder_path TEXT,
                     style_name TEXT,
+                    preset_path TEXT,
                     camera_profile TEXT,
+                    color_profile_mode TEXT NOT NULL DEFAULT 'from_source',
                     status TEXT NOT NULL,
                     updated_at TEXT NOT NULL
                 )
                 """
             )
 
-            # Safe migration from Phase 7 Part 1 databases.
+            # Safe migrations from earlier Phase 7 builds.
             self._ensure_column(db, "source_type", "TEXT")
             self._ensure_column(db, "edits_folder_path", "TEXT")
+            self._ensure_column(db, "preset_path", "TEXT")
+            self._ensure_column(
+                db,
+                "color_profile_mode",
+                "TEXT NOT NULL DEFAULT 'from_source'",
+            )
 
     def get(self) -> PhotographerSetup:
         with self._connect() as db:
@@ -84,7 +93,9 @@ class PhotographerSetupStore:
                     catalog_path,
                     edits_folder_path,
                     style_name,
+                    preset_path,
                     camera_profile,
+                    color_profile_mode,
                     status,
                     updated_at
                 FROM photographer_setup
@@ -98,7 +109,9 @@ class PhotographerSetupStore:
                 catalog_path=None,
                 edits_folder_path=None,
                 style_name=None,
+                preset_path=None,
                 camera_profile=None,
+                color_profile_mode="from_source",
                 status="no_profile",
                 updated_at=None,
             )
@@ -108,10 +121,40 @@ class PhotographerSetupStore:
             catalog_path=row["catalog_path"],
             edits_folder_path=row["edits_folder_path"],
             style_name=row["style_name"],
+            preset_path=row["preset_path"],
             camera_profile=row["camera_profile"],
+            color_profile_mode=row["color_profile_mode"] or "from_source",
             status=row["status"],
             updated_at=row["updated_at"],
         )
+
+    def _ensure_row(self, db: sqlite3.Connection) -> None:
+        current = db.execute(
+            "SELECT singleton FROM photographer_setup WHERE singleton = 1"
+        ).fetchone()
+
+        if current is None:
+            db.execute(
+                """
+                INSERT INTO photographer_setup (
+                    singleton,
+                    source_type,
+                    catalog_path,
+                    edits_folder_path,
+                    style_name,
+                    preset_path,
+                    camera_profile,
+                    color_profile_mode,
+                    status,
+                    updated_at
+                )
+                VALUES (
+                    1, NULL, NULL, NULL, NULL, NULL, NULL,
+                    'from_source', 'no_profile', ?
+                )
+                """,
+                (_utc_now(),),
+            )
 
     def _upsert_source(
         self,
@@ -124,25 +167,17 @@ class PhotographerSetupStore:
         now = _utc_now()
 
         with self._connect() as db:
+            self._ensure_row(db)
             db.execute(
                 """
-                INSERT INTO photographer_setup (
-                    singleton,
-                    source_type,
-                    catalog_path,
-                    edits_folder_path,
-                    style_name,
-                    camera_profile,
-                    status,
-                    updated_at
-                )
-                VALUES (1, ?, ?, ?, NULL, NULL, ?, ?)
-                ON CONFLICT(singleton) DO UPDATE SET
-                    source_type = excluded.source_type,
-                    catalog_path = excluded.catalog_path,
-                    edits_folder_path = excluded.edits_folder_path,
-                    status = excluded.status,
-                    updated_at = excluded.updated_at
+                UPDATE photographer_setup
+                SET
+                    source_type = ?,
+                    catalog_path = ?,
+                    edits_folder_path = ?,
+                    status = ?,
+                    updated_at = ?
+                WHERE singleton = 1
                 """,
                 (
                     source_type,
@@ -178,3 +213,37 @@ class PhotographerSetupStore:
             edits_folder_path=None,
             status="needs_more_data",
         )
+
+    def save_style_preferences(
+        self,
+        *,
+        style_name: str | None,
+        preset_path: str | None,
+        color_profile_mode: str,
+        camera_profile: str | None,
+    ) -> PhotographerSetup:
+        now = _utc_now()
+
+        with self._connect() as db:
+            self._ensure_row(db)
+            db.execute(
+                """
+                UPDATE photographer_setup
+                SET
+                    style_name = ?,
+                    preset_path = ?,
+                    color_profile_mode = ?,
+                    camera_profile = ?,
+                    updated_at = ?
+                WHERE singleton = 1
+                """,
+                (
+                    style_name,
+                    preset_path,
+                    color_profile_mode,
+                    camera_profile,
+                    now,
+                ),
+            )
+
+        return self.get()

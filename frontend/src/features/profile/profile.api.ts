@@ -15,12 +15,18 @@ export type PhotographerSetupOverview = {
     source: string | null;
   };
   discovered_catalogs: string[];
+  discovered_presets: Array<{
+    path: string;
+    name: string;
+  }>;
   setup: {
     source_type: "lightroom_catalog" | "edits_folder" | "none" | null;
     catalog_path: string | null;
     edits_folder_path: string | null;
     style_name: string | null;
+    preset_path: string | null;
     camera_profile: string | null;
+    color_profile_mode: "from_source" | "explicit";
     status: PhotographerSetupStatus;
     updated_at: string | null;
   };
@@ -39,6 +45,7 @@ export type PhotographerSetupOverview = {
     xmp_files: number;
     note: string;
   } | null;
+  readiness_reasons: string[];
 };
 
 export async function getPhotographerSetup(): Promise<PhotographerSetupOverview> {
@@ -74,6 +81,21 @@ export async function continueWithoutEditSource(): Promise<PhotographerSetupOver
     "/api/photographer/setup/no-source",
     {
       method: "POST",
+    },
+  );
+}
+
+export async function saveStylePreferences(input: {
+  style_name: string | null;
+  preset_path: string | null;
+  color_profile_mode: "from_source" | "explicit";
+  camera_profile: string | null;
+}): Promise<PhotographerSetupOverview> {
+  return apiRequest<PhotographerSetupOverview>(
+    "/api/photographer/setup/style",
+    {
+      method: "POST",
+      body: JSON.stringify(input),
     },
   );
 }

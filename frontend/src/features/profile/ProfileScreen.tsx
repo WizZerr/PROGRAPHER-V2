@@ -5,6 +5,7 @@ import { open } from "@tauri-apps/plugin-dialog";
 import {
   continueWithoutEditSource,
   getPhotographerSetup,
+  saveStylePreferences,
   selectEditsFolder,
   selectLightroomCatalog,
   type PhotographerSetupOverview,
@@ -26,11 +27,29 @@ export default function ProfileScreen() {
     useState<PhotographerSetupOverview | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [saved, setSaved] = useState("");
+
+  const [styleName, setStyleName] = useState("");
+  const [presetPath, setPresetPath] = useState<string | null>(null);
+  const [profileMode, setProfileMode] =
+    useState<"from_source" | "explicit">("from_source");
+  const [cameraProfile, setCameraProfile] = useState("");
+
+  const applyOverview = useCallback(
+    (value: PhotographerSetupOverview) => {
+      setOverview(value);
+      setStyleName(value.setup.style_name ?? "");
+      setPresetPath(value.setup.preset_path);
+      setProfileMode(value.setup.color_profile_mode);
+      setCameraProfile(value.setup.camera_profile ?? "");
+    },
+    [],
+  );
 
   const refresh = useCallback(async () => {
     setError("");
     try {
-      setOverview(await getPhotographerSetup());
+      applyOverview(await getPhotographerSetup());
     } catch (cause) {
       setError(
         cause instanceof Error
@@ -38,7 +57,7 @@ export default function ProfileScreen() {
           : "לא ניתן לטעון את הגדרת הצלם.",
       );
     }
-  }, []);
+  }, [applyOverview]);
 
   useEffect(() => {
     void refresh();
@@ -46,24 +65,20 @@ export default function ProfileScreen() {
 
   async function chooseCatalog() {
     setError("");
+    setSaved("");
 
     const selected = await open({
       multiple: false,
       directory: false,
       title: "בחר קטלוג Lightroom",
-      filters: [
-        {
-          name: "Lightroom Catalog",
-          extensions: ["lrcat"],
-        },
-      ],
+      filters: [{ name: "Lightroom Catalog", extensions: ["lrcat"] }],
     });
 
     if (!selected || Array.isArray(selected)) return;
 
     setBusy(true);
     try {
-      setOverview(await selectLightroomCatalog(selected));
+      applyOverview(await selectLightroomCatalog(selected));
     } catch (cause) {
       setError(
         cause instanceof Error
@@ -77,6 +92,7 @@ export default function ProfileScreen() {
 
   async function chooseEditsFolder() {
     setError("");
+    setSaved("");
 
     const selected = await open({
       multiple: false,
@@ -88,7 +104,7 @@ export default function ProfileScreen() {
 
     setBusy(true);
     try {
-      setOverview(await selectEditsFolder(selected));
+      applyOverview(await selectEditsFolder(selected));
     } catch (cause) {
       setError(
         cause instanceof Error
@@ -103,13 +119,58 @@ export default function ProfileScreen() {
   async function noExistingSource() {
     setBusy(true);
     setError("");
+    setSaved("");
     try {
-      setOverview(await continueWithoutEditSource());
+      applyOverview(await continueWithoutEditSource());
     } catch (cause) {
       setError(
         cause instanceof Error
           ? cause.message
           : "לא ניתן לעדכן את מצב הפרופיל.",
+      );
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function choosePreset() {
+    setError("");
+    setSaved("");
+
+    const selected = await open({
+      multiple: false,
+      directory: false,
+      title: "בחר פריסט Lightroom",
+      filters: [{ name: "Lightroom Preset", extensions: ["xmp"] }],
+    });
+
+    if (!selected || Array.isArray(selected)) return;
+    setPresetPath(selected);
+  }
+
+  async function saveStyle() {
+    setBusy(true);
+    setError("");
+    setSaved("");
+
+    try {
+      const result = await saveStylePreferences({
+        style_name: styleName.trim() || null,
+        preset_path: presetPath,
+        color_profile_mode: profileMode,
+        camera_profile:
+          profileMode === "explicit"
+            ? cameraProfile.trim() || null
+            : null,
+      });
+
+      applyOverview(result);
+      setSaved("הגדרות הסגנון נשמרו.");
+    } catch (cause) {
+      setError(
+        cause instanceof Error
+          ? cause.message
+          : "לא ניתן לשמור את הגדרות הסגנון.",
       );
     } finally {
       setBusy(false);
@@ -127,11 +188,12 @@ export default function ProfileScreen() {
         <h2>הפרופיל שלי</h2>
         <p>
           הפרופיל האישי ייווצר בתוך ProGrapher מנתוני עריכה אמיתיים שלך.
-          אינך אמור להגיע עם קובץ פרופיל מוכן.
+          בחירת סגנון כאן מתארת את היעד — היא אינה יוצרת מודל מוכן.
         </p>
       </div>
 
       {error ? <div className={styles.error}>{error}</div> : null}
+      {saved ? <div className={styles.success}>{saved}</div> : null}
 
       <div className={styles.grid}>
         <article className={styles.card}>
@@ -169,8 +231,8 @@ export default function ProfileScreen() {
           </div>
 
           <p>
-            אם עדיין אין לך עריכות היסטוריות מתאימות, אפשר להמשיך בלי
-            פרופיל אישי. בהמשך ProGrapher יבקש חומר מספיק לפני אימון אישי.
+            מצב Ready לא יינתן רק בגלל בחירת פריסט או סיום אימון. קודם
+            נצטרך נתונים תקינים והערכת איכות.
           </p>
         </article>
       </div>
@@ -178,10 +240,6 @@ export default function ProfileScreen() {
       <article className={styles.sourceCard}>
         <span className={styles.label}>EDIT SOURCE</span>
         <h3>מאיפה נלמד את הסגנון שלך?</h3>
-        <p className={styles.sourceIntro}>
-          בחר רק אפשרות שקיימת אצלך. שום אפשרות אינה חובה כדי להמשיך
-          בפיתוח ובבדיקות הטכניות.
-        </p>
 
         <div className={styles.sourceOptions}>
           <button
@@ -218,18 +276,6 @@ export default function ProfileScreen() {
         {catalog ? (
           <div className={styles.details}>
             <div className={styles.pathBox}>{catalog.path}</div>
-            <div className={styles.stats}>
-              <div>
-                <strong>
-                  {catalog.catalog_photo_records?.toLocaleString() ?? "—"}
-                </strong>
-                <span>רשומות צילום בקטלוג</span>
-              </div>
-              <div>
-                <strong>טרם נבדק</strong>
-                <span>עריכות סופיות שניתן להתאים</span>
-              </div>
-            </div>
             <div className={styles.info}>{catalog.note}</div>
           </div>
         ) : null}
@@ -237,16 +283,6 @@ export default function ProfileScreen() {
         {editsFolder ? (
           <div className={styles.details}>
             <div className={styles.pathBox}>{editsFolder.path}</div>
-            <div className={styles.stats}>
-              <div>
-                <strong>{editsFolder.xmp_files.toLocaleString()}</strong>
-                <span>קובצי XMP שנמצאו</span>
-              </div>
-              <div>
-                <strong>טרם נבדק</strong>
-                <span>זוגות RAW ↔ עריכה תקינים</span>
-              </div>
-            </div>
             <div className={styles.info}>{editsFolder.note}</div>
           </div>
         ) : null}
@@ -257,6 +293,101 @@ export default function ProfileScreen() {
             שעדיין אי אפשר לאמן פרופיל אישי מהסגנון שלך.
           </div>
         ) : null}
+      </article>
+
+      <article className={styles.styleCard}>
+        <span className={styles.label}>STYLE TARGET</span>
+        <h3>איך נזהה את הסגנון שלך?</h3>
+        <p className={styles.sourceIntro}>
+          השדות כאן אופציונליים. הם מתעדים את כיוון העבודה ולא מחליפים
+          נתוני עריכה אמיתיים.
+        </p>
+
+        <div className={styles.formGrid}>
+          <label className={styles.field}>
+            <span>שם הסגנון</span>
+            <input
+              value={styleName}
+              onChange={(event) => setStyleName(event.target.value)}
+              placeholder="לדוגמה: טבעי, חם, נקי"
+            />
+          </label>
+
+          <div className={styles.field}>
+            <span>פריסט Lightroom</span>
+            <button
+              type="button"
+              className={styles.secondaryButton}
+              onClick={() => void choosePreset()}
+              disabled={busy}
+            >
+              {presetPath ? "החלפת פריסט" : "בחירת פריסט XMP"}
+            </button>
+            <small className={styles.pathHint}>
+              {presetPath ??
+                `${overview?.discovered_presets.length ?? 0} פריסטים אותרו אוטומטית`}
+            </small>
+          </div>
+        </div>
+
+        <div className={styles.profileChoice}>
+          <strong>פרופיל צבע</strong>
+
+          <label>
+            <input
+              type="radio"
+              name="profile-mode"
+              checked={profileMode === "from_source"}
+              onChange={() => setProfileMode("from_source")}
+            />
+            <span>
+              ייקבע מתוך חומר העריכה המאומת
+              <small>ברירת המחדל הבטוחה כשאין פרופיל ידוע מראש</small>
+            </span>
+          </label>
+
+          <label>
+            <input
+              type="radio"
+              name="profile-mode"
+              checked={profileMode === "explicit"}
+              onChange={() => setProfileMode("explicit")}
+            />
+            <span>
+              יש לי דרישת פרופיל צבע מפורשת
+              <small>נשמור את השם, אך נבדוק התאמה למצלמה לפני שימוש</small>
+            </span>
+          </label>
+
+          {profileMode === "explicit" ? (
+            <input
+              className={styles.profileInput}
+              value={cameraProfile}
+              onChange={(event) => setCameraProfile(event.target.value)}
+              placeholder="לדוגמה: Adobe Color"
+            />
+          ) : null}
+        </div>
+
+        <button
+          type="button"
+          className={styles.primaryButton}
+          onClick={() => void saveStyle()}
+          disabled={busy}
+        >
+          שמירת הגדרות הסגנון
+        </button>
+      </article>
+
+      <article className={styles.readinessCard}>
+        <span className={styles.label}>READINESS</span>
+        <h3>מה עדיין חסר לפרופיל אישי?</h3>
+
+        <ul>
+          {(overview?.readiness_reasons ?? []).map((reason) => (
+            <li key={reason}>{reason}</li>
+          ))}
+        </ul>
       </article>
     </section>
   );
