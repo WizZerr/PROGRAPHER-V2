@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import StatusBadge from "@/components/common/StatusBadge";
 import { getRuntimeInfo } from "@/features/dashboard/dashboard.api";
 import { getEngineInfo } from "@/lib/runtime";
 import { detectDesktopPlatform } from "@/lib/platform";
@@ -66,19 +67,15 @@ export default function DashboardScreen() {
           </p>
         </div>
 
-        <div
-          className={`${styles.status} ${
-            state === "connected"
-              ? styles.ok
-              : state === "error"
-                ? styles.bad
-                : styles.wait
-          }`}
-        >
-          {state === "checking" && "מתחבר למנוע…"}
-          {state === "connected" && "המנוע מחובר"}
-          {state === "error" && "המנוע אינו זמין"}
-        </div>
+        {state === "checking" && (
+          <StatusBadge tone="warning">מתחבר למנוע…</StatusBadge>
+        )}
+        {state === "connected" && (
+          <StatusBadge tone="success">המנוע מחובר</StatusBadge>
+        )}
+        {state === "error" && (
+          <StatusBadge tone="danger">המנוע אינו זמין</StatusBadge>
+        )}
       </section>
 
       <section className={styles.grid}>

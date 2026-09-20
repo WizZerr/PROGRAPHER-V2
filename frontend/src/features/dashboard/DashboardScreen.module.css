@@ -2,20 +2,21 @@
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 24px;
-  padding: 28px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 20px;
-  background: #111;
+  gap: var(--pg-space-6);
+  padding: var(--pg-space-7);
+  border: 1px solid var(--pg-border);
+  border-radius: var(--pg-radius-xl);
+  background: var(--pg-surface-2);
+  box-shadow: var(--pg-shadow-panel);
 }
 
 .eyebrow {
   display: block;
-  margin-bottom: 10px;
+  margin-bottom: var(--pg-space-3);
   font-size: 10px;
-  font-weight: 700;
+  font-weight: var(--pg-weight-bold);
   letter-spacing: 0.16em;
-  color: #7f7f7f;
+  color: var(--pg-text-muted);
   direction: ltr;
   text-align: right;
 }
@@ -23,50 +24,28 @@
 .hero h2 {
   margin: 0;
   font-size: clamp(28px, 4vw, 44px);
+  font-weight: var(--pg-weight-bold);
   letter-spacing: -0.04em;
 }
 
 .hero p {
-  margin: 10px 0 0;
-  color: #999;
-}
-
-.status {
-  flex: 0 0 auto;
-  padding: 9px 12px;
-  border-radius: 999px;
-  font-size: 12px;
-  font-weight: 700;
-}
-
-.ok {
-  background: rgba(55, 214, 122, 0.12);
-  color: #63df94;
-}
-
-.wait {
-  background: rgba(245, 185, 66, 0.12);
-  color: #f5c66a;
-}
-
-.bad {
-  background: rgba(255, 92, 92, 0.12);
-  color: #ff8a8a;
+  margin: var(--pg-space-3) 0 0;
+  color: var(--pg-text-secondary);
 }
 
 .grid {
-  margin-top: 18px;
+  margin-top: var(--pg-space-5);
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 14px;
+  gap: var(--pg-space-4);
 }
 
 .card {
   min-width: 0;
-  padding: 20px;
-  border: 1px solid rgba(255, 255, 255, 0.07);
-  border-radius: 16px;
-  background: #101010;
+  padding: var(--pg-space-5);
+  border: 1px solid var(--pg-border);
+  border-radius: var(--pg-radius-lg);
+  background: var(--pg-surface-2);
 }
 
 .card span,
@@ -76,30 +55,31 @@
 }
 
 .card span {
-  margin-bottom: 8px;
-  color: #777;
-  font-size: 11px;
+  margin-bottom: var(--pg-space-2);
+  color: var(--pg-text-muted);
+  font-size: var(--pg-font-xs);
 }
 
 .card strong {
   overflow: hidden;
   text-overflow: ellipsis;
   font-size: 15px;
-  font-weight: 700;
+  font-weight: var(--pg-weight-bold);
 }
 
 .card small {
   margin-top: 6px;
-  color: #777;
-  font-size: 11px;
+  color: var(--pg-text-muted);
+  font-size: var(--pg-font-xs);
 }
 
 .error {
-  margin-top: 18px;
-  padding: 16px;
-  border-radius: 14px;
-  background: rgba(255, 92, 92, 0.08);
-  color: #ff9a9a;
+  margin-top: var(--pg-space-5);
+  padding: var(--pg-space-4);
+  border: 1px solid rgba(255, 92, 92, 0.2);
+  border-radius: var(--pg-radius-md);
+  background: var(--pg-danger-bg);
+  color: var(--pg-danger);
   white-space: pre-wrap;
 }
 

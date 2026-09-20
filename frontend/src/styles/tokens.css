@@ -1,0 +1,58 @@
+:root {
+  color-scheme: dark;
+
+  --pg-bg: #090909;
+  --pg-surface-1: #0d0d0d;
+  --pg-surface-2: #101010;
+  --pg-surface-3: #141414;
+  --pg-surface-hover: rgba(255, 255, 255, 0.055);
+  --pg-surface-active: rgba(255, 255, 255, 0.09);
+
+  --pg-text: #f5f5f5;
+  --pg-text-secondary: #a0a0a0;
+  --pg-text-muted: #747474;
+
+  --pg-border: rgba(255, 255, 255, 0.08);
+  --pg-border-strong: rgba(255, 255, 255, 0.13);
+
+  --pg-success: #63df94;
+  --pg-success-bg: rgba(55, 214, 122, 0.12);
+  --pg-warning: #f5c66a;
+  --pg-warning-bg: rgba(245, 185, 66, 0.12);
+  --pg-danger: #ff8a8a;
+  --pg-danger-bg: rgba(255, 92, 92, 0.12);
+
+  --pg-radius-sm: 10px;
+  --pg-radius-md: 14px;
+  --pg-radius-lg: 18px;
+  --pg-radius-xl: 22px;
+  --pg-radius-pill: 999px;
+
+  --pg-space-1: 4px;
+  --pg-space-2: 8px;
+  --pg-space-3: 12px;
+  --pg-space-4: 16px;
+  --pg-space-5: 20px;
+  --pg-space-6: 24px;
+  --pg-space-7: 28px;
+  --pg-space-8: 32px;
+  --pg-space-10: 40px;
+
+  --pg-sidebar-width: 230px;
+  --pg-sidebar-compact-width: 76px;
+  --pg-header-height: 82px;
+
+  --pg-font-xs: 11px;
+  --pg-font-sm: 12px;
+  --pg-font-md: 14px;
+  --pg-font-lg: 16px;
+  --pg-font-xl: 20px;
+
+  --pg-weight-normal: 400;
+  --pg-weight-medium: 500;
+  --pg-weight-bold: 700;
+
+  --pg-shadow-panel: 0 24px 70px rgba(0, 0, 0, 0.28);
+
+  --pg-transition-fast: 120ms ease;
+}
