@@ -41,14 +41,29 @@ def _source_identity(source) -> SourceIdentity:
 
 
 def _missing_targets(edit: XmpEdit) -> tuple[str, ...]:
-    recipe = edit.recipe
     missing: list[str] = []
 
     for field in REQUIRED_INITIAL_TARGETS:
-        if getattr(recipe, field) is None:
+        if getattr(edit.recipe, field) is None:
             missing.append(field)
 
     return tuple(missing)
+
+
+def _exclusion_reasons(
+    *,
+    missing_targets: tuple[str, ...],
+    has_local_adjustments: bool,
+) -> tuple[str, ...]:
+    reasons = [f"missing_target:{field}" for field in missing_targets]
+
+    # Explicit initial policy:
+    # local masks / brush / gradient work is preserved as provenance but
+    # excluded from the first global Exposure/WB training dataset.
+    if has_local_adjustments:
+        reasons.append("local_adjustments_out_of_initial_scope")
+
+    return tuple(reasons)
 
 
 def build_dataset_preview(
@@ -80,7 +95,6 @@ def build_dataset_preview(
         try:
             xmp_records.append((path, read_xmp(path)))
         except XmpReadError:
-            # An invalid XMP is not silently paired to a RAW.
             continue
 
     by_relative_stem: dict[str, list[tuple[Path, XmpEdit]]] = defaultdict(list)
@@ -104,12 +118,10 @@ def build_dataset_preview(
     for source in raw_sources:
         relative = Path(source.relative_path)
         exact = by_relative_stem.get(_stem_key(relative), [])
-
         declared = by_declared_source.get(
             _case_key(source.filename),
             [],
         )
-
         filename = by_filename_stem.get(
             _filename_stem(source.filename),
             [],
@@ -128,8 +140,6 @@ def build_dataset_preview(
             matches = filename
             pairing_method = "unique_filename_stem"
         else:
-            # If any strategy has multiple candidates, ambiguity must be
-            # explicit. Never choose one arbitrarily.
             ambiguous_pool = exact or declared or filename
             if len(ambiguous_pool) > 1:
                 candidates.append(
@@ -142,7 +152,10 @@ def build_dataset_preview(
                         target_recipe=None,
                         missing_target_fields=(),
                         virtual_copy_name=None,
+                        final_edit_state="unreviewed",
                         final_edit_verified=False,
+                        has_local_adjustments=False,
+                        exclusion_reasons=("ambiguous_pair",),
                         usable_for_training=False,
                     )
                 )
@@ -159,7 +172,10 @@ def build_dataset_preview(
                     target_recipe=None,
                     missing_target_fields=(),
                     virtual_copy_name=None,
+                    final_edit_state="unreviewed",
                     final_edit_verified=False,
+                    has_local_adjustments=False,
+                    exclusion_reasons=("missing_edit_pair",),
                     usable_for_training=False,
                 )
             )
@@ -167,6 +183,10 @@ def build_dataset_preview(
 
         xmp_path, edit = matches[0]
         missing = _missing_targets(edit)
+        exclusions = _exclusion_reasons(
+            missing_targets=missing,
+            has_local_adjustments=edit.has_local_adjustments,
+        )
 
         candidates.append(
             DatasetCandidate(
@@ -177,10 +197,11 @@ def build_dataset_preview(
                 pairing_method=pairing_method,
                 target_recipe=edit.recipe,
                 missing_target_fields=missing,
-                # XMP sidecars alone do not establish Lightroom Virtual Copy
-                # identity or that this is the photographer's final edit.
                 virtual_copy_name=None,
+                final_edit_state="unreviewed",
                 final_edit_verified=False,
+                has_local_adjustments=edit.has_local_adjustments,
+                exclusion_reasons=exclusions,
                 usable_for_training=False,
             )
         )
@@ -196,7 +217,6 @@ def build_dataset_preview(
         matched_pairs=matched,
         unmatched_raw=unmatched,
         ambiguous_raw=ambiguous,
-        # Part 1 intentionally cannot claim final-edit verification.
         verified_training_pairs=0,
         candidates=tuple(candidates),
     )

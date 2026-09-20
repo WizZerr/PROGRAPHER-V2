@@ -6,6 +6,7 @@ from typing import Literal
 
 DatasetSplit = Literal["train", "validation", "test"]
 PairStatus = Literal["matched", "unmatched", "ambiguous"]
+FinalEditState = Literal["unreviewed", "verified_final", "rejected"]
 
 
 @dataclass(frozen=True)
@@ -39,7 +40,10 @@ class DatasetCandidate:
     target_recipe: TargetRecipe | None
     missing_target_fields: tuple[str, ...]
     virtual_copy_name: str | None
+    final_edit_state: FinalEditState
     final_edit_verified: bool
+    has_local_adjustments: bool
+    exclusion_reasons: tuple[str, ...]
     usable_for_training: bool
 
 

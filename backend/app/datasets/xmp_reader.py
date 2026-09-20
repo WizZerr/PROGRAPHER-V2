@@ -7,11 +7,23 @@ from pathlib import Path
 from app.datasets.contracts import TargetRecipe
 
 
+LOCAL_ADJUSTMENT_HINTS = (
+    "mask",
+    "paintbasedcorrection",
+    "gradientbasedcorrection",
+    "circulargradientbasedcorrection",
+    "retouch",
+    "spotremoval",
+    "localized",
+)
+
+
 @dataclass(frozen=True)
 class XmpEdit:
     path: str
     source_filename: str | None
     recipe: TargetRecipe
+    has_local_adjustments: bool
 
 
 class XmpReadError(ValueError):
@@ -32,11 +44,26 @@ def _attributes(root: ET.Element) -> dict[str, str]:
     for element in root.iter():
         for key, value in element.attrib.items():
             local = _local_name(key)
-            # First concrete value wins; do not silently override with another
-            # namespace occurrence later in the document.
             values.setdefault(local, value)
 
     return values
+
+
+def _has_local_adjustments(root: ET.Element) -> bool:
+    for element in root.iter():
+        element_name = _local_name(element.tag).casefold()
+        if any(hint in element_name for hint in LOCAL_ADJUSTMENT_HINTS):
+            return True
+
+        for key, value in element.attrib.items():
+            local = _local_name(key).casefold()
+
+            if any(hint in local for hint in LOCAL_ADJUSTMENT_HINTS):
+                normalized = value.strip().casefold()
+                if normalized not in {"", "0", "false", "none"}:
+                    return True
+
+    return False
 
 
 def _optional_float(
@@ -97,7 +124,6 @@ def read_xmp(path: str | Path) -> XmpEdit:
 
     values = _attributes(root)
 
-    # Missing stays None. A real zero remains 0 / 0.0.
     recipe = TargetRecipe(
         exposure=_optional_float(values, "Exposure2012", "Exposure"),
         temperature=_optional_int(values, "Temperature"),
@@ -120,4 +146,5 @@ def read_xmp(path: str | Path) -> XmpEdit:
             "OriginalFileName",
         ),
         recipe=recipe,
+        has_local_adjustments=_has_local_adjustments(root),
     )
