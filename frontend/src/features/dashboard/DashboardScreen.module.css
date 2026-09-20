@@ -16,6 +16,8 @@
   font-weight: 700;
   letter-spacing: 0.16em;
   color: #7f7f7f;
+  direction: ltr;
+  text-align: right;
 }
 
 .hero h2 {
