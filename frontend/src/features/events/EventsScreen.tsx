@@ -4,14 +4,22 @@ import { useCallback, useEffect, useState } from "react";
 import { open } from "@tauri-apps/plugin-dialog";
 import {
   getEventAvailability,
+  getEventScanProgress,
   listEvents,
-  openEventFolder,
   relinkEvent,
+  startEventScan,
   type EventAvailability,
   type EventOpenResponse,
+  type EventScanProgress,
   type EventSummary,
 } from "./events.api";
 import styles from "./EventsScreen.module.css";
+
+const POLL_MS = 140;
+
+function sleep(ms: number) {
+  return new Promise((resolve) => window.setTimeout(resolve, ms));
+}
 
 export default function EventsScreen() {
   const [events, setEvents] = useState<EventSummary[]>([]);
@@ -19,6 +27,7 @@ export default function EventsScreen() {
     Record<string, EventAvailability>
   >({});
   const [busy, setBusy] = useState(false);
+  const [scan, setScan] = useState<EventScanProgress | null>(null);
   const [notice, setNotice] = useState<EventOpenResponse | null>(null);
   const [message, setMessage] = useState<string>("");
   const [error, setError] = useState<string>("");
@@ -60,10 +69,34 @@ export default function EventsScreen() {
     void refresh();
   }, [refresh]);
 
+  async function waitForScan(jobId: string) {
+    while (true) {
+      const progress = await getEventScanProgress(jobId);
+      setScan(progress);
+
+      if (progress.status === "completed") {
+        if (!progress.result) {
+          throw new Error("הסריקה הסתיימה ללא תוצאת אירוע.");
+        }
+
+        setNotice(progress.result);
+        await refresh();
+        return;
+      }
+
+      if (progress.status === "failed") {
+        throw new Error(progress.error || "סריקת האירוע נכשלה.");
+      }
+
+      await sleep(POLL_MS);
+    }
+  }
+
   async function chooseFolder() {
     setError("");
     setMessage("");
     setNotice(null);
+    setScan(null);
 
     const selected = await open({
       directory: true,
@@ -74,10 +107,10 @@ export default function EventsScreen() {
     if (!selected || Array.isArray(selected)) return;
 
     setBusy(true);
+
     try {
-      const result = await openEventFolder(selected);
-      setNotice(result);
-      await refresh();
+      const started = await startEventScan(selected);
+      await waitForScan(started.job_id);
     } catch (cause) {
       setError(
         cause instanceof Error
@@ -86,6 +119,7 @@ export default function EventsScreen() {
       );
     } finally {
       setBusy(false);
+      setScan(null);
     }
   }
 
@@ -163,6 +197,18 @@ export default function EventsScreen() {
     );
   }
 
+  function scanTitle(progress: EventScanProgress): string {
+    if (progress.status === "discovering") {
+      return "מאתר קבצי צילום...";
+    }
+
+    if (progress.status === "finalizing") {
+      return "מסיים קליטת האירוע...";
+    }
+
+    return "סורק את האירוע...";
+  }
+
   return (
     <section className={styles.screen}>
       <div className={styles.hero}>
@@ -186,6 +232,34 @@ export default function EventsScreen() {
           </button>
         </div>
       </div>
+
+      {scan ? (
+        <div className={styles.scanPanel}>
+          <div className={styles.scanHeader}>
+            <div>
+              <strong>{scanTitle(scan)}</strong>
+              <span>
+                {scan.total_files > 0
+                  ? `${scan.processed_files.toLocaleString()} / ${scan.total_files.toLocaleString()}`
+                  : "מכין את רשימת הקבצים"}
+              </span>
+            </div>
+            <bdi dir="ltr">{scan.percent}%</bdi>
+          </div>
+          <div
+            className={styles.progressTrack}
+            role="progressbar"
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-valuenow={scan.percent}
+          >
+            <div
+              className={styles.progressFill}
+              style={{ width: `${scan.percent}%` }}
+            />
+          </div>
+        </div>
+      ) : null}
 
       {notice ? (
         <div className={noticeClassName(notice)}>

@@ -3,6 +3,7 @@ from __future__ import annotations
 import hashlib
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Callable
 
 
 RAW_EXTENSIONS = {
@@ -42,6 +43,8 @@ RENDERED_EXTENSIONS = {
 SUPPORTED_EXTENSIONS = RAW_EXTENSIONS | RENDERED_EXTENSIONS
 FINGERPRINT_CHUNK_SIZE = 64 * 1024
 
+ProgressCallback = Callable[[int, int, str], None]
+
 
 @dataclass(frozen=True)
 class ScannedSource:
@@ -59,13 +62,45 @@ class FolderScanError(ValueError):
     pass
 
 
+def _resolve_root(folder: str | Path) -> Path:
+    root = Path(folder).expanduser()
+
+    if not root.exists():
+        raise FolderScanError("תיקיית האירוע לא קיימת.")
+
+    if not root.is_dir():
+        raise FolderScanError("הנתיב שנבחר אינו תיקייה.")
+
+    try:
+        return root.resolve(strict=True)
+    except OSError as exc:
+        raise FolderScanError("לא ניתן לגשת לתיקיית האירוע.") from exc
+
+
+def discover_photo_files(folder: str | Path) -> tuple[Path, list[Path]]:
+    root = _resolve_root(folder)
+
+    try:
+        candidates = sorted(
+            (
+                path
+                for path in root.rglob("*")
+                if path.is_file() and path.suffix.lower() in SUPPORTED_EXTENSIONS
+            ),
+            key=lambda path: str(path).casefold(),
+        )
+    except OSError as exc:
+        raise FolderScanError("סריקת תיקיית האירוע נכשלה.") from exc
+
+    return root, candidates
+
+
 def _fingerprint(path: Path, size_bytes: int) -> str:
     """
-    Stable relocation fingerprint without reading an entire large RAW.
+    Relocation fingerprint, not a full-file integrity hash.
 
-    It uses file size + the first and last 64 KiB. This is NOT presented as a
-    cryptographic content hash. A later integrity phase may compute a full hash
-    where required.
+    Uses file size + first/last 64 KiB so large RAW folders can be indexed
+    without reading every byte of every source file.
     """
     digest = hashlib.sha256()
     digest.update(str(size_bytes).encode("ascii"))
@@ -81,35 +116,19 @@ def _fingerprint(path: Path, size_bytes: int) -> str:
     return digest.hexdigest()
 
 
-def scan_event_folder(folder: str | Path) -> list[ScannedSource]:
-    root = Path(folder).expanduser()
+def scan_event_folder(
+    folder: str | Path,
+    progress_callback: ProgressCallback | None = None,
+) -> list[ScannedSource]:
+    root, candidates = discover_photo_files(folder)
+    total = len(candidates)
 
-    if not root.exists():
-        raise FolderScanError("תיקיית האירוע לא קיימת.")
-
-    if not root.is_dir():
-        raise FolderScanError("הנתיב שנבחר אינו תיקייה.")
-
-    try:
-        root = root.resolve(strict=True)
-    except OSError as exc:
-        raise FolderScanError("לא ניתן לגשת לתיקיית האירוע.") from exc
+    if progress_callback:
+        progress_callback(0, total, "")
 
     results: list[ScannedSource] = []
 
-    try:
-        candidates = sorted(
-            (
-                path
-                for path in root.rglob("*")
-                if path.is_file() and path.suffix.lower() in SUPPORTED_EXTENSIONS
-            ),
-            key=lambda path: str(path).casefold(),
-        )
-    except OSError as exc:
-        raise FolderScanError("סריקת תיקיית האירוע נכשלה.") from exc
-
-    for path in candidates:
+    for index, path in enumerate(candidates, start=1):
         try:
             stat = path.stat()
             extension = path.suffix.lower()
@@ -131,5 +150,8 @@ def scan_event_folder(folder: str | Path) -> list[ScannedSource]:
             raise FolderScanError(
                 f"לא ניתן לקרוא את הקובץ: {path.name}"
             ) from exc
+
+        if progress_callback:
+            progress_callback(index, total, path.name)
 
     return results

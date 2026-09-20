@@ -47,3 +47,31 @@ class EventRelinkResponse(BaseModel):
     matched_files: int
     missing_files: int
     new_files_added: int
+
+
+class EventScanStartResponse(BaseModel):
+    job_id: str
+    status: Literal[
+        "discovering",
+        "scanning",
+        "finalizing",
+        "completed",
+        "failed",
+    ]
+
+
+class EventScanStatusResponse(BaseModel):
+    job_id: str
+    status: Literal[
+        "discovering",
+        "scanning",
+        "finalizing",
+        "completed",
+        "failed",
+    ]
+    processed_files: int
+    total_files: int
+    current_file: str
+    percent: int
+    error: str | None = None
+    result: EventOpenResponse | None = None

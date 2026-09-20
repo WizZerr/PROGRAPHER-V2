@@ -120,7 +120,7 @@ class EventStore:
     ) -> EventOpenResult:
         canonical_root = root.resolve()
         key = _root_key(canonical_root)
-        event_id = key[:24]
+        derived_event_id = key[:24]
         now = _utc_now()
         display_name = (name or canonical_root.name or "אירוע").strip()
 
@@ -135,6 +135,12 @@ class EventStore:
             ).fetchone()
 
             was_existing = existing is not None
+
+            # IMPORTANT:
+            # After a Relink the event keeps its original ID while root_key changes.
+            # Therefore an existing root_key must reuse the stored event ID instead
+            # of deriving a new ID from the current path.
+            event_id = existing["id"] if existing else derived_event_id
             created_at = existing["created_at"] if existing else now
 
             existing_fingerprints: set[str] = set()

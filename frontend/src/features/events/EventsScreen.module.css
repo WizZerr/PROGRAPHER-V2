@@ -63,7 +63,8 @@
 .success,
 .warning,
 .info,
-.error {
+.error,
+.scanPanel {
   padding: var(--pg-space-4) var(--pg-space-5);
   border-radius: var(--pg-radius-md);
   font-size: var(--pg-font-md);
@@ -92,6 +93,50 @@
   border: 1px solid rgba(255, 107, 107, 0.35);
   background: rgba(180, 35, 35, 0.18);
   color: #ff8a8a;
+}
+
+.scanPanel {
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: var(--pg-surface-2);
+  color: var(--pg-text);
+}
+
+.scanHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--pg-space-4);
+}
+
+.scanHeader strong,
+.scanHeader span {
+  display: block;
+}
+
+.scanHeader span {
+  margin-top: 2px;
+  color: var(--pg-text-muted);
+  font-size: var(--pg-font-sm);
+}
+
+.scanHeader bdi {
+  font-weight: var(--pg-weight-bold);
+  font-variant-numeric: tabular-nums;
+}
+
+.progressTrack {
+  height: 8px;
+  margin-top: var(--pg-space-3);
+  overflow: hidden;
+  border-radius: var(--pg-radius-pill);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.progressFill {
+  height: 100%;
+  border-radius: inherit;
+  background: currentColor;
+  transition: width 120ms linear;
 }
 
 .eventName {

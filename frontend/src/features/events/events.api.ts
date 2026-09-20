@@ -39,6 +39,29 @@ export type EventRelinkResponse = {
   new_files_added: number;
 };
 
+export type EventScanStatus =
+  | "discovering"
+  | "scanning"
+  | "finalizing"
+  | "completed"
+  | "failed";
+
+type EventScanStartResponse = {
+  job_id: string;
+  status: EventScanStatus;
+};
+
+export type EventScanProgress = {
+  job_id: string;
+  status: EventScanStatus;
+  processed_files: number;
+  total_files: number;
+  current_file: string;
+  percent: number;
+  error: string | null;
+  result: EventOpenResponse | null;
+};
+
 export async function listEvents(): Promise<EventSummary[]> {
   const response = await apiRequest<EventListResponse>("/api/events");
   return response.events;
@@ -51,6 +74,21 @@ export async function openEventFolder(
     method: "POST",
     body: JSON.stringify({ path }),
   });
+}
+
+export async function startEventScan(
+  path: string,
+): Promise<EventScanStartResponse> {
+  return apiRequest<EventScanStartResponse>("/api/events/scan", {
+    method: "POST",
+    body: JSON.stringify({ path }),
+  });
+}
+
+export async function getEventScanProgress(
+  jobId: string,
+): Promise<EventScanProgress> {
+  return apiRequest<EventScanProgress>(`/api/events/scan/${jobId}`);
 }
 
 export async function getEventAvailability(
