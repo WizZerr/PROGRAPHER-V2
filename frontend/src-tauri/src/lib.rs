@@ -2,19 +2,21 @@ use serde::Serialize;
 use std::{
     io::{Read, Write},
     net::{SocketAddr, TcpListener, TcpStream},
-    path::PathBuf,
-    process::{Child, Command, Stdio},
     sync::Mutex,
     thread,
     time::{Duration, Instant},
 };
 use tauri::Manager;
+use tauri_plugin_shell::{
+    process::{CommandChild, CommandEvent},
+    ShellExt,
+};
 
 const ENGINE_HOST: &str = "127.0.0.1";
-const ENGINE_START_TIMEOUT: Duration = Duration::from_secs(15);
+const ENGINE_START_TIMEOUT: Duration = Duration::from_secs(25);
 
 struct EngineState {
-    child: Mutex<Option<Child>>,
+    child: Mutex<Option<CommandChild>>,
     port: u16,
     secret: String,
 }
@@ -36,26 +38,6 @@ fn get_engine_info(state: tauri::State<'_, EngineState>) -> EngineInfo {
         secret: state.secret.clone(),
         status: "ready".to_string(),
     }
-}
-
-fn project_root() -> PathBuf {
-    PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .join("..")
-        .join("..")
-}
-
-fn backend_dir() -> PathBuf {
-    project_root().join("backend")
-}
-
-#[cfg(target_os = "windows")]
-fn python_executable() -> PathBuf {
-    backend_dir().join(".venv").join("Scripts").join("python.exe")
-}
-
-#[cfg(not(target_os = "windows"))]
-fn python_executable() -> PathBuf {
-    backend_dir().join(".venv").join("bin").join("python")
 }
 
 fn reserve_runtime_port() -> Result<u16, String> {
@@ -82,8 +64,8 @@ fn health_check(port: u16) -> bool {
         Err(_) => return false,
     };
 
-    let _ = stream.set_read_timeout(Some(Duration::from_millis(700)));
-    let _ = stream.set_write_timeout(Some(Duration::from_millis(700)));
+    let _ = stream.set_read_timeout(Some(Duration::from_millis(800)));
+    let _ = stream.set_write_timeout(Some(Duration::from_millis(800)));
 
     let request = format!(
         "GET /health HTTP/1.1\r\nHost: {ENGINE_HOST}:{port}\r\nConnection: close\r\n\r\n"
@@ -109,83 +91,96 @@ fn wait_until_healthy(port: u16) -> bool {
             return true;
         }
 
-        thread::sleep(Duration::from_millis(150));
+        thread::sleep(Duration::from_millis(180));
     }
 
     false
 }
 
-fn start_engine() -> Result<(Child, u16, String), String> {
-    let python = python_executable();
-    let backend = backend_dir();
-
-    if !python.exists() {
-        return Err(format!(
-            "Python virtual environment was not found at: {}",
-            python.display()
-        ));
-    }
-
-    if !backend.join("app").join("main.py").exists() {
-        return Err(format!(
-            "ProGrapher backend was not found at: {}",
-            backend.display()
-        ));
-    }
-
+fn start_packaged_engine(
+    app: &tauri::AppHandle,
+) -> Result<(CommandChild, u16, String), String> {
     let port = reserve_runtime_port()?;
     let secret = uuid::Uuid::new_v4().to_string();
 
-    let mut command = Command::new(&python);
-    command
-        .current_dir(&backend)
-        .arg("-m")
-        .arg("uvicorn")
-        .arg("app.main:app")
-        .arg("--host")
-        .arg(ENGINE_HOST)
-        .arg("--port")
-        .arg(port.to_string())
+    let command = app
+        .shell()
+        .sidecar("prographer-engine")
+        .map_err(|e| format!("failed to resolve packaged engine sidecar: {e}"))?
+        .args([
+            "--host",
+            ENGINE_HOST,
+            "--port",
+            &port.to_string(),
+        ])
         .env("PROGRAPHER_ENGINE_SECRET", &secret);
 
-    if cfg!(debug_assertions) {
-        command.stdout(Stdio::inherit()).stderr(Stdio::inherit());
-    } else {
-        command.stdout(Stdio::null()).stderr(Stdio::null());
-    }
-
-    let mut child = command
+    let (mut rx, child) = command
         .spawn()
-        .map_err(|e| format!("failed to start ProGrapher Engine: {e}"))?;
+        .map_err(|e| format!("failed to start packaged ProGrapher Engine: {e}"))?;
+
+    tauri::async_runtime::spawn(async move {
+        while let Some(event) = rx.recv().await {
+            match event {
+                CommandEvent::Stdout(bytes) => {
+                    if cfg!(debug_assertions) {
+                        println!(
+                            "[engine] {}",
+                            String::from_utf8_lossy(&bytes).trim_end()
+                        );
+                    }
+                }
+                CommandEvent::Stderr(bytes) => {
+                    if cfg!(debug_assertions) {
+                        eprintln!(
+                            "[engine] {}",
+                            String::from_utf8_lossy(&bytes).trim_end()
+                        );
+                    }
+                }
+                CommandEvent::Error(message) => {
+                    eprintln!("[engine] process error: {message}");
+                }
+                CommandEvent::Terminated(payload) => {
+                    if cfg!(debug_assertions) {
+                        println!(
+                            "[engine] terminated: code={:?} signal={:?}",
+                            payload.code, payload.signal
+                        );
+                    }
+                }
+                _ => {}
+            }
+        }
+    });
 
     if !wait_until_healthy(port) {
         let _ = child.kill();
-        let _ = child.wait();
         return Err(format!(
-            "ProGrapher Engine did not become healthy within {} seconds",
+            "Packaged ProGrapher Engine did not become healthy within {} seconds",
             ENGINE_START_TIMEOUT.as_secs()
         ));
     }
 
-    println!("ProGrapher Engine ready: http://{ENGINE_HOST}:{port}");
+    println!(
+        "ProGrapher packaged sidecar ready: http://{ENGINE_HOST}:{port}"
+    );
 
     Ok((child, port, secret))
 }
 
 fn stop_engine(state: &EngineState) {
     if let Ok(mut child_guard) = state.child.lock() {
-        if let Some(child) = child_guard.as_mut() {
+        if let Some(child) = child_guard.take() {
             let _ = child.kill();
-            let _ = child.wait();
         }
-
-        *child_guard = None;
     }
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let app = tauri::Builder::default()
+        .plugin(tauri_plugin_shell::init())
         .setup(|app| {
             if cfg!(debug_assertions) {
                 app.handle().plugin(
@@ -195,8 +190,8 @@ pub fn run() {
                 )?;
             }
 
-            let (child, port, secret) = start_engine()
-                .map_err(|message| std::io::Error::other(message))?;
+            let (child, port, secret) = start_packaged_engine(app.handle())
+                .map_err(std::io::Error::other)?;
 
             app.manage(EngineState {
                 child: Mutex::new(Some(child)),

@@ -1,6 +1,10 @@
 .venv/
+.venv-disabled/
 __pycache__/
 *.pyc
 .env
 data/
 cache/
+build/
+dist/
+*.spec
