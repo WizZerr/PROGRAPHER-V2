@@ -1,0 +1,114 @@
+.hero {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 28px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 20px;
+  background: #111;
+}
+
+.eyebrow {
+  display: block;
+  margin-bottom: 10px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  color: #7f7f7f;
+}
+
+.hero h2 {
+  margin: 0;
+  font-size: clamp(28px, 4vw, 44px);
+  letter-spacing: -0.04em;
+}
+
+.hero p {
+  margin: 10px 0 0;
+  color: #999;
+}
+
+.status {
+  flex: 0 0 auto;
+  padding: 9px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.ok {
+  background: rgba(55, 214, 122, 0.12);
+  color: #63df94;
+}
+
+.wait {
+  background: rgba(245, 185, 66, 0.12);
+  color: #f5c66a;
+}
+
+.bad {
+  background: rgba(255, 92, 92, 0.12);
+  color: #ff8a8a;
+}
+
+.grid {
+  margin-top: 18px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.card {
+  min-width: 0;
+  padding: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 16px;
+  background: #101010;
+}
+
+.card span,
+.card strong,
+.card small {
+  display: block;
+}
+
+.card span {
+  margin-bottom: 8px;
+  color: #777;
+  font-size: 11px;
+}
+
+.card strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.card small {
+  margin-top: 6px;
+  color: #777;
+  font-size: 11px;
+}
+
+.error {
+  margin-top: 18px;
+  padding: 16px;
+  border-radius: 14px;
+  background: rgba(255, 92, 92, 0.08);
+  color: #ff9a9a;
+  white-space: pre-wrap;
+}
+
+@media (max-width: 950px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 650px) {
+  .hero {
+    flex-direction: column;
+  }
+}
