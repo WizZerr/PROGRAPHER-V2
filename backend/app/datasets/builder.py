@@ -9,6 +9,7 @@ from app.datasets.contracts import (
     DatasetPreview,
     SourceIdentity,
 )
+from app.datasets.metadata import extract_source_metadata
 from app.datasets.xmp_reader import XmpEdit, XmpReadError, read_xmp
 from app.ingest.scanner import scan_event_folder
 
@@ -57,13 +58,21 @@ def _exclusion_reasons(
 ) -> tuple[str, ...]:
     reasons = [f"missing_target:{field}" for field in missing_targets]
 
-    # Explicit initial policy:
-    # local masks / brush / gradient work is preserved as provenance but
-    # excluded from the first global Exposure/WB training dataset.
     if has_local_adjustments:
         reasons.append("local_adjustments_out_of_initial_scope")
 
     return tuple(reasons)
+
+
+def _sequence_id(relative_path: str) -> str | None:
+    parent = Path(relative_path).parent
+
+    if str(parent) in {"", "."}:
+        return None
+
+    # This is only a source-group identifier from folder structure.
+    # It is NOT presented as semantic Scene Engine output.
+    return parent.as_posix()
 
 
 def build_dataset_preview(
@@ -71,6 +80,9 @@ def build_dataset_preview(
     raw_root: str | Path,
     edits_root: str | Path,
     event_id: str,
+    photographer_id: str | None = None,
+    lightroom_version: str | None = None,
+    style_label: str | None = None,
 ) -> DatasetPreview:
     raw_root_path = Path(raw_root).expanduser().resolve(strict=True)
     edits_root_path = Path(edits_root).expanduser().resolve(strict=True)
@@ -116,7 +128,9 @@ def build_dataset_preview(
     candidates: list[DatasetCandidate] = []
 
     for source in raw_sources:
+        metadata = extract_source_metadata(source.absolute_path)
         relative = Path(source.relative_path)
+
         exact = by_relative_stem.get(_stem_key(relative), [])
         declared = by_declared_source.get(
             _case_key(source.filename),
@@ -125,6 +139,16 @@ def build_dataset_preview(
         filename = by_filename_stem.get(
             _filename_stem(source.filename),
             [],
+        )
+
+        common = dict(
+            event_id=event_id,
+            source=_source_identity(source),
+            source_metadata=metadata,
+            photographer_id=photographer_id,
+            sequence_id=_sequence_id(source.relative_path),
+            lightroom_version=lightroom_version,
+            style_label=style_label,
         )
 
         pairing_method: str | None = None
@@ -144,8 +168,7 @@ def build_dataset_preview(
             if len(ambiguous_pool) > 1:
                 candidates.append(
                     DatasetCandidate(
-                        event_id=event_id,
-                        source=_source_identity(source),
+                        **common,
                         pair_status="ambiguous",
                         xmp_path=None,
                         pairing_method=None,
@@ -164,8 +187,7 @@ def build_dataset_preview(
         if not matches:
             candidates.append(
                 DatasetCandidate(
-                    event_id=event_id,
-                    source=_source_identity(source),
+                    **common,
                     pair_status="unmatched",
                     xmp_path=None,
                     pairing_method=None,
@@ -190,8 +212,7 @@ def build_dataset_preview(
 
         candidates.append(
             DatasetCandidate(
-                event_id=event_id,
-                source=_source_identity(source),
+                **common,
                 pair_status="matched",
                 xmp_path=str(xmp_path.resolve()),
                 pairing_method=pairing_method,

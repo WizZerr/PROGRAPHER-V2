@@ -7,6 +7,13 @@ from typing import Literal
 DatasetSplit = Literal["train", "validation", "test"]
 PairStatus = Literal["matched", "unmatched", "ambiguous"]
 FinalEditState = Literal["unreviewed", "verified_final", "rejected"]
+PermissionBasis = Literal[
+    "unspecified",
+    "photographer_owned",
+    "client_permission",
+    "licensed_dataset",
+    "other",
+]
 
 
 @dataclass(frozen=True)
@@ -21,6 +28,19 @@ class SourceIdentity:
 
 
 @dataclass(frozen=True)
+class SourceMetadata:
+    camera_make: str | None = None
+    camera_model: str | None = None
+    captured_at: str | None = None
+    iso: int | None = None
+    shutter_seconds: float | None = None
+    aperture: float | None = None
+    focal_length_mm: float | None = None
+    raw_wb: tuple[float, ...] | None = None
+    raw_wb_source: str | None = None
+
+
+@dataclass(frozen=True)
 class TargetRecipe:
     exposure: float | None
     temperature: int | None
@@ -28,6 +48,15 @@ class TargetRecipe:
     blacks: float | None
     process_version: str | None
     camera_profile: str | None
+
+
+@dataclass(frozen=True)
+class DatasetRights:
+    permission_basis: PermissionBasis = "unspecified"
+    allow_personal_training: bool = False
+    allow_general_training: bool = False
+    license_name: str | None = None
+    notes: str | None = None
 
 
 @dataclass(frozen=True)
@@ -45,6 +74,11 @@ class DatasetCandidate:
     has_local_adjustments: bool
     exclusion_reasons: tuple[str, ...]
     usable_for_training: bool
+    source_metadata: SourceMetadata | None = None
+    photographer_id: str | None = None
+    sequence_id: str | None = None
+    lightroom_version: str | None = None
+    style_label: str | None = None
 
 
 @dataclass(frozen=True)

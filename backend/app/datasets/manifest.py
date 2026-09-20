@@ -7,13 +7,14 @@ from datetime import datetime, timezone
 from pathlib import Path
 from uuid import uuid4
 
-from app.datasets.contracts import DatasetPreview
+from app.datasets.contracts import DatasetPreview, DatasetRights
+from app.datasets.coverage import summarize_coverage
 from app.datasets.split import assign_event_splits
 from app.platform.paths import user_data_dir
 
 
 DATASET_MANIFEST_SCHEMA = "prographer.dataset.v2"
-DATASET_MANIFEST_VERSION = 1
+DATASET_MANIFEST_VERSION = 2
 
 
 def _utc_now() -> str:
@@ -24,9 +25,15 @@ def manifest_payload(
     previews: list[DatasetPreview],
     *,
     manifest_id: str | None = None,
+    rights: DatasetRights | None = None,
 ) -> dict:
+    active_rights = rights or DatasetRights()
     event_ids = [preview.event_id for preview in previews]
     split_map = assign_event_splits(event_ids)
+    coverage = summarize_coverage(
+        previews,
+        rights=active_rights,
+    )
 
     samples = []
 
@@ -44,6 +51,21 @@ def manifest_payload(
                 ),
                 "pairing_method": candidate.pairing_method,
                 "final_edit_state": candidate.final_edit_state,
+                "photographer_id": candidate.photographer_id,
+                "event_id": candidate.event_id,
+                "sequence_id": candidate.sequence_id,
+                "lightroom_version": candidate.lightroom_version,
+                "style_label": candidate.style_label,
+            }
+            item["rights"] = {
+                "eligible_for_personal_training": (
+                    candidate.usable_for_training
+                    and active_rights.allow_personal_training
+                ),
+                "eligible_for_general_training": (
+                    candidate.usable_for_training
+                    and active_rights.allow_general_training
+                ),
             }
             samples.append(item)
 
@@ -58,6 +80,8 @@ def manifest_payload(
             "temperature",
             "tint",
         ],
+        "rights": asdict(active_rights),
+        "coverage": asdict(coverage),
         "events": [
             {
                 "event_id": preview.event_id,
@@ -77,8 +101,12 @@ def write_manifest(
     previews: list[DatasetPreview],
     *,
     output_dir: Path | None = None,
+    rights: DatasetRights | None = None,
 ) -> tuple[str, Path, dict]:
-    payload = manifest_payload(previews)
+    payload = manifest_payload(
+        previews,
+        rights=rights,
+    )
     manifest_id = payload["manifest_id"]
 
     destination_dir = (
