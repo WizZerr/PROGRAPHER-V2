@@ -73,9 +73,8 @@ fn health_check(port: u16) -> bool {
     let _ = stream.set_read_timeout(Some(Duration::from_millis(800)));
     let _ = stream.set_write_timeout(Some(Duration::from_millis(800)));
 
-    let request = format!(
-        "GET /health HTTP/1.1\r\nHost: {ENGINE_HOST}:{port}\r\nConnection: close\r\n\r\n"
-    );
+    let request =
+        format!("GET /health HTTP/1.1\r\nHost: {ENGINE_HOST}:{port}\r\nConnection: close\r\n\r\n");
 
     if stream.write_all(request.as_bytes()).is_err() {
         return false;
@@ -103,9 +102,7 @@ fn wait_until_healthy(port: u16) -> bool {
     false
 }
 
-fn start_packaged_engine(
-    app: &tauri::AppHandle,
-) -> Result<(CommandChild, u16, String), String> {
+fn start_packaged_engine(app: &tauri::AppHandle) -> Result<(CommandChild, u16, String), String> {
     let port = reserve_runtime_port()?;
     let secret = uuid::Uuid::new_v4().to_string();
 
@@ -113,12 +110,7 @@ fn start_packaged_engine(
         .shell()
         .sidecar("prographer-engine")
         .map_err(|e| format!("failed to resolve packaged engine sidecar: {e}"))?
-        .args([
-            "--host",
-            ENGINE_HOST,
-            "--port",
-            &port.to_string(),
-        ])
+        .args(["--host", ENGINE_HOST, "--port", &port.to_string()])
         .env("PROGRAPHER_ENGINE_SECRET", &secret);
 
     let (mut rx, child) = command
@@ -130,18 +122,12 @@ fn start_packaged_engine(
             match event {
                 CommandEvent::Stdout(bytes) => {
                     if cfg!(debug_assertions) {
-                        println!(
-                            "[engine] {}",
-                            String::from_utf8_lossy(&bytes).trim_end()
-                        );
+                        println!("[engine] {}", String::from_utf8_lossy(&bytes).trim_end());
                     }
                 }
                 CommandEvent::Stderr(bytes) => {
                     if cfg!(debug_assertions) {
-                        eprintln!(
-                            "[engine] {}",
-                            String::from_utf8_lossy(&bytes).trim_end()
-                        );
+                        eprintln!("[engine] {}", String::from_utf8_lossy(&bytes).trim_end());
                     }
                 }
                 CommandEvent::Error(message) => {
@@ -168,9 +154,7 @@ fn start_packaged_engine(
         ));
     }
 
-    println!(
-        "ProGrapher packaged sidecar ready: http://{ENGINE_HOST}:{port}"
-    );
+    println!("ProGrapher packaged sidecar ready: http://{ENGINE_HOST}:{port}");
 
     Ok((child, port, secret))
 }
@@ -213,6 +197,7 @@ fn stop_engine(state: &EngineState) {
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let app = tauri::Builder::default()
+        .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_shell::init())
         .setup(|app| {
             if cfg!(debug_assertions) {
@@ -223,8 +208,8 @@ pub fn run() {
                 )?;
             }
 
-            let (child, port, secret) = start_packaged_engine(app.handle())
-                .map_err(std::io::Error::other)?;
+            let (child, port, secret) =
+                start_packaged_engine(app.handle()).map_err(std::io::Error::other)?;
 
             app.manage(EngineState {
                 child: Mutex::new(Some(child)),

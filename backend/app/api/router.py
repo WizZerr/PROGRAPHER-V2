@@ -1,5 +1,6 @@
 from fastapi import APIRouter
 
+from app.api.routes.events import router as events_router
 from app.api.routes.health import router as health_router
 from app.api.routes.metadata import router as metadata_router
 from app.api.routes.recipe import router as recipe_router
@@ -12,3 +13,4 @@ api_router.include_router(runtime_router)
 api_router.include_router(metadata_router)
 api_router.include_router(recipe_router)
 api_router.include_router(system_router)
+api_router.include_router(events_router)

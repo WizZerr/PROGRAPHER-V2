@@ -4,6 +4,10 @@ import platform
 
 
 def user_data_dir() -> Path:
+    override = os.getenv("PROGRAPHER_DATA_DIR")
+    if override:
+        return Path(override).expanduser().resolve()
+
     system = platform.system()
 
     if system == "Windows":
@@ -19,6 +23,10 @@ def user_data_dir() -> Path:
 
 
 def user_cache_dir() -> Path:
+    override = os.getenv("PROGRAPHER_CACHE_DIR")
+    if override:
+        return Path(override).expanduser().resolve()
+
     system = platform.system()
 
     if system == "Windows":
