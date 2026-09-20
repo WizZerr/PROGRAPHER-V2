@@ -5,13 +5,15 @@ from fastapi.responses import JSONResponse
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
 from starlette.responses import Response
 
-from app.core.config import get_settings
-
 
 PUBLIC_PATHS = {"/health"}
 
 
 class LocalEngineAuthMiddleware(BaseHTTPMiddleware):
+    def __init__(self, app, engine_secret: str) -> None:
+        super().__init__(app)
+        self.engine_secret = engine_secret
+
     async def dispatch(
         self,
         request: Request,
@@ -24,12 +26,11 @@ class LocalEngineAuthMiddleware(BaseHTTPMiddleware):
         if request.url.path in PUBLIC_PATHS:
             return await call_next(request)
 
-        settings = get_settings()
         supplied = request.headers.get("X-ProGrapher-Secret", "")
 
         if (
-            not settings.engine_secret
-            or not secrets.compare_digest(supplied, settings.engine_secret)
+            not self.engine_secret
+            or not secrets.compare_digest(supplied, self.engine_secret)
         ):
             return JSONResponse(
                 status_code=401,
