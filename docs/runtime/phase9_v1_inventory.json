@@ -1,0 +1,18 @@
+{
+  "clip_detected_in_source": false,
+  "created_at": "2026-09-21T20:26:43.733772+00:00",
+  "extratrees_detected_in_source": false,
+  "files": [],
+  "important_note": "גם אם שחזור אפשרי, הוא מסומן reconstructed ואינו מוצג כפרופיל המקורי שהיה אצל המשתמש.",
+  "legacy_root": "C:\\Users\\Matann\\Desktop\\PROGRAPHER V2\\LEGACY",
+  "model_artifact_count": 0,
+  "reconstruction_state": "incomplete",
+  "required_source_names": [
+    "production_profile.py",
+    "profile_ai.py",
+    "recipe_v2.py",
+    "vision.py"
+  ],
+  "required_sources_present": false,
+  "schema": "prographer.phase9.legacy-inventory.v1"
+}
