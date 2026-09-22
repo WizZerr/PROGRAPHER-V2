@@ -1,0 +1,45 @@
+{
+  "candidates": [
+    {
+      "embedding_source": "BrainInput.features numeric vector (brain-v2-features-v1.2)",
+      "encoder_id": "measured.unified-features.v1",
+      "family": "measured",
+      "license_status": "project-owned feature code",
+      "model_id": null,
+      "notes": "Control candidate. No pretrained vision model.",
+      "status": "available",
+      "version": "1"
+    },
+    {
+      "embedding_source": "image embedding",
+      "encoder_id": "clip.openai-vit-b32.v1",
+      "family": "clip",
+      "license_status": "Must be reviewed and recorded before distribution.",
+      "model_id": "openai/clip-vit-base-patch32",
+      "notes": "Legacy-comparison family only; not promoted by name.",
+      "status": "optional_dependency",
+      "version": "1"
+    },
+    {
+      "embedding_source": "pooled image embedding",
+      "encoder_id": "dinov3.vits16-lvd1689m.v1",
+      "family": "dinov3",
+      "license_status": "DINOv3 License; product/distribution use must be reviewed before promotion.",
+      "model_id": "facebook/dinov3-vits16-pretrain-lvd1689m",
+      "notes": "Small DINOv3 candidate for controlled comparison.",
+      "status": "optional_dependency",
+      "version": "1"
+    }
+  ],
+  "decision": "No encoder is promoted by this inventory. Measured features remain the control candidate.",
+  "runtime": {
+    "cuda_available": false,
+    "cuda_device_name": null,
+    "device": "cpu",
+    "mps_available": false,
+    "torch_version": null,
+    "torchvision_version": null,
+    "transformers_version": null
+  },
+  "schema": "prographer.phase11.encoder-inventory.v1"
+}
