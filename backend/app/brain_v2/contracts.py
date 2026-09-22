@@ -67,6 +67,7 @@ class FeatureVector:
     version: str
     values: tuple[float, ...]
     feature_names: tuple[str, ...]
+    categorical_context: tuple[tuple[str, str], ...] = ()
 
     def validate(self) -> None:
         if not self.version.strip():
@@ -77,6 +78,18 @@ class FeatureVector:
             )
         if len(set(self.feature_names)) != len(self.feature_names):
             raise ValueError("Feature names מכילים כפילויות.")
+
+        category_names = [name for name, _ in self.categorical_context]
+        if len(set(category_names)) != len(category_names):
+            raise ValueError(
+                "categorical_context מכיל מפתחות כפולים."
+            )
+
+        for name, value in self.categorical_context:
+            if not name.strip() or not value.strip():
+                raise ValueError(
+                    "categorical_context אינו יכול להכיל שם/ערך ריק."
+                )
 
 
 @dataclass(frozen=True)
@@ -134,6 +147,13 @@ class BrainInput:
             version=features_payload["version"],
             values=tuple(features_payload["values"]),
             feature_names=tuple(features_payload["feature_names"]),
+            categorical_context=tuple(
+                tuple(item)
+                for item in features_payload.get(
+                    "categorical_context",
+                    (),
+                )
+            ),
         )
         scene_context = Availability(**payload["scene_context"])
         critic = Availability(**payload["critic"])

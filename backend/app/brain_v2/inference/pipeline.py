@@ -40,14 +40,19 @@ class BrainV2Pipeline:
         extracted = self.feature_extractor.run(preprocessed)
         executed.append("features")
 
+        # Important: preprocessing may recover trustworthy metadata directly
+        # from the RAW decoder. BrainInput must use the effective source,
+        # not the incomplete pre-decode source record.
+        source = preprocessed.source
+
         brain_input = BrainInput(
-            source_fingerprint=raw.source_fingerprint,
-            event_id=raw.event_id,
-            camera=raw.camera,
-            captured_at=raw.captured_at,
-            raw_wb=raw.raw_wb,
-            exif=raw.exif,
-            missing_fields=raw.missing_fields,
+            source_fingerprint=source.source_fingerprint,
+            event_id=source.event_id,
+            camera=source.camera,
+            captured_at=source.captured_at,
+            raw_wb=source.raw_wb,
+            exif=source.exif,
+            missing_fields=source.missing_fields,
             preprocessing=preprocessed.preprocessing,
             features=extracted.features,
             scene_context=Availability(

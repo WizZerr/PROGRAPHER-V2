@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Protocol
+from typing import TYPE_CHECKING, Protocol
 
 from app.brain_v2.contracts import (
     Availability,
@@ -11,6 +11,9 @@ from app.brain_v2.contracts import (
     FeatureVector,
     PreprocessingInfo,
 )
+
+if TYPE_CHECKING:
+    from app.brain_v2.preprocessing.raw_decode import DecodedRawFrame
 
 
 @dataclass(frozen=True)
@@ -22,6 +25,7 @@ class RawInputRecord:
     raw_wb: tuple[float, ...] | None
     exif: dict[str, float | int | str | None]
     missing_fields: tuple[str, ...]
+    raw_path: str | None = None
 
 
 @dataclass(frozen=True)
@@ -29,6 +33,7 @@ class PreprocessedInput:
     source: RawInputRecord
     preprocessing: PreprocessingInfo
     numeric_metadata: dict[str, float]
+    decoded_frame: DecodedRawFrame | None = None
 
 
 @dataclass(frozen=True)

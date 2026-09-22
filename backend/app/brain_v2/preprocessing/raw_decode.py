@@ -3,6 +3,7 @@ from __future__ import annotations
 import hashlib
 import math
 from dataclasses import asdict, dataclass
+from datetime import datetime
 from pathlib import Path
 from typing import Any, Protocol
 
@@ -69,6 +70,12 @@ class RawDecodeMetadata:
     daylight_wb: tuple[float, ...] | None
     black_levels: tuple[float, ...] | None
     white_level: float | None
+    iso_speed: float | None
+    shutter_seconds: float | None
+    aperture: float | None
+    focal_length_mm: float | None
+    captured_at: str | None
+    rgb_xyz_matrix: tuple[float, ...] | None
     config: RawDecodeConfig
 
     def to_dict(self) -> dict[str, Any]:
@@ -130,6 +137,50 @@ def _tuple_or_none(value: Any) -> tuple[float, ...] | None:
     return values
 
 
+def _positive_or_none(value: Any) -> float | None:
+    try:
+        number = float(value)
+    except (TypeError, ValueError):
+        return None
+
+    if not math.isfinite(number) or number <= 0:
+        return None
+
+    return number
+
+
+def _datetime_or_none(value: Any) -> str | None:
+    if not isinstance(value, datetime):
+        return None
+
+    # LibRaw may expose epoch when no timestamp exists.
+    if value.year <= 1971:
+        return None
+
+    return value.isoformat()
+
+
+def _matrix_or_none(value: Any) -> tuple[float, ...] | None:
+    if value is None:
+        return None
+
+    try:
+        matrix = np.asarray(value, dtype=np.float64).reshape(-1)
+    except (TypeError, ValueError):
+        return None
+
+    if matrix.size != 12:
+        return None
+
+    if not np.all(np.isfinite(matrix)):
+        return None
+
+    if np.allclose(matrix, 0.0):
+        return None
+
+    return tuple(float(item) for item in matrix)
+
+
 class RawPyBackend:
     def decode(
         self,
@@ -182,6 +233,37 @@ class RawPyBackend:
                 raw_width = getattr(sizes, "raw_width", None)
                 raw_height = getattr(sizes, "raw_height", None)
                 flip = getattr(sizes, "flip", None)
+
+                other = getattr(raw, "other", None)
+                iso_speed = (
+                    _positive_or_none(other.iso_speed)
+                    if other is not None
+                    else None
+                )
+                shutter_seconds = (
+                    _positive_or_none(other.shutter_speed)
+                    if other is not None
+                    else None
+                )
+                aperture = (
+                    _positive_or_none(other.aperture)
+                    if other is not None
+                    else None
+                )
+                focal_length_mm = (
+                    _positive_or_none(other.focal_length)
+                    if other is not None
+                    else None
+                )
+                captured_at = (
+                    _datetime_or_none(other.timestamp)
+                    if other is not None
+                    else None
+                )
+
+                rgb_xyz_matrix = _matrix_or_none(
+                    getattr(raw, "rgb_xyz_matrix", None)
+                )
         except Exception as exc:
             raise ValueError(
                 f"LibRaw/rawpy לא הצליח לפענח את הקובץ: {source.name}"
@@ -211,6 +293,12 @@ class RawPyBackend:
             daylight_wb=daylight_wb,
             black_levels=black_levels,
             white_level=white_level,
+            iso_speed=iso_speed,
+            shutter_seconds=shutter_seconds,
+            aperture=aperture,
+            focal_length_mm=focal_length_mm,
+            captured_at=captured_at,
+            rgb_xyz_matrix=rgb_xyz_matrix,
             config=config,
         )
 

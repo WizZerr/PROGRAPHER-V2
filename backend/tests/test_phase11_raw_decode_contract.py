@@ -29,6 +29,12 @@ def metadata() -> RawDecodeMetadata:
         daylight_wb=None,
         black_levels=(512.0, 512.0, 512.0, 512.0),
         white_level=16383.0,
+        iso_speed=100.0,
+        shutter_seconds=0.01,
+        aperture=2.8,
+        focal_length_mm=50.0,
+        captured_at="2026-09-20T18:00:00",
+        rgb_xyz_matrix=tuple(float(i) / 100 for i in range(12)),
         config=RawDecodeConfig(),
     )
 

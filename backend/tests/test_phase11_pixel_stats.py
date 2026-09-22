@@ -30,6 +30,12 @@ def frame(rgb: np.ndarray) -> DecodedRawFrame:
         daylight_wb=None,
         black_levels=None,
         white_level=None,
+        iso_speed=None,
+        shutter_seconds=None,
+        aperture=None,
+        focal_length_mm=None,
+        captured_at=None,
+        rgb_xyz_matrix=None,
         config=RawDecodeConfig(),
     )
     result = DecodedRawFrame(
