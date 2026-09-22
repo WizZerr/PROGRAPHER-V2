@@ -119,6 +119,7 @@ def test_unified_vector_contains_pixel_exif_wb_and_camera_context() -> None:
     )
     vector = result.features
     mapping = dict(zip(vector.feature_names, vector.values))
+    categorical = dict(vector.categorical_context)
 
     assert vector.version == UNIFIED_FEATURE_VERSION
     assert "pixel.luminance_mean" in mapping
@@ -128,10 +129,10 @@ def test_unified_vector_contains_pixel_exif_wb_and_camera_context() -> None:
     assert mapping["wb.red_over_green__missing"] == 0.0
     assert mapping["camera.rgb_xyz__missing"] == 0.0
     assert mapping["camera.rgb_xyz_00"] == MATRIX[0]
-    assert dict(vector.categorical_context) == {
-        "camera.make": "Canon",
-        "camera.model": "EOS R6",
-    }
+
+    assert categorical["camera.make"] == "Canon"
+    assert categorical["camera.model"] == "EOS R6"
+    assert categorical["region.detector_state"] == "unavailable"
 
 
 def test_missing_wb_and_matrix_are_explicit_not_fake_zero() -> None:
