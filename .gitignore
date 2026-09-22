@@ -1,1 +1,4 @@
 /backend/vendor/exiftool/
+/backend/vendor/huggingface/
+
+/backend/vendor/opencv_zoo/**/*.onnx

@@ -1,0 +1,73 @@
+{
+  "source": "C:\\Users\\Matann\\Desktop\\a4607-050801_080948__I2E5512.dng",
+  "detector": "yunet-rtdetr-person",
+  "detector_version": "yunet-2026may+rtdetr-r50vd+impl-v1",
+  "person_device": "cuda",
+  "threshold": 0.7,
+  "timing_seconds": {
+    "median": 0.845043799985433,
+    "min": 0.7257280000194442,
+    "max": 5.973531900002854
+  },
+  "per_kind": {
+    "face": {
+      "state": "available",
+      "reason": null,
+      "detections": 2
+    },
+    "skin": {
+      "state": "unavailable",
+      "reason": "No validated skin-region detector is active. Color-threshold skin heuristics are intentionally disabled.",
+      "detections": 0
+    },
+    "subject": {
+      "state": "available",
+      "reason": null,
+      "detections": 2
+    }
+  },
+  "detections": [
+    {
+      "kind": "face",
+      "confidence": 0.9215355515480042,
+      "box": {
+        "x": 0.4731206130981445,
+        "y": 0.29393890581068416,
+        "width": 0.18251882553100585,
+        "height": 0.3543128288004481
+      }
+    },
+    {
+      "kind": "face",
+      "confidence": 0.9069913029670715,
+      "box": {
+        "x": 0.26002002716064454,
+        "y": 0.15037056119395062,
+        "width": 0.21713905334472655,
+        "height": 0.43365218243871545
+      }
+    },
+    {
+      "kind": "subject",
+      "confidence": 0.9533037543296814,
+      "box": {
+        "x": 0.003561049682859803,
+        "y": 0.02521029119800262,
+        "width": 0.5746484845284371,
+        "height": 0.964952234921301
+      }
+    },
+    {
+      "kind": "subject",
+      "confidence": 0.939587414264679,
+      "box": {
+        "x": 0.40262608525429444,
+        "y": 0.23836003942018474,
+        "width": 0.5355347303556218,
+        "height": 0.7544850182086483
+      }
+    }
+  ],
+  "subject_semantics": "COCO person class only",
+  "skin_color_threshold_heuristic_used": false
+}

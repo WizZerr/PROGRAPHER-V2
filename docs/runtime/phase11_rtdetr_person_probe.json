@@ -1,0 +1,32 @@
+{
+  "source": "C:\\Users\\Matann\\Desktop\\raw_test\\Canon_EOS_R6_RAW_ISO_100_nocrop_nodual.CR3",
+  "detector": "yunet-rtdetr-person",
+  "detector_version": "yunet-2026may+rtdetr-r50vd+impl-v1",
+  "person_device": "cuda",
+  "threshold": 0.7,
+  "timing_seconds": {
+    "median": 1.6527457000047434,
+    "min": 1.6464523000176996,
+    "max": 7.0059479999763425
+  },
+  "per_kind": {
+    "face": {
+      "state": "not_detected",
+      "reason": null,
+      "detections": 0
+    },
+    "skin": {
+      "state": "unavailable",
+      "reason": "No validated skin-region detector is active. Color-threshold skin heuristics are intentionally disabled.",
+      "detections": 0
+    },
+    "subject": {
+      "state": "not_detected",
+      "reason": null,
+      "detections": 0
+    }
+  },
+  "detections": [],
+  "subject_semantics": "COCO person class only",
+  "skin_color_threshold_heuristic_used": false
+}

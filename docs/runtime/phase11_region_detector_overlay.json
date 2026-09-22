@@ -1,0 +1,44 @@
+{
+  "source": "C:\\Users\\Matann\\Desktop\\raw_test\\Canon_EOS_R6_RAW_ISO_100_nocrop_nodual.CR3",
+  "overlay": "C:\\Users\\Matann\\Desktop\\PROGRAPHER V2\\docs\\runtime\\phase11_region_detector_overlay.png",
+  "per_kind": {
+    "face": {
+      "state": "not_detected",
+      "reason": null,
+      "detections": 0
+    },
+    "skin": {
+      "state": "unavailable",
+      "reason": "No validated skin-region detector is active. Color-threshold skin heuristics are intentionally disabled.",
+      "detections": 0
+    },
+    "subject": {
+      "state": "available",
+      "reason": null,
+      "detections": 2
+    }
+  },
+  "detections": [
+    {
+      "kind": "subject",
+      "confidence": 0.6736228466033936,
+      "box": {
+        "x": 0.14583333333333334,
+        "y": 0.2604166666666667,
+        "width": 0.6770833333333334,
+        "height": 0.7395833333333334
+      }
+    },
+    {
+      "kind": "subject",
+      "confidence": 0.5953043699264526,
+      "box": {
+        "x": 0.7447916666666666,
+        "y": 0.5885416666666666,
+        "width": 0.09895833333333333,
+        "height": 0.16666666666666666
+      }
+    }
+  ],
+  "skin_color_threshold_heuristic_used": false
+}

@@ -1,0 +1,58 @@
+{
+  "source": "C:\\Users\\Matann\\Desktop\\raw_test\\Canon_EOS_R6_RAW_ISO_100_nocrop_nodual.CR3",
+  "runs": 3,
+  "timing_seconds": {
+    "median": 0.8668588000000454,
+    "min": 0.7873519000131637,
+    "max": 0.8861632999905851
+  },
+  "evidence": {
+    "state": "available",
+    "detector_id": "opencv-yunet-pphumanseg",
+    "detector_version": "yunet-2026may+pphumanseg-2023mar+impl-v1",
+    "per_kind": {
+      "face": {
+        "state": "not_detected",
+        "reason": null
+      },
+      "skin": {
+        "state": "unavailable",
+        "reason": "No validated skin-region detector is active. Color-threshold skin heuristics are intentionally disabled."
+      },
+      "subject": {
+        "state": "available",
+        "reason": null
+      }
+    },
+    "detections": [
+      {
+        "kind": "subject",
+        "x": 0.14583333333333334,
+        "y": 0.2604166666666667,
+        "width": 0.6770833333333334,
+        "height": 0.7395833333333334,
+        "confidence": 0.6736228466033936
+      },
+      {
+        "kind": "subject",
+        "x": 0.7447916666666666,
+        "y": 0.5885416666666666,
+        "width": 0.09895833333333333,
+        "height": 0.16666666666666666,
+        "confidence": 0.5953043699264526
+      }
+    ]
+  },
+  "region_flags": {
+    "region.face.available": 1.0,
+    "region.face.detected": 0.0,
+    "region.face.count": 0.0,
+    "region.skin.available": 0.0,
+    "region.skin.detected": 0.0,
+    "region.skin.count": 0.0,
+    "region.subject.available": 1.0,
+    "region.subject.detected": 1.0,
+    "region.subject.count": 2.0
+  },
+  "skin_color_threshold_heuristic_used": false
+}
