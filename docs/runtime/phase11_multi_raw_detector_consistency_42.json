@@ -1,0 +1,5898 @@
+{
+  "schema_version": "phase11-multi-raw-detector-consistency-v1",
+  "source_folder": "C:\\Users\\Matann\\Desktop\\fivek_dataset",
+  "source_raw_count": 5000,
+  "sample_selection": {
+    "mode": "deterministic_spread_plus_explicit_includes",
+    "requested_folder_limit": 40,
+    "selected_count": 42,
+    "paths": [
+      "C:\\Users\\Matann\\Desktop\\fivek_dataset\\raw_photos\\HQa1400to2100\\photos\\a1401-DSC_0034-1.dng",
+      "C:\\Users\\Matann\\Desktop\\fivek_dataset\\raw_photos\\HQa1400to2100\\photos\\a1529-08-04-27-at-20h31m30s-_78U8099.dng",
+      "C:\\Users\\Matann\\Desktop\\fivek_dataset\\raw_photos\\HQa1400to2100\\photos\\a1657-050818_154112__I2E7371.dng",
+      "C:\\Users\\Matann\\Desktop\\fivek_dataset\\raw_photos\\HQa1400to2100\\photos\\a1786-kme_520.dng",
+      "C:\\Users\\Matann\\Desktop\\fivek_dataset\\raw_photos\\HQa1400to2100\\photos\\a1914-dgw_080.dng",
+      "C:\\Users\\Matann\\Desktop\\fivek_dataset\\raw_photos\\HQa1400to2100\\photos\\a2042-dgw_038.dng",
+      "C:\\Users\\Matann\\Desktop\\fivek_dataset\\raw_photos\\HQa1to700\\photos\\a0070-IMG_4327.dng",
+      "C:\\Users\\Matann\\Desktop\\fivek_dataset\\raw_photos\\HQa1to700\\photos\\a0198-kme_134.dng",
+      "C:\\Users\\Matann\\Desktop\\fivek_dataset\\raw_photos\\HQa1to700\\photos\\a0326-jmac_MG_7785.dng",
+      "C:\\Users\\Matann\\Desktop\\fivek_dataset\\raw_photos\\HQa1to700\\photos\\a0455-_DSC4605.dng",
+      "C:\\Users\\Matann\\Desktop\\fivek_dataset\\raw_photos\\HQa1to700\\photos\\a0583-Ja_Pe-34.dng",
+      "C:\\Users\\Matann\\Desktop\\fivek_dataset\\raw_photos\\HQa2101to2800\\photos\\a2111-_DSC5607.dng",
+      "C:\\Users\\Matann\\Desktop\\fivek_dataset\\raw_photos\\HQa2101to2800\\photos\\a2239-kme_227.dng",
+      "C:\\Users\\Matann\\Desktop\\fivek_dataset\\raw_photos\\HQa2101to2800\\photos\\a2367-dgw_098.dng",
+      "C:\\Users\\Matann\\Desktop\\fivek_dataset\\raw_photos\\HQa2101to2800\\photos\\a2496-LS051026_day_15_LL007.dng",
+      "C:\\Users\\Matann\\Desktop\\fivek_dataset\\raw_photos\\HQa2101to2800\\photos\\a2624-DSC_0014-3.dng",
+      "C:\\Users\\Matann\\Desktop\\fivek_dataset\\raw_photos\\HQa2101to2800\\photos\\a2752-kme_015.dng",
+      "C:\\Users\\Matann\\Desktop\\fivek_dataset\\raw_photos\\HQa2801to3500\\photos\\a2880-_DSC2262.dng",
+      "C:\\Users\\Matann\\Desktop\\fivek_dataset\\raw_photos\\HQa2801to3500\\photos\\a3008-WP_CRW_8108.dng",
+      "C:\\Users\\Matann\\Desktop\\fivek_dataset\\raw_photos\\HQa2801to3500\\photos\\a3136-Ja_Pe-15.dng",
+      "C:\\Users\\Matann\\Desktop\\fivek_dataset\\raw_photos\\HQa2801to3500\\photos\\a3265-DSC_0253.dng",
+      "C:\\Users\\Matann\\Desktop\\fivek_dataset\\raw_photos\\HQa2801to3500\\photos\\a3393-_DSC0057.dng",
+      "C:\\Users\\Matann\\Desktop\\fivek_dataset\\raw_photos\\HQa3501to4200\\photos\\a3521-JI2E5091.dng",
+      "C:\\Users\\Matann\\Desktop\\fivek_dataset\\raw_photos\\HQa3501to4200\\photos\\a3649-WP_CRW_0691.dng",
+      "C:\\Users\\Matann\\Desktop\\fivek_dataset\\raw_photos\\HQa3501to4200\\photos\\a3777-dgw_024.dng",
+      "C:\\Users\\Matann\\Desktop\\fivek_dataset\\raw_photos\\HQa3501to4200\\photos\\a3905-kme_177.dng",
+      "C:\\Users\\Matann\\Desktop\\fivek_dataset\\raw_photos\\HQa3501to4200\\photos\\a4034-_DSC1291.dng",
+      "C:\\Users\\Matann\\Desktop\\fivek_dataset\\raw_photos\\HQa3501to4200\\photos\\a4162-IMG_3512.dng",
+      "C:\\Users\\Matann\\Desktop\\fivek_dataset\\raw_photos\\HQa4201to5000\\photos\\a4290-DSC_0012.dng",
+      "C:\\Users\\Matann\\Desktop\\fivek_dataset\\raw_photos\\HQa4201to5000\\photos\\a4418-kme_0663.dng",
+      "C:\\Users\\Matann\\Desktop\\fivek_dataset\\raw_photos\\HQa4201to5000\\photos\\a4546-Duggan_081010_1913.dng",
+      "C:\\Users\\Matann\\Desktop\\fivek_dataset\\raw_photos\\HQa4201to5000\\photos\\a4675-20090519_at_22h53m13__MG_9649.dng",
+      "C:\\Users\\Matann\\Desktop\\fivek_dataset\\raw_photos\\HQa4201to5000\\photos\\a4803-DSC_0017-2.dng",
+      "C:\\Users\\Matann\\Desktop\\fivek_dataset\\raw_photos\\HQa4201to5000\\photos\\a4931-Duggan_090428_8054.dng",
+      "C:\\Users\\Matann\\Desktop\\fivek_dataset\\raw_photos\\HQa701to1400\\photos\\a0759-IMG_3533.dng",
+      "C:\\Users\\Matann\\Desktop\\fivek_dataset\\raw_photos\\HQa701to1400\\photos\\a0887-_DSC5906.dng",
+      "C:\\Users\\Matann\\Desktop\\fivek_dataset\\raw_photos\\HQa701to1400\\photos\\a1015-_DSC5571.dng",
+      "C:\\Users\\Matann\\Desktop\\fivek_dataset\\raw_photos\\HQa701to1400\\photos\\a1144-MB_20050517_054.dng",
+      "C:\\Users\\Matann\\Desktop\\fivek_dataset\\raw_photos\\HQa701to1400\\photos\\a1272-_DGW6377.dng",
+      "C:\\Users\\Matann\\Desktop\\fivek_dataset\\raw_photos\\HQa701to1400\\photos\\a1400-MB_070908_014.dng",
+      "C:\\Users\\Matann\\Desktop\\raw_test\\Canon_EOS_R6_RAW_ISO_100_nocrop_nodual.CR3",
+      "C:\\Users\\Matann\\Desktop\\a4607-050801_080948__I2E5512.dng"
+    ]
+  },
+  "tolerances": {
+    "min_iou": 0.98,
+    "max_confidence_diff": 0.01,
+    "person_threshold": 0.7
+  },
+  "summary": {
+    "overall_pass": true,
+    "samples": 42,
+    "successful": 42,
+    "consistent": 42,
+    "mismatched": 0,
+    "errors": 0,
+    "cpu_detector_median_seconds": 1.3651525000168476,
+    "cuda_detector_median_seconds": 1.1836525499966228
+  },
+  "samples": [
+    {
+      "path": "C:\\Users\\Matann\\Desktop\\fivek_dataset\\raw_photos\\HQa1400to2100\\photos\\a1401-DSC_0034-1.dng",
+      "sha256": "2db2371f207e4f3928322916defad95d540a7e83987ba0a6c74ee01471672d07",
+      "status": "ok",
+      "preprocess_seconds": 0.6374163000145927,
+      "cpu_seconds": 4.377386800013483,
+      "cuda_seconds": 1.1738743000023533,
+      "cpu": {
+        "state": "not_detected",
+        "per_kind": {
+          "face": {
+            "state": "not_detected",
+            "reason": null,
+            "detections": 0
+          },
+          "skin": {
+            "state": "unavailable",
+            "reason": "No validated skin-region detector is active. Color-threshold skin heuristics are intentionally disabled.",
+            "detections": 0
+          },
+          "subject": {
+            "state": "not_detected",
+            "reason": null,
+            "detections": 0
+          }
+        },
+        "detections": []
+      },
+      "cuda": {
+        "state": "not_detected",
+        "per_kind": {
+          "face": {
+            "state": "not_detected",
+            "reason": null,
+            "detections": 0
+          },
+          "skin": {
+            "state": "unavailable",
+            "reason": "No validated skin-region detector is active. Color-threshold skin heuristics are intentionally disabled.",
+            "detections": 0
+          },
+          "subject": {
+            "state": "not_detected",
+            "reason": null,
+            "detections": 0
+          }
+        },
+        "detections": []
+      },
+      "comparison": {
+        "consistent": true,
+        "state_checks": {
+          "face": {
+            "cpu": "not_detected",
+            "cuda": "not_detected",
+            "equal": true
+          },
+          "skin": {
+            "cpu": "unavailable",
+            "cuda": "unavailable",
+            "equal": true
+          },
+          "subject": {
+            "cpu": "not_detected",
+            "cuda": "not_detected",
+            "equal": true
+          }
+        },
+        "detection_checks": {
+          "face": {
+            "consistent": true,
+            "reason": null,
+            "cpu_count": 0,
+            "cuda_count": 0,
+            "matches": []
+          },
+          "subject": {
+            "consistent": true,
+            "reason": null,
+            "cpu_count": 0,
+            "cuda_count": 0,
+            "matches": []
+          }
+        }
+      }
+    },
+    {
+      "path": "C:\\Users\\Matann\\Desktop\\fivek_dataset\\raw_photos\\HQa1400to2100\\photos\\a1529-08-04-27-at-20h31m30s-_78U8099.dng",
+      "sha256": "152dcc13214c8853028a753166d51e6156ac55a026137d7a7d59a998f76f300c",
+      "status": "ok",
+      "preprocess_seconds": 0.8125011000083759,
+      "cpu_seconds": 1.1544451999943703,
+      "cuda_seconds": 0.9032114000001457,
+      "cpu": {
+        "state": "available",
+        "per_kind": {
+          "face": {
+            "state": "available",
+            "reason": null,
+            "detections": 2
+          },
+          "skin": {
+            "state": "unavailable",
+            "reason": "No validated skin-region detector is active. Color-threshold skin heuristics are intentionally disabled.",
+            "detections": 0
+          },
+          "subject": {
+            "state": "available",
+            "reason": null,
+            "detections": 2
+          }
+        },
+        "detections": [
+          {
+            "kind": "face",
+            "confidence": 0.8999304175376892,
+            "box": {
+              "x": 0.6064046797058392,
+              "y": 0.256204776763916,
+              "width": 0.11064276896731955,
+              "height": 0.10970885276794434
+            }
+          },
+          {
+            "kind": "face",
+            "confidence": 0.8876117467880249,
+            "box": {
+              "x": 0.3215996827318075,
+              "y": 0.2824802017211914,
+              "width": 0.11013910714449457,
+              "height": 0.10732476234436035
+            }
+          },
+          {
+            "kind": "subject",
+            "confidence": 0.9566565155982971,
+            "box": {
+              "x": 0.40422086275540864,
+              "y": 0.23011741501456093,
+              "width": 0.5400979849008414,
+              "height": 0.5989145180291539
+            }
+          },
+          {
+            "kind": "subject",
+            "confidence": 0.9511227607727051,
+            "box": {
+              "x": 0.1935953345665565,
+              "y": 0.2529161553839446,
+              "width": 0.3368357614370493,
+              "height": 0.5535560838393657
+            }
+          }
+        ]
+      },
+      "cuda": {
+        "state": "available",
+        "per_kind": {
+          "face": {
+            "state": "available",
+            "reason": null,
+            "detections": 2
+          },
+          "skin": {
+            "state": "unavailable",
+            "reason": "No validated skin-region detector is active. Color-threshold skin heuristics are intentionally disabled.",
+            "detections": 0
+          },
+          "subject": {
+            "state": "available",
+            "reason": null,
+            "detections": 2
+          }
+        },
+        "detections": [
+          {
+            "kind": "face",
+            "confidence": 0.8999304175376892,
+            "box": {
+              "x": 0.6064046797058392,
+              "y": 0.256204776763916,
+              "width": 0.11064276896731955,
+              "height": 0.10970885276794434
+            }
+          },
+          {
+            "kind": "face",
+            "confidence": 0.8876117467880249,
+            "box": {
+              "x": 0.3215996827318075,
+              "y": 0.2824802017211914,
+              "width": 0.11013910714449457,
+              "height": 0.10732476234436035
+            }
+          },
+          {
+            "kind": "subject",
+            "confidence": 0.9566413164138794,
+            "box": {
+              "x": 0.4042236328125,
+              "y": 0.23011032081053187,
+              "width": 0.5401026329627404,
+              "height": 0.5989439261612743
+            }
+          },
+          {
+            "kind": "subject",
+            "confidence": 0.9511280655860901,
+            "box": {
+              "x": 0.19360067514272836,
+              "y": 0.2529126707859303,
+              "width": 0.3368286367563101,
+              "height": 0.5535608185173851
+            }
+          }
+        ]
+      },
+      "comparison": {
+        "consistent": true,
+        "state_checks": {
+          "face": {
+            "cpu": "available",
+            "cuda": "available",
+            "equal": true
+          },
+          "skin": {
+            "cpu": "unavailable",
+            "cuda": "unavailable",
+            "equal": true
+          },
+          "subject": {
+            "cpu": "available",
+            "cuda": "available",
+            "equal": true
+          }
+        },
+        "detection_checks": {
+          "face": {
+            "consistent": true,
+            "reason": null,
+            "cpu_count": 2,
+            "cuda_count": 2,
+            "matches": [
+              {
+                "cpu_index": 0,
+                "cuda_index": 0,
+                "iou": 0.9999999999999991,
+                "confidence_diff": 0.0,
+                "consistent": true
+              },
+              {
+                "cpu_index": 1,
+                "cuda_index": 1,
+                "iou": 1.0000000000000002,
+                "confidence_diff": 0.0,
+                "consistent": true
+              }
+            ]
+          },
+          "subject": {
+            "consistent": true,
+            "reason": null,
+            "cpu_count": 2,
+            "cuda_count": 2,
+            "matches": [
+              {
+                "cpu_index": 0,
+                "cuda_index": 0,
+                "iou": 0.9999320378916589,
+                "confidence_diff": 1.519918441772461e-05,
+                "consistent": true
+              },
+              {
+                "cpu_index": 1,
+                "cuda_index": 1,
+                "iou": 0.9999702954368429,
+                "confidence_diff": 5.304813385009766e-06,
+                "consistent": true
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "path": "C:\\Users\\Matann\\Desktop\\fivek_dataset\\raw_photos\\HQa1400to2100\\photos\\a1657-050818_154112__I2E7371.dng",
+      "sha256": "f7a652d16fd4ab2a57e85499e3b457172014d83fb3ae6f9d396fdea0e53f56e2",
+      "status": "ok",
+      "preprocess_seconds": 0.7096154000028037,
+      "cpu_seconds": 1.0088202999904752,
+      "cuda_seconds": 0.7795653000066523,
+      "cpu": {
+        "state": "not_detected",
+        "per_kind": {
+          "face": {
+            "state": "not_detected",
+            "reason": null,
+            "detections": 0
+          },
+          "skin": {
+            "state": "unavailable",
+            "reason": "No validated skin-region detector is active. Color-threshold skin heuristics are intentionally disabled.",
+            "detections": 0
+          },
+          "subject": {
+            "state": "not_detected",
+            "reason": null,
+            "detections": 0
+          }
+        },
+        "detections": []
+      },
+      "cuda": {
+        "state": "not_detected",
+        "per_kind": {
+          "face": {
+            "state": "not_detected",
+            "reason": null,
+            "detections": 0
+          },
+          "skin": {
+            "state": "unavailable",
+            "reason": "No validated skin-region detector is active. Color-threshold skin heuristics are intentionally disabled.",
+            "detections": 0
+          },
+          "subject": {
+            "state": "not_detected",
+            "reason": null,
+            "detections": 0
+          }
+        },
+        "detections": []
+      },
+      "comparison": {
+        "consistent": true,
+        "state_checks": {
+          "face": {
+            "cpu": "not_detected",
+            "cuda": "not_detected",
+            "equal": true
+          },
+          "skin": {
+            "cpu": "unavailable",
+            "cuda": "unavailable",
+            "equal": true
+          },
+          "subject": {
+            "cpu": "not_detected",
+            "cuda": "not_detected",
+            "equal": true
+          }
+        },
+        "detection_checks": {
+          "face": {
+            "consistent": true,
+            "reason": null,
+            "cpu_count": 0,
+            "cuda_count": 0,
+            "matches": []
+          },
+          "subject": {
+            "consistent": true,
+            "reason": null,
+            "cpu_count": 0,
+            "cuda_count": 0,
+            "matches": []
+          }
+        }
+      }
+    },
+    {
+      "path": "C:\\Users\\Matann\\Desktop\\fivek_dataset\\raw_photos\\HQa1400to2100\\photos\\a1786-kme_520.dng",
+      "sha256": "83e54a85b0d2c521fb712987eb73c7efba6b4b35a4adb9d3422d62195825a4ae",
+      "status": "ok",
+      "preprocess_seconds": 0.8732153000019025,
+      "cpu_seconds": 1.3668722000147682,
+      "cuda_seconds": 1.1462046999949962,
+      "cpu": {
+        "state": "not_detected",
+        "per_kind": {
+          "face": {
+            "state": "not_detected",
+            "reason": null,
+            "detections": 0
+          },
+          "skin": {
+            "state": "unavailable",
+            "reason": "No validated skin-region detector is active. Color-threshold skin heuristics are intentionally disabled.",
+            "detections": 0
+          },
+          "subject": {
+            "state": "not_detected",
+            "reason": null,
+            "detections": 0
+          }
+        },
+        "detections": []
+      },
+      "cuda": {
+        "state": "not_detected",
+        "per_kind": {
+          "face": {
+            "state": "not_detected",
+            "reason": null,
+            "detections": 0
+          },
+          "skin": {
+            "state": "unavailable",
+            "reason": "No validated skin-region detector is active. Color-threshold skin heuristics are intentionally disabled.",
+            "detections": 0
+          },
+          "subject": {
+            "state": "not_detected",
+            "reason": null,
+            "detections": 0
+          }
+        },
+        "detections": []
+      },
+      "comparison": {
+        "consistent": true,
+        "state_checks": {
+          "face": {
+            "cpu": "not_detected",
+            "cuda": "not_detected",
+            "equal": true
+          },
+          "skin": {
+            "cpu": "unavailable",
+            "cuda": "unavailable",
+            "equal": true
+          },
+          "subject": {
+            "cpu": "not_detected",
+            "cuda": "not_detected",
+            "equal": true
+          }
+        },
+        "detection_checks": {
+          "face": {
+            "consistent": true,
+            "reason": null,
+            "cpu_count": 0,
+            "cuda_count": 0,
+            "matches": []
+          },
+          "subject": {
+            "consistent": true,
+            "reason": null,
+            "cpu_count": 0,
+            "cuda_count": 0,
+            "matches": []
+          }
+        }
+      }
+    },
+    {
+      "path": "C:\\Users\\Matann\\Desktop\\fivek_dataset\\raw_photos\\HQa1400to2100\\photos\\a1914-dgw_080.dng",
+      "sha256": "b33f74a6ec85f83c155f9796b10a0c75edf336a16b5b190b141a54952d2a383c",
+      "status": "ok",
+      "preprocess_seconds": 1.005790800001705,
+      "cpu_seconds": 1.374781599995913,
+      "cuda_seconds": 1.3270418999891263,
+      "cpu": {
+        "state": "available",
+        "per_kind": {
+          "face": {
+            "state": "available",
+            "reason": null,
+            "detections": 2
+          },
+          "skin": {
+            "state": "unavailable",
+            "reason": "No validated skin-region detector is active. Color-threshold skin heuristics are intentionally disabled.",
+            "detections": 0
+          },
+          "subject": {
+            "state": "available",
+            "reason": null,
+            "detections": 8
+          }
+        },
+        "detections": [
+          {
+            "kind": "face",
+            "confidence": 0.8999916315078735,
+            "box": {
+              "x": 0.29281009674072267,
+              "y": 0.3653483992467043,
+              "width": 0.02770246982574463,
+              "height": 0.04849918099670985
+            }
+          },
+          {
+            "kind": "face",
+            "confidence": 0.8816332817077637,
+            "box": {
+              "x": 0.40267124176025393,
+              "y": 0.3541950577845457,
+              "width": 0.029018850326538087,
+              "height": 0.054370732855213114
+            }
+          },
+          {
+            "kind": "subject",
+            "confidence": 0.9403115510940552,
+            "box": {
+              "x": 0.34107037997490663,
+              "y": 0.48383860313104343,
+              "width": 0.17532613631390057,
+              "height": 0.5092069945087245
+            }
+          },
+          {
+            "kind": "subject",
+            "confidence": 0.9144290089607239,
+            "box": {
+              "x": 0.3501412812846493,
+              "y": 0.3480337494368627,
+              "width": 0.1050427006740196,
+              "height": 0.15459732935566103
+            }
+          },
+          {
+            "kind": "subject",
+            "confidence": 0.8962435126304626,
+            "box": {
+              "x": 0.23115954145330006,
+              "y": 0.3430023837190137,
+              "width": 0.11295407648736577,
+              "height": 0.15766290806852146
+            }
+          },
+          {
+            "kind": "subject",
+            "confidence": 0.890277087688446,
+            "box": {
+              "x": 0.7129775901245915,
+              "y": 0.4560022796759626,
+              "width": 0.15814112103174602,
+              "height": 0.5389021002961278
+            }
+          },
+          {
+            "kind": "subject",
+            "confidence": 0.8843825459480286,
+            "box": {
+              "x": 0.5217362091320903,
+              "y": 0.41062452957432316,
+              "width": 0.1783989800347222,
+              "height": 0.582847369874077
+            }
+          },
+          {
+            "kind": "subject",
+            "confidence": 0.8220093846321106,
+            "box": {
+              "x": 0.7907893219136612,
+              "y": 0.4053682523102365,
+              "width": 0.08878671911472923,
+              "height": 0.23682344546633263
+            }
+          },
+          {
+            "kind": "subject",
+            "confidence": 0.8036115169525146,
+            "box": {
+              "x": 0.014435503663135176,
+              "y": 0.5319893323251802,
+              "width": 0.02666543378215544,
+              "height": 0.11923097591695235
+            }
+          },
+          {
+            "kind": "subject",
+            "confidence": 0.7173802256584167,
+            "box": {
+              "x": 0.48531548850008754,
+              "y": 0.3739421431357683,
+              "width": 0.07807570456568044,
+              "height": 0.13200543667864365
+            }
+          }
+        ]
+      },
+      "cuda": {
+        "state": "available",
+        "per_kind": {
+          "face": {
+            "state": "available",
+            "reason": null,
+            "detections": 2
+          },
+          "skin": {
+            "state": "unavailable",
+            "reason": "No validated skin-region detector is active. Color-threshold skin heuristics are intentionally disabled.",
+            "detections": 0
+          },
+          "subject": {
+            "state": "available",
+            "reason": null,
+            "detections": 8
+          }
+        },
+        "detections": [
+          {
+            "kind": "face",
+            "confidence": 0.8999916315078735,
+            "box": {
+              "x": 0.29281009674072267,
+              "y": 0.3653483992467043,
+              "width": 0.02770246982574463,
+              "height": 0.04849918099670985
+            }
+          },
+          {
+            "kind": "face",
+            "confidence": 0.8816332817077637,
+            "box": {
+              "x": 0.40267124176025393,
+              "y": 0.3541950577845457,
+              "width": 0.029018850326538087,
+              "height": 0.054370732855213114
+            }
+          },
+          {
+            "kind": "subject",
+            "confidence": 0.9403441548347473,
+            "box": {
+              "x": 0.34107214663209034,
+              "y": 0.4838364141064522,
+              "width": 0.1753240277230684,
+              "height": 0.5092072091189785
+            }
+          },
+          {
+            "kind": "subject",
+            "confidence": 0.9144752621650696,
+            "box": {
+              "x": 0.3501432474031279,
+              "y": 0.3480343718065994,
+              "width": 0.10504138992836717,
+              "height": 0.15459846679000747
+            }
+          },
+          {
+            "kind": "subject",
+            "confidence": 0.8964828848838806,
+            "box": {
+              "x": 0.2311529449833319,
+              "y": 0.342980214479771,
+              "width": 0.11295087085941147,
+              "height": 0.15769640872917765
+            }
+          },
+          {
+            "kind": "subject",
+            "confidence": 0.8902469873428345,
+            "box": {
+              "x": 0.7129742847659897,
+              "y": 0.45599970435291404,
+              "width": 0.15814414144564076,
+              "height": 0.5389031304253472
+            }
+          },
+          {
+            "kind": "subject",
+            "confidence": 0.8840643167495728,
+            "box": {
+              "x": 0.5216800750248016,
+              "y": 0.41062302730254485,
+              "width": 0.17842456806941526,
+              "height": 0.5828456959140955
+            }
+          },
+          {
+            "kind": "subject",
+            "confidence": 0.8219488859176636,
+            "box": {
+              "x": 0.7907899487920168,
+              "y": 0.405371728996352,
+              "width": 0.08878877071661997,
+              "height": 0.23681996878021713
+            }
+          },
+          {
+            "kind": "subject",
+            "confidence": 0.8035983443260193,
+            "box": {
+              "x": 0.014437478686135912,
+              "y": 0.5319888172605705,
+              "width": 0.02666477306661597,
+              "height": 0.11923226357847662
+            }
+          },
+          {
+            "kind": "subject",
+            "confidence": 0.7169651389122009,
+            "box": {
+              "x": 0.48531446269914214,
+              "y": 0.3739447184588168,
+              "width": 0.07807838304592671,
+              "height": 0.13200410609506857
+            }
+          }
+        ]
+      },
+      "comparison": {
+        "consistent": true,
+        "state_checks": {
+          "face": {
+            "cpu": "available",
+            "cuda": "available",
+            "equal": true
+          },
+          "skin": {
+            "cpu": "unavailable",
+            "cuda": "unavailable",
+            "equal": true
+          },
+          "subject": {
+            "cpu": "available",
+            "cuda": "available",
+            "equal": true
+          }
+        },
+        "detection_checks": {
+          "face": {
+            "consistent": true,
+            "reason": null,
+            "cpu_count": 2,
+            "cuda_count": 2,
+            "matches": [
+              {
+                "cpu_index": 0,
+                "cuda_index": 0,
+                "iou": 1.0000000000000016,
+                "confidence_diff": 0.0,
+                "consistent": true
+              },
+              {
+                "cpu_index": 1,
+                "cuda_index": 1,
+                "iou": 0.9999999999999976,
+                "confidence_diff": 0.0,
+                "consistent": true
+              }
+            ]
+          },
+          "subject": {
+            "consistent": true,
+            "reason": null,
+            "cpu_count": 8,
+            "cuda_count": 8,
+            "matches": [
+              {
+                "cpu_index": 0,
+                "cuda_index": 0,
+                "iou": 0.9999797971888571,
+                "confidence_diff": 3.260374069213867e-05,
+                "consistent": true
+              },
+              {
+                "cpu_index": 1,
+                "cuda_index": 1,
+                "iou": 0.999959635625334,
+                "confidence_diff": 4.6253204345703125e-05,
+                "consistent": true
+              },
+              {
+                "cpu_index": 2,
+                "cuda_index": 2,
+                "iou": 0.9996424409850284,
+                "confidence_diff": 0.00023937225341796875,
+                "consistent": true
+              },
+              {
+                "cpu_index": 3,
+                "cuda_index": 3,
+                "iou": 0.9999696514597974,
+                "confidence_diff": 3.0100345611572266e-05,
+                "consistent": true
+              },
+              {
+                "cpu_index": 4,
+                "cuda_index": 4,
+                "iou": 0.9995062537051459,
+                "confidence_diff": 0.00031822919845581055,
+                "consistent": true
+              },
+              {
+                "cpu_index": 5,
+                "cuda_index": 5,
+                "iou": 0.9999480935398143,
+                "confidence_diff": 6.0498714447021484e-05,
+                "consistent": true
+              },
+              {
+                "cpu_index": 6,
+                "cuda_index": 6,
+                "iou": 0.9998658530097139,
+                "confidence_diff": 1.3172626495361328e-05,
+                "consistent": true
+              },
+              {
+                "cpu_index": 7,
+                "cuda_index": 7,
+                "iou": 0.9999367582422746,
+                "confidence_diff": 0.0004150867462158203,
+                "consistent": true
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "path": "C:\\Users\\Matann\\Desktop\\fivek_dataset\\raw_photos\\HQa1400to2100\\photos\\a2042-dgw_038.dng",
+      "sha256": "2da32d1e4c46afcb476d128ea6ba73ced3398a45c7229427e58304a8060d3e04",
+      "status": "ok",
+      "preprocess_seconds": 0.9847529000253417,
+      "cpu_seconds": 1.3746020000253338,
+      "cuda_seconds": 1.211839499999769,
+      "cpu": {
+        "state": "not_detected",
+        "per_kind": {
+          "face": {
+            "state": "not_detected",
+            "reason": null,
+            "detections": 0
+          },
+          "skin": {
+            "state": "unavailable",
+            "reason": "No validated skin-region detector is active. Color-threshold skin heuristics are intentionally disabled.",
+            "detections": 0
+          },
+          "subject": {
+            "state": "not_detected",
+            "reason": null,
+            "detections": 0
+          }
+        },
+        "detections": []
+      },
+      "cuda": {
+        "state": "not_detected",
+        "per_kind": {
+          "face": {
+            "state": "not_detected",
+            "reason": null,
+            "detections": 0
+          },
+          "skin": {
+            "state": "unavailable",
+            "reason": "No validated skin-region detector is active. Color-threshold skin heuristics are intentionally disabled.",
+            "detections": 0
+          },
+          "subject": {
+            "state": "not_detected",
+            "reason": null,
+            "detections": 0
+          }
+        },
+        "detections": []
+      },
+      "comparison": {
+        "consistent": true,
+        "state_checks": {
+          "face": {
+            "cpu": "not_detected",
+            "cuda": "not_detected",
+            "equal": true
+          },
+          "skin": {
+            "cpu": "unavailable",
+            "cuda": "unavailable",
+            "equal": true
+          },
+          "subject": {
+            "cpu": "not_detected",
+            "cuda": "not_detected",
+            "equal": true
+          }
+        },
+        "detection_checks": {
+          "face": {
+            "consistent": true,
+            "reason": null,
+            "cpu_count": 0,
+            "cuda_count": 0,
+            "matches": []
+          },
+          "subject": {
+            "consistent": true,
+            "reason": null,
+            "cpu_count": 0,
+            "cuda_count": 0,
+            "matches": []
+          }
+        }
+      }
+    },
+    {
+      "path": "C:\\Users\\Matann\\Desktop\\fivek_dataset\\raw_photos\\HQa1to700\\photos\\a0070-IMG_4327.dng",
+      "sha256": "684c84f40f9053ac30264a5c438525b78c839b5f4f64468b913f5d1bb54e1b8b",
+      "status": "ok",
+      "preprocess_seconds": 0.9699286999821197,
+      "cpu_seconds": 1.400124700012384,
+      "cuda_seconds": 1.4098330999840982,
+      "cpu": {
+        "state": "available",
+        "per_kind": {
+          "face": {
+            "state": "not_detected",
+            "reason": null,
+            "detections": 0
+          },
+          "skin": {
+            "state": "unavailable",
+            "reason": "No validated skin-region detector is active. Color-threshold skin heuristics are intentionally disabled.",
+            "detections": 0
+          },
+          "subject": {
+            "state": "available",
+            "reason": null,
+            "detections": 6
+          }
+        },
+        "detections": [
+          {
+            "kind": "subject",
+            "confidence": 0.9035701751708984,
+            "box": {
+              "x": 0.5487649527584472,
+              "y": 0.7059249344405595,
+              "width": 0.03977799615940126,
+              "height": 0.08691201376748252
+            }
+          },
+          {
+            "kind": "subject",
+            "confidence": 0.8714636564254761,
+            "box": {
+              "x": 0.4890503442587973,
+              "y": 0.689814100287733,
+              "width": 0.0587457395067402,
+              "height": 0.10037588550772145
+            }
+          },
+          {
+            "kind": "subject",
+            "confidence": 0.7889328598976135,
+            "box": {
+              "x": 0.6817089262462798,
+              "y": 0.7013612120301573,
+              "width": 0.02481724501323967,
+              "height": 0.04890085500437063
+            }
+          },
+          {
+            "kind": "subject",
+            "confidence": 0.7232424020767212,
+            "box": {
+              "x": 0.7071172035708815,
+              "y": 0.6980077214452215,
+              "width": 0.02778557101551558,
+              "height": 0.07563613144667833
+            }
+          },
+          {
+            "kind": "subject",
+            "confidence": 0.7104408740997314,
+            "box": {
+              "x": 0.6033718419008228,
+              "y": 0.703771773473922,
+              "width": 0.01947072774422269,
+              "height": 0.04516026779210373
+            }
+          },
+          {
+            "kind": "subject",
+            "confidence": 0.7008180022239685,
+            "box": {
+              "x": 0.9540863464526436,
+              "y": 0.6971285306490385,
+              "width": 0.025727429643732494,
+              "height": 0.0604160975743007
+            }
+          }
+        ]
+      },
+      "cuda": {
+        "state": "available",
+        "per_kind": {
+          "face": {
+            "state": "not_detected",
+            "reason": null,
+            "detections": 0
+          },
+          "skin": {
+            "state": "unavailable",
+            "reason": "No validated skin-region detector is active. Color-threshold skin heuristics are intentionally disabled.",
+            "detections": 0
+          },
+          "subject": {
+            "state": "available",
+            "reason": null,
+            "detections": 6
+          }
+        },
+        "detections": [
+          {
+            "kind": "subject",
+            "confidence": 0.9036809206008911,
+            "box": {
+              "x": 0.548765593884038,
+              "y": 0.7059220889787297,
+              "width": 0.03977786793428309,
+              "height": 0.08691645268793706
+            }
+          },
+          {
+            "kind": "subject",
+            "confidence": 0.8715713024139404,
+            "box": {
+              "x": 0.489050899900976,
+              "y": 0.6898067589962121,
+              "width": 0.05874296129584646,
+              "height": 0.1003854462594697
+            }
+          },
+          {
+            "kind": "subject",
+            "confidence": 0.7889606952667236,
+            "box": {
+              "x": 0.681712089132528,
+              "y": 0.7013572283835956,
+              "width": 0.02481331277628239,
+              "height": 0.04890370046620047
+            }
+          },
+          {
+            "kind": "subject",
+            "confidence": 0.7237461805343628,
+            "box": {
+              "x": 0.7071194688813025,
+              "y": 0.6980036239801864,
+              "width": 0.027776723482361695,
+              "height": 0.0756590658690268
+            }
+          },
+          {
+            "kind": "subject",
+            "confidence": 0.7108107805252075,
+            "box": {
+              "x": 0.6033739362444196,
+              "y": 0.7037701231060606,
+              "width": 0.019469146301098566,
+              "height": 0.04516265798004079
+            }
+          },
+          {
+            "kind": "subject",
+            "confidence": 0.701301634311676,
+            "box": {
+              "x": 0.9540883125711221,
+              "y": 0.697126766462704,
+              "width": 0.025723240956538867,
+              "height": 0.06042070722246504
+            }
+          }
+        ]
+      },
+      "comparison": {
+        "consistent": true,
+        "state_checks": {
+          "face": {
+            "cpu": "not_detected",
+            "cuda": "not_detected",
+            "equal": true
+          },
+          "skin": {
+            "cpu": "unavailable",
+            "cuda": "unavailable",
+            "equal": true
+          },
+          "subject": {
+            "cpu": "available",
+            "cuda": "available",
+            "equal": true
+          }
+        },
+        "detection_checks": {
+          "face": {
+            "consistent": true,
+            "reason": null,
+            "cpu_count": 0,
+            "cuda_count": 0,
+            "matches": []
+          },
+          "subject": {
+            "consistent": true,
+            "reason": null,
+            "cpu_count": 6,
+            "cuda_count": 6,
+            "matches": [
+              {
+                "cpu_index": 0,
+                "cuda_index": 0,
+                "iou": 0.9999199198911453,
+                "confidence_diff": 0.00011074542999267578,
+                "consistent": true
+              },
+              {
+                "cpu_index": 1,
+                "cuda_index": 1,
+                "iou": 0.9998574764651024,
+                "confidence_diff": 0.00010764598846435547,
+                "consistent": true
+              },
+              {
+                "cpu_index": 2,
+                "cuda_index": 2,
+                "iou": 0.9997368511714119,
+                "confidence_diff": 2.7835369110107422e-05,
+                "consistent": true
+              },
+              {
+                "cpu_index": 3,
+                "cuda_index": 3,
+                "iou": 0.9993786425850371,
+                "confidence_diff": 0.0005037784576416016,
+                "consistent": true
+              },
+              {
+                "cpu_index": 4,
+                "cuda_index": 4,
+                "iou": 0.9998131864824481,
+                "confidence_diff": 0.0003699064254760742,
+                "consistent": true
+              },
+              {
+                "cpu_index": 5,
+                "cuda_index": 5,
+                "iou": 0.9997609221469553,
+                "confidence_diff": 0.00048363208770751953,
+                "consistent": true
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "path": "C:\\Users\\Matann\\Desktop\\fivek_dataset\\raw_photos\\HQa1to700\\photos\\a0198-kme_134.dng",
+      "sha256": "1eddf60a8b94bc531fa54d779859909fd553f60232b4a2dbcd04d44b67943aeb",
+      "status": "ok",
+      "preprocess_seconds": 0.7706733999948483,
+      "cpu_seconds": 1.038098999997601,
+      "cuda_seconds": 0.9835342000005767,
+      "cpu": {
+        "state": "not_detected",
+        "per_kind": {
+          "face": {
+            "state": "not_detected",
+            "reason": null,
+            "detections": 0
+          },
+          "skin": {
+            "state": "unavailable",
+            "reason": "No validated skin-region detector is active. Color-threshold skin heuristics are intentionally disabled.",
+            "detections": 0
+          },
+          "subject": {
+            "state": "not_detected",
+            "reason": null,
+            "detections": 0
+          }
+        },
+        "detections": []
+      },
+      "cuda": {
+        "state": "not_detected",
+        "per_kind": {
+          "face": {
+            "state": "not_detected",
+            "reason": null,
+            "detections": 0
+          },
+          "skin": {
+            "state": "unavailable",
+            "reason": "No validated skin-region detector is active. Color-threshold skin heuristics are intentionally disabled.",
+            "detections": 0
+          },
+          "subject": {
+            "state": "not_detected",
+            "reason": null,
+            "detections": 0
+          }
+        },
+        "detections": []
+      },
+      "comparison": {
+        "consistent": true,
+        "state_checks": {
+          "face": {
+            "cpu": "not_detected",
+            "cuda": "not_detected",
+            "equal": true
+          },
+          "skin": {
+            "cpu": "unavailable",
+            "cuda": "unavailable",
+            "equal": true
+          },
+          "subject": {
+            "cpu": "not_detected",
+            "cuda": "not_detected",
+            "equal": true
+          }
+        },
+        "detection_checks": {
+          "face": {
+            "consistent": true,
+            "reason": null,
+            "cpu_count": 0,
+            "cuda_count": 0,
+            "matches": []
+          },
+          "subject": {
+            "consistent": true,
+            "reason": null,
+            "cpu_count": 0,
+            "cuda_count": 0,
+            "matches": []
+          }
+        }
+      }
+    },
+    {
+      "path": "C:\\Users\\Matann\\Desktop\\fivek_dataset\\raw_photos\\HQa1to700\\photos\\a0326-jmac_MG_7785.dng",
+      "sha256": "8af4f9567eb76646295ed18843689b08c861f34cd29f02fdc43c306795686b9f",
+      "status": "ok",
+      "preprocess_seconds": 1.0053257000108715,
+      "cpu_seconds": 1.5306607999955304,
+      "cuda_seconds": 1.4332142999919597,
+      "cpu": {
+        "state": "not_detected",
+        "per_kind": {
+          "face": {
+            "state": "not_detected",
+            "reason": null,
+            "detections": 0
+          },
+          "skin": {
+            "state": "unavailable",
+            "reason": "No validated skin-region detector is active. Color-threshold skin heuristics are intentionally disabled.",
+            "detections": 0
+          },
+          "subject": {
+            "state": "not_detected",
+            "reason": null,
+            "detections": 0
+          }
+        },
+        "detections": []
+      },
+      "cuda": {
+        "state": "not_detected",
+        "per_kind": {
+          "face": {
+            "state": "not_detected",
+            "reason": null,
+            "detections": 0
+          },
+          "skin": {
+            "state": "unavailable",
+            "reason": "No validated skin-region detector is active. Color-threshold skin heuristics are intentionally disabled.",
+            "detections": 0
+          },
+          "subject": {
+            "state": "not_detected",
+            "reason": null,
+            "detections": 0
+          }
+        },
+        "detections": []
+      },
+      "comparison": {
+        "consistent": true,
+        "state_checks": {
+          "face": {
+            "cpu": "not_detected",
+            "cuda": "not_detected",
+            "equal": true
+          },
+          "skin": {
+            "cpu": "unavailable",
+            "cuda": "unavailable",
+            "equal": true
+          },
+          "subject": {
+            "cpu": "not_detected",
+            "cuda": "not_detected",
+            "equal": true
+          }
+        },
+        "detection_checks": {
+          "face": {
+            "consistent": true,
+            "reason": null,
+            "cpu_count": 0,
+            "cuda_count": 0,
+            "matches": []
+          },
+          "subject": {
+            "consistent": true,
+            "reason": null,
+            "cpu_count": 0,
+            "cuda_count": 0,
+            "matches": []
+          }
+        }
+      }
+    },
+    {
+      "path": "C:\\Users\\Matann\\Desktop\\fivek_dataset\\raw_photos\\HQa1to700\\photos\\a0455-_DSC4605.dng",
+      "sha256": "998c3444855367369ce1607120e84a4f1a078fb7dfcfe5f4a11c7d4dc7581424",
+      "status": "ok",
+      "preprocess_seconds": 1.0535662999900524,
+      "cpu_seconds": 1.6006419000041205,
+      "cuda_seconds": 1.5793341999815311,
+      "cpu": {
+        "state": "available",
+        "per_kind": {
+          "face": {
+            "state": "available",
+            "reason": null,
+            "detections": 1
+          },
+          "skin": {
+            "state": "unavailable",
+            "reason": "No validated skin-region detector is active. Color-threshold skin heuristics are intentionally disabled.",
+            "detections": 0
+          },
+          "subject": {
+            "state": "available",
+            "reason": null,
+            "detections": 1
+          }
+        },
+        "detections": [
+          {
+            "kind": "face",
+            "confidence": 0.8585493564605713,
+            "box": {
+              "x": 0.5823317130855696,
+              "y": 0.4757598114013672,
+              "width": 0.05249635872418822,
+              "height": 0.05296903133392334
+            }
+          },
+          {
+            "kind": "subject",
+            "confidence": 0.9500491619110107,
+            "box": {
+              "x": 0.4142442319631241,
+              "y": 0.45191908550529586,
+              "width": 0.4334283284161832,
+              "height": 0.5210152705287844
+            }
+          }
+        ]
+      },
+      "cuda": {
+        "state": "available",
+        "per_kind": {
+          "face": {
+            "state": "available",
+            "reason": null,
+            "detections": 1
+          },
+          "skin": {
+            "state": "unavailable",
+            "reason": "No validated skin-region detector is active. Color-threshold skin heuristics are intentionally disabled.",
+            "detections": 0
+          },
+          "subject": {
+            "state": "available",
+            "reason": null,
+            "detections": 1
+          }
+        },
+        "detections": [
+          {
+            "kind": "face",
+            "confidence": 0.8585493564605713,
+            "box": {
+              "x": 0.5823317130855696,
+              "y": 0.4757598114013672,
+              "width": 0.05249635872418822,
+              "height": 0.05296903133392334
+            }
+          },
+          {
+            "kind": "subject",
+            "confidence": 0.9500247240066528,
+            "box": {
+              "x": 0.41425324559379395,
+              "y": 0.45191250328256305,
+              "width": 0.4334038628472222,
+              "height": 0.5210212828621031
+            }
+          }
+        ]
+      },
+      "comparison": {
+        "consistent": true,
+        "state_checks": {
+          "face": {
+            "cpu": "available",
+            "cuda": "available",
+            "equal": true
+          },
+          "skin": {
+            "cpu": "unavailable",
+            "cuda": "unavailable",
+            "equal": true
+          },
+          "subject": {
+            "cpu": "available",
+            "cuda": "available",
+            "equal": true
+          }
+        },
+        "detection_checks": {
+          "face": {
+            "consistent": true,
+            "reason": null,
+            "cpu_count": 1,
+            "cuda_count": 1,
+            "matches": [
+              {
+                "cpu_index": 0,
+                "cuda_index": 0,
+                "iou": 1.0,
+                "confidence_diff": 0.0,
+                "consistent": true
+              }
+            ]
+          },
+          "subject": {
+            "consistent": true,
+            "reason": null,
+            "cpu_count": 1,
+            "cuda_count": 1,
+            "matches": [
+              {
+                "cpu_index": 0,
+                "cuda_index": 0,
+                "iou": 0.9999298277701052,
+                "confidence_diff": 2.4437904357910156e-05,
+                "consistent": true
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "path": "C:\\Users\\Matann\\Desktop\\fivek_dataset\\raw_photos\\HQa1to700\\photos\\a0583-Ja_Pe-34.dng",
+      "sha256": "0fb64fa5b5daf33b58190e497df420587fcbe50f1974456645203b7d170c3c2a",
+      "status": "ok",
+      "preprocess_seconds": 0.8139377000043169,
+      "cpu_seconds": 1.4084082999906968,
+      "cuda_seconds": 1.1554105000104755,
+      "cpu": {
+        "state": "available",
+        "per_kind": {
+          "face": {
+            "state": "not_detected",
+            "reason": null,
+            "detections": 0
+          },
+          "skin": {
+            "state": "unavailable",
+            "reason": "No validated skin-region detector is active. Color-threshold skin heuristics are intentionally disabled.",
+            "detections": 0
+          },
+          "subject": {
+            "state": "available",
+            "reason": null,
+            "detections": 2
+          }
+        },
+        "detections": [
+          {
+            "kind": "subject",
+            "confidence": 0.8725730776786804,
+            "box": {
+              "x": 0.5776480611165364,
+              "y": 0.7159993374639536,
+              "width": 0.06386362711588542,
+              "height": 0.040342226764801085
+            }
+          },
+          {
+            "kind": "subject",
+            "confidence": 0.7182348370552063,
+            "box": {
+              "x": 0.5071318054199219,
+              "y": 0.713656323104255,
+              "width": 0.06621363321940105,
+              "height": 0.04472313717484699
+            }
+          }
+        ]
+      },
+      "cuda": {
+        "state": "available",
+        "per_kind": {
+          "face": {
+            "state": "not_detected",
+            "reason": null,
+            "detections": 0
+          },
+          "skin": {
+            "state": "unavailable",
+            "reason": "No validated skin-region detector is active. Color-threshold skin heuristics are intentionally disabled.",
+            "detections": 0
+          },
+          "subject": {
+            "state": "available",
+            "reason": null,
+            "detections": 2
+          }
+        },
+        "detections": [
+          {
+            "kind": "subject",
+            "confidence": 0.8725817203521729,
+            "box": {
+              "x": 0.5776460774739584,
+              "y": 0.715999050104461,
+              "width": 0.06386520385742188,
+              "height": 0.04034487047213395
+            }
+          },
+          {
+            "kind": "subject",
+            "confidence": 0.7181272506713867,
+            "box": {
+              "x": 0.5071324666341146,
+              "y": 0.7136582196769068,
+              "width": 0.06620468139648437,
+              "height": 0.044720148636122885
+            }
+          }
+        ]
+      },
+      "comparison": {
+        "consistent": true,
+        "state_checks": {
+          "face": {
+            "cpu": "not_detected",
+            "cuda": "not_detected",
+            "equal": true
+          },
+          "skin": {
+            "cpu": "unavailable",
+            "cuda": "unavailable",
+            "equal": true
+          },
+          "subject": {
+            "cpu": "available",
+            "cuda": "available",
+            "equal": true
+          }
+        },
+        "detection_checks": {
+          "face": {
+            "consistent": true,
+            "reason": null,
+            "cpu_count": 0,
+            "cuda_count": 0,
+            "matches": []
+          },
+          "subject": {
+            "consistent": true,
+            "reason": null,
+            "cpu_count": 2,
+            "cuda_count": 2,
+            "matches": [
+              {
+                "cpu_index": 0,
+                "cuda_index": 0,
+                "iou": 0.9998970443087308,
+                "confidence_diff": 8.64267349243164e-06,
+                "consistent": true
+              },
+              {
+                "cpu_index": 1,
+                "cuda_index": 1,
+                "iou": 0.9997979898640915,
+                "confidence_diff": 0.00010758638381958008,
+                "consistent": true
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "path": "C:\\Users\\Matann\\Desktop\\fivek_dataset\\raw_photos\\HQa2101to2800\\photos\\a2111-_DSC5607.dng",
+      "sha256": "d811da7b2e93eb962cc156d657a7b264907d7626379572fc6d06bc0991bf59b4",
+      "status": "ok",
+      "preprocess_seconds": 1.0708817999984603,
+      "cpu_seconds": 1.6014592999999877,
+      "cuda_seconds": 1.4276110000209883,
+      "cpu": {
+        "state": "available",
+        "per_kind": {
+          "face": {
+            "state": "available",
+            "reason": null,
+            "detections": 1
+          },
+          "skin": {
+            "state": "unavailable",
+            "reason": "No validated skin-region detector is active. Color-threshold skin heuristics are intentionally disabled.",
+            "detections": 0
+          },
+          "subject": {
+            "state": "available",
+            "reason": null,
+            "detections": 2
+          }
+        },
+        "detections": [
+          {
+            "kind": "face",
+            "confidence": 0.916651725769043,
+            "box": {
+              "x": 0.3922079849243164,
+              "y": 0.21716081579750765,
+              "width": 0.048959598541259766,
+              "height": 0.1049888524631996
+            }
+          },
+          {
+            "kind": "subject",
+            "confidence": 0.8864246606826782,
+            "box": {
+              "x": 0.2433011778930322,
+              "y": 0.19225451849013273,
+              "width": 0.2676833835747841,
+              "height": 0.7994205780673128
+            }
+          },
+          {
+            "kind": "subject",
+            "confidence": 0.7799112796783447,
+            "box": {
+              "x": 0.10168927190016631,
+              "y": 0.3624303203427171,
+              "width": 0.03771087902934611,
+              "height": 0.05062960639449279
+            }
+          }
+        ]
+      },
+      "cuda": {
+        "state": "available",
+        "per_kind": {
+          "face": {
+            "state": "available",
+            "reason": null,
+            "detections": 1
+          },
+          "skin": {
+            "state": "unavailable",
+            "reason": "No validated skin-region detector is active. Color-threshold skin heuristics are intentionally disabled.",
+            "detections": 0
+          },
+          "subject": {
+            "state": "available",
+            "reason": null,
+            "detections": 2
+          }
+        },
+        "detections": [
+          {
+            "kind": "face",
+            "confidence": 0.916651725769043,
+            "box": {
+              "x": 0.3922079849243164,
+              "y": 0.21716081579750765,
+              "width": 0.048959598541259766,
+              "height": 0.1049888524631996
+            }
+          },
+          {
+            "kind": "subject",
+            "confidence": 0.8873183131217957,
+            "box": {
+              "x": 0.24329573544912758,
+              "y": 0.19223782181236815,
+              "width": 0.267646882157811,
+              "height": 0.7994361587717563
+            }
+          },
+          {
+            "kind": "subject",
+            "confidence": 0.780297040939331,
+            "box": {
+              "x": 0.10169075361264297,
+              "y": 0.36243109293963166,
+              "width": 0.03770896989980888,
+              "height": 0.050628662109375
+            }
+          }
+        ]
+      },
+      "comparison": {
+        "consistent": true,
+        "state_checks": {
+          "face": {
+            "cpu": "available",
+            "cuda": "available",
+            "equal": true
+          },
+          "skin": {
+            "cpu": "unavailable",
+            "cuda": "unavailable",
+            "equal": true
+          },
+          "subject": {
+            "cpu": "available",
+            "cuda": "available",
+            "equal": true
+          }
+        },
+        "detection_checks": {
+          "face": {
+            "consistent": true,
+            "reason": null,
+            "cpu_count": 1,
+            "cuda_count": 1,
+            "matches": [
+              {
+                "cpu_index": 0,
+                "cuda_index": 0,
+                "iou": 0.999999999999999,
+                "confidence_diff": 0.0,
+                "consistent": true
+              }
+            ]
+          },
+          "subject": {
+            "consistent": true,
+            "reason": null,
+            "cpu_count": 2,
+            "cuda_count": 2,
+            "matches": [
+              {
+                "cpu_index": 0,
+                "cuda_index": 0,
+                "iou": 0.9998007056501352,
+                "confidence_diff": 0.0008936524391174316,
+                "consistent": true
+              },
+              {
+                "cpu_index": 1,
+                "cuda_index": 1,
+                "iou": 0.9999307246638467,
+                "confidence_diff": 0.0003857612609863281,
+                "consistent": true
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "path": "C:\\Users\\Matann\\Desktop\\fivek_dataset\\raw_photos\\HQa2101to2800\\photos\\a2239-kme_227.dng",
+      "sha256": "361f7df2fab4635c444011996295b3b99c8c5e97db7377634696f0a489eb1d7a",
+      "status": "ok",
+      "preprocess_seconds": 0.7675396999984514,
+      "cpu_seconds": 1.132569200010039,
+      "cuda_seconds": 0.8628745999885723,
+      "cpu": {
+        "state": "not_detected",
+        "per_kind": {
+          "face": {
+            "state": "not_detected",
+            "reason": null,
+            "detections": 0
+          },
+          "skin": {
+            "state": "unavailable",
+            "reason": "No validated skin-region detector is active. Color-threshold skin heuristics are intentionally disabled.",
+            "detections": 0
+          },
+          "subject": {
+            "state": "not_detected",
+            "reason": null,
+            "detections": 0
+          }
+        },
+        "detections": []
+      },
+      "cuda": {
+        "state": "not_detected",
+        "per_kind": {
+          "face": {
+            "state": "not_detected",
+            "reason": null,
+            "detections": 0
+          },
+          "skin": {
+            "state": "unavailable",
+            "reason": "No validated skin-region detector is active. Color-threshold skin heuristics are intentionally disabled.",
+            "detections": 0
+          },
+          "subject": {
+            "state": "not_detected",
+            "reason": null,
+            "detections": 0
+          }
+        },
+        "detections": []
+      },
+      "comparison": {
+        "consistent": true,
+        "state_checks": {
+          "face": {
+            "cpu": "not_detected",
+            "cuda": "not_detected",
+            "equal": true
+          },
+          "skin": {
+            "cpu": "unavailable",
+            "cuda": "unavailable",
+            "equal": true
+          },
+          "subject": {
+            "cpu": "not_detected",
+            "cuda": "not_detected",
+            "equal": true
+          }
+        },
+        "detection_checks": {
+          "face": {
+            "consistent": true,
+            "reason": null,
+            "cpu_count": 0,
+            "cuda_count": 0,
+            "matches": []
+          },
+          "subject": {
+            "consistent": true,
+            "reason": null,
+            "cpu_count": 0,
+            "cuda_count": 0,
+            "matches": []
+          }
+        }
+      }
+    },
+    {
+      "path": "C:\\Users\\Matann\\Desktop\\fivek_dataset\\raw_photos\\HQa2101to2800\\photos\\a2367-dgw_098.dng",
+      "sha256": "2ecc8314f41641acc74c02b51816e8eff899c530f1840cc43a33bf74ebad4f8b",
+      "status": "ok",
+      "preprocess_seconds": 0.9549180999747477,
+      "cpu_seconds": 1.4877411000197753,
+      "cuda_seconds": 1.2622788999869954,
+      "cpu": {
+        "state": "not_detected",
+        "per_kind": {
+          "face": {
+            "state": "not_detected",
+            "reason": null,
+            "detections": 0
+          },
+          "skin": {
+            "state": "unavailable",
+            "reason": "No validated skin-region detector is active. Color-threshold skin heuristics are intentionally disabled.",
+            "detections": 0
+          },
+          "subject": {
+            "state": "not_detected",
+            "reason": null,
+            "detections": 0
+          }
+        },
+        "detections": []
+      },
+      "cuda": {
+        "state": "not_detected",
+        "per_kind": {
+          "face": {
+            "state": "not_detected",
+            "reason": null,
+            "detections": 0
+          },
+          "skin": {
+            "state": "unavailable",
+            "reason": "No validated skin-region detector is active. Color-threshold skin heuristics are intentionally disabled.",
+            "detections": 0
+          },
+          "subject": {
+            "state": "not_detected",
+            "reason": null,
+            "detections": 0
+          }
+        },
+        "detections": []
+      },
+      "comparison": {
+        "consistent": true,
+        "state_checks": {
+          "face": {
+            "cpu": "not_detected",
+            "cuda": "not_detected",
+            "equal": true
+          },
+          "skin": {
+            "cpu": "unavailable",
+            "cuda": "unavailable",
+            "equal": true
+          },
+          "subject": {
+            "cpu": "not_detected",
+            "cuda": "not_detected",
+            "equal": true
+          }
+        },
+        "detection_checks": {
+          "face": {
+            "consistent": true,
+            "reason": null,
+            "cpu_count": 0,
+            "cuda_count": 0,
+            "matches": []
+          },
+          "subject": {
+            "consistent": true,
+            "reason": null,
+            "cpu_count": 0,
+            "cuda_count": 0,
+            "matches": []
+          }
+        }
+      }
+    },
+    {
+      "path": "C:\\Users\\Matann\\Desktop\\fivek_dataset\\raw_photos\\HQa2101to2800\\photos\\a2496-LS051026_day_15_LL007.dng",
+      "sha256": "70c6fe60391fb74dcefd40776971c3348a1c23619b485a9b9fb010ea5fea5b58",
+      "status": "ok",
+      "preprocess_seconds": 1.1551556999911554,
+      "cpu_seconds": 1.7848727999953553,
+      "cuda_seconds": 1.575694700004533,
+      "cpu": {
+        "state": "available",
+        "per_kind": {
+          "face": {
+            "state": "not_detected",
+            "reason": null,
+            "detections": 0
+          },
+          "skin": {
+            "state": "unavailable",
+            "reason": "No validated skin-region detector is active. Color-threshold skin heuristics are intentionally disabled.",
+            "detections": 0
+          },
+          "subject": {
+            "state": "available",
+            "reason": null,
+            "detections": 4
+          }
+        },
+        "detections": [
+          {
+            "kind": "subject",
+            "confidence": 0.958553671836853,
+            "box": {
+              "x": 0.505194981131487,
+              "y": 0.39117912967344454,
+              "width": 0.24124002970621258,
+              "height": 0.44884536491519866
+            }
+          },
+          {
+            "kind": "subject",
+            "confidence": 0.9564642906188965,
+            "box": {
+              "x": 0.3557123545876996,
+              "y": 0.37266009329319716,
+              "width": 0.23203807229291418,
+              "height": 0.46296503847685533
+            }
+          },
+          {
+            "kind": "subject",
+            "confidence": 0.9344489574432373,
+            "box": {
+              "x": 0.9062710516467066,
+              "y": 0.4408017548842766,
+              "width": 0.09369240035553893,
+              "height": 0.44934235762977887
+            }
+          },
+          {
+            "kind": "subject",
+            "confidence": 0.753212571144104,
+            "box": {
+              "x": 0.466780647688997,
+              "y": 0.2560572313940686,
+              "width": 0.0444948969249002,
+              "height": 0.21457536002506558
+            }
+          }
+        ]
+      },
+      "cuda": {
+        "state": "available",
+        "per_kind": {
+          "face": {
+            "state": "not_detected",
+            "reason": null,
+            "detections": 0
+          },
+          "skin": {
+            "state": "unavailable",
+            "reason": "No validated skin-region detector is active. Color-threshold skin heuristics are intentionally disabled.",
+            "detections": 0
+          },
+          "subject": {
+            "state": "available",
+            "reason": null,
+            "detections": 4
+          }
+        },
+        "detections": [
+          {
+            "kind": "subject",
+            "confidence": 0.9585540890693665,
+            "box": {
+              "x": 0.5051953222461327,
+              "y": 0.3911799349348763,
+              "width": 0.24123988351422157,
+              "height": 0.44884346156999627
+            }
+          },
+          {
+            "kind": "subject",
+            "confidence": 0.956461489200592,
+            "box": {
+              "x": 0.3557122083957086,
+              "y": 0.3726616672132684,
+              "width": 0.23203977786614272,
+              "height": 0.4629633913511994
+            }
+          },
+          {
+            "kind": "subject",
+            "confidence": 0.934425413608551,
+            "box": {
+              "x": 0.9062708567240519,
+              "y": 0.4408042438741567,
+              "width": 0.09369279020084831,
+              "height": 0.44934030787340706
+            }
+          },
+          {
+            "kind": "subject",
+            "confidence": 0.753345787525177,
+            "box": {
+              "x": 0.46677996545970557,
+              "y": 0.2560584575876124,
+              "width": 0.044494263426272454,
+              "height": 0.2145787457833583
+            }
+          }
+        ]
+      },
+      "comparison": {
+        "consistent": true,
+        "state_checks": {
+          "face": {
+            "cpu": "not_detected",
+            "cuda": "not_detected",
+            "equal": true
+          },
+          "skin": {
+            "cpu": "unavailable",
+            "cuda": "unavailable",
+            "equal": true
+          },
+          "subject": {
+            "cpu": "available",
+            "cuda": "available",
+            "equal": true
+          }
+        },
+        "detection_checks": {
+          "face": {
+            "consistent": true,
+            "reason": null,
+            "cpu_count": 0,
+            "cuda_count": 0,
+            "matches": []
+          },
+          "subject": {
+            "consistent": true,
+            "reason": null,
+            "cpu_count": 4,
+            "cuda_count": 4,
+            "matches": [
+              {
+                "cpu_index": 0,
+                "cuda_index": 0,
+                "iou": 0.9999935374699321,
+                "confidence_diff": 4.172325134277344e-07,
+                "consistent": true
+              },
+              {
+                "cpu_index": 1,
+                "cuda_index": 1,
+                "iou": 0.9999890919283541,
+                "confidence_diff": 2.8014183044433594e-06,
+                "consistent": true
+              },
+              {
+                "cpu_index": 2,
+                "cuda_index": 2,
+                "iou": 0.9999893224806841,
+                "confidence_diff": 2.3543834686279297e-05,
+                "consistent": true
+              },
+              {
+                "cpu_index": 3,
+                "cuda_index": 3,
+                "iou": 0.9999278922518317,
+                "confidence_diff": 0.00013321638107299805,
+                "consistent": true
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "path": "C:\\Users\\Matann\\Desktop\\fivek_dataset\\raw_photos\\HQa2101to2800\\photos\\a2624-DSC_0014-3.dng",
+      "sha256": "22438b9aaba0a777da24d72e7ed84bec5d4f0d6118fc935b08214b4142e7280b",
+      "status": "ok",
+      "preprocess_seconds": 0.6711757000011858,
+      "cpu_seconds": 0.9004496000125073,
+      "cuda_seconds": 0.8242700999835506,
+      "cpu": {
+        "state": "available",
+        "per_kind": {
+          "face": {
+            "state": "not_detected",
+            "reason": null,
+            "detections": 0
+          },
+          "skin": {
+            "state": "unavailable",
+            "reason": "No validated skin-region detector is active. Color-threshold skin heuristics are intentionally disabled.",
+            "detections": 0
+          },
+          "subject": {
+            "state": "available",
+            "reason": null,
+            "detections": 1
+          }
+        },
+        "detections": [
+          {
+            "kind": "subject",
+            "confidence": 0.9793013334274292,
+            "box": {
+              "x": 0.0049682557582855225,
+              "y": 0.0,
+              "width": 0.9950317442417145,
+              "height": 0.9994204993754655
+            }
+          }
+        ]
+      },
+      "cuda": {
+        "state": "available",
+        "per_kind": {
+          "face": {
+            "state": "not_detected",
+            "reason": null,
+            "detections": 0
+          },
+          "skin": {
+            "state": "unavailable",
+            "reason": "No validated skin-region detector is active. Color-threshold skin heuristics are intentionally disabled.",
+            "detections": 0
+          },
+          "subject": {
+            "state": "available",
+            "reason": null,
+            "detections": 1
+          }
+        },
+        "detections": [
+          {
+            "kind": "subject",
+            "confidence": 0.9793447852134705,
+            "box": {
+              "x": 0.004833906888961792,
+              "y": 0.0,
+              "width": 0.9951660931110382,
+              "height": 0.9994114683543321
+            }
+          }
+        ]
+      },
+      "comparison": {
+        "consistent": true,
+        "state_checks": {
+          "face": {
+            "cpu": "not_detected",
+            "cuda": "not_detected",
+            "equal": true
+          },
+          "skin": {
+            "cpu": "unavailable",
+            "cuda": "unavailable",
+            "equal": true
+          },
+          "subject": {
+            "cpu": "available",
+            "cuda": "available",
+            "equal": true
+          }
+        },
+        "detection_checks": {
+          "face": {
+            "consistent": true,
+            "reason": null,
+            "cpu_count": 0,
+            "cuda_count": 0,
+            "matches": []
+          },
+          "subject": {
+            "consistent": true,
+            "reason": null,
+            "cpu_count": 1,
+            "cuda_count": 1,
+            "matches": [
+              {
+                "cpu_index": 0,
+                "cuda_index": 0,
+                "iou": 0.9998559647282085,
+                "confidence_diff": 4.3451786041259766e-05,
+                "consistent": true
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "path": "C:\\Users\\Matann\\Desktop\\fivek_dataset\\raw_photos\\HQa2101to2800\\photos\\a2752-kme_015.dng",
+      "sha256": "998a7a444fffa9d4b36da9d8ae37f534c6cabae395f7565ce9aa637d262e65b4",
+      "status": "ok",
+      "preprocess_seconds": 0.847364400018705,
+      "cpu_seconds": 1.2034296999918297,
+      "cuda_seconds": 1.060892999987118,
+      "cpu": {
+        "state": "not_detected",
+        "per_kind": {
+          "face": {
+            "state": "not_detected",
+            "reason": null,
+            "detections": 0
+          },
+          "skin": {
+            "state": "unavailable",
+            "reason": "No validated skin-region detector is active. Color-threshold skin heuristics are intentionally disabled.",
+            "detections": 0
+          },
+          "subject": {
+            "state": "not_detected",
+            "reason": null,
+            "detections": 0
+          }
+        },
+        "detections": []
+      },
+      "cuda": {
+        "state": "not_detected",
+        "per_kind": {
+          "face": {
+            "state": "not_detected",
+            "reason": null,
+            "detections": 0
+          },
+          "skin": {
+            "state": "unavailable",
+            "reason": "No validated skin-region detector is active. Color-threshold skin heuristics are intentionally disabled.",
+            "detections": 0
+          },
+          "subject": {
+            "state": "not_detected",
+            "reason": null,
+            "detections": 0
+          }
+        },
+        "detections": []
+      },
+      "comparison": {
+        "consistent": true,
+        "state_checks": {
+          "face": {
+            "cpu": "not_detected",
+            "cuda": "not_detected",
+            "equal": true
+          },
+          "skin": {
+            "cpu": "unavailable",
+            "cuda": "unavailable",
+            "equal": true
+          },
+          "subject": {
+            "cpu": "not_detected",
+            "cuda": "not_detected",
+            "equal": true
+          }
+        },
+        "detection_checks": {
+          "face": {
+            "consistent": true,
+            "reason": null,
+            "cpu_count": 0,
+            "cuda_count": 0,
+            "matches": []
+          },
+          "subject": {
+            "consistent": true,
+            "reason": null,
+            "cpu_count": 0,
+            "cuda_count": 0,
+            "matches": []
+          }
+        }
+      }
+    },
+    {
+      "path": "C:\\Users\\Matann\\Desktop\\fivek_dataset\\raw_photos\\HQa2801to3500\\photos\\a2880-_DSC2262.dng",
+      "sha256": "6f574154b23ff809e1a77fb63d7bca2c51d518b6371bb6348e3c2be861a10e18",
+      "status": "ok",
+      "preprocess_seconds": 0.902387500012992,
+      "cpu_seconds": 1.5188722999882884,
+      "cuda_seconds": 1.4027046999835875,
+      "cpu": {
+        "state": "available",
+        "per_kind": {
+          "face": {
+            "state": "available",
+            "reason": null,
+            "detections": 2
+          },
+          "skin": {
+            "state": "unavailable",
+            "reason": "No validated skin-region detector is active. Color-threshold skin heuristics are intentionally disabled.",
+            "detections": 0
+          },
+          "subject": {
+            "state": "available",
+            "reason": null,
+            "detections": 4
+          }
+        },
+        "detections": [
+          {
+            "kind": "face",
+            "confidence": 0.9394150972366333,
+            "box": {
+              "x": 0.16846948623657226,
+              "y": 0.3660501023919344,
+              "width": 0.07086596012115479,
+              "height": 0.13369291201374175
+            }
+          },
+          {
+            "kind": "face",
+            "confidence": 0.9061428904533386,
+            "box": {
+              "x": 0.6936660766601562,
+              "y": 0.2855396737711129,
+              "width": 0.058467235565185544,
+              "height": 0.12751048747204566
+            }
+          },
+          {
+            "kind": "subject",
+            "confidence": 0.9548762440681458,
+            "box": {
+              "x": 0.08281367967108719,
+              "y": 0.3303017703457388,
+              "width": 0.3107310347641661,
+              "height": 0.6620553575990572
+            }
+          },
+          {
+            "kind": "subject",
+            "confidence": 0.8796852231025696,
+            "box": {
+              "x": 0.04203115368868902,
+              "y": 0.5251243795188335,
+              "width": 0.0536758038176208,
+              "height": 0.4422863666518328
+            }
+          },
+          {
+            "kind": "subject",
+            "confidence": 0.8768004179000854,
+            "box": {
+              "x": 0.6718924956050129,
+              "y": 0.07937249721521734,
+              "width": 0.2114367801156921,
+              "height": 0.90692257780566
+            }
+          },
+          {
+            "kind": "subject",
+            "confidence": 0.7479923963546753,
+            "box": {
+              "x": 0.0,
+              "y": 0.5804451514564654,
+              "width": 0.02495107107580988,
+              "height": 0.38347294159579376
+            }
+          }
+        ]
+      },
+      "cuda": {
+        "state": "available",
+        "per_kind": {
+          "face": {
+            "state": "available",
+            "reason": null,
+            "detections": 2
+          },
+          "skin": {
+            "state": "unavailable",
+            "reason": "No validated skin-region detector is active. Color-threshold skin heuristics are intentionally disabled.",
+            "detections": 0
+          },
+          "subject": {
+            "state": "available",
+            "reason": null,
+            "detections": 4
+          }
+        },
+        "detections": [
+          {
+            "kind": "face",
+            "confidence": 0.9394150972366333,
+            "box": {
+              "x": 0.16846948623657226,
+              "y": 0.3660501023919344,
+              "width": 0.07086596012115479,
+              "height": 0.13369291201374175
+            }
+          },
+          {
+            "kind": "face",
+            "confidence": 0.9061428904533386,
+            "box": {
+              "x": 0.6936660766601562,
+              "y": 0.2855396737711129,
+              "width": 0.058467235565185544,
+              "height": 0.12751048747204566
+            }
+          },
+          {
+            "kind": "subject",
+            "confidence": 0.954859733581543,
+            "box": {
+              "x": 0.08281192013752116,
+              "y": 0.33029919502269034,
+              "width": 0.31073290827561495,
+              "height": 0.6620580187662074
+            }
+          },
+          {
+            "kind": "subject",
+            "confidence": 0.8796678185462952,
+            "box": {
+              "x": 0.042031381644454656,
+              "y": 0.5251269977639328,
+              "width": 0.05367706469794949,
+              "height": 0.4422849502241561
+            }
+          },
+          {
+            "kind": "subject",
+            "confidence": 0.8769780993461609,
+            "box": {
+              "x": 0.6718734043096405,
+              "y": 0.07939573950573027,
+              "width": 0.2114454424347864,
+              "height": 0.9069102377160524
+            }
+          },
+          {
+            "kind": "subject",
+            "confidence": 0.7479761838912964,
+            "box": {
+              "x": 0.0,
+              "y": 0.5804452802226178,
+              "width": 0.024950385427608544,
+              "height": 0.3834716110122187
+            }
+          }
+        ]
+      },
+      "comparison": {
+        "consistent": true,
+        "state_checks": {
+          "face": {
+            "cpu": "available",
+            "cuda": "available",
+            "equal": true
+          },
+          "skin": {
+            "cpu": "unavailable",
+            "cuda": "unavailable",
+            "equal": true
+          },
+          "subject": {
+            "cpu": "available",
+            "cuda": "available",
+            "equal": true
+          }
+        },
+        "detection_checks": {
+          "face": {
+            "consistent": true,
+            "reason": null,
+            "cpu_count": 2,
+            "cuda_count": 2,
+            "matches": [
+              {
+                "cpu_index": 0,
+                "cuda_index": 0,
+                "iou": 0.9999999999999997,
+                "confidence_diff": 0.0,
+                "consistent": true
+              },
+              {
+                "cpu_index": 1,
+                "cuda_index": 1,
+                "iou": 0.9999999999999986,
+                "confidence_diff": 0.0,
+                "consistent": true
+              }
+            ]
+          },
+          "subject": {
+            "consistent": true,
+            "reason": null,
+            "cpu_count": 4,
+            "cuda_count": 4,
+            "matches": [
+              {
+                "cpu_index": 0,
+                "cuda_index": 0,
+                "iou": 0.9999899511559057,
+                "confidence_diff": 1.6510486602783203e-05,
+                "consistent": true
+              },
+              {
+                "cpu_index": 1,
+                "cuda_index": 1,
+                "iou": 0.9999593798182215,
+                "confidence_diff": 1.7404556274414062e-05,
+                "consistent": true
+              },
+              {
+                "cpu_index": 2,
+                "cuda_index": 2,
+                "iou": 0.9998227549951277,
+                "confidence_diff": 0.00017768144607543945,
+                "consistent": true
+              },
+              {
+                "cpu_index": 3,
+                "cuda_index": 3,
+                "iou": 0.9999690505612973,
+                "confidence_diff": 1.621246337890625e-05,
+                "consistent": true
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "path": "C:\\Users\\Matann\\Desktop\\fivek_dataset\\raw_photos\\HQa2801to3500\\photos\\a3008-WP_CRW_8108.dng",
+      "sha256": "7cf903262fc38c5d75749f78768229c8ffbb24e6abf2fb5021bca8384dd99573",
+      "status": "ok",
+      "preprocess_seconds": 0.6842031000123825,
+      "cpu_seconds": 0.9617061000026297,
+      "cuda_seconds": 0.7096790000214241,
+      "cpu": {
+        "state": "available",
+        "per_kind": {
+          "face": {
+            "state": "available",
+            "reason": null,
+            "detections": 1
+          },
+          "skin": {
+            "state": "unavailable",
+            "reason": "No validated skin-region detector is active. Color-threshold skin heuristics are intentionally disabled.",
+            "detections": 0
+          },
+          "subject": {
+            "state": "available",
+            "reason": null,
+            "detections": 1
+          }
+        },
+        "detections": [
+          {
+            "kind": "face",
+            "confidence": 0.9091968536376953,
+            "box": {
+              "x": 0.671744619736649,
+              "y": 0.13890024185180663,
+              "width": 0.26449771218456575,
+              "height": 0.24136882781982422
+            }
+          },
+          {
+            "kind": "subject",
+            "confidence": 0.9784203171730042,
+            "box": {
+              "x": 0.11897075124030566,
+              "y": 0.000140458345413208,
+              "width": 0.8810292487596944,
+              "height": 0.9915724379719848
+            }
+          }
+        ]
+      },
+      "cuda": {
+        "state": "available",
+        "per_kind": {
+          "face": {
+            "state": "available",
+            "reason": null,
+            "detections": 1
+          },
+          "skin": {
+            "state": "unavailable",
+            "reason": "No validated skin-region detector is active. Color-threshold skin heuristics are intentionally disabled.",
+            "detections": 0
+          },
+          "subject": {
+            "state": "available",
+            "reason": null,
+            "detections": 1
+          }
+        },
+        "detections": [
+          {
+            "kind": "face",
+            "confidence": 0.9091968536376953,
+            "box": {
+              "x": 0.671744619736649,
+              "y": 0.13890024185180663,
+              "width": 0.26449771218456575,
+              "height": 0.24136882781982422
+            }
+          },
+          {
+            "kind": "subject",
+            "confidence": 0.978421688079834,
+            "box": {
+              "x": 0.11896654857626217,
+              "y": 0.0001443326473236084,
+              "width": 0.8810334514237378,
+              "height": 0.9915642943715802
+            }
+          }
+        ]
+      },
+      "comparison": {
+        "consistent": true,
+        "state_checks": {
+          "face": {
+            "cpu": "available",
+            "cuda": "available",
+            "equal": true
+          },
+          "skin": {
+            "cpu": "unavailable",
+            "cuda": "unavailable",
+            "equal": true
+          },
+          "subject": {
+            "cpu": "available",
+            "cuda": "available",
+            "equal": true
+          }
+        },
+        "detection_checks": {
+          "face": {
+            "consistent": true,
+            "reason": null,
+            "cpu_count": 1,
+            "cuda_count": 1,
+            "matches": [
+              {
+                "cpu_index": 0,
+                "cuda_index": 0,
+                "iou": 1.0000000000000004,
+                "confidence_diff": 0.0,
+                "consistent": true
+              }
+            ]
+          },
+          "subject": {
+            "consistent": true,
+            "reason": null,
+            "cpu_count": 1,
+            "cuda_count": 1,
+            "matches": [
+              {
+                "cpu_index": 0,
+                "cuda_index": 0,
+                "iou": 0.9999870171113058,
+                "confidence_diff": 1.3709068298339844e-06,
+                "consistent": true
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "path": "C:\\Users\\Matann\\Desktop\\fivek_dataset\\raw_photos\\HQa2801to3500\\photos\\a3136-Ja_Pe-15.dng",
+      "sha256": "b320732c69fbf8f7b9e00ff5c4cbe6634c4cd128ce73ec3ba7010f728eac87f7",
+      "status": "ok",
+      "preprocess_seconds": 0.7731860000058077,
+      "cpu_seconds": 1.2132450999924913,
+      "cuda_seconds": 0.9922418000060134,
+      "cpu": {
+        "state": "not_detected",
+        "per_kind": {
+          "face": {
+            "state": "not_detected",
+            "reason": null,
+            "detections": 0
+          },
+          "skin": {
+            "state": "unavailable",
+            "reason": "No validated skin-region detector is active. Color-threshold skin heuristics are intentionally disabled.",
+            "detections": 0
+          },
+          "subject": {
+            "state": "not_detected",
+            "reason": null,
+            "detections": 0
+          }
+        },
+        "detections": []
+      },
+      "cuda": {
+        "state": "not_detected",
+        "per_kind": {
+          "face": {
+            "state": "not_detected",
+            "reason": null,
+            "detections": 0
+          },
+          "skin": {
+            "state": "unavailable",
+            "reason": "No validated skin-region detector is active. Color-threshold skin heuristics are intentionally disabled.",
+            "detections": 0
+          },
+          "subject": {
+            "state": "not_detected",
+            "reason": null,
+            "detections": 0
+          }
+        },
+        "detections": []
+      },
+      "comparison": {
+        "consistent": true,
+        "state_checks": {
+          "face": {
+            "cpu": "not_detected",
+            "cuda": "not_detected",
+            "equal": true
+          },
+          "skin": {
+            "cpu": "unavailable",
+            "cuda": "unavailable",
+            "equal": true
+          },
+          "subject": {
+            "cpu": "not_detected",
+            "cuda": "not_detected",
+            "equal": true
+          }
+        },
+        "detection_checks": {
+          "face": {
+            "consistent": true,
+            "reason": null,
+            "cpu_count": 0,
+            "cuda_count": 0,
+            "matches": []
+          },
+          "subject": {
+            "consistent": true,
+            "reason": null,
+            "cpu_count": 0,
+            "cuda_count": 0,
+            "matches": []
+          }
+        }
+      }
+    },
+    {
+      "path": "C:\\Users\\Matann\\Desktop\\fivek_dataset\\raw_photos\\HQa2801to3500\\photos\\a3265-DSC_0253.dng",
+      "sha256": "957d506ce9861fe79729ef30555126bfcb50fff4ecba146bd4e165839928cc1d",
+      "status": "ok",
+      "preprocess_seconds": 0.6649379000009503,
+      "cpu_seconds": 0.9229030999995302,
+      "cuda_seconds": 0.6369938999996521,
+      "cpu": {
+        "state": "available",
+        "per_kind": {
+          "face": {
+            "state": "available",
+            "reason": null,
+            "detections": 1
+          },
+          "skin": {
+            "state": "unavailable",
+            "reason": "No validated skin-region detector is active. Color-threshold skin heuristics are intentionally disabled.",
+            "detections": 0
+          },
+          "subject": {
+            "state": "available",
+            "reason": null,
+            "detections": 2
+          }
+        },
+        "detections": [
+          {
+            "kind": "face",
+            "confidence": 0.912054717540741,
+            "box": {
+              "x": 0.6396357345581055,
+              "y": 0.2053654652721477,
+              "width": 0.2031061553955078,
+              "height": 0.3379518041070902
+            }
+          },
+          {
+            "kind": "subject",
+            "confidence": 0.8814816474914551,
+            "box": {
+              "x": 0.34291948017321133,
+              "y": 0.10426595739006642,
+              "width": 0.5706377932899876,
+              "height": 0.8879303917984266
+            }
+          },
+          {
+            "kind": "subject",
+            "confidence": 0.8480663299560547,
+            "box": {
+              "x": 0.0006293505430221558,
+              "y": 0.12840863467446623,
+              "width": 0.4249682719770231,
+              "height": 0.8615696593571561
+            }
+          }
+        ]
+      },
+      "cuda": {
+        "state": "available",
+        "per_kind": {
+          "face": {
+            "state": "available",
+            "reason": null,
+            "detections": 1
+          },
+          "skin": {
+            "state": "unavailable",
+            "reason": "No validated skin-region detector is active. Color-threshold skin heuristics are intentionally disabled.",
+            "detections": 0
+          },
+          "subject": {
+            "state": "available",
+            "reason": null,
+            "detections": 2
+          }
+        },
+        "detections": [
+          {
+            "kind": "face",
+            "confidence": 0.912054717540741,
+            "box": {
+              "x": 0.6396357345581055,
+              "y": 0.2053654652721477,
+              "width": 0.2031061553955078,
+              "height": 0.3379518041070902
+            }
+          },
+          {
+            "kind": "subject",
+            "confidence": 0.8812267184257507,
+            "box": {
+              "x": 0.3429678665964227,
+              "y": 0.10426372236386311,
+              "width": 0.5705820184004934,
+              "height": 0.8879329904899105
+            }
+          },
+          {
+            "kind": "subject",
+            "confidence": 0.8462480306625366,
+            "box": {
+              "x": 0.0006255656480789185,
+              "y": 0.12838095065498542,
+              "width": 0.4249817743113166,
+              "height": 0.8615976464310374
+            }
+          }
+        ]
+      },
+      "comparison": {
+        "consistent": true,
+        "state_checks": {
+          "face": {
+            "cpu": "available",
+            "cuda": "available",
+            "equal": true
+          },
+          "skin": {
+            "cpu": "unavailable",
+            "cuda": "unavailable",
+            "equal": true
+          },
+          "subject": {
+            "cpu": "available",
+            "cuda": "available",
+            "equal": true
+          }
+        },
+        "detection_checks": {
+          "face": {
+            "consistent": true,
+            "reason": null,
+            "cpu_count": 1,
+            "cuda_count": 1,
+            "matches": [
+              {
+                "cpu_index": 0,
+                "cuda_index": 0,
+                "iou": 0.9999999999999996,
+                "confidence_diff": 0.0,
+                "consistent": true
+              }
+            ]
+          },
+          "subject": {
+            "consistent": true,
+            "reason": null,
+            "cpu_count": 2,
+            "cuda_count": 2,
+            "matches": [
+              {
+                "cpu_index": 0,
+                "cuda_index": 0,
+                "iou": 0.9998993325797774,
+                "confidence_diff": 0.0002549290657043457,
+                "consistent": true
+              },
+              {
+                "cpu_index": 1,
+                "cuda_index": 1,
+                "iou": 0.9999357467061909,
+                "confidence_diff": 0.0018182992935180664,
+                "consistent": true
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "path": "C:\\Users\\Matann\\Desktop\\fivek_dataset\\raw_photos\\HQa2801to3500\\photos\\a3393-_DSC0057.dng",
+      "sha256": "99e29add7dbfb2e77bff755c63c1fcaaeb2ffc158270e5a7582e17fc56222799",
+      "status": "ok",
+      "preprocess_seconds": 0.6655930000124499,
+      "cpu_seconds": 0.8860716999915894,
+      "cuda_seconds": 0.9137666999886278,
+      "cpu": {
+        "state": "not_detected",
+        "per_kind": {
+          "face": {
+            "state": "not_detected",
+            "reason": null,
+            "detections": 0
+          },
+          "skin": {
+            "state": "unavailable",
+            "reason": "No validated skin-region detector is active. Color-threshold skin heuristics are intentionally disabled.",
+            "detections": 0
+          },
+          "subject": {
+            "state": "not_detected",
+            "reason": null,
+            "detections": 0
+          }
+        },
+        "detections": []
+      },
+      "cuda": {
+        "state": "not_detected",
+        "per_kind": {
+          "face": {
+            "state": "not_detected",
+            "reason": null,
+            "detections": 0
+          },
+          "skin": {
+            "state": "unavailable",
+            "reason": "No validated skin-region detector is active. Color-threshold skin heuristics are intentionally disabled.",
+            "detections": 0
+          },
+          "subject": {
+            "state": "not_detected",
+            "reason": null,
+            "detections": 0
+          }
+        },
+        "detections": []
+      },
+      "comparison": {
+        "consistent": true,
+        "state_checks": {
+          "face": {
+            "cpu": "not_detected",
+            "cuda": "not_detected",
+            "equal": true
+          },
+          "skin": {
+            "cpu": "unavailable",
+            "cuda": "unavailable",
+            "equal": true
+          },
+          "subject": {
+            "cpu": "not_detected",
+            "cuda": "not_detected",
+            "equal": true
+          }
+        },
+        "detection_checks": {
+          "face": {
+            "consistent": true,
+            "reason": null,
+            "cpu_count": 0,
+            "cuda_count": 0,
+            "matches": []
+          },
+          "subject": {
+            "consistent": true,
+            "reason": null,
+            "cpu_count": 0,
+            "cuda_count": 0,
+            "matches": []
+          }
+        }
+      }
+    },
+    {
+      "path": "C:\\Users\\Matann\\Desktop\\fivek_dataset\\raw_photos\\HQa3501to4200\\photos\\a3521-JI2E5091.dng",
+      "sha256": "3c4abd78f3612887cde987db78d2f0323a072e664c3da1e632845aa7074878b0",
+      "status": "ok",
+      "preprocess_seconds": 0.781217400013702,
+      "cpu_seconds": 1.0866030000033788,
+      "cuda_seconds": 0.9727943000034429,
+      "cpu": {
+        "state": "not_detected",
+        "per_kind": {
+          "face": {
+            "state": "not_detected",
+            "reason": null,
+            "detections": 0
+          },
+          "skin": {
+            "state": "unavailable",
+            "reason": "No validated skin-region detector is active. Color-threshold skin heuristics are intentionally disabled.",
+            "detections": 0
+          },
+          "subject": {
+            "state": "not_detected",
+            "reason": null,
+            "detections": 0
+          }
+        },
+        "detections": []
+      },
+      "cuda": {
+        "state": "not_detected",
+        "per_kind": {
+          "face": {
+            "state": "not_detected",
+            "reason": null,
+            "detections": 0
+          },
+          "skin": {
+            "state": "unavailable",
+            "reason": "No validated skin-region detector is active. Color-threshold skin heuristics are intentionally disabled.",
+            "detections": 0
+          },
+          "subject": {
+            "state": "not_detected",
+            "reason": null,
+            "detections": 0
+          }
+        },
+        "detections": []
+      },
+      "comparison": {
+        "consistent": true,
+        "state_checks": {
+          "face": {
+            "cpu": "not_detected",
+            "cuda": "not_detected",
+            "equal": true
+          },
+          "skin": {
+            "cpu": "unavailable",
+            "cuda": "unavailable",
+            "equal": true
+          },
+          "subject": {
+            "cpu": "not_detected",
+            "cuda": "not_detected",
+            "equal": true
+          }
+        },
+        "detection_checks": {
+          "face": {
+            "consistent": true,
+            "reason": null,
+            "cpu_count": 0,
+            "cuda_count": 0,
+            "matches": []
+          },
+          "subject": {
+            "consistent": true,
+            "reason": null,
+            "cpu_count": 0,
+            "cuda_count": 0,
+            "matches": []
+          }
+        }
+      }
+    },
+    {
+      "path": "C:\\Users\\Matann\\Desktop\\fivek_dataset\\raw_photos\\HQa3501to4200\\photos\\a3649-WP_CRW_0691.dng",
+      "sha256": "11768f8d400eef0d55945dd82a76cf3d6f5f21fc22729348ed6d76bcfae14be4",
+      "status": "ok",
+      "preprocess_seconds": 0.6994001000130083,
+      "cpu_seconds": 0.9039157000079285,
+      "cuda_seconds": 0.8093821999791544,
+      "cpu": {
+        "state": "available",
+        "per_kind": {
+          "face": {
+            "state": "not_detected",
+            "reason": null,
+            "detections": 0
+          },
+          "skin": {
+            "state": "unavailable",
+            "reason": "No validated skin-region detector is active. Color-threshold skin heuristics are intentionally disabled.",
+            "detections": 0
+          },
+          "subject": {
+            "state": "available",
+            "reason": null,
+            "detections": 5
+          }
+        },
+        "detections": [
+          {
+            "kind": "subject",
+            "confidence": 0.914650559425354,
+            "box": {
+              "x": 0.2870263422509576,
+              "y": 0.3548932248446608,
+              "width": 0.09635913418424732,
+              "height": 0.08030289565960978
+            }
+          },
+          {
+            "kind": "subject",
+            "confidence": 0.8306059837341309,
+            "box": {
+              "x": 0.4863480445475894,
+              "y": 0.3461985612780319,
+              "width": 0.056530815154198076,
+              "height": 0.05505292032666775
+            }
+          },
+          {
+            "kind": "subject",
+            "confidence": 0.8041430711746216,
+            "box": {
+              "x": 0.6549751489542801,
+              "y": 0.32554460436568977,
+              "width": 0.041692414636277965,
+              "height": 0.05536829498765382
+            }
+          },
+          {
+            "kind": "subject",
+            "confidence": 0.7782765030860901,
+            "box": {
+              "x": 0.7589052549132114,
+              "y": 0.3131422922401231,
+              "width": 0.0304722767395732,
+              "height": 0.038771278499939284
+            }
+          },
+          {
+            "kind": "subject",
+            "confidence": 0.7598879933357239,
+            "box": {
+              "x": 0.7317290547292984,
+              "y": 0.2843703037716564,
+              "width": 0.0288844127135518,
+              "height": 0.0469456806084035
+            }
+          }
+        ]
+      },
+      "cuda": {
+        "state": "available",
+        "per_kind": {
+          "face": {
+            "state": "not_detected",
+            "reason": null,
+            "detections": 0
+          },
+          "skin": {
+            "state": "unavailable",
+            "reason": "No validated skin-region detector is active. Color-threshold skin heuristics are intentionally disabled.",
+            "detections": 0
+          },
+          "subject": {
+            "state": "available",
+            "reason": null,
+            "detections": 5
+          }
+        },
+        "detections": [
+          {
+            "kind": "subject",
+            "confidence": 0.9146437048912048,
+            "box": {
+              "x": 0.28702675785999815,
+              "y": 0.35489350155845206,
+              "width": 0.09635949042056785,
+              "height": 0.08030333049556752
+            }
+          },
+          {
+            "kind": "subject",
+            "confidence": 0.8306807279586792,
+            "box": {
+              "x": 0.4863499444746322,
+              "y": 0.34619883799182316,
+              "width": 0.05652820275451423,
+              "height": 0.05505106239121195
+            }
+          },
+          {
+            "kind": "subject",
+            "confidence": 0.804230272769928,
+            "box": {
+              "x": 0.6549921295522252,
+              "y": 0.3255424499511719,
+              "width": 0.04167495905657223,
+              "height": 0.05537222827654428
+            }
+          },
+          {
+            "kind": "subject",
+            "confidence": 0.7783449292182922,
+            "box": {
+              "x": 0.7589070360948139,
+              "y": 0.3131428456677056,
+              "width": 0.030472395485013376,
+              "height": 0.03876942056448349
+            }
+          },
+          {
+            "kind": "subject",
+            "confidence": 0.7601734399795532,
+            "box": {
+              "x": 0.7317344576468263,
+              "y": 0.28437075837288495,
+              "width": 0.028878712932423396,
+              "height": 0.04694633286234011
+            }
+          }
+        ]
+      },
+      "comparison": {
+        "consistent": true,
+        "state_checks": {
+          "face": {
+            "cpu": "not_detected",
+            "cuda": "not_detected",
+            "equal": true
+          },
+          "skin": {
+            "cpu": "unavailable",
+            "cuda": "unavailable",
+            "equal": true
+          },
+          "subject": {
+            "cpu": "available",
+            "cuda": "available",
+            "equal": true
+          }
+        },
+        "detection_checks": {
+          "face": {
+            "consistent": true,
+            "reason": null,
+            "cpu_count": 0,
+            "cuda_count": 0,
+            "matches": []
+          },
+          "subject": {
+            "consistent": true,
+            "reason": null,
+            "cpu_count": 5,
+            "cuda_count": 5,
+            "matches": [
+              {
+                "cpu_index": 0,
+                "cuda_index": 0,
+                "iou": 0.9999753705107789,
+                "confidence_diff": 6.854534149169922e-06,
+                "consistent": true
+              },
+              {
+                "cpu_index": 1,
+                "cuda_index": 1,
+                "iou": 0.9999200414284958,
+                "confidence_diff": 7.474422454833984e-05,
+                "consistent": true
+              },
+              {
+                "cpu_index": 2,
+                "cuda_index": 2,
+                "iou": 0.999510350670206,
+                "confidence_diff": 8.720159530639648e-05,
+                "consistent": true
+              },
+              {
+                "cpu_index": 3,
+                "cuda_index": 3,
+                "iou": 0.9998312940090797,
+                "confidence_diff": 6.842613220214844e-05,
+                "consistent": true
+              },
+              {
+                "cpu_index": 4,
+                "cuda_index": 4,
+                "iou": 0.99976942039033,
+                "confidence_diff": 0.0002854466438293457,
+                "consistent": true
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "path": "C:\\Users\\Matann\\Desktop\\fivek_dataset\\raw_photos\\HQa3501to4200\\photos\\a3777-dgw_024.dng",
+      "sha256": "fc410219770b9b26c5b256f99f93033869f86282d2622965632ddb02c04de23d",
+      "status": "ok",
+      "preprocess_seconds": 0.9502191999927163,
+      "cpu_seconds": 1.363432800018927,
+      "cuda_seconds": 1.1786204999953043,
+      "cpu": {
+        "state": "available",
+        "per_kind": {
+          "face": {
+            "state": "available",
+            "reason": null,
+            "detections": 1
+          },
+          "skin": {
+            "state": "unavailable",
+            "reason": "No validated skin-region detector is active. Color-threshold skin heuristics are intentionally disabled.",
+            "detections": 0
+          },
+          "subject": {
+            "state": "available",
+            "reason": null,
+            "detections": 1
+          }
+        },
+        "detections": [
+          {
+            "kind": "face",
+            "confidence": 0.9357144236564636,
+            "box": {
+              "x": 0.3314122776527189,
+              "y": 0.09916963577270507,
+              "width": 0.1250834060927569,
+              "height": 0.10334914207458495
+            }
+          },
+          {
+            "kind": "subject",
+            "confidence": 0.9558170437812805,
+            "box": {
+              "x": 0.25022959004977585,
+              "y": 0.08333715871602547,
+              "width": 0.47722139640196465,
+              "height": 0.8848565152379311
+            }
+          }
+        ]
+      },
+      "cuda": {
+        "state": "available",
+        "per_kind": {
+          "face": {
+            "state": "available",
+            "reason": null,
+            "detections": 1
+          },
+          "skin": {
+            "state": "unavailable",
+            "reason": "No validated skin-region detector is active. Color-threshold skin heuristics are intentionally disabled.",
+            "detections": 0
+          },
+          "subject": {
+            "state": "available",
+            "reason": null,
+            "detections": 1
+          }
+        },
+        "detections": [
+          {
+            "kind": "face",
+            "confidence": 0.9357144236564636,
+            "box": {
+              "x": 0.3314122776527189,
+              "y": 0.09916963577270507,
+              "width": 0.1250834060927569,
+              "height": 0.10334914207458495
+            }
+          },
+          {
+            "kind": "subject",
+            "confidence": 0.9558407068252563,
+            "box": {
+              "x": 0.2502288818359375,
+              "y": 0.08333614716231545,
+              "width": 0.47721497955536873,
+              "height": 0.8848549053003363
+            }
+          }
+        ]
+      },
+      "comparison": {
+        "consistent": true,
+        "state_checks": {
+          "face": {
+            "cpu": "available",
+            "cuda": "available",
+            "equal": true
+          },
+          "skin": {
+            "cpu": "unavailable",
+            "cuda": "unavailable",
+            "equal": true
+          },
+          "subject": {
+            "cpu": "available",
+            "cuda": "available",
+            "equal": true
+          }
+        },
+        "detection_checks": {
+          "face": {
+            "consistent": true,
+            "reason": null,
+            "cpu_count": 1,
+            "cuda_count": 1,
+            "matches": [
+              {
+                "cpu_index": 0,
+                "cuda_index": 0,
+                "iou": 0.9999999999999994,
+                "confidence_diff": 0.0,
+                "consistent": true
+              }
+            ]
+          },
+          "subject": {
+            "consistent": true,
+            "reason": null,
+            "cpu_count": 1,
+            "cuda_count": 1,
+            "matches": [
+              {
+                "cpu_index": 0,
+                "cuda_index": 0,
+                "iou": 0.999979479976594,
+                "confidence_diff": 2.3663043975830078e-05,
+                "consistent": true
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "path": "C:\\Users\\Matann\\Desktop\\fivek_dataset\\raw_photos\\HQa3501to4200\\photos\\a3905-kme_177.dng",
+      "sha256": "fb752da9ec5fca2de6167ff88027f288dfe4547d2d4e6683ebb64cf69d1569c9",
+      "status": "ok",
+      "preprocess_seconds": 0.7690971000120044,
+      "cpu_seconds": 1.0420742999995127,
+      "cuda_seconds": 1.025989199988544,
+      "cpu": {
+        "state": "not_detected",
+        "per_kind": {
+          "face": {
+            "state": "not_detected",
+            "reason": null,
+            "detections": 0
+          },
+          "skin": {
+            "state": "unavailable",
+            "reason": "No validated skin-region detector is active. Color-threshold skin heuristics are intentionally disabled.",
+            "detections": 0
+          },
+          "subject": {
+            "state": "not_detected",
+            "reason": null,
+            "detections": 0
+          }
+        },
+        "detections": []
+      },
+      "cuda": {
+        "state": "not_detected",
+        "per_kind": {
+          "face": {
+            "state": "not_detected",
+            "reason": null,
+            "detections": 0
+          },
+          "skin": {
+            "state": "unavailable",
+            "reason": "No validated skin-region detector is active. Color-threshold skin heuristics are intentionally disabled.",
+            "detections": 0
+          },
+          "subject": {
+            "state": "not_detected",
+            "reason": null,
+            "detections": 0
+          }
+        },
+        "detections": []
+      },
+      "comparison": {
+        "consistent": true,
+        "state_checks": {
+          "face": {
+            "cpu": "not_detected",
+            "cuda": "not_detected",
+            "equal": true
+          },
+          "skin": {
+            "cpu": "unavailable",
+            "cuda": "unavailable",
+            "equal": true
+          },
+          "subject": {
+            "cpu": "not_detected",
+            "cuda": "not_detected",
+            "equal": true
+          }
+        },
+        "detection_checks": {
+          "face": {
+            "consistent": true,
+            "reason": null,
+            "cpu_count": 0,
+            "cuda_count": 0,
+            "matches": []
+          },
+          "subject": {
+            "consistent": true,
+            "reason": null,
+            "cpu_count": 0,
+            "cuda_count": 0,
+            "matches": []
+          }
+        }
+      }
+    },
+    {
+      "path": "C:\\Users\\Matann\\Desktop\\fivek_dataset\\raw_photos\\HQa3501to4200\\photos\\a4034-_DSC1291.dng",
+      "sha256": "8ee3cb9df1c84d719f6f5fd2dbc5af5a7cb3b996c865e89ad6025cdfbcebebfd",
+      "status": "ok",
+      "preprocess_seconds": 0.9341990000102669,
+      "cpu_seconds": 1.3455417999939527,
+      "cuda_seconds": 1.323488299996825,
+      "cpu": {
+        "state": "available",
+        "per_kind": {
+          "face": {
+            "state": "available",
+            "reason": null,
+            "detections": 2
+          },
+          "skin": {
+            "state": "unavailable",
+            "reason": "No validated skin-region detector is active. Color-threshold skin heuristics are intentionally disabled.",
+            "detections": 0
+          },
+          "subject": {
+            "state": "not_detected",
+            "reason": null,
+            "detections": 0
+          }
+        },
+        "detections": [
+          {
+            "kind": "face",
+            "confidence": 0.8635732531547546,
+            "box": {
+              "x": 0.648128662109375,
+              "y": 0.4304031975525247,
+              "width": 0.01380905032157898,
+              "height": 0.024270479737477563
+            }
+          },
+          {
+            "kind": "face",
+            "confidence": 0.855238676071167,
+            "box": {
+              "x": 0.20111223220825195,
+              "y": 0.377899917056556,
+              "width": 0.012648864984512329,
+              "height": 0.023954556711200493
+            }
+          }
+        ]
+      },
+      "cuda": {
+        "state": "available",
+        "per_kind": {
+          "face": {
+            "state": "available",
+            "reason": null,
+            "detections": 2
+          },
+          "skin": {
+            "state": "unavailable",
+            "reason": "No validated skin-region detector is active. Color-threshold skin heuristics are intentionally disabled.",
+            "detections": 0
+          },
+          "subject": {
+            "state": "not_detected",
+            "reason": null,
+            "detections": 0
+          }
+        },
+        "detections": [
+          {
+            "kind": "face",
+            "confidence": 0.8635732531547546,
+            "box": {
+              "x": 0.648128662109375,
+              "y": 0.4304031975525247,
+              "width": 0.01380905032157898,
+              "height": 0.024270479737477563
+            }
+          },
+          {
+            "kind": "face",
+            "confidence": 0.855238676071167,
+            "box": {
+              "x": 0.20111223220825195,
+              "y": 0.377899917056556,
+              "width": 0.012648864984512329,
+              "height": 0.023954556711200493
+            }
+          }
+        ]
+      },
+      "comparison": {
+        "consistent": true,
+        "state_checks": {
+          "face": {
+            "cpu": "available",
+            "cuda": "available",
+            "equal": true
+          },
+          "skin": {
+            "cpu": "unavailable",
+            "cuda": "unavailable",
+            "equal": true
+          },
+          "subject": {
+            "cpu": "not_detected",
+            "cuda": "not_detected",
+            "equal": true
+          }
+        },
+        "detection_checks": {
+          "face": {
+            "consistent": true,
+            "reason": null,
+            "cpu_count": 2,
+            "cuda_count": 2,
+            "matches": [
+              {
+                "cpu_index": 0,
+                "cuda_index": 0,
+                "iou": 1.0000000000000013,
+                "confidence_diff": 0.0,
+                "consistent": true
+              },
+              {
+                "cpu_index": 1,
+                "cuda_index": 1,
+                "iou": 0.9999999999999986,
+                "confidence_diff": 0.0,
+                "consistent": true
+              }
+            ]
+          },
+          "subject": {
+            "consistent": true,
+            "reason": null,
+            "cpu_count": 0,
+            "cuda_count": 0,
+            "matches": []
+          }
+        }
+      }
+    },
+    {
+      "path": "C:\\Users\\Matann\\Desktop\\fivek_dataset\\raw_photos\\HQa3501to4200\\photos\\a4162-IMG_3512.dng",
+      "sha256": "13ebb162b7909062c3bbd6b9ad7387e83ef12354cae9677b81eeb0a91ea61786",
+      "status": "ok",
+      "preprocess_seconds": 0.9910303000069689,
+      "cpu_seconds": 1.3468008999770973,
+      "cuda_seconds": 1.204583000013372,
+      "cpu": {
+        "state": "not_detected",
+        "per_kind": {
+          "face": {
+            "state": "not_detected",
+            "reason": null,
+            "detections": 0
+          },
+          "skin": {
+            "state": "unavailable",
+            "reason": "No validated skin-region detector is active. Color-threshold skin heuristics are intentionally disabled.",
+            "detections": 0
+          },
+          "subject": {
+            "state": "not_detected",
+            "reason": null,
+            "detections": 0
+          }
+        },
+        "detections": []
+      },
+      "cuda": {
+        "state": "not_detected",
+        "per_kind": {
+          "face": {
+            "state": "not_detected",
+            "reason": null,
+            "detections": 0
+          },
+          "skin": {
+            "state": "unavailable",
+            "reason": "No validated skin-region detector is active. Color-threshold skin heuristics are intentionally disabled.",
+            "detections": 0
+          },
+          "subject": {
+            "state": "not_detected",
+            "reason": null,
+            "detections": 0
+          }
+        },
+        "detections": []
+      },
+      "comparison": {
+        "consistent": true,
+        "state_checks": {
+          "face": {
+            "cpu": "not_detected",
+            "cuda": "not_detected",
+            "equal": true
+          },
+          "skin": {
+            "cpu": "unavailable",
+            "cuda": "unavailable",
+            "equal": true
+          },
+          "subject": {
+            "cpu": "not_detected",
+            "cuda": "not_detected",
+            "equal": true
+          }
+        },
+        "detection_checks": {
+          "face": {
+            "consistent": true,
+            "reason": null,
+            "cpu_count": 0,
+            "cuda_count": 0,
+            "matches": []
+          },
+          "subject": {
+            "consistent": true,
+            "reason": null,
+            "cpu_count": 0,
+            "cuda_count": 0,
+            "matches": []
+          }
+        }
+      }
+    },
+    {
+      "path": "C:\\Users\\Matann\\Desktop\\fivek_dataset\\raw_photos\\HQa4201to5000\\photos\\a4290-DSC_0012.dng",
+      "sha256": "2bbf90a7155eb91f35ff9dc5233d29d9268da52ede4342313ace95b0d7ad72a0",
+      "status": "ok",
+      "preprocess_seconds": 0.6859299999778159,
+      "cpu_seconds": 0.8584514000103809,
+      "cuda_seconds": 0.7985280999855604,
+      "cpu": {
+        "state": "not_detected",
+        "per_kind": {
+          "face": {
+            "state": "not_detected",
+            "reason": null,
+            "detections": 0
+          },
+          "skin": {
+            "state": "unavailable",
+            "reason": "No validated skin-region detector is active. Color-threshold skin heuristics are intentionally disabled.",
+            "detections": 0
+          },
+          "subject": {
+            "state": "not_detected",
+            "reason": null,
+            "detections": 0
+          }
+        },
+        "detections": []
+      },
+      "cuda": {
+        "state": "not_detected",
+        "per_kind": {
+          "face": {
+            "state": "not_detected",
+            "reason": null,
+            "detections": 0
+          },
+          "skin": {
+            "state": "unavailable",
+            "reason": "No validated skin-region detector is active. Color-threshold skin heuristics are intentionally disabled.",
+            "detections": 0
+          },
+          "subject": {
+            "state": "not_detected",
+            "reason": null,
+            "detections": 0
+          }
+        },
+        "detections": []
+      },
+      "comparison": {
+        "consistent": true,
+        "state_checks": {
+          "face": {
+            "cpu": "not_detected",
+            "cuda": "not_detected",
+            "equal": true
+          },
+          "skin": {
+            "cpu": "unavailable",
+            "cuda": "unavailable",
+            "equal": true
+          },
+          "subject": {
+            "cpu": "not_detected",
+            "cuda": "not_detected",
+            "equal": true
+          }
+        },
+        "detection_checks": {
+          "face": {
+            "consistent": true,
+            "reason": null,
+            "cpu_count": 0,
+            "cuda_count": 0,
+            "matches": []
+          },
+          "subject": {
+            "consistent": true,
+            "reason": null,
+            "cpu_count": 0,
+            "cuda_count": 0,
+            "matches": []
+          }
+        }
+      }
+    },
+    {
+      "path": "C:\\Users\\Matann\\Desktop\\fivek_dataset\\raw_photos\\HQa4201to5000\\photos\\a4418-kme_0663.dng",
+      "sha256": "33334e81673335be56020258cc44ac4f30537a3360709e04abdc5840b09424d5",
+      "status": "ok",
+      "preprocess_seconds": 1.4837266000104137,
+      "cpu_seconds": 2.434051200019894,
+      "cuda_seconds": 2.3612264999828767,
+      "cpu": {
+        "state": "available",
+        "per_kind": {
+          "face": {
+            "state": "available",
+            "reason": null,
+            "detections": 3
+          },
+          "skin": {
+            "state": "unavailable",
+            "reason": "No validated skin-region detector is active. Color-threshold skin heuristics are intentionally disabled.",
+            "detections": 0
+          },
+          "subject": {
+            "state": "available",
+            "reason": null,
+            "detections": 6
+          }
+        },
+        "detections": [
+          {
+            "kind": "face",
+            "confidence": 0.8843017816543579,
+            "box": {
+              "x": 0.07087635040283204,
+              "y": 0.0,
+              "width": 0.2522825622558594,
+              "height": 0.4273715023703418
+            }
+          },
+          {
+            "kind": "face",
+            "confidence": 0.883747935295105,
+            "box": {
+              "x": 0.28858705520629885,
+              "y": 0.34032223123899646,
+              "width": 0.05811751365661621,
+              "height": 0.107200185569799
+            }
+          },
+          {
+            "kind": "face",
+            "confidence": 0.8712835907936096,
+            "box": {
+              "x": 0.44943584442138673,
+              "y": 0.40105885966842725,
+              "width": 0.056197404861450195,
+              "height": 0.12533156703895246
+            }
+          },
+          {
+            "kind": "subject",
+            "confidence": 0.9727841019630432,
+            "box": {
+              "x": 0.0008963197469711304,
+              "y": 0.0,
+              "width": 0.43874252077780274,
+              "height": 0.9949594731387413
+            }
+          },
+          {
+            "kind": "subject",
+            "confidence": 0.9305159449577332,
+            "box": {
+              "x": 0.38072871157997534,
+              "y": 0.36451835783102765,
+              "width": 0.17844487240439968,
+              "height": 0.631243438117589
+            }
+          },
+          {
+            "kind": "subject",
+            "confidence": 0.8440163731575012,
+            "box": {
+              "x": 0.34530434859426395,
+              "y": 0.39902095266952814,
+              "width": 0.060208852667557565,
+              "height": 0.12551186301491477
+            }
+          },
+          {
+            "kind": "subject",
+            "confidence": 0.8244921565055847,
+            "box": {
+              "x": 0.2623286197060033,
+              "y": 0.31672900655995245,
+              "width": 0.08625889828330592,
+              "height": 0.14177538001019022
+            }
+          },
+          {
+            "kind": "subject",
+            "confidence": 0.808179497718811,
+            "box": {
+              "x": 0.485150829114412,
+              "y": 0.35725252053483203,
+              "width": 0.07283911454050164,
+              "height": 0.18445807294883276
+            }
+          },
+          {
+            "kind": "subject",
+            "confidence": 0.7461763024330139,
+            "box": {
+              "x": 0.4692419353284334,
+              "y": 0.4138273759321733,
+              "width": 0.10352317408511513,
+              "height": 0.5797135123151093
+            }
+          }
+        ]
+      },
+      "cuda": {
+        "state": "available",
+        "per_kind": {
+          "face": {
+            "state": "available",
+            "reason": null,
+            "detections": 3
+          },
+          "skin": {
+            "state": "unavailable",
+            "reason": "No validated skin-region detector is active. Color-threshold skin heuristics are intentionally disabled.",
+            "detections": 0
+          },
+          "subject": {
+            "state": "available",
+            "reason": null,
+            "detections": 6
+          }
+        },
+        "detections": [
+          {
+            "kind": "face",
+            "confidence": 0.8843017816543579,
+            "box": {
+              "x": 0.07087635040283204,
+              "y": 0.0,
+              "width": 0.2522825622558594,
+              "height": 0.4273715023703418
+            }
+          },
+          {
+            "kind": "face",
+            "confidence": 0.883747935295105,
+            "box": {
+              "x": 0.28858705520629885,
+              "y": 0.34032223123899646,
+              "width": 0.05811751365661621,
+              "height": 0.107200185569799
+            }
+          },
+          {
+            "kind": "face",
+            "confidence": 0.8712835907936096,
+            "box": {
+              "x": 0.44943584442138673,
+              "y": 0.40105885966842725,
+              "width": 0.056197404861450195,
+              "height": 0.12533156703895246
+            }
+          },
+          {
+            "kind": "subject",
+            "confidence": 0.9727354645729065,
+            "box": {
+              "x": 0.0008987784385681152,
+              "y": 0.0,
+              "width": 0.4387955157380355,
+              "height": 0.9949480139690897
+            }
+          },
+          {
+            "kind": "subject",
+            "confidence": 0.93062424659729,
+            "box": {
+              "x": 0.38073252627724097,
+              "y": 0.3645144375887784,
+              "width": 0.17843162135074014,
+              "height": 0.6312538719931139
+            }
+          },
+          {
+            "kind": "subject",
+            "confidence": 0.8439649343490601,
+            "box": {
+              "x": 0.34532101279810856,
+              "y": 0.3990230032577816,
+              "width": 0.06018837376644737,
+              "height": 0.12551047585227273
+            }
+          },
+          {
+            "kind": "subject",
+            "confidence": 0.824631929397583,
+            "box": {
+              "x": 0.2623398831016139,
+              "y": 0.3167228849509017,
+              "width": 0.08624847813656455,
+              "height": 0.1417909102006392
+            }
+          },
+          {
+            "kind": "subject",
+            "confidence": 0.8082175254821777,
+            "box": {
+              "x": 0.4851517526726974,
+              "y": 0.3572502890123209,
+              "width": 0.07283963655170642,
+              "height": 0.1845242345757164
+            }
+          },
+          {
+            "kind": "subject",
+            "confidence": 0.7463646531105042,
+            "box": {
+              "x": 0.4692731355365954,
+              "y": 0.41396962041440216,
+              "width": 0.10348358154296874,
+              "height": 0.5795652970023777
+            }
+          }
+        ]
+      },
+      "comparison": {
+        "consistent": true,
+        "state_checks": {
+          "face": {
+            "cpu": "available",
+            "cuda": "available",
+            "equal": true
+          },
+          "skin": {
+            "cpu": "unavailable",
+            "cuda": "unavailable",
+            "equal": true
+          },
+          "subject": {
+            "cpu": "available",
+            "cuda": "available",
+            "equal": true
+          }
+        },
+        "detection_checks": {
+          "face": {
+            "consistent": true,
+            "reason": null,
+            "cpu_count": 3,
+            "cuda_count": 3,
+            "matches": [
+              {
+                "cpu_index": 0,
+                "cuda_index": 0,
+                "iou": 1.0,
+                "confidence_diff": 0.0,
+                "consistent": true
+              },
+              {
+                "cpu_index": 1,
+                "cuda_index": 1,
+                "iou": 1.0,
+                "confidence_diff": 0.0,
+                "consistent": true
+              },
+              {
+                "cpu_index": 2,
+                "cuda_index": 2,
+                "iou": 0.9999999999999996,
+                "confidence_diff": 0.0,
+                "consistent": true
+              }
+            ]
+          },
+          "subject": {
+            "consistent": true,
+            "reason": null,
+            "cpu_count": 6,
+            "cuda_count": 6,
+            "matches": [
+              {
+                "cpu_index": 0,
+                "cuda_index": 0,
+                "iou": 0.9998565062387718,
+                "confidence_diff": 4.863739013671875e-05,
+                "consistent": true
+              },
+              {
+                "cpu_index": 1,
+                "cuda_index": 1,
+                "iou": 0.9999092151157705,
+                "confidence_diff": 0.00010830163955688477,
+                "consistent": true
+              },
+              {
+                "cpu_index": 2,
+                "cuda_index": 2,
+                "iou": 0.9996382546379619,
+                "confidence_diff": 5.143880844116211e-05,
+                "consistent": true
+              },
+              {
+                "cpu_index": 3,
+                "cuda_index": 3,
+                "iou": 0.9997501498146013,
+                "confidence_diff": 0.00013977289199829102,
+                "consistent": true
+              },
+              {
+                "cpu_index": 4,
+                "cuda_index": 4,
+                "iou": 0.9996089388564583,
+                "confidence_diff": 3.802776336669922e-05,
+                "consistent": true
+              },
+              {
+                "cpu_index": 5,
+                "cuda_index": 5,
+                "iou": 0.999361976845173,
+                "confidence_diff": 0.00018835067749023438,
+                "consistent": true
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "path": "C:\\Users\\Matann\\Desktop\\fivek_dataset\\raw_photos\\HQa4201to5000\\photos\\a4546-Duggan_081010_1913.dng",
+      "sha256": "d7f9465fa33c20d53cd969a1e1efc383cf9addc28f39a79fa52c0e2659e8027b",
+      "status": "ok",
+      "preprocess_seconds": 0.945535499980906,
+      "cpu_seconds": 1.527814800007036,
+      "cuda_seconds": 1.1989760999858845,
+      "cpu": {
+        "state": "not_detected",
+        "per_kind": {
+          "face": {
+            "state": "not_detected",
+            "reason": null,
+            "detections": 0
+          },
+          "skin": {
+            "state": "unavailable",
+            "reason": "No validated skin-region detector is active. Color-threshold skin heuristics are intentionally disabled.",
+            "detections": 0
+          },
+          "subject": {
+            "state": "not_detected",
+            "reason": null,
+            "detections": 0
+          }
+        },
+        "detections": []
+      },
+      "cuda": {
+        "state": "not_detected",
+        "per_kind": {
+          "face": {
+            "state": "not_detected",
+            "reason": null,
+            "detections": 0
+          },
+          "skin": {
+            "state": "unavailable",
+            "reason": "No validated skin-region detector is active. Color-threshold skin heuristics are intentionally disabled.",
+            "detections": 0
+          },
+          "subject": {
+            "state": "not_detected",
+            "reason": null,
+            "detections": 0
+          }
+        },
+        "detections": []
+      },
+      "comparison": {
+        "consistent": true,
+        "state_checks": {
+          "face": {
+            "cpu": "not_detected",
+            "cuda": "not_detected",
+            "equal": true
+          },
+          "skin": {
+            "cpu": "unavailable",
+            "cuda": "unavailable",
+            "equal": true
+          },
+          "subject": {
+            "cpu": "not_detected",
+            "cuda": "not_detected",
+            "equal": true
+          }
+        },
+        "detection_checks": {
+          "face": {
+            "consistent": true,
+            "reason": null,
+            "cpu_count": 0,
+            "cuda_count": 0,
+            "matches": []
+          },
+          "subject": {
+            "consistent": true,
+            "reason": null,
+            "cpu_count": 0,
+            "cuda_count": 0,
+            "matches": []
+          }
+        }
+      }
+    },
+    {
+      "path": "C:\\Users\\Matann\\Desktop\\fivek_dataset\\raw_photos\\HQa4201to5000\\photos\\a4675-20090519_at_22h53m13__MG_9649.dng",
+      "sha256": "fe7c98e189d7dca34635cee36e278fab1a2a064dd48befb55d4a887a35342f53",
+      "status": "ok",
+      "preprocess_seconds": 1.2875950000016019,
+      "cpu_seconds": 2.144094599992968,
+      "cuda_seconds": 2.076675599993905,
+      "cpu": {
+        "state": "available",
+        "per_kind": {
+          "face": {
+            "state": "available",
+            "reason": null,
+            "detections": 2
+          },
+          "skin": {
+            "state": "unavailable",
+            "reason": "No validated skin-region detector is active. Color-threshold skin heuristics are intentionally disabled.",
+            "detections": 0
+          },
+          "subject": {
+            "state": "available",
+            "reason": null,
+            "detections": 3
+          }
+        },
+        "detections": [
+          {
+            "kind": "face",
+            "confidence": 0.9352321028709412,
+            "box": {
+              "x": 0.1696263885498047,
+              "y": 0.7495517408646517,
+              "width": 0.09605157852172852,
+              "height": 0.19507656133197263
+            }
+          },
+          {
+            "kind": "face",
+            "confidence": 0.9195271134376526,
+            "box": {
+              "x": 0.9237908935546875,
+              "y": 0.814597353478981,
+              "width": 0.0762091064453125,
+              "height": 0.17923967028648277
+            }
+          },
+          {
+            "kind": "subject",
+            "confidence": 0.9438159465789795,
+            "box": {
+              "x": 0.35914966608981186,
+              "y": 0.35302125975521387,
+              "width": 0.5089265161852148,
+              "height": 0.6391232293297742
+            }
+          },
+          {
+            "kind": "subject",
+            "confidence": 0.9094166159629822,
+            "box": {
+              "x": 0.1402819724551828,
+              "y": 0.7124133404892391,
+              "width": 0.2368120729055733,
+              "height": 0.2832557011260661
+            }
+          },
+          {
+            "kind": "subject",
+            "confidence": 0.8610956072807312,
+            "box": {
+              "x": 0.8655427357894037,
+              "y": 0.7734335958322228,
+              "width": 0.1341177900082091,
+              "height": 0.22484141270489072
+            }
+          }
+        ]
+      },
+      "cuda": {
+        "state": "available",
+        "per_kind": {
+          "face": {
+            "state": "available",
+            "reason": null,
+            "detections": 2
+          },
+          "skin": {
+            "state": "unavailable",
+            "reason": "No validated skin-region detector is active. Color-threshold skin heuristics are intentionally disabled.",
+            "detections": 0
+          },
+          "subject": {
+            "state": "available",
+            "reason": null,
+            "detections": 3
+          }
+        },
+        "detections": [
+          {
+            "kind": "face",
+            "confidence": 0.9352321028709412,
+            "box": {
+              "x": 0.1696263885498047,
+              "y": 0.7495517408646517,
+              "width": 0.09605157852172852,
+              "height": 0.19507656133197263
+            }
+          },
+          {
+            "kind": "face",
+            "confidence": 0.9195271134376526,
+            "box": {
+              "x": 0.9237908935546875,
+              "y": 0.814597353478981,
+              "width": 0.0762091064453125,
+              "height": 0.17923967028648277
+            }
+          },
+          {
+            "kind": "subject",
+            "confidence": 0.9438712000846863,
+            "box": {
+              "x": 0.35914921108864706,
+              "y": 0.353028775278185,
+              "width": 0.5089296578599242,
+              "height": 0.6391084260269523
+            }
+          },
+          {
+            "kind": "subject",
+            "confidence": 0.9094427227973938,
+            "box": {
+              "x": 0.14028368412623135,
+              "y": 0.7124154877815165,
+              "width": 0.2368068945589834,
+              "height": 0.28325075584688164
+            }
+          },
+          {
+            "kind": "subject",
+            "confidence": 0.861138641834259,
+            "box": {
+              "x": 0.8655474158013845,
+              "y": 0.7734354828466484,
+              "width": 0.13411232999423145,
+              "height": 0.22483750853711354
+            }
+          }
+        ]
+      },
+      "comparison": {
+        "consistent": true,
+        "state_checks": {
+          "face": {
+            "cpu": "available",
+            "cuda": "available",
+            "equal": true
+          },
+          "skin": {
+            "cpu": "unavailable",
+            "cuda": "unavailable",
+            "equal": true
+          },
+          "subject": {
+            "cpu": "available",
+            "cuda": "available",
+            "equal": true
+          }
+        },
+        "detection_checks": {
+          "face": {
+            "consistent": true,
+            "reason": null,
+            "cpu_count": 2,
+            "cuda_count": 2,
+            "matches": [
+              {
+                "cpu_index": 0,
+                "cuda_index": 0,
+                "iou": 1.0000000000000004,
+                "confidence_diff": 0.0,
+                "consistent": true
+              },
+              {
+                "cpu_index": 1,
+                "cuda_index": 1,
+                "iou": 1.0000000000000016,
+                "confidence_diff": 0.0,
+                "consistent": true
+              }
+            ]
+          },
+          "subject": {
+            "consistent": true,
+            "reason": null,
+            "cpu_count": 3,
+            "cuda_count": 3,
+            "matches": [
+              {
+                "cpu_index": 0,
+                "cuda_index": 0,
+                "iou": 0.9999706652925281,
+                "confidence_diff": 5.525350570678711e-05,
+                "consistent": true
+              },
+              {
+                "cpu_index": 1,
+                "cuda_index": 1,
+                "iou": 0.9999606747687763,
+                "confidence_diff": 2.6106834411621094e-05,
+                "consistent": true
+              },
+              {
+                "cpu_index": 2,
+                "cuda_index": 2,
+                "iou": 0.9999419260241951,
+                "confidence_diff": 4.303455352783203e-05,
+                "consistent": true
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "path": "C:\\Users\\Matann\\Desktop\\fivek_dataset\\raw_photos\\HQa4201to5000\\photos\\a4803-DSC_0017-2.dng",
+      "sha256": "f5bcc60c48fbc505f16b968f04eae6d7384526360a2af280e472ad2c6236da8b",
+      "status": "ok",
+      "preprocess_seconds": 0.7055986000050325,
+      "cpu_seconds": 0.8869174999999814,
+      "cuda_seconds": 0.6491397999925539,
+      "cpu": {
+        "state": "not_detected",
+        "per_kind": {
+          "face": {
+            "state": "not_detected",
+            "reason": null,
+            "detections": 0
+          },
+          "skin": {
+            "state": "unavailable",
+            "reason": "No validated skin-region detector is active. Color-threshold skin heuristics are intentionally disabled.",
+            "detections": 0
+          },
+          "subject": {
+            "state": "not_detected",
+            "reason": null,
+            "detections": 0
+          }
+        },
+        "detections": []
+      },
+      "cuda": {
+        "state": "not_detected",
+        "per_kind": {
+          "face": {
+            "state": "not_detected",
+            "reason": null,
+            "detections": 0
+          },
+          "skin": {
+            "state": "unavailable",
+            "reason": "No validated skin-region detector is active. Color-threshold skin heuristics are intentionally disabled.",
+            "detections": 0
+          },
+          "subject": {
+            "state": "not_detected",
+            "reason": null,
+            "detections": 0
+          }
+        },
+        "detections": []
+      },
+      "comparison": {
+        "consistent": true,
+        "state_checks": {
+          "face": {
+            "cpu": "not_detected",
+            "cuda": "not_detected",
+            "equal": true
+          },
+          "skin": {
+            "cpu": "unavailable",
+            "cuda": "unavailable",
+            "equal": true
+          },
+          "subject": {
+            "cpu": "not_detected",
+            "cuda": "not_detected",
+            "equal": true
+          }
+        },
+        "detection_checks": {
+          "face": {
+            "consistent": true,
+            "reason": null,
+            "cpu_count": 0,
+            "cuda_count": 0,
+            "matches": []
+          },
+          "subject": {
+            "consistent": true,
+            "reason": null,
+            "cpu_count": 0,
+            "cuda_count": 0,
+            "matches": []
+          }
+        }
+      }
+    },
+    {
+      "path": "C:\\Users\\Matann\\Desktop\\fivek_dataset\\raw_photos\\HQa4201to5000\\photos\\a4931-Duggan_090428_8054.dng",
+      "sha256": "ae1b0d640c35c9a7c459c2837f63d66cc81d3e2a432f81bd34745672a827a286",
+      "status": "ok",
+      "preprocess_seconds": 0.9623148999817204,
+      "cpu_seconds": 1.4573536000098102,
+      "cuda_seconds": 1.3809523999807425,
+      "cpu": {
+        "state": "not_detected",
+        "per_kind": {
+          "face": {
+            "state": "not_detected",
+            "reason": null,
+            "detections": 0
+          },
+          "skin": {
+            "state": "unavailable",
+            "reason": "No validated skin-region detector is active. Color-threshold skin heuristics are intentionally disabled.",
+            "detections": 0
+          },
+          "subject": {
+            "state": "not_detected",
+            "reason": null,
+            "detections": 0
+          }
+        },
+        "detections": []
+      },
+      "cuda": {
+        "state": "not_detected",
+        "per_kind": {
+          "face": {
+            "state": "not_detected",
+            "reason": null,
+            "detections": 0
+          },
+          "skin": {
+            "state": "unavailable",
+            "reason": "No validated skin-region detector is active. Color-threshold skin heuristics are intentionally disabled.",
+            "detections": 0
+          },
+          "subject": {
+            "state": "not_detected",
+            "reason": null,
+            "detections": 0
+          }
+        },
+        "detections": []
+      },
+      "comparison": {
+        "consistent": true,
+        "state_checks": {
+          "face": {
+            "cpu": "not_detected",
+            "cuda": "not_detected",
+            "equal": true
+          },
+          "skin": {
+            "cpu": "unavailable",
+            "cuda": "unavailable",
+            "equal": true
+          },
+          "subject": {
+            "cpu": "not_detected",
+            "cuda": "not_detected",
+            "equal": true
+          }
+        },
+        "detection_checks": {
+          "face": {
+            "consistent": true,
+            "reason": null,
+            "cpu_count": 0,
+            "cuda_count": 0,
+            "matches": []
+          },
+          "subject": {
+            "consistent": true,
+            "reason": null,
+            "cpu_count": 0,
+            "cuda_count": 0,
+            "matches": []
+          }
+        }
+      }
+    },
+    {
+      "path": "C:\\Users\\Matann\\Desktop\\fivek_dataset\\raw_photos\\HQa701to1400\\photos\\a0759-IMG_3533.dng",
+      "sha256": "c2a2b958ba6d3361e6f570103636493374654441a0d6938e2b17dd37bbd3d099",
+      "status": "ok",
+      "preprocess_seconds": 0.9120948000054341,
+      "cpu_seconds": 1.402437300013844,
+      "cuda_seconds": 1.414114699990023,
+      "cpu": {
+        "state": "not_detected",
+        "per_kind": {
+          "face": {
+            "state": "not_detected",
+            "reason": null,
+            "detections": 0
+          },
+          "skin": {
+            "state": "unavailable",
+            "reason": "No validated skin-region detector is active. Color-threshold skin heuristics are intentionally disabled.",
+            "detections": 0
+          },
+          "subject": {
+            "state": "not_detected",
+            "reason": null,
+            "detections": 0
+          }
+        },
+        "detections": []
+      },
+      "cuda": {
+        "state": "not_detected",
+        "per_kind": {
+          "face": {
+            "state": "not_detected",
+            "reason": null,
+            "detections": 0
+          },
+          "skin": {
+            "state": "unavailable",
+            "reason": "No validated skin-region detector is active. Color-threshold skin heuristics are intentionally disabled.",
+            "detections": 0
+          },
+          "subject": {
+            "state": "not_detected",
+            "reason": null,
+            "detections": 0
+          }
+        },
+        "detections": []
+      },
+      "comparison": {
+        "consistent": true,
+        "state_checks": {
+          "face": {
+            "cpu": "not_detected",
+            "cuda": "not_detected",
+            "equal": true
+          },
+          "skin": {
+            "cpu": "unavailable",
+            "cuda": "unavailable",
+            "equal": true
+          },
+          "subject": {
+            "cpu": "not_detected",
+            "cuda": "not_detected",
+            "equal": true
+          }
+        },
+        "detection_checks": {
+          "face": {
+            "consistent": true,
+            "reason": null,
+            "cpu_count": 0,
+            "cuda_count": 0,
+            "matches": []
+          },
+          "subject": {
+            "consistent": true,
+            "reason": null,
+            "cpu_count": 0,
+            "cuda_count": 0,
+            "matches": []
+          }
+        }
+      }
+    },
+    {
+      "path": "C:\\Users\\Matann\\Desktop\\fivek_dataset\\raw_photos\\HQa701to1400\\photos\\a0887-_DSC5906.dng",
+      "sha256": "1b9eca315f74ef38a2f4c985862bef9048b5e97b35574f082ced0c902f56e218",
+      "status": "ok",
+      "preprocess_seconds": 0.9956039999960922,
+      "cpu_seconds": 1.3808436999970581,
+      "cuda_seconds": 1.1886845999979414,
+      "cpu": {
+        "state": "available",
+        "per_kind": {
+          "face": {
+            "state": "available",
+            "reason": null,
+            "detections": 1
+          },
+          "skin": {
+            "state": "unavailable",
+            "reason": "No validated skin-region detector is active. Color-threshold skin heuristics are intentionally disabled.",
+            "detections": 0
+          },
+          "subject": {
+            "state": "available",
+            "reason": null,
+            "detections": 4
+          }
+        },
+        "detections": [
+          {
+            "kind": "face",
+            "confidence": 0.9012477993965149,
+            "box": {
+              "x": 0.6178474807739258,
+              "y": 0.487471528421463,
+              "width": 0.04423095226287842,
+              "height": 0.0857792223914195
+            }
+          },
+          {
+            "kind": "subject",
+            "confidence": 0.8996139764785767,
+            "box": {
+              "x": 0.007652417173127389,
+              "y": 0.6106950247505714,
+              "width": 0.04544412611134135,
+              "height": 0.12265671355814874
+            }
+          },
+          {
+            "kind": "subject",
+            "confidence": 0.8555546402931213,
+            "box": {
+              "x": 0.05506139732097266,
+              "y": 0.6172528702833817,
+              "width": 0.025986686585441468,
+              "height": 0.09775784649426424
+            }
+          },
+          {
+            "kind": "subject",
+            "confidence": 0.8453109264373779,
+            "box": {
+              "x": 0.08362123434171846,
+              "y": 0.6205660663073576,
+              "width": 0.03345210968501984,
+              "height": 0.10127114511911041
+            }
+          },
+          {
+            "kind": "subject",
+            "confidence": 0.702973484992981,
+            "box": {
+              "x": 0.15739597637557629,
+              "y": 0.6362587973035337,
+              "width": 0.015065995473710318,
+              "height": 0.048438049402250355
+            }
+          }
+        ]
+      },
+      "cuda": {
+        "state": "available",
+        "per_kind": {
+          "face": {
+            "state": "available",
+            "reason": null,
+            "detections": 1
+          },
+          "skin": {
+            "state": "unavailable",
+            "reason": "No validated skin-region detector is active. Color-threshold skin heuristics are intentionally disabled.",
+            "detections": 0
+          },
+          "subject": {
+            "state": "available",
+            "reason": null,
+            "detections": 4
+          }
+        },
+        "detections": [
+          {
+            "kind": "face",
+            "confidence": 0.9012477993965149,
+            "box": {
+              "x": 0.6178474807739258,
+              "y": 0.487471528421463,
+              "width": 0.04423095226287842,
+              "height": 0.0857792223914195
+            }
+          },
+          {
+            "kind": "subject",
+            "confidence": 0.8996390700340271,
+            "box": {
+              "x": 0.007653547156981282,
+              "y": 0.6106942950757076,
+              "width": 0.045444520581670166,
+              "height": 0.12265847336223189
+            }
+          },
+          {
+            "kind": "subject",
+            "confidence": 0.8556643128395081,
+            "box": {
+              "x": 0.05505997615924625,
+              "y": 0.6172517113880098,
+              "width": 0.02598880586170015,
+              "height": 0.09776016428500792
+            }
+          },
+          {
+            "kind": "subject",
+            "confidence": 0.8452791571617126,
+            "box": {
+              "x": 0.08361326301353875,
+              "y": 0.6205663238396625,
+              "width": 0.033460522677495476,
+              "height": 0.10127148849551688
+            }
+          },
+          {
+            "kind": "subject",
+            "confidence": 0.7030078172683716,
+            "box": {
+              "x": 0.15739564868916317,
+              "y": 0.6362606429517186,
+              "width": 0.015065454078766924,
+              "height": 0.04843637544226881
+            }
+          }
+        ]
+      },
+      "comparison": {
+        "consistent": true,
+        "state_checks": {
+          "face": {
+            "cpu": "available",
+            "cuda": "available",
+            "equal": true
+          },
+          "skin": {
+            "cpu": "unavailable",
+            "cuda": "unavailable",
+            "equal": true
+          },
+          "subject": {
+            "cpu": "available",
+            "cuda": "available",
+            "equal": true
+          }
+        },
+        "detection_checks": {
+          "face": {
+            "consistent": true,
+            "reason": null,
+            "cpu_count": 1,
+            "cuda_count": 1,
+            "matches": [
+              {
+                "cpu_index": 0,
+                "cuda_index": 0,
+                "iou": 1.0000000000000018,
+                "confidence_diff": 0.0,
+                "consistent": true
+              }
+            ]
+          },
+          "subject": {
+            "consistent": true,
+            "reason": null,
+            "cpu_count": 4,
+            "cuda_count": 4,
+            "matches": [
+              {
+                "cpu_index": 0,
+                "cuda_index": 0,
+                "iou": 0.9999272449407492,
+                "confidence_diff": 2.5093555450439453e-05,
+                "consistent": true
+              },
+              {
+                "cpu_index": 1,
+                "cuda_index": 1,
+                "iou": 0.9998947472500782,
+                "confidence_diff": 0.00010967254638671875,
+                "consistent": true
+              },
+              {
+                "cpu_index": 2,
+                "cuda_index": 2,
+                "iou": 0.9997400957650189,
+                "confidence_diff": 3.17692756652832e-05,
+                "consistent": true
+              },
+              {
+                "cpu_index": 3,
+                "cuda_index": 3,
+                "iou": 0.9998789234260256,
+                "confidence_diff": 3.4332275390625e-05,
+                "consistent": true
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "path": "C:\\Users\\Matann\\Desktop\\fivek_dataset\\raw_photos\\HQa701to1400\\photos\\a1015-_DSC5571.dng",
+      "sha256": "6782850640419aa3efbf5b80a18fb541af3cd322a60b8e5452244d81ebaaa79b",
+      "status": "ok",
+      "preprocess_seconds": 0.9557349999959115,
+      "cpu_seconds": 1.362425200000871,
+      "cuda_seconds": 1.3566434000094887,
+      "cpu": {
+        "state": "available",
+        "per_kind": {
+          "face": {
+            "state": "not_detected",
+            "reason": null,
+            "detections": 0
+          },
+          "skin": {
+            "state": "unavailable",
+            "reason": "No validated skin-region detector is active. Color-threshold skin heuristics are intentionally disabled.",
+            "detections": 0
+          },
+          "subject": {
+            "state": "available",
+            "reason": null,
+            "detections": 1
+          }
+        },
+        "detections": [
+          {
+            "kind": "subject",
+            "confidence": 0.9646955728530884,
+            "box": {
+              "x": 0.0213331886811528,
+              "y": 0.0,
+              "width": 0.8483128712402116,
+              "height": 0.9981658549248418
+            }
+          }
+        ]
+      },
+      "cuda": {
+        "state": "available",
+        "per_kind": {
+          "face": {
+            "state": "not_detected",
+            "reason": null,
+            "detections": 0
+          },
+          "skin": {
+            "state": "unavailable",
+            "reason": "No validated skin-region detector is active. Color-threshold skin heuristics are intentionally disabled.",
+            "detections": 0
+          },
+          "subject": {
+            "state": "available",
+            "reason": null,
+            "detections": 1
+          }
+        },
+        "detections": [
+          {
+            "kind": "subject",
+            "confidence": 0.9647266864776611,
+            "box": {
+              "x": 0.021258830578943816,
+              "y": 0.0,
+              "width": 0.8483758315541385,
+              "height": 0.9981651681720288
+            }
+          }
+        ]
+      },
+      "comparison": {
+        "consistent": true,
+        "state_checks": {
+          "face": {
+            "cpu": "not_detected",
+            "cuda": "not_detected",
+            "equal": true
+          },
+          "skin": {
+            "cpu": "unavailable",
+            "cuda": "unavailable",
+            "equal": true
+          },
+          "subject": {
+            "cpu": "available",
+            "cuda": "available",
+            "equal": true
+          }
+        },
+        "detection_checks": {
+          "face": {
+            "consistent": true,
+            "reason": null,
+            "cpu_count": 0,
+            "cuda_count": 0,
+            "matches": []
+          },
+          "subject": {
+            "consistent": true,
+            "reason": null,
+            "cpu_count": 1,
+            "cuda_count": 1,
+            "matches": [
+              {
+                "cpu_index": 0,
+                "cuda_index": 0,
+                "iou": 0.9998982310432534,
+                "confidence_diff": 3.1113624572753906e-05,
+                "consistent": true
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "path": "C:\\Users\\Matann\\Desktop\\fivek_dataset\\raw_photos\\HQa701to1400\\photos\\a1144-MB_20050517_054.dng",
+      "sha256": "33b0f3273f9db7fbe745d65dfdd04a4b99ed1d3f84a9bb960593d7ca5a43f7f2",
+      "status": "ok",
+      "preprocess_seconds": 0.7928574999968987,
+      "cpu_seconds": 1.0696338000125252,
+      "cuda_seconds": 0.9673261999851093,
+      "cpu": {
+        "state": "available",
+        "per_kind": {
+          "face": {
+            "state": "available",
+            "reason": null,
+            "detections": 1
+          },
+          "skin": {
+            "state": "unavailable",
+            "reason": "No validated skin-region detector is active. Color-threshold skin heuristics are intentionally disabled.",
+            "detections": 0
+          },
+          "subject": {
+            "state": "available",
+            "reason": null,
+            "detections": 1
+          }
+        },
+        "detections": [
+          {
+            "kind": "face",
+            "confidence": 0.940356969833374,
+            "box": {
+              "x": 0.2657305387659618,
+              "y": 0.20811538696289061,
+              "width": 0.1438403572003866,
+              "height": 0.13027968406677246
+            }
+          },
+          {
+            "kind": "subject",
+            "confidence": 0.9509475827217102,
+            "box": {
+              "x": 0.1569674880175615,
+              "y": 0.16551923345666525,
+              "width": 0.5974603162307349,
+              "height": 0.5595857705804586
+            }
+          }
+        ]
+      },
+      "cuda": {
+        "state": "available",
+        "per_kind": {
+          "face": {
+            "state": "available",
+            "reason": null,
+            "detections": 1
+          },
+          "skin": {
+            "state": "unavailable",
+            "reason": "No validated skin-region detector is active. Color-threshold skin heuristics are intentionally disabled.",
+            "detections": 0
+          },
+          "subject": {
+            "state": "available",
+            "reason": null,
+            "detections": 1
+          }
+        },
+        "detections": [
+          {
+            "kind": "face",
+            "confidence": 0.940356969833374,
+            "box": {
+              "x": 0.2657305387659618,
+              "y": 0.20811538696289061,
+              "width": 0.1438403572003866,
+              "height": 0.13027968406677246
+            }
+          },
+          {
+            "kind": "subject",
+            "confidence": 0.95086270570755,
+            "box": {
+              "x": 0.15696889172217712,
+              "y": 0.16552278604242085,
+              "width": 0.5974557411934692,
+              "height": 0.5595641258018793
+            }
+          }
+        ]
+      },
+      "comparison": {
+        "consistent": true,
+        "state_checks": {
+          "face": {
+            "cpu": "available",
+            "cuda": "available",
+            "equal": true
+          },
+          "skin": {
+            "cpu": "unavailable",
+            "cuda": "unavailable",
+            "equal": true
+          },
+          "subject": {
+            "cpu": "available",
+            "cuda": "available",
+            "equal": true
+          }
+        },
+        "detection_checks": {
+          "face": {
+            "consistent": true,
+            "reason": null,
+            "cpu_count": 1,
+            "cuda_count": 1,
+            "matches": [
+              {
+                "cpu_index": 0,
+                "cuda_index": 0,
+                "iou": 1.0,
+                "confidence_diff": 0.0,
+                "consistent": true
+              }
+            ]
+          },
+          "subject": {
+            "consistent": true,
+            "reason": null,
+            "cpu_count": 1,
+            "cuda_count": 1,
+            "matches": [
+              {
+                "cpu_index": 0,
+                "cuda_index": 0,
+                "iou": 0.9999536628197351,
+                "confidence_diff": 8.487701416015625e-05,
+                "consistent": true
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "path": "C:\\Users\\Matann\\Desktop\\fivek_dataset\\raw_photos\\HQa701to1400\\photos\\a1272-_DGW6377.dng",
+      "sha256": "12f4d2f2c2943d218e90efa36d6a154bbf003d03d5ad43a37b418deb23168e7d",
+      "status": "ok",
+      "preprocess_seconds": 0.9676154000044335,
+      "cpu_seconds": 1.3916061000199988,
+      "cuda_seconds": 1.3077989999728743,
+      "cpu": {
+        "state": "not_detected",
+        "per_kind": {
+          "face": {
+            "state": "not_detected",
+            "reason": null,
+            "detections": 0
+          },
+          "skin": {
+            "state": "unavailable",
+            "reason": "No validated skin-region detector is active. Color-threshold skin heuristics are intentionally disabled.",
+            "detections": 0
+          },
+          "subject": {
+            "state": "not_detected",
+            "reason": null,
+            "detections": 0
+          }
+        },
+        "detections": []
+      },
+      "cuda": {
+        "state": "not_detected",
+        "per_kind": {
+          "face": {
+            "state": "not_detected",
+            "reason": null,
+            "detections": 0
+          },
+          "skin": {
+            "state": "unavailable",
+            "reason": "No validated skin-region detector is active. Color-threshold skin heuristics are intentionally disabled.",
+            "detections": 0
+          },
+          "subject": {
+            "state": "not_detected",
+            "reason": null,
+            "detections": 0
+          }
+        },
+        "detections": []
+      },
+      "comparison": {
+        "consistent": true,
+        "state_checks": {
+          "face": {
+            "cpu": "not_detected",
+            "cuda": "not_detected",
+            "equal": true
+          },
+          "skin": {
+            "cpu": "unavailable",
+            "cuda": "unavailable",
+            "equal": true
+          },
+          "subject": {
+            "cpu": "not_detected",
+            "cuda": "not_detected",
+            "equal": true
+          }
+        },
+        "detection_checks": {
+          "face": {
+            "consistent": true,
+            "reason": null,
+            "cpu_count": 0,
+            "cuda_count": 0,
+            "matches": []
+          },
+          "subject": {
+            "consistent": true,
+            "reason": null,
+            "cpu_count": 0,
+            "cuda_count": 0,
+            "matches": []
+          }
+        }
+      }
+    },
+    {
+      "path": "C:\\Users\\Matann\\Desktop\\fivek_dataset\\raw_photos\\HQa701to1400\\photos\\a1400-MB_070908_014.dng",
+      "sha256": "85fb6c73baa73c5cd9dbf4d0025d88e9a9e8fe9594a4073d71f8a996f03f2639",
+      "status": "ok",
+      "preprocess_seconds": 1.0283648000040557,
+      "cpu_seconds": 1.416079799993895,
+      "cuda_seconds": 1.2331673000007868,
+      "cpu": {
+        "state": "available",
+        "per_kind": {
+          "face": {
+            "state": "not_detected",
+            "reason": null,
+            "detections": 0
+          },
+          "skin": {
+            "state": "unavailable",
+            "reason": "No validated skin-region detector is active. Color-threshold skin heuristics are intentionally disabled.",
+            "detections": 0
+          },
+          "subject": {
+            "state": "available",
+            "reason": null,
+            "detections": 1
+          }
+        },
+        "detections": [
+          {
+            "kind": "subject",
+            "confidence": 0.9552270174026489,
+            "box": {
+              "x": 0.3066285851883562,
+              "y": 0.29029639540227425,
+              "width": 0.4081684269317209,
+              "height": 0.7056915937250627
+            }
+          }
+        ]
+      },
+      "cuda": {
+        "state": "available",
+        "per_kind": {
+          "face": {
+            "state": "not_detected",
+            "reason": null,
+            "detections": 0
+          },
+          "skin": {
+            "state": "unavailable",
+            "reason": "No validated skin-region detector is active. Color-threshold skin heuristics are intentionally disabled.",
+            "detections": 0
+          },
+          "subject": {
+            "state": "available",
+            "reason": null,
+            "detections": 1
+          }
+        },
+        "detections": [
+          {
+            "kind": "subject",
+            "confidence": 0.9551578760147095,
+            "box": {
+              "x": 0.3066367789490582,
+              "y": 0.2902954769525906,
+              "width": 0.4081616545376712,
+              "height": 0.7056999710994499
+            }
+          }
+        ]
+      },
+      "comparison": {
+        "consistent": true,
+        "state_checks": {
+          "face": {
+            "cpu": "not_detected",
+            "cuda": "not_detected",
+            "equal": true
+          },
+          "skin": {
+            "cpu": "unavailable",
+            "cuda": "unavailable",
+            "equal": true
+          },
+          "subject": {
+            "cpu": "available",
+            "cuda": "available",
+            "equal": true
+          }
+        },
+        "detection_checks": {
+          "face": {
+            "consistent": true,
+            "reason": null,
+            "cpu_count": 0,
+            "cuda_count": 0,
+            "matches": []
+          },
+          "subject": {
+            "consistent": true,
+            "reason": null,
+            "cpu_count": 1,
+            "cuda_count": 1,
+            "matches": [
+              {
+                "cpu_index": 0,
+                "cuda_index": 0,
+                "iou": 0.999964572821635,
+                "confidence_diff": 6.914138793945312e-05,
+                "consistent": true
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "path": "C:\\Users\\Matann\\Desktop\\raw_test\\Canon_EOS_R6_RAW_ISO_100_nocrop_nodual.CR3",
+      "sha256": "81fab349ae9080fd0172583b7fd5ea36806e95ffa434909d2ccc6527dde34ee6",
+      "status": "ok",
+      "preprocess_seconds": 1.074536400003126,
+      "cpu_seconds": 2.027908699994441,
+      "cuda_seconds": 1.973522000014782,
+      "cpu": {
+        "state": "not_detected",
+        "per_kind": {
+          "face": {
+            "state": "not_detected",
+            "reason": null,
+            "detections": 0
+          },
+          "skin": {
+            "state": "unavailable",
+            "reason": "No validated skin-region detector is active. Color-threshold skin heuristics are intentionally disabled.",
+            "detections": 0
+          },
+          "subject": {
+            "state": "not_detected",
+            "reason": null,
+            "detections": 0
+          }
+        },
+        "detections": []
+      },
+      "cuda": {
+        "state": "not_detected",
+        "per_kind": {
+          "face": {
+            "state": "not_detected",
+            "reason": null,
+            "detections": 0
+          },
+          "skin": {
+            "state": "unavailable",
+            "reason": "No validated skin-region detector is active. Color-threshold skin heuristics are intentionally disabled.",
+            "detections": 0
+          },
+          "subject": {
+            "state": "not_detected",
+            "reason": null,
+            "detections": 0
+          }
+        },
+        "detections": []
+      },
+      "comparison": {
+        "consistent": true,
+        "state_checks": {
+          "face": {
+            "cpu": "not_detected",
+            "cuda": "not_detected",
+            "equal": true
+          },
+          "skin": {
+            "cpu": "unavailable",
+            "cuda": "unavailable",
+            "equal": true
+          },
+          "subject": {
+            "cpu": "not_detected",
+            "cuda": "not_detected",
+            "equal": true
+          }
+        },
+        "detection_checks": {
+          "face": {
+            "consistent": true,
+            "reason": null,
+            "cpu_count": 0,
+            "cuda_count": 0,
+            "matches": []
+          },
+          "subject": {
+            "consistent": true,
+            "reason": null,
+            "cpu_count": 0,
+            "cuda_count": 0,
+            "matches": []
+          }
+        }
+      }
+    },
+    {
+      "path": "C:\\Users\\Matann\\Desktop\\a4607-050801_080948__I2E5512.dng",
+      "sha256": "979917f030484d209b791599ac9f585e577127047b2ca92334fea673471e496e",
+      "status": "ok",
+      "preprocess_seconds": 0.7594556000258308,
+      "cpu_seconds": 1.0822063999949023,
+      "cuda_seconds": 0.8150592999882065,
+      "cpu": {
+        "state": "available",
+        "per_kind": {
+          "face": {
+            "state": "available",
+            "reason": null,
+            "detections": 2
+          },
+          "skin": {
+            "state": "unavailable",
+            "reason": "No validated skin-region detector is active. Color-threshold skin heuristics are intentionally disabled.",
+            "detections": 0
+          },
+          "subject": {
+            "state": "available",
+            "reason": null,
+            "detections": 2
+          }
+        },
+        "detections": [
+          {
+            "kind": "face",
+            "confidence": 0.9215355515480042,
+            "box": {
+              "x": 0.4731206130981445,
+              "y": 0.29393890581068416,
+              "width": 0.18251882553100585,
+              "height": 0.3543128288004481
+            }
+          },
+          {
+            "kind": "face",
+            "confidence": 0.9069913029670715,
+            "box": {
+              "x": 0.26002002716064454,
+              "y": 0.15037056119395062,
+              "width": 0.21713905334472655,
+              "height": 0.43365218243871545
+            }
+          },
+          {
+            "kind": "subject",
+            "confidence": 0.9527907371520996,
+            "box": {
+              "x": 0.0035552680661636344,
+              "y": 0.02520808653693386,
+              "width": 0.5746799834000665,
+              "height": 0.9649555833416863
+            }
+          },
+          {
+            "kind": "subject",
+            "confidence": 0.9395489692687988,
+            "box": {
+              "x": 0.40267079584575527,
+              "y": 0.23834368886086563,
+              "width": 0.5355014573573254,
+              "height": 0.754497001686941
+            }
+          }
+        ]
+      },
+      "cuda": {
+        "state": "available",
+        "per_kind": {
+          "face": {
+            "state": "available",
+            "reason": null,
+            "detections": 2
+          },
+          "skin": {
+            "state": "unavailable",
+            "reason": "No validated skin-region detector is active. Color-threshold skin heuristics are intentionally disabled.",
+            "detections": 0
+          },
+          "subject": {
+            "state": "available",
+            "reason": null,
+            "detections": 2
+          }
+        },
+        "detections": [
+          {
+            "kind": "face",
+            "confidence": 0.9215355515480042,
+            "box": {
+              "x": 0.4731206130981445,
+              "y": 0.29393890581068416,
+              "width": 0.18251882553100585,
+              "height": 0.3543128288004481
+            }
+          },
+          {
+            "kind": "face",
+            "confidence": 0.9069913029670715,
+            "box": {
+              "x": 0.26002002716064454,
+              "y": 0.15037056119395062,
+              "width": 0.21713905334472655,
+              "height": 0.43365218243871545
+            }
+          },
+          {
+            "kind": "subject",
+            "confidence": 0.9533037543296814,
+            "box": {
+              "x": 0.003561049682859803,
+              "y": 0.02521029119800262,
+              "width": 0.5746484845284371,
+              "height": 0.964952234921301
+            }
+          },
+          {
+            "kind": "subject",
+            "confidence": 0.939587414264679,
+            "box": {
+              "x": 0.40262608525429444,
+              "y": 0.23836003942018474,
+              "width": 0.5355347303556218,
+              "height": 0.7544850182086483
+            }
+          }
+        ]
+      },
+      "comparison": {
+        "consistent": true,
+        "state_checks": {
+          "face": {
+            "cpu": "available",
+            "cuda": "available",
+            "equal": true
+          },
+          "skin": {
+            "cpu": "unavailable",
+            "cuda": "unavailable",
+            "equal": true
+          },
+          "subject": {
+            "cpu": "available",
+            "cuda": "available",
+            "equal": true
+          }
+        },
+        "detection_checks": {
+          "face": {
+            "consistent": true,
+            "reason": null,
+            "cpu_count": 2,
+            "cuda_count": 2,
+            "matches": [
+              {
+                "cpu_index": 0,
+                "cuda_index": 0,
+                "iou": 1.0000000000000004,
+                "confidence_diff": 0.0,
+                "consistent": true
+              },
+              {
+                "cpu_index": 1,
+                "cuda_index": 1,
+                "iou": 0.9999999999999997,
+                "confidence_diff": 0.0,
+                "consistent": true
+              }
+            ]
+          },
+          "subject": {
+            "consistent": true,
+            "reason": null,
+            "cpu_count": 2,
+            "cuda_count": 2,
+            "matches": [
+              {
+                "cpu_index": 0,
+                "cuda_index": 0,
+                "iou": 0.9999417190133031,
+                "confidence_diff": 0.0005130171775817871,
+                "consistent": true
+              },
+              {
+                "cpu_index": 1,
+                "cuda_index": 1,
+                "iou": 0.9998677032469694,
+                "confidence_diff": 3.844499588012695e-05,
+                "consistent": true
+              }
+            ]
+          }
+        }
+      }
+    }
+  ],
+  "interpretation_limits": [
+    "This validates CPU↔CUDA consistency only on the selected RAW fixture.",
+    "It is not an event-editing quality comparison.",
+    "It does not substitute for the blocked Dataset V2 feature-ablation work.",
+    "macOS/MPS remains untested until a real Apple Silicon Mac is available."
+  ]
+}
