@@ -16,6 +16,15 @@ from app.brain_v2.vision_encoders.registry import get_encoder_descriptor
 
 @dataclass
 class HuggingFaceVisionEncoder:
+    """
+    Runtime adapter for the controlled Phase 11 encoder experiment.
+
+    CLIP uses the vision-only model with projection.
+    DINOv3 uses AutoModel and the checkpoint's own image processor.
+
+    Model downloads happen only when load() is explicitly called.
+    """
+
     encoder_id: str
     device: str = "cpu"
 
@@ -25,24 +34,44 @@ class HuggingFaceVisionEncoder:
             raise ValueError(
                 "HuggingFaceVisionEncoder אינו מיועד ל-measured candidate."
             )
+        if self.device not in {"cpu", "cuda", "mps"}:
+            raise ValueError("device לא נתמך.")
         self.descriptor = descriptor
         self._processor: Any = None
         self._model: Any = None
 
     def load(self) -> None:
         try:
-            from transformers import AutoImageProcessor, AutoModel
+            if self.descriptor.family == "clip":
+                from transformers import (
+                    CLIPImageProcessor,
+                    CLIPVisionModelWithProjection,
+                )
+
+                self._processor = CLIPImageProcessor.from_pretrained(
+                    self.descriptor.model_id
+                )
+                self._model = CLIPVisionModelWithProjection.from_pretrained(
+                    self.descriptor.model_id
+                )
+            elif self.descriptor.family == "dinov3":
+                from transformers import AutoImageProcessor, AutoModel
+
+                self._processor = AutoImageProcessor.from_pretrained(
+                    self.descriptor.model_id
+                )
+                self._model = AutoModel.from_pretrained(
+                    self.descriptor.model_id
+                )
+            else:
+                raise RuntimeError(
+                    f"Unsupported encoder family: {self.descriptor.family}"
+                )
         except ImportError as exc:
             raise RuntimeError(
-                "transformers אינו מותקן במסלול הניסוי."
+                "torch/transformers אינם מותקנים במסלול הניסוי."
             ) from exc
 
-        self._processor = AutoImageProcessor.from_pretrained(
-            self.descriptor.model_id
-        )
-        self._model = AutoModel.from_pretrained(
-            self.descriptor.model_id
-        )
         self._model.to(self.device)
         self._model.eval()
 
@@ -70,9 +99,9 @@ class HuggingFaceVisionEncoder:
         with torch.inference_mode():
             outputs = self._model(**inputs)
 
-        pooled = getattr(outputs, "pooler_output", None)
+        pooled = getattr(outputs, "image_embeds", None)
         if pooled is None:
-            pooled = getattr(outputs, "image_embeds", None)
+            pooled = getattr(outputs, "pooler_output", None)
 
         if pooled is None:
             last_hidden = getattr(outputs, "last_hidden_state", None)
@@ -80,7 +109,8 @@ class HuggingFaceVisionEncoder:
                 raise RuntimeError(
                     "המודל לא החזיר embedding מוכר."
                 )
-            pooled = last_hidden.mean(dim=1)
+            # Fallback only for models without an official pooled output.
+            pooled = last_hidden[:, 0, :]
 
         vector_np = (
             pooled[0]
@@ -89,9 +119,10 @@ class HuggingFaceVisionEncoder:
             .float()
             .numpy()
             .astype(np.float32, copy=False)
+            .reshape(-1)
         )
 
-        vector = tuple(float(value) for value in vector_np.reshape(-1))
+        vector = tuple(float(value) for value in vector_np)
 
         result = EncoderResult(
             encoder_id=self.descriptor.encoder_id,
@@ -103,3 +134,15 @@ class HuggingFaceVisionEncoder:
         )
         result.validate()
         return result
+
+    def unload(self) -> None:
+        self._model = None
+        self._processor = None
+
+        try:
+            import torch
+
+            if self.device == "cuda" and torch.cuda.is_available():
+                torch.cuda.empty_cache()
+        except ImportError:
+            pass
