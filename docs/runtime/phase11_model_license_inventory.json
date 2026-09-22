@@ -1,0 +1,66 @@
+{
+  "schema_version": "phase11-model-license-inventory-v1",
+  "legal_note": "Engineering inventory only; license compliance and commercial redistribution decisions require review of the governing license terms.",
+  "models": [
+    {
+      "id": "yunet-2026may",
+      "role": "face_candidate",
+      "path": "vendor/opencv_zoo/face_detection_yunet/face_detection_yunet_2026may.onnx",
+      "license": "MIT",
+      "license_scope": "OpenCV Zoo face_detection_yunet directory",
+      "redistribution_review": "permissive-license-obligations",
+      "candidate_status": "basic_negative_positive_validation_passed",
+      "local_vendor_file_present": true,
+      "size_bytes": 229738,
+      "sha256": "ebafce4e3c118d6554634be5c27ab333b4c047a9a8c3faf1d7cf93101c22f0f0"
+    },
+    {
+      "id": "pphumanseg-2023mar",
+      "role": "subject_candidate_rejected",
+      "path": "vendor/opencv_zoo/human_segmentation_pphumanseg/human_segmentation_pphumanseg_2023mar.onnx",
+      "license": "Apache-2.0",
+      "license_scope": "OpenCV Zoo human_segmentation_pphumanseg directory",
+      "redistribution_review": "permissive-license-obligations",
+      "candidate_status": "rejected_false_positive_on_sculpture_control",
+      "local_vendor_file_present": true,
+      "size_bytes": 6163938,
+      "sha256": "552d8a984054e59b5d773d24b9b12022b22046ceb2bbc4c9aaeaceb36a9ddf24"
+    },
+    {
+      "id": "PekingU/rtdetr_r50vd",
+      "role": "person_candidate",
+      "path": "vendor/huggingface/PekingU_rtdetr_r50vd/model.safetensors",
+      "license": "Apache-2.0",
+      "license_scope": "Hugging Face model repository metadata + official RT-DETR repository",
+      "redistribution_review": "permissive-license-obligations",
+      "candidate_status": "basic_negative_positive_validation_passed",
+      "local_vendor_file_present": true,
+      "size_bytes": 172175856,
+      "sha256": "5263d5521eff3e356f6cd8a371fd5dfb891725beda5f713674f79669115cdc64"
+    },
+    {
+      "id": "openai/clip-vit-base-patch32",
+      "role": "vision_encoder_candidate",
+      "path": null,
+      "license": "MIT for OpenAI CLIP repository software",
+      "license_scope": "repository software; pretrained-weight scope not assumed",
+      "redistribution_review": "weights-clarification-required-before-bundling",
+      "candidate_status": "quality_comparison_blocked_by_representative_dataset",
+      "local_vendor_file_present": null,
+      "size_bytes": null,
+      "sha256": null
+    },
+    {
+      "id": "facebook/dinov3-vits16-pretrain-lvd1689m",
+      "role": "vision_encoder_candidate",
+      "path": null,
+      "license": "DINOv3 License",
+      "license_scope": "code and model weights under custom DINOv3 agreement",
+      "redistribution_review": "custom-license-review-required-before-bundling",
+      "candidate_status": "quality_comparison_blocked_by_representative_dataset",
+      "local_vendor_file_present": null,
+      "size_bytes": null,
+      "sha256": null
+    }
+  ]
+}
