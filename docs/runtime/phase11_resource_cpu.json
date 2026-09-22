@@ -1,0 +1,131 @@
+{
+  "schema_version": "phase11-resource-benchmark-v2",
+  "device": "cpu",
+  "raw": "C:\\Users\\Matann\\Desktop\\raw_test\\Canon_EOS_R6_RAW_ISO_100_nocrop_nodual.CR3",
+  "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+  "command": [
+    "C:\\Users\\Matann\\Desktop\\PROGRAPHER V2\\backend\\.venv\\Scripts\\python.exe",
+    "tools/phase11_real_encoder_benchmark.py",
+    "--raw",
+    "C:\\Users\\Matann\\Desktop\\raw_test\\Canon_EOS_R6_RAW_ISO_100_nocrop_nodual.CR3",
+    "--device",
+    "cpu",
+    "--runs",
+    "5",
+    "--output",
+    "..\\docs\\runtime\\phase11_resource_cpu_encoder.json",
+    "--vectors",
+    "..\\docs\\runtime\\phase11_resource_cpu_vectors.npz"
+  ],
+  "return_code": 0,
+  "wall_time_s": 19.59751610000967,
+  "peak_process_tree_rss_mb": 2525.05859375,
+  "nvidia": {
+    "baseline_total_used_mb": null,
+    "peak_total_used_mb": null,
+    "peak_total_used_delta_mb": null,
+    "peak_process_vram_mb": null,
+    "process_vram_note": "May be unavailable under Windows/WDDM; total GPU memory delta is retained as fallback."
+  },
+  "poll_interval_ms": 100,
+  "sample_count": 179,
+  "benchmark_report_path": "C:\\Users\\Matann\\Desktop\\PROGRAPHER V2\\docs\\runtime\\phase11_resource_cpu_encoder.json",
+  "benchmark_vectors_path": "C:\\Users\\Matann\\Desktop\\PROGRAPHER V2\\docs\\runtime\\phase11_resource_cpu_vectors.npz",
+  "benchmark_report": {
+    "actual_device": "cpu",
+    "brain_input": {
+      "feature_version": "brain-v2-features-v1.2",
+      "measured_feature_count": 93,
+      "missing_fields": [
+        "camera_model"
+      ],
+      "preprocessing_version": "raw-linear-srgb-v1",
+      "raw_wb": [
+        1849.0,
+        1024.0,
+        1678.0,
+        1024.0
+      ]
+    },
+    "encoders": [
+      {
+        "device": "cpu",
+        "dimension": 93,
+        "encoder_id": "measured.unified-features.v1",
+        "error_message": null,
+        "error_type": null,
+        "gpu_peak_allocated_mb": null,
+        "gpu_peak_reserved_mb": null,
+        "inference_seconds_max": null,
+        "inference_seconds_median": null,
+        "inference_seconds_min": null,
+        "load_seconds": 0.0,
+        "process_rss_after_mb": null,
+        "process_rss_before_mb": null,
+        "status": "pass",
+        "vector_l2_norm": 225.0217742919922,
+        "vector_sha256": "419abec42910da6d09ea8be67dd22356cf1acab50c4abba317390bd35d1d7cf7"
+      },
+      {
+        "device": "cpu",
+        "dimension": 512,
+        "encoder_id": "clip.openai-vit-b32.v1",
+        "error_message": null,
+        "error_type": null,
+        "gpu_peak_allocated_mb": null,
+        "gpu_peak_reserved_mb": null,
+        "inference_seconds_max": 0.9178053000068758,
+        "inference_seconds_median": 0.9150674999982584,
+        "inference_seconds_min": 0.8987712999805808,
+        "load_seconds": 4.549723700009054,
+        "process_rss_after_mb": 1295.9375,
+        "process_rss_before_mb": 744.6640625,
+        "status": "pass",
+        "vector_l2_norm": 10.862069592848352,
+        "vector_sha256": "488784e2c23d59fb31fcad2bf9739c35a9afd25fdf936140caeb3806b5361d72"
+      },
+      {
+        "device": "cpu",
+        "dimension": 384,
+        "encoder_id": "dinov3.vits16-lvd1689m.v1",
+        "error_message": null,
+        "error_type": null,
+        "gpu_peak_allocated_mb": null,
+        "gpu_peak_reserved_mb": null,
+        "inference_seconds_max": 1.042923700006213,
+        "inference_seconds_median": 0.8563373000069987,
+        "inference_seconds_min": 0.8494559999962803,
+        "load_seconds": 0.5114163999969605,
+        "process_rss_after_mb": 1565.078125,
+        "process_rss_before_mb": 949.703125,
+        "status": "pass",
+        "vector_l2_norm": 8.453773379271485,
+        "vector_sha256": "236440b4fad88ac51f3ac976c084639e93cd76cc1aa9abe34f267882e01f71bc"
+      }
+    ],
+    "important_note": "This is a runtime/embedding smoke benchmark only. It does not decide which encoder improves editing quality.",
+    "raw_path": "C:\\Users\\Matann\\Desktop\\raw_test\\Canon_EOS_R6_RAW_ISO_100_nocrop_nodual.CR3",
+    "raw_sha256": "81fab349ae9080fd0172583b7fd5ea36806e95ffa434909d2ccc6527dde34ee6",
+    "requested_device": "cpu",
+    "runs_per_pretrained_encoder": 5,
+    "runtime": {
+      "cuda_available": true,
+      "cuda_device_name": "NVIDIA GeForce RTX 4070",
+      "device": "cuda",
+      "mps_available": false,
+      "torch_version": "2.11.0+cu128",
+      "torchvision_version": "0.26.0+cu128",
+      "transformers_version": "4.57.6"
+    },
+    "schema": "prographer.phase11.real-encoder-benchmark.v1"
+  },
+  "stdout": "Running clip.openai-vit-b32.v1 on cpu ...\n✅ clip.openai-vit-b32.v1: dim=512, median=0.9151s\nRunning dinov3.vits16-lvd1689m.v1 on cpu ...\n✅ dinov3.vits16-lvd1689m.v1: dim=384, median=0.8563s\n\n=== Phase 11 encoder benchmark summary ===\nDevice: cpu\nPassed: 3\nBlocked: 0\nFailed: 0\nReport: C:\\Users\\Matann\\Desktop\\PROGRAPHER V2\\docs\\runtime\\phase11_resource_cpu_encoder.json\nVectors: C:\\Users\\Matann\\Desktop\\PROGRAPHER V2\\docs\\runtime\\phase11_resource_cpu_vectors.npz\n",
+  "notes": [
+    "Child Python is forced to UTF-8 so Unicode benchmark output does not fail under cp1255 Hebrew Windows terminals.",
+    "Peak RSS is sampled for the benchmark process tree, not isolated per encoder.",
+    "On Windows/WDDM, per-process VRAM from nvidia-smi may be unavailable; total GPU memory delta is also measured.",
+    "Total GPU memory delta can include activity from unrelated GPU processes; keep the machine reasonably idle for cleaner evidence.",
+    "Wall time includes model setup/loading performed by the benchmark process.",
+    "Use the benchmark report's per-encoder medians for encoder execution timing."
+  ]
+}

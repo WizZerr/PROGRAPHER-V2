@@ -1,0 +1,88 @@
+{
+  "actual_device": "cpu",
+  "brain_input": {
+    "feature_version": "brain-v2-features-v1.2",
+    "measured_feature_count": 93,
+    "missing_fields": [
+      "camera_model"
+    ],
+    "preprocessing_version": "raw-linear-srgb-v1",
+    "raw_wb": [
+      1849.0,
+      1024.0,
+      1678.0,
+      1024.0
+    ]
+  },
+  "encoders": [
+    {
+      "device": "cpu",
+      "dimension": 93,
+      "encoder_id": "measured.unified-features.v1",
+      "error_message": null,
+      "error_type": null,
+      "gpu_peak_allocated_mb": null,
+      "gpu_peak_reserved_mb": null,
+      "inference_seconds_max": null,
+      "inference_seconds_median": null,
+      "inference_seconds_min": null,
+      "load_seconds": 0.0,
+      "process_rss_after_mb": null,
+      "process_rss_before_mb": null,
+      "status": "pass",
+      "vector_l2_norm": 225.0217742919922,
+      "vector_sha256": "419abec42910da6d09ea8be67dd22356cf1acab50c4abba317390bd35d1d7cf7"
+    },
+    {
+      "device": "cpu",
+      "dimension": 512,
+      "encoder_id": "clip.openai-vit-b32.v1",
+      "error_message": null,
+      "error_type": null,
+      "gpu_peak_allocated_mb": null,
+      "gpu_peak_reserved_mb": null,
+      "inference_seconds_max": 1.0695344000123441,
+      "inference_seconds_median": 1.0689973999978974,
+      "inference_seconds_min": 1.0345910000032745,
+      "load_seconds": 4.569384900009027,
+      "process_rss_after_mb": 1296.75,
+      "process_rss_before_mb": 745.18359375,
+      "status": "pass",
+      "vector_l2_norm": 10.862069592848352,
+      "vector_sha256": "488784e2c23d59fb31fcad2bf9739c35a9afd25fdf936140caeb3806b5361d72"
+    },
+    {
+      "device": "cpu",
+      "dimension": 384,
+      "encoder_id": "dinov3.vits16-lvd1689m.v1",
+      "error_message": null,
+      "error_type": null,
+      "gpu_peak_allocated_mb": null,
+      "gpu_peak_reserved_mb": null,
+      "inference_seconds_max": 1.042061999993166,
+      "inference_seconds_median": 1.0332960999803618,
+      "inference_seconds_min": 0.9681350000028033,
+      "load_seconds": 0.6598341000208165,
+      "process_rss_after_mb": 1332.328125,
+      "process_rss_before_mb": 950.515625,
+      "status": "pass",
+      "vector_l2_norm": 8.453773379271485,
+      "vector_sha256": "236440b4fad88ac51f3ac976c084639e93cd76cc1aa9abe34f267882e01f71bc"
+    }
+  ],
+  "important_note": "This is a runtime/embedding smoke benchmark only. It does not decide which encoder improves editing quality.",
+  "raw_path": "C:\\Users\\Matann\\Desktop\\raw_test\\Canon_EOS_R6_RAW_ISO_100_nocrop_nodual.CR3",
+  "raw_sha256": "81fab349ae9080fd0172583b7fd5ea36806e95ffa434909d2ccc6527dde34ee6",
+  "requested_device": "cpu",
+  "runs_per_pretrained_encoder": 3,
+  "runtime": {
+    "cuda_available": true,
+    "cuda_device_name": "NVIDIA GeForce RTX 4070",
+    "device": "cuda",
+    "mps_available": false,
+    "torch_version": "2.11.0+cu128",
+    "torchvision_version": "0.26.0+cu128",
+    "transformers_version": "4.57.6"
+  },
+  "schema": "prographer.phase11.real-encoder-benchmark.v1"
+}
