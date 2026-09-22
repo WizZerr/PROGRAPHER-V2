@@ -4,6 +4,11 @@ from dataclasses import replace
 
 from app.brain_v2.components import PreprocessedInput, RawInputRecord
 from app.brain_v2.contracts import PreprocessingInfo
+from app.brain_v2.preprocessing.exiftool_metadata import (
+    CameraMetadataProvider,
+    ExifToolMetadataProvider,
+    enrich_raw_input_with_camera_metadata,
+)
 from app.brain_v2.preprocessing.raw_decode import (
     RawDecodeConfig,
     RawDecoderBackend,
@@ -17,15 +22,25 @@ class RawPixelPreprocessor:
         *,
         backend: RawDecoderBackend | None = None,
         config: RawDecodeConfig | None = None,
+        camera_metadata_provider: CameraMetadataProvider | None = None,
     ) -> None:
         self.backend = backend
         self.config = config or RawDecodeConfig()
+        self.camera_metadata_provider = (
+            camera_metadata_provider or ExifToolMetadataProvider()
+        )
 
     def run(self, raw: RawInputRecord) -> PreprocessedInput:
         if not raw.raw_path:
             raise ValueError(
                 "RawPixelPreprocessor דורש raw_path מפורש."
             )
+
+        camera_metadata = self.camera_metadata_provider.read(raw.raw_path)
+        effective_raw = enrich_raw_input_with_camera_metadata(
+            raw,
+            camera_metadata,
+        )
 
         frame = decode_raw(
             raw.raw_path,
@@ -40,7 +55,7 @@ class RawPixelPreprocessor:
             "focal_length_mm": frame.metadata.focal_length_mm,
         }
 
-        effective_exif = dict(raw.exif)
+        effective_exif = dict(effective_raw.exif)
         recovered_fields: set[str] = set()
 
         for key, fallback_value in fallback.items():
@@ -53,12 +68,12 @@ class RawPixelPreprocessor:
                 effective_exif[key] = fallback_value
                 recovered_fields.add(key)
 
-        effective_wb = raw.raw_wb
+        effective_wb = effective_raw.raw_wb
         if effective_wb is None and frame.metadata.camera_wb is not None:
             effective_wb = frame.metadata.camera_wb
             recovered_fields.add("raw_wb")
 
-        effective_captured_at = raw.captured_at
+        effective_captured_at = effective_raw.captured_at
         if (
             effective_captured_at is None
             and frame.metadata.captured_at is not None
@@ -68,12 +83,12 @@ class RawPixelPreprocessor:
 
         effective_missing = tuple(
             field
-            for field in raw.missing_fields
+            for field in effective_raw.missing_fields
             if field not in recovered_fields
         )
 
         effective_source = replace(
-            raw,
+            effective_raw,
             captured_at=effective_captured_at,
             raw_wb=effective_wb,
             exif=effective_exif,

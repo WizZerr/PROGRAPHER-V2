@@ -1,0 +1,37 @@
+{
+  "schema_version": "phase11-camera-metadata-probe-v1",
+  "source": "C:\\Users\\Matann\\Desktop\\raw_test\\Canon_EOS_R6_RAW_ISO_100_nocrop_nodual.CR3",
+  "filename_is_not_used_as_camera_identity": true,
+  "providers": [
+    {
+      "provider": "exifread",
+      "available": true,
+      "error": null,
+      "make": null,
+      "model": null,
+      "lens_model": null,
+      "captured_at": null,
+      "matched_keys": {},
+      "camera_related_tags": {}
+    },
+    {
+      "provider": "rawpy-libraw",
+      "available": true,
+      "error": null,
+      "raw_type": "RawPy",
+      "metadata_attrs": {
+        "lens": "Lens(model='RF70-200mm F2.8 L IS USM', make='', min_focal=70.0, max_focal=200.0)"
+      }
+    },
+    {
+      "provider": "exiftool-cli",
+      "available": false,
+      "executable": null,
+      "error": null,
+      "make": null,
+      "model": null,
+      "lens_model": null,
+      "captured_at": null
+    }
+  ]
+}

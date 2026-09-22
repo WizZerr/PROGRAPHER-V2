@@ -123,7 +123,7 @@ def test_phase11_pipeline_uses_recovered_source_metadata() -> None:
     ).run(raw_record())
 
     assert result.brain_input.preprocessing.version == "raw-linear-srgb-v1"
-    assert result.brain_input.features.version == "brain-v2-features-v1.2"
+    assert result.brain_input.features.version == "brain-v2-features-v1.3"
     assert result.brain_input.raw_wb == (2.0, 1.0, 1.5, 1.0)
     assert result.brain_input.exif["iso"] == 400.0
     assert "raw_wb" not in result.brain_input.missing_fields

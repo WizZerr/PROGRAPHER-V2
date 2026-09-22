@@ -91,7 +91,7 @@ def test_unified_features_record_not_detected_state() -> None:
     mapping = dict(zip(result.features.feature_names, result.features.values))
     categorical = dict(result.features.categorical_context)
 
-    assert result.features.version == "brain-v2-features-v1.2"
+    assert result.features.version == "brain-v2-features-v1.3"
     assert mapping["region.face.available"] == 1.0
     assert mapping["region.face.detected"] == 0.0
     assert categorical["region.detector_state"] == "not_detected"

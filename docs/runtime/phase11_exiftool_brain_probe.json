@@ -1,0 +1,18 @@
+{
+  "source": "C:\\Users\\Matann\\Desktop\\raw_test\\Canon_EOS_R6_RAW_ISO_100_nocrop_nodual.CR3",
+  "camera": {
+    "make": "Canon",
+    "model": "Canon EOS R6"
+  },
+  "lens_model": "RF70-200mm F2.8 L IS USM",
+  "captured_at": "2021:05:12 12:16:33",
+  "missing_fields": [],
+  "feature_version": "brain-v2-features-v1.3",
+  "categorical_context": {
+    "camera.make": "Canon",
+    "camera.model": "Canon EOS R6",
+    "region.detector_state": "unavailable"
+  },
+  "camera_model_reached_features": true,
+  "filename_inference_used": false
+}

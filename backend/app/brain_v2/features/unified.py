@@ -10,7 +10,7 @@ from app.brain_v2.features.visual_regions import (
     visual_region_features,
 )
 
-UNIFIED_FEATURE_VERSION = "brain-v2-features-v1.2"
+UNIFIED_FEATURE_VERSION = "brain-v2-features-v1.3"
 
 
 def _normalized_wb(wb: tuple[float, ...] | None) -> tuple[float | None, float | None]:
