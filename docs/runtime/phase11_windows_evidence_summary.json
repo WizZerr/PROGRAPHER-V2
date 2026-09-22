@@ -1,0 +1,63 @@
+{
+  "schema_version": "phase11-windows-evidence-summary-v1",
+  "scope": "Windows only",
+  "p11_05": {
+    "status": "partial",
+    "completed_evidence": [
+      "model/license inventory",
+      "detector extraction timing",
+      "process-tree RAM evidence",
+      "NVIDIA total-used memory delta evidence"
+    ],
+    "blocked": [
+      "feature-group contribution / ablation quality measurement requires a representative Dataset V2 with final Lightroom targets and event-safe splits"
+    ]
+  },
+  "p11_06": {
+    "status": "windows_evidence_passed_global_phase_still_open",
+    "windows_cpu_cuda": {
+      "samples": 42,
+      "consistent": 42,
+      "mismatched": 0,
+      "errors": 0,
+      "overall_pass": true,
+      "cpu_median_detector_seconds": 1.3651525000168476,
+      "cuda_median_detector_seconds": 1.1836525499966228
+    },
+    "still_open": [
+      "real macOS / Apple Silicon / MPS validation",
+      "formal representative RAW fixture requirements outside this engineering consistency sample"
+    ]
+  },
+  "p11_04": {
+    "status": "blocked",
+    "reason": "No representative Dataset V2 with final Lightroom targets and at least two event groups is available. No quality winner is declared among measured features, CLIP, and DINO."
+  },
+  "detector_validation": {
+    "yunet_face": "basic Windows negative/positive validation passed",
+    "rtdetr_person": "basic Windows negative/positive validation passed",
+    "pphumanseg": "rejected for promotion after sculpture false positive",
+    "skin": "unavailable intentionally"
+  },
+  "reviewed_resource_observations": {
+    "part_7b_cpu_steady_median_seconds": 1.7166,
+    "part_7b_cuda_steady_median_seconds": 1.2964,
+    "part_7b_cpu_peak_process_tree_rss_mb": 2378.8,
+    "part_7b_cuda_peak_process_tree_rss_mb": 2906.4,
+    "part_7b_max_nvidia_total_used_delta_mb": 747.0,
+    "part_7b_controls_ok_cpu": true,
+    "part_7b_controls_ok_cuda": true,
+    "interpretation": "Engineering benchmark only; not 2,000-photo production throughput and NVIDIA value is system-total used-memory delta, not per-process VRAM."
+  },
+  "source_reports": [
+    "docs/runtime/phase11_model_license_inventory.json",
+    "docs/runtime/phase11_detector_resource_benchmark.json",
+    "docs/runtime/phase11_multi_raw_detector_consistency_42.json"
+  ],
+  "release_cautions": [
+    "Do not claim Phase 11 globally complete while macOS/MPS is untested.",
+    "Do not claim P11-05 feature contribution complete without Dataset V2.",
+    "Do not infer universal detector accuracy from the current controls and RAW sample.",
+    "Do not treat FiveK as a representative ProGrapher event-training dataset without separate provenance/license and representativeness review."
+  ]
+}
