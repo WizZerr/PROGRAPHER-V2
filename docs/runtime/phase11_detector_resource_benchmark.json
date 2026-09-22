@@ -1,0 +1,210 @@
+{
+  "schema_version": "phase11-detector-resource-benchmark-v1",
+  "runs_per_control_after_cold_run": 5,
+  "negative_control": "C:\\Users\\Matann\\Desktop\\raw_test\\Canon_EOS_R6_RAW_ISO_100_nocrop_nodual.CR3",
+  "positive_control": "C:\\Users\\Matann\\Desktop\\a4607-050801_080948__I2E5512.dng",
+  "results": [
+    {
+      "label": "negative",
+      "raw": "C:\\Users\\Matann\\Desktop\\raw_test\\Canon_EOS_R6_RAW_ISO_100_nocrop_nodual.CR3",
+      "requested_device": "cpu",
+      "actual_person_device": "cpu",
+      "threshold": 0.7,
+      "runs": 5,
+      "timing_seconds": {
+        "raw_preprocessing": 1.906480300007388,
+        "cold_detector": 30.704159299988532,
+        "steady_detector_median": 2.2254994999966584,
+        "steady_detector_min": 2.189214100013487,
+        "steady_detector_max": 2.2748375000082888,
+        "worker_total": 43.782602499995846
+      },
+      "per_kind": {
+        "face": {
+          "state": "not_detected",
+          "reason": null,
+          "detections": 0
+        },
+        "skin": {
+          "state": "unavailable",
+          "reason": "No validated skin-region detector is active. Color-threshold skin heuristics are intentionally disabled.",
+          "detections": 0
+        },
+        "subject": {
+          "state": "not_detected",
+          "reason": null,
+          "detections": 0
+        }
+      },
+      "expected_control_result": true,
+      "subject_semantics": "COCO person class only",
+      "skin_color_threshold_heuristic_used": false,
+      "monitoring": {
+        "parent_wall_seconds": 45.14593349999632,
+        "peak_process_tree_rss_mb": 2378.765625,
+        "gpu_memory_scope": null,
+        "gpu_total_used_baseline_mb": null,
+        "gpu_total_used_peak_mb": null,
+        "gpu_total_used_peak_delta_mb": null
+      },
+      "worker_stderr": "[ WARN:0@0.061] global net_impl_backend.cpp:345 cv::dnn::dnn5_v20260605::Net::Impl::setPreferableTarget Targets are not supported by the new graph engine for now"
+    },
+    {
+      "label": "positive",
+      "raw": "C:\\Users\\Matann\\Desktop\\a4607-050801_080948__I2E5512.dng",
+      "requested_device": "cpu",
+      "actual_person_device": "cpu",
+      "threshold": 0.7,
+      "runs": 5,
+      "timing_seconds": {
+        "raw_preprocessing": 0.7225731999787968,
+        "cold_detector": 6.413398099975893,
+        "steady_detector_median": 1.2077687999990303,
+        "steady_detector_min": 1.194582199997967,
+        "steady_detector_max": 1.2520057999936398,
+        "worker_total": 13.210773499973584
+      },
+      "per_kind": {
+        "face": {
+          "state": "available",
+          "reason": null,
+          "detections": 2
+        },
+        "skin": {
+          "state": "unavailable",
+          "reason": "No validated skin-region detector is active. Color-threshold skin heuristics are intentionally disabled.",
+          "detections": 0
+        },
+        "subject": {
+          "state": "available",
+          "reason": null,
+          "detections": 2
+        }
+      },
+      "expected_control_result": true,
+      "subject_semantics": "COCO person class only",
+      "skin_color_threshold_heuristic_used": false,
+      "monitoring": {
+        "parent_wall_seconds": 14.225523000000976,
+        "peak_process_tree_rss_mb": 1701.26171875,
+        "gpu_memory_scope": null,
+        "gpu_total_used_baseline_mb": null,
+        "gpu_total_used_peak_mb": null,
+        "gpu_total_used_peak_delta_mb": null
+      },
+      "worker_stderr": "[ WARN:0@0.023] global net_impl_backend.cpp:345 cv::dnn::dnn5_v20260605::Net::Impl::setPreferableTarget Targets are not supported by the new graph engine for now"
+    },
+    {
+      "label": "negative",
+      "raw": "C:\\Users\\Matann\\Desktop\\raw_test\\Canon_EOS_R6_RAW_ISO_100_nocrop_nodual.CR3",
+      "requested_device": "cuda",
+      "actual_person_device": "cuda",
+      "threshold": 0.7,
+      "runs": 5,
+      "timing_seconds": {
+        "raw_preprocessing": 1.0960637000098359,
+        "cold_detector": 8.449530799989589,
+        "steady_detector_median": 1.8434724000107963,
+        "steady_detector_min": 1.7959523999888916,
+        "steady_detector_max": 1.9394306999747641,
+        "worker_total": 18.82446999999229
+      },
+      "per_kind": {
+        "face": {
+          "state": "not_detected",
+          "reason": null,
+          "detections": 0
+        },
+        "skin": {
+          "state": "unavailable",
+          "reason": "No validated skin-region detector is active. Color-threshold skin heuristics are intentionally disabled.",
+          "detections": 0
+        },
+        "subject": {
+          "state": "not_detected",
+          "reason": null,
+          "detections": 0
+        }
+      },
+      "expected_control_result": true,
+      "subject_semantics": "COCO person class only",
+      "skin_color_threshold_heuristic_used": false,
+      "monitoring": {
+        "parent_wall_seconds": 19.95544040002278,
+        "peak_process_tree_rss_mb": 2906.3515625,
+        "gpu_memory_scope": "system_total_nvidia_used_memory_delta",
+        "gpu_total_used_baseline_mb": 2635.0,
+        "gpu_total_used_peak_mb": 3382.0,
+        "gpu_total_used_peak_delta_mb": 747.0
+      },
+      "worker_stderr": "[ WARN:0@0.030] global net_impl_backend.cpp:345 cv::dnn::dnn5_v20260605::Net::Impl::setPreferableTarget Targets are not supported by the new graph engine for now"
+    },
+    {
+      "label": "positive",
+      "raw": "C:\\Users\\Matann\\Desktop\\a4607-050801_080948__I2E5512.dng",
+      "requested_device": "cuda",
+      "actual_person_device": "cuda",
+      "threshold": 0.7,
+      "runs": 5,
+      "timing_seconds": {
+        "raw_preprocessing": 0.7369381000171416,
+        "cold_detector": 6.3356261999870185,
+        "steady_detector_median": 0.7493670000112616,
+        "steady_detector_min": 0.720202700002119,
+        "steady_detector_max": 0.825066900026286,
+        "worker_total": 10.906342900008895
+      },
+      "per_kind": {
+        "face": {
+          "state": "available",
+          "reason": null,
+          "detections": 2
+        },
+        "skin": {
+          "state": "unavailable",
+          "reason": "No validated skin-region detector is active. Color-threshold skin heuristics are intentionally disabled.",
+          "detections": 0
+        },
+        "subject": {
+          "state": "available",
+          "reason": null,
+          "detections": 2
+        }
+      },
+      "expected_control_result": true,
+      "subject_semantics": "COCO person class only",
+      "skin_color_threshold_heuristic_used": false,
+      "monitoring": {
+        "parent_wall_seconds": 11.997422299988102,
+        "peak_process_tree_rss_mb": 2131.58984375,
+        "gpu_memory_scope": "system_total_nvidia_used_memory_delta",
+        "gpu_total_used_baseline_mb": 2671.0,
+        "gpu_total_used_peak_mb": 3184.0,
+        "gpu_total_used_peak_delta_mb": 513.0
+      },
+      "worker_stderr": "[ WARN:0@0.023] global net_impl_backend.cpp:345 cv::dnn::dnn5_v20260605::Net::Impl::setPreferableTarget Targets are not supported by the new graph engine for now"
+    }
+  ],
+  "summary_by_device": {
+    "cpu": {
+      "all_controls_expected_ok": true,
+      "steady_detector_median_seconds_across_controls": 1.7166341499978444,
+      "max_peak_process_tree_rss_mb": 2378.765625,
+      "max_gpu_total_used_peak_delta_mb": null
+    },
+    "cuda": {
+      "all_controls_expected_ok": true,
+      "steady_detector_median_seconds_across_controls": 1.296419700011029,
+      "max_peak_process_tree_rss_mb": 2906.3515625,
+      "max_gpu_total_used_peak_delta_mb": 747.0
+    }
+  },
+  "interpretation_limits": [
+    "Two RAW controls are not representative production throughput evidence.",
+    "GPU memory is system-total NVIDIA used-memory delta, not isolated per-process VRAM.",
+    "Cold timing includes first model load/inference effects.",
+    "Steady timing reuses the loaded detector in one worker.",
+    "macOS/MPS remains untested.",
+    "Feature-group quality contribution remains blocked by a representative Dataset V2."
+  ]
+}
