@@ -62,35 +62,127 @@ class RegionDetection:
 
 
 @dataclass(frozen=True)
+class RegionKindStatus:
+    kind: RegionKind
+    state: DetectionState
+    reason: str | None = None
+
+    def validate(self) -> None:
+        if self.state == "unavailable":
+            if not self.reason:
+                raise ValueError(
+                    "Per-kind unavailable state requires an explicit reason."
+                )
+            return
+
+        if self.reason is not None:
+            raise ValueError(
+                "Only an unavailable per-kind state may carry a reason."
+            )
+
+
+@dataclass(frozen=True)
 class RegionEvidence:
     state: DetectionState
     detections: tuple[RegionDetection, ...]
     detector_id: str | None
     detector_version: str | None
     reason: str | None = None
+    kind_statuses: tuple[RegionKindStatus, ...] = ()
+
+    def status_for(self, kind: RegionKind) -> RegionKindStatus:
+        matches = tuple(
+            status for status in self.kind_statuses if status.kind == kind
+        )
+        if len(matches) > 1:
+            raise ValueError(f"Duplicate per-kind region status for {kind}.")
+        if matches:
+            return matches[0]
+
+        if self.state == "unavailable":
+            return RegionKindStatus(
+                kind=kind,
+                state="unavailable",
+                reason=self.reason or "Region detector unavailable.",
+            )
+
+        has_detection = any(
+            detection.kind == kind for detection in self.detections
+        )
+        return RegionKindStatus(
+            kind=kind,
+            state="available" if has_detection else "not_detected",
+        )
 
     def validate(self) -> None:
+        seen_kinds: set[RegionKind] = set()
+        for status in self.kind_statuses:
+            status.validate()
+            if status.kind in seen_kinds:
+                raise ValueError(
+                    f"Duplicate per-kind region status for {status.kind}."
+                )
+            seen_kinds.add(status.kind)
+
         if self.state == "unavailable":
             if self.detections:
-                raise ValueError("unavailable אינו יכול להכיל detections.")
+                raise ValueError(
+                    "Global unavailable state cannot carry detections."
+                )
             if not self.reason:
-                raise ValueError("unavailable חייב לכלול reason.")
-            return
-
-        if not self.detector_id or not self.detector_version:
-            raise ValueError("Evidence זמין חייב detector + version.")
+                raise ValueError(
+                    "Global unavailable state requires an explicit reason."
+                )
+        else:
+            if not self.detector_id or not self.detector_version:
+                raise ValueError(
+                    "Available detector evidence requires detector id/version."
+                )
 
         for detection in self.detections:
             detection.validate()
-            if detection.detector_id != self.detector_id:
-                raise ValueError("detector_id אינו עקבי.")
-            if detection.detector_version != self.detector_version:
-                raise ValueError("detector_version אינו עקבי.")
+            if (
+                self.detector_id is not None
+                and detection.detector_id != self.detector_id
+            ):
+                raise ValueError("detector_id must be consistent.")
+            if (
+                self.detector_version is not None
+                and detection.detector_version != self.detector_version
+            ):
+                raise ValueError("detector_version must be consistent.")
 
         if self.state == "not_detected" and self.detections:
-            raise ValueError("not_detected אינו יכול להכיל detections.")
+            raise ValueError(
+                "Global not_detected state cannot carry detections."
+            )
         if self.state == "available" and not self.detections:
-            raise ValueError("available מחייב detection אחד לפחות.")
+            raise ValueError(
+                "Global available state requires at least one detection."
+            )
+
+        for kind in ("face", "skin", "subject"):
+            status = self.status_for(kind)
+            status.validate()
+            detections_for_kind = tuple(
+                detection
+                for detection in self.detections
+                if detection.kind == kind
+            )
+
+            if status.state == "available" and not detections_for_kind:
+                raise ValueError(
+                    f"Per-kind available state for {kind} requires a detection."
+                )
+
+            if (
+                status.state in ("not_detected", "unavailable")
+                and detections_for_kind
+            ):
+                raise ValueError(
+                    f"Per-kind {status.state} state for {kind} "
+                    "cannot carry detections."
+                )
 
 
 class VisualRegionDetector(Protocol):
@@ -162,11 +254,14 @@ def _crop(rgb: np.ndarray, box: NormalizedBox) -> np.ndarray:
 def _summary(frame: DecodedRawFrame, evidence: RegionEvidence, kind: RegionKind) -> RegionSummary:
     evidence.validate()
 
-    if evidence.state == "unavailable":
+    status = evidence.status_for(kind)
+    status.validate()
+
+    if status.state == "unavailable":
         return RegionSummary(*(0.0 for _ in FIELDS))
 
     detections = tuple(d for d in evidence.detections if d.kind == kind)
-    if not detections:
+    if status.state == "not_detected":
         return RegionSummary(
             1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
             0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
