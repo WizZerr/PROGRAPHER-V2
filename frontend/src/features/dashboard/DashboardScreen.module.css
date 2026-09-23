@@ -4,8 +4,8 @@
 }
 
 .hero {
-  min-height: 290px;
-  padding: clamp(28px, 5vw, 56px);
+  min-height: 240px;
+  padding: clamp(30px, 4vw, 46px);
   border: 1px solid var(--pg-border);
   border-radius: var(--pg-radius-2xl);
   background:
@@ -35,7 +35,7 @@
 .hero h2 {
   margin: 0;
   max-width: 680px;
-  font-size: var(--pg-font-display);
+  font-size: clamp(36px, 4vw, 48px);
   font-weight: var(--pg-weight-semibold);
   letter-spacing: -0.052em;
   line-height: 1.04;
@@ -93,7 +93,7 @@
 
 .card {
   min-width: 0;
-  min-height: 154px;
+  min-height: 138px;
   padding: 22px;
   border: 1px solid var(--pg-border);
   border-radius: var(--pg-radius-lg);
