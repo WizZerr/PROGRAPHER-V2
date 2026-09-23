@@ -1,3 +1,6 @@
+/frontend/node_modules/
+/frontend/.next/
+
 /backend/vendor/exiftool/
 /backend/vendor/huggingface/
 

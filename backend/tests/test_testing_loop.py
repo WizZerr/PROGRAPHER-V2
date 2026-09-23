@@ -1,0 +1,249 @@
+from __future__ import annotations
+
+import os
+from pathlib import Path
+
+from fastapi.testclient import TestClient
+
+os.environ["PROGRAPHER_ENGINE_SECRET"] = "phase6-test-secret"
+
+from app.application import create_app  # noqa: E402
+
+
+HEADERS = {"X-ProGrapher-Secret": "phase6-test-secret"}
+
+
+def _xmp(
+    path: Path,
+    *,
+    exposure: str | None,
+    temperature: str | None,
+    tint: str | None,
+    raw_name: str,
+    local: bool = False,
+) -> None:
+    fields = []
+    if exposure is not None:
+        fields.append(f'crs:Exposure2012="{exposure}"')
+    if temperature is not None:
+        fields.append(f'crs:Temperature="{temperature}"')
+    if tint is not None:
+        fields.append(f'crs:Tint="{tint}"')
+    fields.append('crs:ProcessVersion="15.4"')
+    fields.append('crs:CameraProfile="Adobe Color"')
+    fields.append(f'crs:RawFileName="{raw_name}"')
+    local_xml = ""
+    if local:
+        local_xml = "<crs:MaskGroupBasedCorrections></crs:MaskGroupBasedCorrections>"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(
+        f"""<?xml version="1.0" encoding="UTF-8"?>
+<x:xmpmeta xmlns:x="adobe:ns:meta/" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:crs="http://ns.adobe.com/camera-raw-settings/1.0/">
+ <rdf:RDF>
+  <rdf:Description {' '.join(fields)}>
+   {local_xml}
+  </rdf:Description>
+ </rdf:RDF>
+</x:xmpmeta>
+""",
+        encoding="utf-8",
+    )
+
+
+def _raw(path: Path, payload: bytes) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_bytes(payload)
+
+
+def test_profile_uses_median_and_keeps_missing_targets_out(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    monkeypatch.setenv("PROGRAPHER_DATA_DIR", str(tmp_path / "data"))
+    root = tmp_path / "reference"
+    root.mkdir()
+    _raw(root / "IMG_0001.ARW", b"raw-a" * 400)
+    _raw(root / "IMG_0002.ARW", b"raw-b" * 400)
+    _raw(root / "IMG_0003.ARW", b"raw-c" * 400)
+    _xmp(
+        root / "IMG_0001.xmp",
+        exposure="+0.20",
+        temperature="5000",
+        tint="+4",
+        raw_name="IMG_0001.ARW",
+    )
+    _xmp(
+        root / "IMG_0002.xmp",
+        exposure="+0.60",
+        temperature="5400",
+        tint="+10",
+        raw_name="IMG_0002.ARW",
+    )
+    _xmp(
+        root / "IMG_0003.xmp",
+        exposure="-1.00",
+        temperature=None,
+        tint="+2",
+        raw_name="IMG_0003.ARW",
+    )
+
+    with TestClient(create_app()) as client:
+        response = client.post(
+            "/api/testing/profile",
+            headers=HEADERS,
+            json={
+                "raw_root": str(root),
+                "edits_root": str(root),
+                "photographer_id": "studio",
+                "event_label": "reference",
+            },
+        )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["quality_claim_allowed"] is False
+    assert body["usable_pairs"] == 2
+    assert body["excluded_missing_targets"] == 1
+    assert body["baseline"]["exposure"] == 0.4
+    assert body["baseline"]["temperature"] == 5200
+    assert body["baseline"]["tint"] == 7
+    assert body["baseline"]["temperature"] != 0
+
+
+def test_shared_filename_is_not_trained_as_one_edit(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    monkeypatch.setenv("PROGRAPHER_DATA_DIR", str(tmp_path / "data"))
+    root = tmp_path / "two-cameras"
+    _raw(root / "cam-a" / "IMG_0001.ARW", b"camera-a" * 300)
+    _raw(root / "cam-b" / "IMG_0001.ARW", b"camera-b" * 300)
+    _xmp(
+        root / "loose" / "IMG_0001.xmp",
+        exposure="+0.10",
+        temperature="4800",
+        tint="0",
+        raw_name="IMG_0001.ARW",
+    )
+
+    with TestClient(create_app()) as client:
+        response = client.post(
+            "/api/testing/profile",
+            headers=HEADERS,
+            json={"raw_root": str(root), "edits_root": str(root)},
+        )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["baseline"] is None
+    assert body["usable_pairs"] == 0
+    assert any("אותו XMP" in warning for warning in body["warnings"])
+
+
+def test_review_and_export_leave_raw_unchanged(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    monkeypatch.setenv("PROGRAPHER_DATA_DIR", str(tmp_path / "data"))
+    event = tmp_path / "wedding"
+    event.mkdir()
+    raw_path = event / "IMG_0100.ARW"
+    _raw(raw_path, b"wedding-raw" * 500)
+    original = raw_path.read_bytes()
+    _xmp(
+        event / "IMG_0100.xmp",
+        exposure="+0.15",
+        temperature="5100",
+        tint="+3",
+        raw_name="IMG_0100.ARW",
+    )
+    reference = tmp_path / "reference"
+    reference.mkdir()
+    _raw(reference / "IMG_0001.ARW", b"ref-raw" * 400)
+    _xmp(
+        reference / "IMG_0001.xmp",
+        exposure="+0.50",
+        temperature="5600",
+        tint="+8",
+        raw_name="IMG_0001.ARW",
+    )
+    output = tmp_path / "export"
+
+    with TestClient(create_app()) as client:
+        opened = client.post(
+            "/api/events/open-folder",
+            headers=HEADERS,
+            json={"path": str(event)},
+        )
+        assert opened.status_code == 200
+        event_id = opened.json()["event"]["id"]
+
+        profile = client.post(
+            "/api/testing/profile",
+            headers=HEADERS,
+            json={"raw_root": str(reference), "edits_root": str(reference)},
+        )
+        assert profile.status_code == 200
+
+        sheet = client.get(
+            f"/api/testing/events/{event_id}/review",
+            headers=HEADERS,
+        )
+        assert sheet.status_code == 200
+        files = sheet.json()["files"]
+        assert len(files) == 1
+        assert files[0]["photographer"]["temperature"] == 5100
+        assert files[0]["suggested"]["temperature"] == 5600
+        assert files[0]["suggested"]["exposure"] == 0.5
+
+        exported = client.post(
+            "/api/testing/export",
+            headers=HEADERS,
+            json={
+                "event_id": event_id,
+                "output_dir": str(output),
+                "items": [
+                    {
+                        "fingerprint": files[0]["fingerprint"],
+                        "exposure": 0.25,
+                        "temperature": 5300,
+                        "tint": 5,
+                        "decision": "corrected",
+                    }
+                ],
+            },
+        )
+
+    assert exported.status_code == 200
+    body = exported.json()
+    assert body["written"] == 1
+    written = Path(body["files"][0]["path"])
+    assert written.name == "IMG_0100.xmp"
+    assert written.parent == output.resolve()
+    assert raw_path.read_bytes() == original
+    text = written.read_text(encoding="utf-8")
+    assert 'crs:Temperature="5300"' in text
+    assert "testing-loop-v1" in text
+
+    with TestClient(create_app()) as client:
+        blocked = client.post(
+            "/api/testing/export",
+            headers=HEADERS,
+            json={
+                "event_id": event_id,
+                "output_dir": str(event),
+                "items": [
+                    {
+                        "fingerprint": files[0]["fingerprint"],
+                        "exposure": 0.25,
+                        "temperature": 5300,
+                        "tint": 5,
+                        "decision": "approved",
+                    }
+                ],
+            },
+        )
+    assert blocked.status_code == 200
+    assert blocked.json()["skipped"] == 1
+    assert "לא הוחלף" in blocked.json()["files"][0]["reason"]
+    assert raw_path.read_bytes() == original

@@ -63,8 +63,8 @@ export default function DashboardScreen() {
           <span className={styles.kicker}>סביבת העבודה</span>
           <h2>מוכנים להתחיל.</h2>
           <p>
-            ProGrapher עובד מקומית ומרכז במקום אחד את האירועים, העריכה
-            והלמידה של הפרופיל שלך.
+            סדר הבדיקה: סורקים תיקיית אירוע, בונים בסיס מ-RAW ו-XMP במעבדה,
+            סוקרים בגלריה ומייצאים XMP ל-Lightroom. המקור נשאר ללא שינוי.
           </p>
         </div>
 

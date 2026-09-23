@@ -4,6 +4,7 @@ from pathlib import Path
 
 from app.catalog.event_store import (
     EventAvailability,
+    EventFile,
     EventOpenResult,
     EventStore,
     RelinkResult,
@@ -33,6 +34,17 @@ def open_event_folder(
 
 def list_events(store: EventStore | None = None):
     return (store or EventStore()).list_events()
+
+
+def list_event_files(
+    event_id: str,
+    store: EventStore | None = None,
+) -> list[EventFile]:
+    event_store = store or EventStore()
+    try:
+        return event_store.list_files(event_id)
+    except KeyError as exc:
+        raise EventOpenError("האירוע לא נמצא.") from exc
 
 
 def event_availability(

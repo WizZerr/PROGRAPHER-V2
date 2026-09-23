@@ -2,6 +2,8 @@ from fastapi import APIRouter, HTTPException, status
 
 from app.schemas.events import (
     EventAvailabilityResponse,
+    EventFileListResponse,
+    EventFileRecord,
     EventListResponse,
     EventOpenRequest,
     EventOpenResponse,
@@ -15,6 +17,7 @@ from app.services.event_scan_jobs import get_scan_job, start_scan_job
 from app.services.event_service import (
     EventOpenError,
     event_availability,
+    list_event_files,
     list_events,
     open_event_folder,
     relink_event,
@@ -113,6 +116,37 @@ def scan_status(job_id: str) -> EventScanStatusResponse:
         percent=max(0, min(100, percent)),
         error=job.error,
         result=_open_response(job.result) if job.result else None,
+    )
+
+
+@router.get(
+    "/{event_id}/files",
+    response_model=EventFileListResponse,
+)
+def files(event_id: str) -> EventFileListResponse:
+    try:
+        records = list_event_files(event_id)
+    except EventOpenError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(exc),
+        ) from exc
+
+    return EventFileListResponse(
+        event_id=event_id,
+        files=[
+            EventFileRecord(
+                fingerprint=item.fingerprint,
+                absolute_path=item.absolute_path,
+                relative_path=item.relative_path,
+                filename=item.filename,
+                extension=item.extension,
+                source_type=item.source_type,
+                size_bytes=item.size_bytes,
+                present=item.present,
+            )
+            for item in records
+        ],
     )
 
 

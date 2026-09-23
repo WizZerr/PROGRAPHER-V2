@@ -22,9 +22,16 @@ export async function apiRequest<T>(
   );
 
   if (!response.ok) {
-    throw new Error(
-      `Engine request failed: ${response.status} ${response.statusText}`,
-    );
+    let detail = `Engine request failed: ${response.status} ${response.statusText}`;
+    try {
+      const body = (await response.json()) as { detail?: unknown };
+      if (typeof body.detail === "string" && body.detail.trim()) {
+        detail = body.detail;
+      }
+    } catch {
+      // The engine did not return a JSON error body.
+    }
+    throw new Error(detail);
   }
 
   return (await response.json()) as T;

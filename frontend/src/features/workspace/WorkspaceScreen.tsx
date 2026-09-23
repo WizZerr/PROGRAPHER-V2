@@ -8,6 +8,7 @@ import GalleryScreen from "@/features/gallery/GalleryScreen";
 import DarkroomScreen from "@/features/darkroom/DarkroomScreen";
 import ProfileScreen from "@/features/profile/ProfileScreen";
 import TrainingScreen from "@/features/training/TrainingScreen";
+import { TestingNavProvider } from "@/features/testing/TestingNav";
 import type { WorkspaceView } from "./workspace.types";
 
 const titles: Record<WorkspaceView, string> = {
@@ -41,12 +42,14 @@ export default function WorkspaceScreen() {
   }, [activeView]);
 
   return (
-    <AppShell
-      activeView={activeView}
-      title={titles[activeView]}
-      onSelect={setActiveView}
-    >
-      {screen}
-    </AppShell>
+    <TestingNavProvider onOpenDarkroom={() => setActiveView("darkroom")}>
+      <AppShell
+        activeView={activeView}
+        title={titles[activeView]}
+        onSelect={setActiveView}
+      >
+        {screen}
+      </AppShell>
+    </TestingNavProvider>
   );
 }

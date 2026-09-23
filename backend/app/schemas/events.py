@@ -42,6 +42,22 @@ class EventAvailabilityResponse(BaseModel):
     missing_files: int
 
 
+class EventFileRecord(BaseModel):
+    fingerprint: str
+    absolute_path: str
+    relative_path: str
+    filename: str
+    extension: str
+    source_type: str
+    size_bytes: int
+    present: bool
+
+
+class EventFileListResponse(BaseModel):
+    event_id: str
+    files: list[EventFileRecord]
+
+
 class EventRelinkResponse(BaseModel):
     event: EventSummary
     matched_files: int

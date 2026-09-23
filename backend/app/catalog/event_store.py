@@ -52,6 +52,18 @@ class EventAvailability:
 
 
 @dataclass(frozen=True)
+class EventFile:
+    fingerprint: str
+    absolute_path: str
+    relative_path: str
+    filename: str
+    extension: str
+    source_type: str
+    size_bytes: int
+    present: bool
+
+
+@dataclass(frozen=True)
 class RelinkResult:
     event: EventRecord
     matched_files: int
@@ -282,6 +294,42 @@ class EventStore:
             created_at=row["created_at"],
             updated_at=row["updated_at"],
         )
+
+    def list_files(self, event_id: str) -> list[EventFile]:
+        self.get_event(event_id)
+
+        with self._connect() as db:
+            rows = db.execute(
+                """
+                SELECT
+                    fingerprint,
+                    absolute_path,
+                    relative_path,
+                    filename,
+                    extension,
+                    source_type,
+                    size_bytes,
+                    present
+                FROM event_files
+                WHERE event_id = ? AND present = 1
+                ORDER BY relative_path, filename
+                """,
+                (event_id,),
+            ).fetchall()
+
+        return [
+            EventFile(
+                fingerprint=row["fingerprint"],
+                absolute_path=row["absolute_path"],
+                relative_path=row["relative_path"],
+                filename=row["filename"],
+                extension=row["extension"],
+                source_type=row["source_type"],
+                size_bytes=int(row["size_bytes"]),
+                present=bool(row["present"]),
+            )
+            for row in rows
+        ]
 
     def list_events(self) -> list[EventRecord]:
         with self._connect() as db:

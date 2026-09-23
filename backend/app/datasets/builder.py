@@ -8,6 +8,7 @@ from app.datasets.contracts import (
     DatasetCandidate,
     DatasetPreview,
     SourceIdentity,
+    SourceMetadata,
 )
 from app.datasets.metadata import extract_source_metadata
 from app.datasets.xmp_reader import XmpEdit, XmpReadError, read_xmp
@@ -83,6 +84,7 @@ def build_dataset_preview(
     photographer_id: str | None = None,
     lightroom_version: str | None = None,
     style_label: str | None = None,
+    include_metadata: bool = True,
 ) -> DatasetPreview:
     raw_root_path = Path(raw_root).expanduser().resolve(strict=True)
     edits_root_path = Path(edits_root).expanduser().resolve(strict=True)
@@ -128,7 +130,11 @@ def build_dataset_preview(
     candidates: list[DatasetCandidate] = []
 
     for source in raw_sources:
-        metadata = extract_source_metadata(source.absolute_path)
+        metadata = (
+            extract_source_metadata(source.absolute_path)
+            if include_metadata
+            else SourceMetadata()
+        )
         relative = Path(source.relative_path)
 
         exact = by_relative_stem.get(_stem_key(relative), [])
