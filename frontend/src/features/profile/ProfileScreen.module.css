@@ -1,4 +1,6 @@
 .screen {
+  width: min(100%, 1440px);
+  margin: 0 auto;
   display: grid;
   gap: var(--pg-space-5);
 }
@@ -13,25 +15,27 @@
 }
 
 .hero {
-  padding: var(--pg-space-7);
-  border-radius: var(--pg-radius-xl);
+  min-height: 210px;
+  padding: clamp(28px, 4vw, 44px);
+  border-radius: var(--pg-radius-2xl);
+  background:
+    radial-gradient(circle at 10% 0%, rgba(255, 255, 255, 0.055), transparent 34%),
+    linear-gradient(145deg, #17171b 0%, #111114 58%, #0e0e11 100%);
+  box-shadow: var(--pg-shadow-soft);
 }
 
 .eyebrow,
 .label {
   display: block;
   color: var(--pg-text-muted);
-  font-size: 10px;
-  font-weight: var(--pg-weight-bold);
-  letter-spacing: 0.14em;
-  direction: ltr;
-  text-align: right;
+  font-size: var(--pg-font-xs);
+  font-weight: var(--pg-weight-semibold);
 }
 
 .hero h2 {
   margin: var(--pg-space-3) 0 0;
-  font-size: clamp(28px, 4vw, 42px);
-  font-weight: var(--pg-weight-bold);
+  font-size: clamp(32px, 4vw, 46px);
+  font-weight: var(--pg-weight-semibold);
   letter-spacing: -0.04em;
 }
 
@@ -129,6 +133,15 @@
 
 .sourceOption:hover:not(:disabled) {
   border-color: var(--pg-border-strong);
+  background: var(--pg-surface-2);
+}
+
+.sourceOptionSelected {
+  border-color: rgba(112, 226, 155, 0.34);
+  background:
+    linear-gradient(180deg, rgba(112, 226, 155, 0.055), transparent),
+    var(--pg-surface-1);
+  box-shadow: 0 0 0 1px rgba(112, 226, 155, 0.06) inset;
 }
 
 .sourceOption:disabled {
