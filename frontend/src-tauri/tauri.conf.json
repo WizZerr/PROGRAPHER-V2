@@ -7,7 +7,7 @@
     "frontendDist": "../out",
     "devUrl": "http://localhost:3000",
     "beforeDevCommand": "node scripts/tauri-before-dev.mjs",
-    "beforeBuildCommand": "npm run build"
+    "beforeBuildCommand": "node scripts/prepare-sidecar.mjs && npm run build"
   },
   "app": {
     "windows": [
