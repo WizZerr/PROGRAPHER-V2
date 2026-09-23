@@ -57,48 +57,66 @@ export default function DashboardScreen() {
   }, []);
 
   return (
-    <>
+    <div className={styles.page}>
       <section className={styles.hero}>
-        <div>
-          <span className={styles.eyebrow}>PROGRAPHER V2</span>
-          <h2>סביבת העבודה שלך</h2>
+        <div className={styles.heroCopy}>
+          <span className={styles.kicker}>סביבת העבודה</span>
+          <h2>מוכנים להתחיל.</h2>
           <p>
-            הממשק והמנוע המקומי מחוברים ומוכנים להמשך בניית תהליך העבודה.
+            ProGrapher עובד מקומית ומרכז במקום אחד את האירועים, העריכה
+            והלמידה של הפרופיל שלך.
           </p>
         </div>
 
-        {state === "checking" && (
-          <StatusBadge tone="warning">מתחבר למנוע…</StatusBadge>
-        )}
-        {state === "connected" && (
-          <StatusBadge tone="success">המנוע מחובר</StatusBadge>
-        )}
-        {state === "error" && (
-          <StatusBadge tone="danger">המנוע אינו זמין</StatusBadge>
-        )}
+        <div className={styles.heroStatus}>
+          {state === "checking" && (
+            <StatusBadge tone="warning">מתחבר למנוע…</StatusBadge>
+          )}
+          {state === "connected" && (
+            <StatusBadge tone="success">המנוע מחובר</StatusBadge>
+          )}
+          {state === "error" && (
+            <StatusBadge tone="danger">המנוע אינו זמין</StatusBadge>
+          )}
+        </div>
       </section>
 
-      <section className={styles.grid}>
-        <article className={styles.card}>
-          <span>מנוע</span>
-          <strong>{runtime?.service ?? "—"}</strong>
-          <small>גרסה {runtime?.version ?? "—"}</small>
-        </article>
+      <section className={styles.section} aria-labelledby="system-title">
+        <div className={styles.sectionHeader}>
+          <div>
+            <span className={styles.sectionEyebrow}>מערכת</span>
+            <h3 id="system-title">מצב ProGrapher</h3>
+          </div>
+          <span className={styles.sectionHint}>מידע מקומי</span>
+        </div>
 
-        <article className={styles.card}>
-          <span>חיבור מקומי</span>
-          <strong>{engine ? `127.0.0.1:${engine.port}` : "—"}</strong>
-          <small>חיבור מאובטח לאותה הפעלה</small>
-        </article>
+        <div className={styles.grid}>
+          <article className={styles.card}>
+            <span className={styles.cardLabel}>מנוע</span>
+            <strong>{runtime?.service ?? "—"}</strong>
+            <small>גרסה {runtime?.version ?? "—"}</small>
+          </article>
 
-        <article className={styles.card}>
-          <span>מערכת הפעלה</span>
-          <strong>{platform}</strong>
-          <small>זוהתה אוטומטית</small>
-        </article>
+          <article className={styles.card}>
+            <span className={styles.cardLabel}>חיבור</span>
+            <strong>{engine ? `127.0.0.1:${engine.port}` : "—"}</strong>
+            <small>Loopback מקומי לאותה הפעלה</small>
+          </article>
+
+          <article className={styles.card}>
+            <span className={styles.cardLabel}>מחשב</span>
+            <strong>{platform}</strong>
+            <small>זוהה אוטומטית</small>
+          </article>
+        </div>
       </section>
 
-      {state === "error" && <pre className={styles.error}>{error}</pre>}
-    </>
+      {state === "error" && (
+        <section className={styles.errorPanel}>
+          <span>פרטי חיבור</span>
+          <pre>{error}</pre>
+        </section>
+      )}
+    </div>
   );
 }

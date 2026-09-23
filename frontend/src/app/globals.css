@@ -17,14 +17,17 @@ html {
 
 body {
   min-height: 100vh;
+  overflow-x: hidden;
   color: var(--pg-text);
-  background: var(--pg-bg);
+  background:
+    radial-gradient(circle at 82% -8%, rgba(255, 255, 255, 0.045), transparent 28%),
+    var(--pg-bg);
   font-family:
-    Arial,
-    "Segoe UI",
-    system-ui,
     -apple-system,
     BlinkMacSystemFont,
+    "Segoe UI",
+    Arial,
+    system-ui,
     sans-serif;
   font-size: var(--pg-font-md);
   font-weight: var(--pg-weight-normal);
@@ -54,25 +57,27 @@ a {
 }
 
 :focus-visible {
-  outline: 2px solid rgba(255, 255, 255, 0.7);
+  outline: 2px solid rgba(255, 255, 255, 0.78);
   outline-offset: 3px;
 }
 
 ::-webkit-scrollbar {
-  width: 10px;
-  height: 10px;
+  width: 9px;
+  height: 9px;
 }
 
 ::-webkit-scrollbar-track {
-  background: var(--pg-surface-1);
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-  border: 2px solid var(--pg-surface-1);
+  border: 2px solid transparent;
   border-radius: var(--pg-radius-pill);
-  background: #333;
+  background: rgba(255, 255, 255, 0.16);
+  background-clip: padding-box;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #444;
+  background: rgba(255, 255, 255, 0.24);
+  background-clip: padding-box;
 }

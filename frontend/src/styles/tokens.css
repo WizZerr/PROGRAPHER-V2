@@ -1,31 +1,40 @@
 :root {
   color-scheme: dark;
 
-  --pg-bg: #090909;
-  --pg-surface-1: #0d0d0d;
-  --pg-surface-2: #101010;
-  --pg-surface-3: #141414;
+  --pg-bg: #09090b;
+  --pg-bg-elevated: #0c0c0f;
+  --pg-surface-1: rgba(18, 18, 22, 0.92);
+  --pg-surface-2: #141417;
+  --pg-surface-3: #1a1a1f;
+  --pg-surface-4: #202026;
   --pg-surface-hover: rgba(255, 255, 255, 0.055);
-  --pg-surface-active: rgba(255, 255, 255, 0.09);
+  --pg-surface-active: rgba(255, 255, 255, 0.085);
+  --pg-surface-selected: rgba(255, 255, 255, 0.11);
 
-  --pg-text: #f5f5f5;
-  --pg-text-secondary: #a0a0a0;
-  --pg-text-muted: #747474;
+  --pg-text: #f7f7f8;
+  --pg-text-secondary: #b2b2b8;
+  --pg-text-muted: #77777f;
+  --pg-text-faint: #56565d;
 
-  --pg-border: rgba(255, 255, 255, 0.08);
+  --pg-border: rgba(255, 255, 255, 0.075);
   --pg-border-strong: rgba(255, 255, 255, 0.13);
+  --pg-divider: rgba(255, 255, 255, 0.06);
 
-  --pg-success: #63df94;
-  --pg-success-bg: rgba(55, 214, 122, 0.12);
-  --pg-warning: #f5c66a;
-  --pg-warning-bg: rgba(245, 185, 66, 0.12);
-  --pg-danger: #ff8a8a;
-  --pg-danger-bg: rgba(255, 92, 92, 0.12);
+  --pg-accent: #f4f4f5;
+  --pg-accent-text: #111114;
+  --pg-success: #70e29b;
+  --pg-success-bg: rgba(62, 211, 119, 0.11);
+  --pg-warning: #f3c96f;
+  --pg-warning-bg: rgba(237, 180, 66, 0.11);
+  --pg-danger: #ff8f8f;
+  --pg-danger-bg: rgba(255, 86, 86, 0.11);
 
+  --pg-radius-xs: 8px;
   --pg-radius-sm: 10px;
   --pg-radius-md: 14px;
   --pg-radius-lg: 18px;
-  --pg-radius-xl: 22px;
+  --pg-radius-xl: 24px;
+  --pg-radius-2xl: 30px;
   --pg-radius-pill: 999px;
 
   --pg-space-1: 4px;
@@ -37,22 +46,30 @@
   --pg-space-7: 28px;
   --pg-space-8: 32px;
   --pg-space-10: 40px;
+  --pg-space-12: 48px;
 
-  --pg-sidebar-width: 230px;
-  --pg-sidebar-compact-width: 76px;
-  --pg-header-height: 82px;
+  --pg-sidebar-width: 248px;
+  --pg-sidebar-compact-width: 82px;
+  --pg-header-height: 76px;
 
-  --pg-font-xs: 11px;
-  --pg-font-sm: 12px;
-  --pg-font-md: 14px;
-  --pg-font-lg: 16px;
-  --pg-font-xl: 20px;
+  --pg-font-xs: 12px;
+  --pg-font-sm: 13px;
+  --pg-font-md: 15px;
+  --pg-font-lg: 17px;
+  --pg-font-xl: 22px;
+  --pg-font-2xl: 30px;
+  --pg-font-display: clamp(34px, 4vw, 52px);
 
   --pg-weight-normal: 400;
   --pg-weight-medium: 500;
+  --pg-weight-semibold: 600;
   --pg-weight-bold: 700;
 
-  --pg-shadow-panel: 0 24px 70px rgba(0, 0, 0, 0.28);
+  --pg-shadow-panel:
+    0 1px 0 rgba(255, 255, 255, 0.025) inset,
+    0 24px 80px rgba(0, 0, 0, 0.28);
+  --pg-shadow-soft: 0 16px 48px rgba(0, 0, 0, 0.18);
 
-  --pg-transition-fast: 120ms ease;
+  --pg-transition-fast: 140ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  --pg-transition-medium: 220ms cubic-bezier(0.2, 0.8, 0.2, 1);
 }
