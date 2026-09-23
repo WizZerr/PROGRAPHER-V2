@@ -21,10 +21,15 @@ const ENGINE_START_TIMEOUT: Duration = Duration::from_secs(25);
 #[cfg(target_os = "windows")]
 const CREATE_NO_WINDOW: u32 = 0x08000000;
 
-struct EngineState {
-    child: Mutex<Option<CommandChild>>,
+struct EngineRuntimeState {
+    child: Option<CommandChild>,
     port: u16,
     secret: String,
+    status: String,
+}
+
+struct EngineState {
+    runtime: Mutex<EngineRuntimeState>,
 }
 
 #[derive(Serialize)]
@@ -38,11 +43,13 @@ struct EngineInfo {
 
 #[tauri::command]
 fn get_engine_info(state: tauri::State<'_, EngineState>) -> EngineInfo {
+    let runtime = state.runtime.lock().expect("engine state mutex poisoned");
+
     EngineInfo {
         host: ENGINE_HOST.to_string(),
-        port: state.port,
-        secret: state.secret.clone(),
-        status: "ready".to_string(),
+        port: runtime.port,
+        secret: runtime.secret.clone(),
+        status: runtime.status.clone(),
     }
 }
 
@@ -222,10 +229,12 @@ fn terminate_engine(child: CommandChild) {
 }
 
 fn stop_engine(state: &EngineState) {
-    if let Ok(mut child_guard) = state.child.lock() {
-        if let Some(child) = child_guard.take() {
+    if let Ok(mut runtime) = state.runtime.lock() {
+        if let Some(child) = runtime.child.take() {
             terminate_engine(child);
         }
+
+        runtime.status = "stopped".to_string();
     }
 }
 
@@ -243,13 +252,42 @@ pub fn run() {
                 )?;
             }
 
-            let (child, port, secret) =
-                start_packaged_engine(app.handle()).map_err(std::io::Error::other)?;
-
             app.manage(EngineState {
-                child: Mutex::new(Some(child)),
-                port,
-                secret,
+                runtime: Mutex::new(EngineRuntimeState {
+                    child: None,
+                    port: 0,
+                    secret: String::new(),
+                    status: "starting".to_string(),
+                }),
+            });
+
+            // Do not block desktop startup on the packaged Python engine.
+            // The window should render immediately while the engine warms up
+            // in the background. Frontend API calls wait for status="ready".
+            let app_handle = app.handle().clone();
+
+            tauri::async_runtime::spawn_blocking(move || {
+                match start_packaged_engine(&app_handle) {
+                    Ok((child, port, secret)) => {
+                        let state = app_handle.state::<EngineState>();
+
+                        if let Ok(mut runtime) = state.runtime.lock() {
+                            runtime.child = Some(child);
+                            runtime.port = port;
+                            runtime.secret = secret;
+                            runtime.status = "ready".to_string();
+                        }
+                    }
+                    Err(error) => {
+                        eprintln!("[engine] startup failed: {error}");
+
+                        let state = app_handle.state::<EngineState>();
+
+                        if let Ok(mut runtime) = state.runtime.lock() {
+                            runtime.status = format!("error:{error}");
+                        }
+                    }
+                }
             });
 
             Ok(())
