@@ -184,7 +184,7 @@ export default function ProfileScreen() {
   return (
     <section className={styles.screen}>
       <div className={styles.hero}>
-        <span className={styles.eyebrow}>PHOTOGRAPHER SETUP</span>
+        <span className={styles.eyebrow}>הגדרת פרופיל</span>
         <h2>הפרופיל שלי</h2>
         <p>
           הפרופיל האישי ייווצר בתוך ProGrapher מנתוני עריכה אמיתיים שלך.
@@ -199,7 +199,7 @@ export default function ProfileScreen() {
         <article className={styles.card}>
           <div className={styles.cardHeader}>
             <div>
-              <span className={styles.label}>LIGHTROOM CLASSIC</span>
+              <span className={styles.label}>חיבור ל־Lightroom</span>
               <h3>זיהוי Lightroom</h3>
             </div>
             <span
@@ -222,7 +222,7 @@ export default function ProfileScreen() {
         <article className={styles.card}>
           <div className={styles.cardHeader}>
             <div>
-              <span className={styles.label}>PROFILE STATUS</span>
+              <span className={styles.label}>מצב הפרופיל</span>
               <h3>מצב הפרופיל</h3>
             </div>
             <span className={styles.statusBadge}>
@@ -238,13 +238,13 @@ export default function ProfileScreen() {
       </div>
 
       <article className={styles.sourceCard}>
-        <span className={styles.label}>EDIT SOURCE</span>
+        <span className={styles.label}>מקור העריכה</span>
         <h3>מאיפה נלמד את הסגנון שלך?</h3>
 
         <div className={styles.sourceOptions}>
           <button
             type="button"
-            className={styles.sourceOption}
+            className={`${styles.sourceOption} ${setup?.source_type === "lightroom_catalog" ? styles.sourceOptionSelected : ""}`}
             onClick={() => void chooseCatalog()}
             disabled={busy}
           >
@@ -254,7 +254,7 @@ export default function ProfileScreen() {
 
           <button
             type="button"
-            className={styles.sourceOption}
+            className={`${styles.sourceOption} ${setup?.source_type === "edits_folder" ? styles.sourceOptionSelected : ""}`}
             onClick={() => void chooseEditsFolder()}
             disabled={busy}
           >
@@ -264,7 +264,7 @@ export default function ProfileScreen() {
 
           <button
             type="button"
-            className={styles.sourceOption}
+            className={`${styles.sourceOption} ${setup?.source_type === "none" ? styles.sourceOptionSelected : ""}`}
             onClick={() => void noExistingSource()}
             disabled={busy}
           >
@@ -296,7 +296,7 @@ export default function ProfileScreen() {
       </article>
 
       <article className={styles.styleCard}>
-        <span className={styles.label}>STYLE TARGET</span>
+        <span className={styles.label}>יעד הסגנון</span>
         <h3>איך נזהה את הסגנון שלך?</h3>
         <p className={styles.sourceIntro}>
           השדות כאן אופציונליים. הם מתעדים את כיוון העבודה ולא מחליפים
@@ -380,7 +380,7 @@ export default function ProfileScreen() {
       </article>
 
       <article className={styles.readinessCard}>
-        <span className={styles.label}>READINESS</span>
+        <span className={styles.label}>מוכנות הפרופיל</span>
         <h3>מה עדיין חסר לפרופיל אישי?</h3>
 
         <ul>
