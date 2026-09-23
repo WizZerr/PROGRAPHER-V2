@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "tauri": "tauri"
+    "tauri": "node scripts/prepare-sidecar.mjs && tauri"
   },
   "dependencies": {
     "@tauri-apps/api": "^2.11.1",
