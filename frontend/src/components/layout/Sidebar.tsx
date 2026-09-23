@@ -88,7 +88,7 @@ export default function Sidebar({ activeView, onSelect }: SidebarProps) {
         </div>
         <div className={styles.brandText}>
           <span className={styles.brandName}>ProGrapher</span>
-          <span className={styles.brandMeta}>Desktop</span>
+          <span className={styles.brandMeta}>סטודיו מקומי</span>
         </div>
       </div>
 
