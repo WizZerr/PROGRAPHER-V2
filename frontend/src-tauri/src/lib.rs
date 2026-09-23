@@ -276,7 +276,7 @@ pub fn run() {
                             runtime.port = port;
                             runtime.secret = secret;
                             runtime.status = "ready".to_string();
-                        }
+                        };
                     }
                     Err(error) => {
                         eprintln!("[engine] startup failed: {error}");
@@ -285,7 +285,7 @@ pub fn run() {
 
                         if let Ok(mut runtime) = state.runtime.lock() {
                             runtime.status = format!("error:{error}");
-                        }
+                        };
                     }
                 }
             });
