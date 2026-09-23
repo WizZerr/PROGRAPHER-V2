@@ -12,6 +12,7 @@ type TestingNavValue = {
   outputDir: string;
   setOutputDir: (value: string) => void;
   openPhoto: (eventId: string, fingerprint: string) => void;
+  openGallery: () => void;
 };
 
 const TestingNavContext = createContext<TestingNavValue | null>(null);
@@ -19,9 +20,11 @@ const TestingNavContext = createContext<TestingNavValue | null>(null);
 export function TestingNavProvider({
   children,
   onOpenDarkroom,
+  onOpenGallery,
 }: {
   children: React.ReactNode;
   onOpenDarkroom: () => void;
+  onOpenGallery: () => void;
 }) {
   const [selection, setSelection] = useState<PhotoSelection | null>(null);
   const [outputDir, setOutputDir] = useState("");
@@ -36,6 +39,7 @@ export function TestingNavProvider({
           setSelection({ eventId, fingerprint });
           onOpenDarkroom();
         },
+        openGallery: onOpenGallery,
       }}
     >
       {children}

@@ -1,4 +1,5 @@
 from fastapi import APIRouter, HTTPException, status
+from fastapi.responses import Response
 
 from app.schemas.events import (
     EventAvailabilityResponse,
@@ -13,6 +14,7 @@ from app.schemas.events import (
     EventScanStatusResponse,
     EventSummary,
 )
+from app.preview.embedded_jpeg import PreviewUnavailable, camera_preview_bytes
 from app.services.event_scan_jobs import get_scan_job, start_scan_job
 from app.services.event_service import (
     EventOpenError,
@@ -147,6 +149,23 @@ def files(event_id: str) -> EventFileListResponse:
             )
             for item in records
         ],
+    )
+
+
+@router.get("/{event_id}/files/{fingerprint}/preview")
+def file_preview(event_id: str, fingerprint: str) -> Response:
+    try:
+        payload = camera_preview_bytes(event_id, fingerprint)
+    except PreviewUnavailable as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(exc),
+        ) from exc
+
+    return Response(
+        content=payload,
+        media_type="image/jpeg",
+        headers={"Cache-Control": "private, max-age=3600"},
     )
 
 

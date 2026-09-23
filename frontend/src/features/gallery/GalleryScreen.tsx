@@ -1,15 +1,59 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { listEvents, type EventSummary } from "@/features/events/events.api";
-import { getReviewSheet, type ReviewSheet } from "@/features/testing/testing.api";
+import CameraPreview from "@/features/review/CameraPreview";
+import { getReviewSheet, type ReviewFile, type ReviewSheet } from "@/features/testing/testing.api";
 import { useTestingNav } from "@/features/testing/TestingNav";
-import styles from "@/features/testing/testing.module.css";
+import styles from "./GalleryScreen.module.css";
 
 function statusLabel(status: string) {
   if (status === "matched") return "יש עריכת צלם";
-  if (status === "ambiguous") return "שם קובץ לא חד";
-  return "אין XMP תואם";
+  if (status === "ambiguous") return "שם לא חד";
+  return "בלי XMP";
+}
+
+function GalleryCard({
+  eventId,
+  file,
+  onOpen,
+}: {
+  eventId: string;
+  file: ReviewFile;
+  onOpen: () => void;
+}) {
+  const ref = useRef<HTMLButtonElement>(null);
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    const node = ref.current;
+    if (!node) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry?.isIntersecting) setVisible(true);
+      },
+      { rootMargin: "240px" },
+    );
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, []);
+
+  return (
+    <button ref={ref} type="button" className={styles.card} onClick={onOpen}>
+      <div className={styles.thumb}>
+        {visible && (
+          <CameraPreview eventId={eventId} fingerprint={file.fingerprint} alt="" />
+        )}
+      </div>
+      <strong>{file.filename}</strong>
+      <span className={styles.meta}>
+        <span>{statusLabel(file.pair_status)}</span>
+        <bdi>
+          {file.suggested?.exposure != null ? file.suggested.exposure.toFixed(2) : "—"}
+        </bdi>
+      </span>
+    </button>
+  );
 }
 
 export default function GalleryScreen() {
@@ -33,7 +77,10 @@ export default function GalleryScreen() {
   useEffect(() => {
     if (!eventId) return;
     void getReviewSheet(eventId)
-      .then(setSheet)
+      .then((value) => {
+        setSheet(value);
+        setError("");
+      })
       .catch((cause: unknown) => {
         setError(cause instanceof Error ? cause.message : "טעינת התמונות נכשלה.");
       });
@@ -41,56 +88,39 @@ export default function GalleryScreen() {
 
   return (
     <div className={styles.screen}>
-      <section className={styles.hero}>
-        <h2>גלריית בדיקה</h2>
-        <p>
-          בוחרים אירוע שנסרק, ופותחים תמונה כדי לראות את הצעת הבסיס מול עריכת
-          הצלם אם קיימת. כל התמונות נשארות לבדיקה.
-        </p>
-        <div className={styles.actions}>
-          <label className={styles.field}>
-            <span>אירוע</span>
-            <select
-              value={eventId}
-              onChange={(event) => setEventId(event.target.value)}
-            >
-              {events.length === 0 && <option value="">אין אירועים</option>}
-              {events.map((event) => (
-                <option key={event.id} value={event.id}>
-                  {event.name} · {event.raw_files} RAW
-                </option>
-              ))}
-            </select>
-          </label>
+      <div className={styles.toolbar}>
+        <div>
+          <h2>גלריה</h2>
+          <p>כל התמונות נשארות לבדיקה. לחיצה פותחת את חדר העריכה.</p>
         </div>
-      </section>
+        <label className={styles.field}>
+          <span>אירוע</span>
+          <select value={eventId} onChange={(event) => setEventId(event.target.value)}>
+            {events.length === 0 && <option value="">אין אירועים</option>}
+            {events.map((event) => (
+              <option key={event.id} value={event.id}>
+                {event.name} · {event.raw_files} RAW
+              </option>
+            ))}
+          </select>
+        </label>
+      </div>
 
       {error && <p className={styles.error}>{error}</p>}
-      {sheet && <p className={styles.note}>{sheet.note}</p>}
+      {sheet && sheet.files.length === 0 && (
+        <p className={styles.empty}>באירוע הזה אין קבצי RAW.</p>
+      )}
 
-      <section className={styles.fileList}>
+      <div className={styles.grid}>
         {sheet?.files.map((file) => (
-          <button
+          <GalleryCard
             key={file.fingerprint}
-            className={styles.fileButton}
-            type="button"
-            onClick={() => openPhoto(sheet.event_id, file.fingerprint)}
-          >
-            <span>
-              <strong className={styles.fileName}>{file.filename}</strong>
-              <small className={styles.note}> {statusLabel(file.pair_status)}</small>
-            </span>
-            <bdi className={styles.ltr}>
-              {file.suggested
-                ? `${file.suggested.exposure} / ${file.suggested.temperature}K / ${file.suggested.tint}`
-                : "אין הצעה"}
-            </bdi>
-          </button>
+            eventId={sheet.event_id}
+            file={file}
+            onOpen={() => openPhoto(sheet.event_id, file.fingerprint)}
+          />
         ))}
-        {sheet && sheet.files.length === 0 && (
-          <p className={styles.note}>באירוע הזה אין קבצי RAW.</p>
-        )}
-      </section>
+      </div>
     </div>
   );
 }

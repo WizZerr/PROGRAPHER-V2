@@ -1,47 +1,122 @@
 .screen {
+  width: min(100%, 1480px);
+  margin: 0 auto;
   display: grid;
   gap: 18px;
 }
 
-.hero {
-  padding: 28px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 20px;
-  background: #111;
+.toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: end;
+  gap: 18px;
 }
 
-.eyebrow {
-  display: block;
-  margin-bottom: 10px;
-  color: #777;
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.14em;
-  direction: ltr;
-  text-align: right;
-}
-
-.hero h2 {
+.toolbar h2 {
   margin: 0;
-  font-size: clamp(28px, 4vw, 42px);
+  font-size: 32px;
   letter-spacing: -0.04em;
 }
 
-.hero p {
-  margin: 10px 0 0;
-  max-width: 720px;
-  color: #999;
-  line-height: 1.7;
+.toolbar p {
+  margin: 6px 0 0;
+  color: var(--pg-text-secondary);
+  font-size: 15px;
 }
 
-.placeholder {
-  min-height: 220px;
+.field {
   display: grid;
-  place-items: center;
-  padding: 24px;
-  border: 1px dashed rgba(255, 255, 255, 0.1);
-  border-radius: 18px;
-  background: #0d0d0d;
-  color: #777;
-  text-align: center;
+  gap: 6px;
+  min-width: min(100%, 280px);
+  color: var(--pg-text-muted);
+  font-size: 13px;
+}
+
+.field select {
+  min-height: 44px;
+  padding: 0 12px;
+  border: 1px solid var(--pg-border);
+  border-radius: 12px;
+  background: var(--pg-surface-3);
+  color: var(--pg-text);
+  font: inherit;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+  gap: 12px;
+}
+
+.card {
+  display: grid;
+  gap: 8px;
+  padding: 8px;
+  border: 1px solid var(--pg-border);
+  border-radius: 16px;
+  background: var(--pg-surface-2);
+  color: inherit;
+  text-align: right;
+  cursor: pointer;
+}
+
+.card:hover,
+.card:focus-visible {
+  border-color: var(--pg-border-strong);
+  background: var(--pg-surface-3);
+}
+
+.card:focus-visible {
+  outline: 2px solid #f4f4f5;
+  outline-offset: 3px;
+}
+
+.thumb {
+  aspect-ratio: 3 / 2;
+  border-radius: 10px;
+  overflow: hidden;
+  background: #101013;
+}
+
+.thumb img,
+.thumb div {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.card strong {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  direction: ltr;
+  unicode-bidi: isolate;
+  text-align: right;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.meta {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  color: var(--pg-text-muted);
+  font-size: 12px;
+}
+
+.meta bdi {
+  direction: ltr;
+  unicode-bidi: isolate;
+}
+
+.error,
+.empty {
+  margin: 0;
+  color: var(--pg-text-secondary);
+  font-size: 15px;
+}
+
+.error {
+  color: var(--pg-danger);
 }

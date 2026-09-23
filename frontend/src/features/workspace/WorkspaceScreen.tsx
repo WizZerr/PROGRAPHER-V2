@@ -42,10 +42,14 @@ export default function WorkspaceScreen() {
   }, [activeView]);
 
   return (
-    <TestingNavProvider onOpenDarkroom={() => setActiveView("darkroom")}>
+    <TestingNavProvider
+      onOpenDarkroom={() => setActiveView("darkroom")}
+      onOpenGallery={() => setActiveView("gallery")}
+    >
       <AppShell
         activeView={activeView}
         title={titles[activeView]}
+        immersive={activeView === "darkroom"}
         onSelect={setActiveView}
       >
         {screen}

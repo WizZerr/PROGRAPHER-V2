@@ -36,3 +36,19 @@ export async function apiRequest<T>(
 
   return (await response.json()) as T;
 }
+
+export async function apiBlob(path: string): Promise<Blob> {
+  const engine = await getEngineInfo();
+  const headers = new Headers();
+  headers.set("X-ProGrapher-Secret", engine.secret);
+
+  const response = await fetch(`http://${engine.host}:${engine.port}${path}`, {
+    headers,
+  });
+
+  if (!response.ok) {
+    throw new Error("אין תצוגת מצלמה לקובץ הזה.");
+  }
+
+  return response.blob();
+}
