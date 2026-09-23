@@ -2,6 +2,8 @@ use serde::Serialize;
 use std::{
     io::{Read, Write},
     net::{SocketAddr, TcpListener, TcpStream},
+    path::PathBuf,
+    process::Stdio,
     sync::Mutex,
     thread,
     time::{Duration, Instant},
@@ -21,8 +23,14 @@ const ENGINE_START_TIMEOUT: Duration = Duration::from_secs(25);
 #[cfg(target_os = "windows")]
 const CREATE_NO_WINDOW: u32 = 0x08000000;
 
+enum EngineProcess {
+    Packaged(CommandChild),
+    #[cfg(debug_assertions)]
+    Development(std::process::Child),
+}
+
 struct EngineRuntimeState {
-    child: Option<CommandChild>,
+    child: Option<EngineProcess>,
     port: u16,
     secret: String,
     status: String,
@@ -144,6 +152,72 @@ fn wait_until_healthy(port: u16) -> bool {
     false
 }
 
+#[cfg(debug_assertions)]
+fn start_development_engine() -> Result<(EngineProcess, u16, String), String> {
+    let port = reserve_runtime_port()?;
+    let secret = uuid::Uuid::new_v4().to_string();
+
+    let manifest_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+    let frontend_dir = manifest_dir
+        .parent()
+        .ok_or_else(|| "failed to resolve frontend directory".to_string())?;
+    let project_dir = frontend_dir
+        .parent()
+        .ok_or_else(|| "failed to resolve project directory".to_string())?;
+    let backend_dir = project_dir.join("backend");
+
+    let python = if cfg!(target_os = "windows") {
+        backend_dir.join(".venv").join("Scripts").join("python.exe")
+    } else {
+        backend_dir.join(".venv").join("bin").join("python")
+    };
+    let entry = backend_dir.join("desktop_entry.py");
+
+    if !python.is_file() {
+        return Err(format!(
+            "ProGrapher development Python was not found: {}",
+            python.display()
+        ));
+    }
+
+    if !entry.is_file() {
+        return Err(format!(
+            "ProGrapher desktop entry point was not found: {}",
+            entry.display()
+        ));
+    }
+
+    let mut command = std::process::Command::new(&python);
+    command
+        .current_dir(&backend_dir)
+        .arg(&entry)
+        .args(["--host", ENGINE_HOST, "--port", &port.to_string()])
+        .env("PROGRAPHER_ENGINE_SECRET", &secret)
+        .stdout(Stdio::inherit())
+        .stderr(Stdio::inherit());
+
+    #[cfg(target_os = "windows")]
+    command.creation_flags(CREATE_NO_WINDOW);
+
+    let child = command
+        .spawn()
+        .map_err(|e| format!("failed to start development ProGrapher Engine: {e}"))?;
+
+    let process = EngineProcess::Development(child);
+
+    if !wait_until_healthy(port) {
+        terminate_engine(process);
+        return Err(format!(
+            "Development ProGrapher Engine did not become healthy within {} seconds",
+            ENGINE_START_TIMEOUT.as_secs()
+        ));
+    }
+
+    println!("ProGrapher development engine ready: http://{ENGINE_HOST}:{port}");
+
+    Ok((process, port, secret))
+}
+
 fn start_packaged_engine(app: &tauri::AppHandle) -> Result<(CommandChild, u16, String), String> {
     let port = reserve_runtime_port()?;
     let secret = uuid::Uuid::new_v4().to_string();
@@ -201,31 +275,64 @@ fn start_packaged_engine(app: &tauri::AppHandle) -> Result<(CommandChild, u16, S
     Ok((child, port, secret))
 }
 
+fn start_engine(app: &tauri::AppHandle) -> Result<(EngineProcess, u16, String), String> {
+    #[cfg(debug_assertions)]
+    {
+        let _ = app;
+        return start_development_engine();
+    }
+
+    #[cfg(not(debug_assertions))]
+    {
+        let (child, port, secret) = start_packaged_engine(app)?;
+        Ok((EngineProcess::Packaged(child), port, secret))
+    }
+}
+
 #[cfg(target_os = "windows")]
-fn terminate_engine(child: CommandChild) {
-    let pid = child.pid();
+fn terminate_engine(child: EngineProcess) {
+    match child {
+        EngineProcess::Packaged(child) => {
+            let pid = child.pid();
+            let tree_killed = std::process::Command::new("taskkill.exe")
+                .args(["/PID", &pid.to_string(), "/T", "/F"])
+                .creation_flags(CREATE_NO_WINDOW)
+                .status()
+                .map(|status| status.success())
+                .unwrap_or(false);
 
-    // PyInstaller --onefile runs a parent process and an extracted child
-    // process. Killing only the CommandChild PID can leave the other process
-    // alive. taskkill /T terminates the full process tree.
-    let tree_killed = std::process::Command::new("taskkill.exe")
-        .args(["/PID", &pid.to_string(), "/T", "/F"])
-        .creation_flags(CREATE_NO_WINDOW)
-        .status()
-        .map(|status| status.success())
-        .unwrap_or(false);
+            if !tree_killed {
+                let _ = child.kill();
+            }
+        }
+        #[cfg(debug_assertions)]
+        EngineProcess::Development(mut child) => {
+            let pid = child.id();
+            let tree_killed = std::process::Command::new("taskkill.exe")
+                .args(["/PID", &pid.to_string(), "/T", "/F"])
+                .creation_flags(CREATE_NO_WINDOW)
+                .status()
+                .map(|status| status.success())
+                .unwrap_or(false);
 
-    // Fallback to the Tauri handle if taskkill was unavailable or failed.
-    if !tree_killed {
-        let _ = child.kill();
+            if !tree_killed {
+                let _ = child.kill();
+            }
+        }
     }
 }
 
 #[cfg(not(target_os = "windows"))]
-fn terminate_engine(child: CommandChild) {
-    // macOS/Linux behavior remains on the native sidecar kill path for now.
-    // macOS will receive its own process-lifecycle validation on real hardware.
-    let _ = child.kill();
+fn terminate_engine(child: EngineProcess) {
+    match child {
+        EngineProcess::Packaged(child) => {
+            let _ = child.kill();
+        }
+        #[cfg(debug_assertions)]
+        EngineProcess::Development(mut child) => {
+            let _ = child.kill();
+        }
+    }
 }
 
 fn stop_engine(state: &EngineState) {
@@ -267,7 +374,7 @@ pub fn run() {
             let app_handle = app.handle().clone();
 
             tauri::async_runtime::spawn_blocking(move || {
-                match start_packaged_engine(&app_handle) {
+                match start_engine(&app_handle) {
                     Ok((child, port, secret)) => {
                         let state = app_handle.state::<EngineState>();
 
