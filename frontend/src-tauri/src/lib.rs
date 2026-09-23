@@ -3,41 +3,26 @@ use std::{
     io::{Read, Write},
     net::{SocketAddr, TcpListener, TcpStream},
     path::PathBuf,
-    process::Stdio,
+    process::{Child, Command, Stdio},
     sync::Mutex,
     thread,
     time::{Duration, Instant},
 };
 use tauri::Manager;
-use tauri_plugin_shell::{
-    process::{CommandChild, CommandEvent},
-    ShellExt,
-};
 
 #[cfg(target_os = "windows")]
 use std::os::windows::process::CommandExt;
 
 const ENGINE_HOST: &str = "127.0.0.1";
-const ENGINE_START_TIMEOUT: Duration = Duration::from_secs(25);
+const ENGINE_START_TIMEOUT: Duration = Duration::from_secs(15);
 
 #[cfg(target_os = "windows")]
 const CREATE_NO_WINDOW: u32 = 0x08000000;
 
-enum EngineProcess {
-    Packaged(CommandChild),
-    #[cfg(debug_assertions)]
-    Development(std::process::Child),
-}
-
-struct EngineRuntimeState {
-    child: Option<EngineProcess>,
+struct EngineState {
+    child: Mutex<Option<Child>>,
     port: u16,
     secret: String,
-    status: String,
-}
-
-struct EngineState {
-    runtime: Mutex<EngineRuntimeState>,
 }
 
 #[derive(Serialize)]
@@ -51,14 +36,32 @@ struct EngineInfo {
 
 #[tauri::command]
 fn get_engine_info(state: tauri::State<'_, EngineState>) -> EngineInfo {
-    let runtime = state.runtime.lock().expect("engine state mutex poisoned");
-
     EngineInfo {
         host: ENGINE_HOST.to_string(),
-        port: runtime.port,
-        secret: runtime.secret.clone(),
-        status: runtime.status.clone(),
+        port: state.port,
+        secret: state.secret.clone(),
+        status: "ready".to_string(),
     }
+}
+
+fn project_root() -> PathBuf {
+    PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join("..")
+        .join("..")
+}
+
+fn backend_dir() -> PathBuf {
+    project_root().join("backend")
+}
+
+#[cfg(target_os = "windows")]
+fn python_executable() -> PathBuf {
+    backend_dir().join(".venv").join("Scripts").join("python.exe")
+}
+
+#[cfg(not(target_os = "windows"))]
+fn python_executable() -> PathBuf {
+    backend_dir().join(".venv").join("bin").join("python")
 }
 
 fn reserve_runtime_port() -> Result<u16, String> {
@@ -85,8 +88,8 @@ fn health_check(port: u16) -> bool {
         Err(_) => return false,
     };
 
-    let _ = stream.set_read_timeout(Some(Duration::from_millis(800)));
-    let _ = stream.set_write_timeout(Some(Duration::from_millis(800)));
+    let _ = stream.set_read_timeout(Some(Duration::from_millis(700)));
+    let _ = stream.set_write_timeout(Some(Duration::from_millis(700)));
 
     let request =
         format!("GET /health HTTP/1.1\r\nHost: {ENGINE_HOST}:{port}\r\nConnection: close\r\n\r\n");
@@ -95,10 +98,6 @@ fn health_check(port: u16) -> bool {
         return false;
     }
 
-    // Do not wait for EOF. Some HTTP servers keep the socket alive long enough
-    // for read_to_string() to hit our timeout even though the full health
-    // response has already arrived. Read bounded chunks and return as soon as
-    // the expected response is present.
     let mut response = Vec::with_capacity(2048);
     let mut buffer = [0_u8; 2048];
 
@@ -107,8 +106,8 @@ fn health_check(port: u16) -> bool {
             Ok(0) => break,
             Ok(read) => {
                 response.extend_from_slice(&buffer[..read]);
-
                 let text = String::from_utf8_lossy(&response);
+
                 if text.contains("200 OK")
                     && (text.contains("\"status\":\"ok\"")
                         || text.contains("\"status\": \"ok\""))
@@ -132,10 +131,7 @@ fn health_check(port: u16) -> bool {
         }
     }
 
-    let text = String::from_utf8_lossy(&response);
-    text.contains("200 OK")
-        && (text.contains("\"status\":\"ok\"")
-            || text.contains("\"status\": \"ok\""))
+    false
 }
 
 fn wait_until_healthy(port: u16) -> bool {
@@ -146,202 +142,83 @@ fn wait_until_healthy(port: u16) -> bool {
             return true;
         }
 
-        thread::sleep(Duration::from_millis(180));
+        thread::sleep(Duration::from_millis(120));
     }
 
     false
 }
 
-#[cfg(debug_assertions)]
-fn start_development_engine() -> Result<(EngineProcess, u16, String), String> {
-    let port = reserve_runtime_port()?;
-    let secret = uuid::Uuid::new_v4().to_string();
+fn start_engine() -> Result<(Child, u16, String), String> {
+    let python = python_executable();
+    let backend = backend_dir();
 
-    let manifest_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-    let frontend_dir = manifest_dir
-        .parent()
-        .ok_or_else(|| "failed to resolve frontend directory".to_string())?;
-    let project_dir = frontend_dir
-        .parent()
-        .ok_or_else(|| "failed to resolve project directory".to_string())?;
-    let backend_dir = project_dir.join("backend");
-
-    let python = if cfg!(target_os = "windows") {
-        backend_dir.join(".venv").join("Scripts").join("python.exe")
-    } else {
-        backend_dir.join(".venv").join("bin").join("python")
-    };
-    let entry = backend_dir.join("desktop_entry.py");
-
-    if !python.is_file() {
+    if !python.exists() {
         return Err(format!(
-            "ProGrapher development Python was not found: {}",
+            "Python virtual environment was not found at: {}",
             python.display()
         ));
     }
 
-    if !entry.is_file() {
+    if !backend.join("app").join("main.py").exists() {
         return Err(format!(
-            "ProGrapher desktop entry point was not found: {}",
-            entry.display()
+            "ProGrapher backend was not found at: {}",
+            backend.display()
         ));
     }
 
-    let mut command = std::process::Command::new(&python);
+    let port = reserve_runtime_port()?;
+    let secret = uuid::Uuid::new_v4().to_string();
+
+    let mut command = Command::new(&python);
     command
-        .current_dir(&backend_dir)
-        .arg(&entry)
-        .args(["--host", ENGINE_HOST, "--port", &port.to_string()])
-        .env("PROGRAPHER_ENGINE_SECRET", &secret)
-        .stdout(Stdio::inherit())
-        .stderr(Stdio::inherit());
+        .current_dir(&backend)
+        .arg("-m")
+        .arg("uvicorn")
+        .arg("app.main:app")
+        .arg("--host")
+        .arg(ENGINE_HOST)
+        .arg("--port")
+        .arg(port.to_string())
+        .arg("--log-level")
+        .arg("warning")
+        .arg("--no-access-log")
+        .env("PROGRAPHER_ENGINE_SECRET", &secret);
+
+    if cfg!(debug_assertions) {
+        command.stdout(Stdio::inherit()).stderr(Stdio::inherit());
+    } else {
+        command.stdout(Stdio::null()).stderr(Stdio::null());
+    }
 
     #[cfg(target_os = "windows")]
     command.creation_flags(CREATE_NO_WINDOW);
 
-    let child = command
+    let mut child = command
         .spawn()
-        .map_err(|e| format!("failed to start development ProGrapher Engine: {e}"))?;
-
-    let process = EngineProcess::Development(child);
+        .map_err(|e| format!("failed to start ProGrapher Engine: {e}"))?;
 
     if !wait_until_healthy(port) {
-        terminate_engine(process);
+        let _ = child.kill();
+        let _ = child.wait();
         return Err(format!(
-            "Development ProGrapher Engine did not become healthy within {} seconds",
+            "ProGrapher Engine did not become healthy within {} seconds",
             ENGINE_START_TIMEOUT.as_secs()
         ));
     }
 
-    println!("ProGrapher development engine ready: http://{ENGINE_HOST}:{port}");
-
-    Ok((process, port, secret))
-}
-
-fn start_packaged_engine(app: &tauri::AppHandle) -> Result<(CommandChild, u16, String), String> {
-    let port = reserve_runtime_port()?;
-    let secret = uuid::Uuid::new_v4().to_string();
-
-    let command = app
-        .shell()
-        .sidecar("prographer-engine")
-        .map_err(|e| format!("failed to resolve packaged engine sidecar: {e}"))?
-        .args(["--host", ENGINE_HOST, "--port", &port.to_string()])
-        .env("PROGRAPHER_ENGINE_SECRET", &secret);
-
-    let (mut rx, child) = command
-        .spawn()
-        .map_err(|e| format!("failed to start packaged ProGrapher Engine: {e}"))?;
-
-    tauri::async_runtime::spawn(async move {
-        while let Some(event) = rx.recv().await {
-            match event {
-                CommandEvent::Stdout(bytes) => {
-                    if cfg!(debug_assertions) {
-                        println!("[engine] {}", String::from_utf8_lossy(&bytes).trim_end());
-                    }
-                }
-                CommandEvent::Stderr(bytes) => {
-                    if cfg!(debug_assertions) {
-                        eprintln!("[engine] {}", String::from_utf8_lossy(&bytes).trim_end());
-                    }
-                }
-                CommandEvent::Error(message) => {
-                    eprintln!("[engine] process error: {message}");
-                }
-                CommandEvent::Terminated(payload) => {
-                    if cfg!(debug_assertions) {
-                        println!(
-                            "[engine] terminated: code={:?} signal={:?}",
-                            payload.code, payload.signal
-                        );
-                    }
-                }
-                _ => {}
-            }
-        }
-    });
-
-    if !wait_until_healthy(port) {
-        terminate_engine(child);
-        return Err(format!(
-            "Packaged ProGrapher Engine did not become healthy within {} seconds",
-            ENGINE_START_TIMEOUT.as_secs()
-        ));
-    }
-
-    println!("ProGrapher packaged sidecar ready: http://{ENGINE_HOST}:{port}");
+    println!("ProGrapher Engine ready: http://{ENGINE_HOST}:{port}");
 
     Ok((child, port, secret))
 }
 
-fn start_engine(app: &tauri::AppHandle) -> Result<(EngineProcess, u16, String), String> {
-    #[cfg(debug_assertions)]
-    {
-        let _ = app;
-        return start_development_engine();
-    }
-
-    #[cfg(not(debug_assertions))]
-    {
-        let (child, port, secret) = start_packaged_engine(app)?;
-        Ok((EngineProcess::Packaged(child), port, secret))
-    }
-}
-
-#[cfg(target_os = "windows")]
-fn terminate_engine(child: EngineProcess) {
-    match child {
-        EngineProcess::Packaged(child) => {
-            let pid = child.pid();
-            let tree_killed = std::process::Command::new("taskkill.exe")
-                .args(["/PID", &pid.to_string(), "/T", "/F"])
-                .creation_flags(CREATE_NO_WINDOW)
-                .status()
-                .map(|status| status.success())
-                .unwrap_or(false);
-
-            if !tree_killed {
-                let _ = child.kill();
-            }
-        }
-        #[cfg(debug_assertions)]
-        EngineProcess::Development(mut child) => {
-            let pid = child.id();
-            let tree_killed = std::process::Command::new("taskkill.exe")
-                .args(["/PID", &pid.to_string(), "/T", "/F"])
-                .creation_flags(CREATE_NO_WINDOW)
-                .status()
-                .map(|status| status.success())
-                .unwrap_or(false);
-
-            if !tree_killed {
-                let _ = child.kill();
-            }
-        }
-    }
-}
-
-#[cfg(not(target_os = "windows"))]
-fn terminate_engine(child: EngineProcess) {
-    match child {
-        EngineProcess::Packaged(child) => {
-            let _ = child.kill();
-        }
-        #[cfg(debug_assertions)]
-        EngineProcess::Development(mut child) => {
-            let _ = child.kill();
-        }
-    }
-}
-
 fn stop_engine(state: &EngineState) {
-    if let Ok(mut runtime) = state.runtime.lock() {
-        if let Some(child) = runtime.child.take() {
-            terminate_engine(child);
+    if let Ok(mut child_guard) = state.child.lock() {
+        if let Some(child) = child_guard.as_mut() {
+            let _ = child.kill();
+            let _ = child.wait();
         }
 
-        runtime.status = "stopped".to_string();
+        *child_guard = None;
     }
 }
 
@@ -349,7 +226,6 @@ fn stop_engine(state: &EngineState) {
 pub fn run() {
     let app = tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
-        .plugin(tauri_plugin_shell::init())
         .setup(|app| {
             if cfg!(debug_assertions) {
                 app.handle().plugin(
@@ -359,42 +235,13 @@ pub fn run() {
                 )?;
             }
 
+            let (child, port, secret) =
+                start_engine().map_err(std::io::Error::other)?;
+
             app.manage(EngineState {
-                runtime: Mutex::new(EngineRuntimeState {
-                    child: None,
-                    port: 0,
-                    secret: String::new(),
-                    status: "starting".to_string(),
-                }),
-            });
-
-            // Do not block desktop startup on the packaged Python engine.
-            // The window should render immediately while the engine warms up
-            // in the background. Frontend API calls wait for status="ready".
-            let app_handle = app.handle().clone();
-
-            tauri::async_runtime::spawn_blocking(move || {
-                match start_engine(&app_handle) {
-                    Ok((child, port, secret)) => {
-                        let state = app_handle.state::<EngineState>();
-
-                        if let Ok(mut runtime) = state.runtime.lock() {
-                            runtime.child = Some(child);
-                            runtime.port = port;
-                            runtime.secret = secret;
-                            runtime.status = "ready".to_string();
-                        };
-                    }
-                    Err(error) => {
-                        eprintln!("[engine] startup failed: {error}");
-
-                        let state = app_handle.state::<EngineState>();
-
-                        if let Ok(mut runtime) = state.runtime.lock() {
-                            runtime.status = format!("error:{error}");
-                        };
-                    }
-                }
+                child: Mutex::new(Some(child)),
+                port,
+                secret,
             });
 
             Ok(())
