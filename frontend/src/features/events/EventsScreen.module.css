@@ -1,24 +1,27 @@
 .screen {
+  width: min(100%, 1440px);
+  margin: 0 auto;
   display: grid;
   gap: var(--pg-space-5);
 }
 
 .hero {
-  padding: var(--pg-space-7);
+  min-height: 210px;
+  padding: clamp(28px, 4vw, 44px);
   border: 1px solid var(--pg-border);
-  border-radius: var(--pg-radius-xl);
-  background: var(--pg-surface-2);
+  border-radius: var(--pg-radius-2xl);
+  background:
+    radial-gradient(circle at 10% 0%, rgba(255, 255, 255, 0.055), transparent 34%),
+    linear-gradient(145deg, #17171b 0%, #111114 58%, #0e0e11 100%);
+  box-shadow: var(--pg-shadow-soft);
 }
 
 .eyebrow {
   display: block;
   margin-bottom: var(--pg-space-3);
   color: var(--pg-text-muted);
-  font-size: 10px;
-  font-weight: var(--pg-weight-bold);
-  letter-spacing: 0.14em;
-  direction: ltr;
-  text-align: right;
+  font-size: var(--pg-font-xs);
+  font-weight: var(--pg-weight-semibold);
 }
 
 .heroRow {
@@ -30,8 +33,8 @@
 
 .hero h2 {
   margin: 0;
-  font-size: clamp(28px, 4vw, 42px);
-  font-weight: var(--pg-weight-bold);
+  font-size: clamp(32px, 4vw, 46px);
+  font-weight: var(--pg-weight-semibold);
   letter-spacing: -0.04em;
 }
 
@@ -48,8 +51,8 @@
   padding: 0 var(--pg-space-5);
   border: 1px solid var(--pg-border-strong);
   border-radius: var(--pg-radius-md);
-  background: var(--pg-text);
-  color: var(--pg-bg);
+  background: var(--pg-accent);
+  color: var(--pg-accent-text);
   font: inherit;
   font-weight: var(--pg-weight-bold);
   cursor: pointer;
@@ -195,7 +198,10 @@
   padding: var(--pg-space-5);
   border: 1px solid var(--pg-border);
   border-radius: var(--pg-radius-lg);
-  background: var(--pg-surface-2);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.02), transparent),
+    var(--pg-surface-2);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.02) inset;
 }
 
 .cardTop {
