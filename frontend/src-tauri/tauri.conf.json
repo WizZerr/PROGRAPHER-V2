@@ -7,7 +7,7 @@
     "frontendDist": "../out",
     "devUrl": "http://localhost:3000",
     "beforeDevCommand": "node scripts/tauri-before-dev.mjs",
-    "beforeBuildCommand": "node scripts/prepare-sidecar.mjs && npm run build"
+    "beforeBuildCommand": "npm run build"
   },
   "app": {
     "windows": [
@@ -31,9 +31,6 @@
     "active": true,
     "targets": [
       "nsis"
-    ],
-    "externalBin": [
-      "binaries/prographer-engine"
     ],
     "windows": {
       "webviewInstallMode": {
