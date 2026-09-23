@@ -1,0 +1,106 @@
+{
+  "schema_version": "phase12-end-to-end-dry-run-v1",
+  "fixture_kind": "synthetic_only",
+  "quality_claim_allowed": false,
+  "manifest": {
+    "dataset_id": "synthetic-dataset-dddddddddddddddddddddddddddddddddddddddddddddd",
+    "sample_count": 6,
+    "event_count": 3,
+    "training_ready_count": 6
+  },
+  "split": {
+    "split_id": "synthetic-split-ssssssssssssssssssssssssssssssssssssssssssssssssss",
+    "train_sample_count": 4,
+    "validation_sample_count": 2,
+    "train_event_ids": [
+      "event-train-a",
+      "event-train-b"
+    ],
+    "validation_event_ids": [
+      "event-val-c"
+    ]
+  },
+  "baseline": {
+    "baseline_id": "b071b124d6871895bf8aa49e15ff519307b8ed4a4d85a5e523a7b25b68930c43",
+    "baseline_version": "phase12-simple-target-baseline-v1",
+    "strategy": "median",
+    "dataset_id": "synthetic-dataset-dddddddddddddddddddddddddddddddddddddddddddddd",
+    "split_id": "synthetic-split-ssssssssssssssssssssssssssssssssssssssssssssssssss",
+    "train_sample_count": 4,
+    "fitted_values": {
+      "exposure_stops": 0.30000000000000004,
+      "temperature_k": 5100.0,
+      "tint": 1.0
+    }
+  },
+  "experiment": {
+    "schema_version": "phase12-candidate-experiment-v1",
+    "experiment_id": "1036fe23e57f25da20f8a4a4f1285bc6880f202628a48fd37e5a2f5ce5adc135",
+    "candidate_name": "synthetic-simple-baseline-median",
+    "candidate_family": "simple_baseline",
+    "dataset_id": "synthetic-dataset-dddddddddddddddddddddddddddddddddddddddddddddd",
+    "split_id": "synthetic-split-ssssssssssssssssssssssssssssssssssssssssssssssssss",
+    "target_contract_version": "phase12-three-target-contract-v1",
+    "target_names": [
+      "exposure_stops",
+      "temperature_k",
+      "tint"
+    ],
+    "white_balance_target_mode": "absolute_kelvin",
+    "representation": {
+      "name": "constant-target-baseline",
+      "version": "v1",
+      "model_id": null,
+      "feature_version": null
+    },
+    "estimator": {
+      "name": "median",
+      "config": {}
+    },
+    "random_seed": 42,
+    "code_revision": "synthetic-dry-run",
+    "train_sample_count": 4,
+    "validation_sample_count": 2,
+    "train_cohort_sha256": "42bae0f90444f6e112e431ba876f0c51f38be73d7ee838d018e59432d832571a",
+    "validation_cohort_sha256": "94e4bfe4e68398ce048c37364881c278a3d72c3ac81e54f5ec4778df7023b438"
+  },
+  "evaluation": {
+    "candidate_name": "synthetic-simple-baseline-median",
+    "dataset_id": "synthetic-dataset-dddddddddddddddddddddddddddddddddddddddddddddd",
+    "split_id": "synthetic-split-ssssssssssssssssssssssssssssssssssssssssssssssssss",
+    "metric_version": "phase12-three-target-metrics-v1",
+    "validation_sample_count": 2,
+    "metrics": {
+      "exposure_stops": {
+        "n": 2,
+        "mae": 0.3,
+        "median_absolute_error": 0.3,
+        "p90_absolute_error": 0.37999999999999995,
+        "p95_absolute_error": 0.3899999999999999
+      },
+      "temperature_k": {
+        "n": 2,
+        "mae": 300.0,
+        "median_absolute_error": 300.0,
+        "p90_absolute_error": 380.0,
+        "p95_absolute_error": 390.0
+      },
+      "tint": {
+        "n": 2,
+        "mae": 3.0,
+        "median_absolute_error": 3.0,
+        "p90_absolute_error": 3.8,
+        "p95_absolute_error": 3.9
+      }
+    },
+    "evaluation_id": "a77e23b2a12517bf1950ce400956b9502b8b4d61c94f3f241efa9c3693041e6c"
+  },
+  "assertions": {
+    "dataset_identity_connected": true,
+    "split_identity_connected": true,
+    "train_only_baseline_fitting": true,
+    "validation_only_predictions": true,
+    "evaluation_completed": true
+  },
+  "warning": "Synthetic dry-run only. Metrics prove pipeline wiring and are not a photographic-quality result or evidence of model usefulness."
+}
