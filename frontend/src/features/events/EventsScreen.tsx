@@ -212,7 +212,7 @@ export default function EventsScreen() {
   return (
     <section className={styles.screen}>
       <div className={styles.hero}>
-        <span className={styles.eyebrow}>EVENTS</span>
+        <span className={styles.eyebrow}>ספריית אירועים</span>
         <div className={styles.heroRow}>
           <div>
             <h2>אירועים</h2>
