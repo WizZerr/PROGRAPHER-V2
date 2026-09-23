@@ -80,12 +80,47 @@ fn health_check(port: u16) -> bool {
         return false;
     }
 
-    let mut response = String::new();
-    if stream.read_to_string(&mut response).is_err() {
-        return false;
+    // Do not wait for EOF. Some HTTP servers keep the socket alive long enough
+    // for read_to_string() to hit our timeout even though the full health
+    // response has already arrived. Read bounded chunks and return as soon as
+    // the expected response is present.
+    let mut response = Vec::with_capacity(2048);
+    let mut buffer = [0_u8; 2048];
+
+    loop {
+        match stream.read(&mut buffer) {
+            Ok(0) => break,
+            Ok(read) => {
+                response.extend_from_slice(&buffer[..read]);
+
+                let text = String::from_utf8_lossy(&response);
+                if text.contains("200 OK")
+                    && (text.contains("\"status\":\"ok\"")
+                        || text.contains("\"status\": \"ok\""))
+                {
+                    return true;
+                }
+
+                if response.len() >= 16 * 1024 {
+                    break;
+                }
+            }
+            Err(error)
+                if matches!(
+                    error.kind(),
+                    std::io::ErrorKind::WouldBlock | std::io::ErrorKind::TimedOut
+                ) =>
+            {
+                break;
+            }
+            Err(_) => return false,
+        }
     }
 
-    response.contains("200 OK") && response.contains("\"status\":\"ok\"")
+    let text = String::from_utf8_lossy(&response);
+    text.contains("200 OK")
+        && (text.contains("\"status\":\"ok\"")
+            || text.contains("\"status\": \"ok\""))
 }
 
 fn wait_until_healthy(port: u16) -> bool {
