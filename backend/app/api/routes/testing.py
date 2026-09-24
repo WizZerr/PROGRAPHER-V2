@@ -23,7 +23,7 @@ def get_profile() -> TestingProfileSummary:
     if profile is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="עדיין אין פרופיל בדיקה. יש לבנות אותו מתיקיית RAW ו-XMP.",
+            detail="עדיין אין פרופיל בדיקה. יש לבנות אותו מתיקיית RAW או JPEG.",
         )
     return profile
 
@@ -36,6 +36,7 @@ def create_profile(payload: TestingProfileRequest) -> TestingProfileSummary:
             edits_root=payload.edits_root,
             photographer_id=payload.photographer_id.strip() or "local-photographer",
             event_label=payload.event_label.strip() or "reference",
+            learning_source=payload.learning_source,
         )
     except ValueError as exc:
         raise HTTPException(
@@ -64,7 +65,13 @@ def export_recipes(payload: ExportRecipesRequest) -> ExportRecipesResponse:
             items=payload.items,
         )
     except ValueError as exc:
+        detail = str(exc)
+        missing = detail == "האירוע לא נמצא."
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=str(exc),
+            status_code=(
+                status.HTTP_404_NOT_FOUND
+                if missing
+                else status.HTTP_422_UNPROCESSABLE_CONTENT
+            ),
+            detail=detail,
         ) from exc

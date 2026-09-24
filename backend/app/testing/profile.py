@@ -6,6 +6,7 @@ import statistics
 from collections import Counter
 from datetime import datetime, timezone
 from pathlib import Path
+from typing import Literal
 
 from app.datasets.builder import build_dataset_preview
 from app.datasets.contracts import TargetRecipe
@@ -22,12 +23,20 @@ from app.schemas.testing import (
 )
 from app.services.event_service import EventOpenError, list_event_files
 from app.catalog.event_store import EventStore
+from app.testing.jpeg_pairs import JPEG_EXTENSIONS, scan_jpeg_pairs
 from app.testing.sidecar import SidecarExportError, write_testing_sidecar
 
 
 PROFILE_NOTE = (
-    "זהו בסיס חציון של Exposure, Temperature ו-Tint מזוגות שזוהו באופן חד. "
+    "זהו בסיס חציון של Exposure, Temperature ו-Tint מזוגות RAW שזוהו באופן חד. "
     "אותו מתכון מוצע לכל תמונה. זו אינה עריכה לפי תמונה, ואין כאן טענת איכות."
+)
+JPEG_PROFILE_NOTE = (
+    "פרופיל JPEG נפרד מפרופיל RAW. נספרים רק זוגות של JPEG מקורי ו-JPEG ערוך. "
+    "אין כאן מתכון Lightroom, וקבצי RAW לא נכנסים לפרופיל הזה."
+)
+JPEG_REVIEW_NOTE = (
+    "פרופיל JPEG. מוצגים רק קובצי JPEG. אין מתכון Lightroom ואין ייצוא XMP."
 )
 REVIEW_NOTE = (
     "ההצעה היא בסיס הבדיקה, אם נבנה. עריכת הצלם מוצגת בנפרד כשיש XMP תואם. "
@@ -107,13 +116,113 @@ def _round_exposure(value: float) -> float:
     return round(float(value), 2)
 
 
-def build_testing_profile(
+def _persist_profile(summary: TestingProfileSummary) -> None:
+    previous = load_profile_document() or {}
+    previous_summary = previous.get("summary") or {}
+    previous_source = previous_summary.get("learning_source") or "raw"
+    reviews = (
+        {}
+        if previous_source != summary.learning_source
+        else previous.get("reviews") or {}
+    )
+    _write_document(
+        {
+            "summary": summary.model_dump(),
+            "reviews": reviews,
+        }
+    )
+
+
+def _profile_id(identity: dict) -> str:
+    return hashlib.sha256(
+        json.dumps(identity, sort_keys=True).encode("utf-8")
+    ).hexdigest()[:24]
+
+
+def _build_jpeg_testing_profile(
     *,
     raw_root: str,
     edits_root: str,
     photographer_id: str,
     event_label: str,
 ) -> TestingProfileSummary:
+    try:
+        scan = scan_jpeg_pairs(raw_root, edits_root)
+    except (OSError, ValueError) as exc:
+        raise ValueError(str(exc)) from exc
+
+    warnings = [
+        "אין טענת איכות. לפרופיל JPEG אין בסיס Lightroom.",
+    ]
+    if scan.ignored_non_jpeg:
+        warnings.append(
+            f"{scan.ignored_non_jpeg} קבצים שאינם JPEG לא נכנסו לפרופיל."
+        )
+    if scan.ambiguous_files:
+        warnings.append(
+            f"{scan.ambiguous_files} קבצים לא שובצו כי אותו שם הופיע יותר מפעם אחת."
+        )
+    if scan.unmatched_files:
+        warnings.append(
+            f"{scan.unmatched_files} קובצי JPEG מקור בלי JPEG ערוך תואם לא נכנסו."
+        )
+    if scan.matched_pairs == 0:
+        warnings.append("אין זוגות JPEG חד-משמעיים.")
+    elif scan.matched_pairs < TUNING_PAIR_THRESHOLD:
+        warnings.append(
+            "פחות מ-30 זוגות שמישים. אפשר לבדוק את המסלול, אבל אי אפשר לכוון סגנון מהמדגם הזה."
+        )
+
+    created_at = _utc_now()
+    identity = {
+        "learning_source": "jpeg",
+        "raw_root": str(Path(raw_root).expanduser().resolve()),
+        "edits_root": str(Path(edits_root).expanduser().resolve()),
+        "photographer_id": photographer_id,
+        "usable_pairs": scan.matched_pairs,
+        "baseline": None,
+        "created_at": created_at,
+    }
+    return TestingProfileSummary(
+        profile_id=_profile_id(identity),
+        created_at=created_at,
+        photographer_id=photographer_id,
+        learning_source="jpeg",
+        raw_root=identity["raw_root"],
+        edits_root=identity["edits_root"],
+        event_label=event_label or "reference",
+        raw_files=scan.original_files,
+        xmp_files=scan.edited_files,
+        matched_pairs=scan.matched_pairs,
+        ambiguous_raw=scan.ambiguous_files,
+        unmatched_raw=scan.unmatched_files,
+        usable_pairs=scan.matched_pairs,
+        excluded_local_adjustments=0,
+        excluded_missing_targets=0,
+        baseline=None,
+        quality_claim_allowed=False,
+        warnings=warnings,
+        note=JPEG_PROFILE_NOTE,
+    )
+
+
+def build_testing_profile(
+    *,
+    raw_root: str,
+    edits_root: str,
+    photographer_id: str,
+    event_label: str,
+    learning_source: Literal["raw", "jpeg"] = "raw",
+) -> TestingProfileSummary:
+    if learning_source == "jpeg":
+        summary = _build_jpeg_testing_profile(
+            raw_root=raw_root,
+            edits_root=edits_root,
+            photographer_id=photographer_id,
+            event_label=event_label,
+        )
+        _persist_profile(summary)
+        return summary
     try:
         preview = build_dataset_preview(
             raw_root=raw_root,
@@ -206,6 +315,7 @@ def build_testing_profile(
 
     created_at = _utc_now()
     identity = {
+        "learning_source": "raw",
         "raw_root": str(Path(raw_root).expanduser().resolve()),
         "edits_root": str(Path(edits_root).expanduser().resolve()),
         "photographer_id": photographer_id,
@@ -213,14 +323,12 @@ def build_testing_profile(
         "baseline": baseline.model_dump() if baseline else None,
         "created_at": created_at,
     }
-    profile_id = hashlib.sha256(
-        json.dumps(identity, sort_keys=True).encode("utf-8")
-    ).hexdigest()[:24]
 
     summary = TestingProfileSummary(
-        profile_id=profile_id,
+        profile_id=_profile_id(identity),
         created_at=created_at,
         photographer_id=photographer_id,
+        learning_source="raw",
         raw_root=identity["raw_root"],
         edits_root=identity["edits_root"],
         event_label=event_label or "reference",
@@ -238,13 +346,7 @@ def build_testing_profile(
         note=PROFILE_NOTE,
     )
 
-    previous = load_profile_document() or {}
-    _write_document(
-        {
-            "summary": summary.model_dump(),
-            "reviews": previous.get("reviews") or {},
-        }
-    )
+    _persist_profile(summary)
     return summary
 
 
@@ -264,6 +366,34 @@ def build_review_sheet(event_id: str) -> ReviewSheet:
         raise ValueError("האירוע לא נמצא.") from exc
 
     profile = active_testing_profile()
+    learning_source = profile.learning_source if profile else "raw"
+    if learning_source == "jpeg":
+        rows = [
+            ReviewFile(
+                fingerprint=item.fingerprint,
+                filename=item.filename,
+                relative_path=item.relative_path,
+                absolute_path=item.absolute_path,
+                pair_status="jpeg",
+                photographer=None,
+                baseline=None,
+                saved_review=None,
+                suggested=None,
+                exclusion_reasons=["no_lightroom_recipe"],
+            )
+            for item in files
+            if item.source_type == "rendered" and item.extension in JPEG_EXTENSIONS
+        ]
+        return ReviewSheet(
+            event_id=event.id,
+            event_name=event.name,
+            learning_source="jpeg",
+            quality_claim_allowed=False,
+            baseline=None,
+            files=rows,
+            note=JPEG_REVIEW_NOTE,
+        )
+
     baseline = profile.baseline if profile else None
     baseline_recipe = _baseline_recipe(baseline)
     document = load_profile_document() or {}
@@ -341,6 +471,7 @@ def build_review_sheet(event_id: str) -> ReviewSheet:
     return ReviewSheet(
         event_id=event.id,
         event_name=event.name,
+        learning_source="raw",
         quality_claim_allowed=False,
         baseline=baseline,
         files=rows,
@@ -354,6 +485,10 @@ def export_testing_recipes(
     output_dir: str,
     items: list[ExportRecipeItem],
 ) -> ExportRecipesResponse:
+    profile = active_testing_profile()
+    if profile is not None and profile.learning_source == "jpeg":
+        raise ValueError("פרופיל JPEG לא מייצא מתכון Lightroom.")
+
     sheet = build_review_sheet(event_id)
     by_fingerprint = {item.fingerprint: item for item in sheet.files}
     results: list[ExportFileResult] = []

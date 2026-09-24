@@ -16,10 +16,13 @@ export type BaselineValues = {
   strategy: "median";
 };
 
+export type LearningSource = "raw" | "jpeg";
+
 export type TestingProfile = {
   profile_id: string;
   created_at: string;
   photographer_id: string;
+  learning_source: LearningSource;
   raw_root: string;
   edits_root: string;
   event_label: string;
@@ -53,6 +56,7 @@ export type ReviewFile = {
 export type ReviewSheet = {
   event_id: string;
   event_name: string;
+  learning_source: LearningSource;
   quality_claim_allowed: boolean;
   baseline: BaselineValues | null;
   files: ReviewFile[];
@@ -90,6 +94,7 @@ export async function createTestingProfile(input: {
   edits_root: string;
   photographer_id: string;
   event_label: string;
+  learning_source: LearningSource;
 }): Promise<TestingProfile> {
   return apiRequest<TestingProfile>("/api/testing/profile", {
     method: "POST",

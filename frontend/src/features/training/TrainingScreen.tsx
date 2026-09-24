@@ -5,6 +5,7 @@ import { open } from "@tauri-apps/plugin-dialog";
 import {
   createTestingProfile,
   getTestingProfile,
+  type LearningSource,
   type TestingProfile,
 } from "@/features/testing/testing.api";
 import styles from "@/features/testing/testing.module.css";
@@ -15,6 +16,7 @@ export default function TrainingScreen() {
   const [editsRoot, setEditsRoot] = useState("");
   const [photographerId, setPhotographerId] = useState("local-photographer");
   const [eventLabel, setEventLabel] = useState("reference");
+  const [learningSource, setLearningSource] = useState<LearningSource>("raw");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
 
@@ -27,6 +29,7 @@ export default function TrainingScreen() {
         setEditsRoot(value.edits_root);
         setPhotographerId(value.photographer_id);
         setEventLabel(value.event_label);
+        setLearningSource(value.learning_source ?? "raw");
       })
       .catch((cause: unknown) => {
         setError(cause instanceof Error ? cause.message : "טעינת הפרופיל נכשלה.");
@@ -38,7 +41,14 @@ export default function TrainingScreen() {
     const selected = await open({
       directory: true,
       multiple: false,
-      title: target === "raw" ? "בחר תיקיית RAW" : "בחר תיקיית XMP",
+      title:
+        target === "raw"
+          ? learningSource === "jpeg"
+            ? "בחר תיקיית JPEG מקור"
+            : "בחר תיקיית RAW"
+          : learningSource === "jpeg"
+            ? "בחר תיקיית JPEG ערוך"
+            : "בחר תיקיית XMP",
     });
     if (!selected || Array.isArray(selected)) return;
     if (target === "raw") {
@@ -59,6 +69,7 @@ export default function TrainingScreen() {
           edits_root: editsRoot || rawRoot,
           photographer_id: photographerId,
           event_label: eventLabel,
+          learning_source: learningSource,
         }),
       );
     } catch (cause) {
@@ -73,9 +84,9 @@ export default function TrainingScreen() {
       <section className={styles.hero}>
         <h2>מעבדת בדיקה</h2>
         <p>
-          בוחרים תיקייה של RAW וקובצי XMP שכבר נערכו ב-Lightroom. ProGrapher
-          בונה מהם בסיס חציון לשלושת היעדים הראשונים. זה המסלול שמחכה לחומר
-          של הצלמים, ועדיין לא מודל שעבר הערכה.
+          {learningSource === "jpeg"
+            ? "פרופיל JPEG לומד רק מזוגות JPEG מקורי ו-JPEG ערוך. אין בו מתכון Lightroom, והוא לא מתערבב עם פרופיל RAW."
+            : "פרופיל RAW לומד מ-RAW ומ-XMP של Lightroom. בונים ממנו בסיס חציון לחשיפה, טמפרטורה וגוון. הוא לא מתערבב עם פרופיל JPEG."}
         </p>
       </section>
 
@@ -97,21 +108,39 @@ export default function TrainingScreen() {
           </label>
         </div>
         <div className={styles.actions}>
+          <button
+            className={learningSource === "raw" ? styles.primary : styles.secondary}
+            type="button"
+            onClick={() => setLearningSource("raw")}
+          >
+            למידה מ-RAW
+          </button>
+          <button
+            className={learningSource === "jpeg" ? styles.primary : styles.secondary}
+            type="button"
+            onClick={() => setLearningSource("jpeg")}
+          >
+            למידה מ-JPEG
+          </button>
+        </div>
+        <div className={styles.actions}>
           <button className={styles.secondary} type="button" onClick={() => void chooseFolder("raw")}>
-            תיקיית RAW
+            {learningSource === "jpeg" ? "תיקיית JPEG מקור" : "תיקיית RAW"}
           </button>
           <button className={styles.secondary} type="button" onClick={() => void chooseFolder("edits")}>
-            תיקיית XMP
+            {learningSource === "jpeg" ? "תיקיית JPEG ערוך" : "תיקיית XMP"}
           </button>
           <button className={styles.primary} type="button" disabled={busy || !rawRoot} onClick={() => void build()}>
             {busy ? "קורא קבצים…" : "בנה בסיס בדיקה"}
           </button>
         </div>
         <p className={styles.note}>
-          RAW: <bdi className={styles.ltr}>{rawRoot || "עדיין לא נבחר"}</bdi>
+          {learningSource === "jpeg" ? "JPEG מקור" : "RAW"}:{" "}
+          <bdi className={styles.ltr}>{rawRoot || "עדיין לא נבחר"}</bdi>
         </p>
         <p className={styles.note}>
-          XMP: <bdi className={styles.ltr}>{editsRoot || rawRoot || "אותה תיקייה"}</bdi>
+          {learningSource === "jpeg" ? "JPEG ערוך" : "XMP"}:{" "}
+          <bdi className={styles.ltr}>{editsRoot || rawRoot || "אותה תיקייה"}</bdi>
         </p>
       </section>
 
@@ -120,10 +149,13 @@ export default function TrainingScreen() {
       {profile && (
         <section className={styles.panel}>
           <h3>הבסיס הנוכחי</h3>
+          <p className={styles.note}>
+            מסלול: {profile.learning_source === "jpeg" ? "JPEG" : "RAW"}
+          </p>
           <p className={styles.note}>{profile.note}</p>
           <div className={styles.metrics}>
             <div className={styles.metric}>
-              <span>RAW</span>
+              <span>{profile.learning_source === "jpeg" ? "JPEG" : "RAW"}</span>
               <strong className={styles.ltr}>{profile.raw_files}</strong>
             </div>
             <div className={styles.metric}>

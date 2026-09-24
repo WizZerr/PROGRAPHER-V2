@@ -6,6 +6,7 @@ import CameraPreview from "@/features/review/CameraPreview";
 import {
   exportRecipes,
   getReviewSheet,
+  type LearningSource,
   type ReviewFile,
 } from "@/features/testing/testing.api";
 import { useTestingNav } from "@/features/testing/TestingNav";
@@ -53,6 +54,8 @@ export default function DarkroomScreen() {
   const { selection, outputDir, setOutputDir, openPhoto, openGallery } = useTestingNav();
   const frameRef = useRef<HTMLDivElement>(null);
   const [files, setFiles] = useState<ReviewFile[]>([]);
+  const [learningSource, setLearningSource] = useState<LearningSource>("raw");
+  const [sheetNote, setSheetNote] = useState("");
   const [exposure, setExposure] = useState(0);
   const [temperature, setTemperature] = useState(5500);
   const [tint, setTint] = useState(0);
@@ -107,6 +110,8 @@ export default function DarkroomScreen() {
     void getReviewSheet(selection.eventId)
       .then((sheet) => {
         setFiles(sheet.files);
+        setLearningSource(sheet.learning_source ?? "raw");
+        setSheetNote(sheet.note);
         const match = sheet.files.find(
           (item) => item.fingerprint === selection.fingerprint,
         );
@@ -247,7 +252,7 @@ export default function DarkroomScreen() {
       } else if (event.key === "ArrowLeft") {
         event.preventDefault();
         move(-1);
-      } else if (event.key === "Enter" && !typing) {
+      } else if (event.key === "Enter" && !typing && learningSource !== "jpeg") {
         event.preventDefault();
         void save();
       } else if ((event.key === "z" || event.key === "Z") && (event.metaKey || event.ctrlKey)) {
@@ -377,6 +382,15 @@ export default function DarkroomScreen() {
       </section>
 
       <aside className={styles.panel}>
+        {learningSource === "jpeg" ? (
+          <div className={styles.panelBody}>
+            <h2 className={styles.panelTitle}>פרופיל JPEG</h2>
+            <p className={styles.keys}>{sheetNote}</p>
+            <p className={styles.keys}>
+              לפרופיל הזה אין סליידרים של Lightroom ואין ייצוא XMP.
+            </p>
+          </div>
+        ) : (
         <div className={styles.panelBody}>
           <h2 className={styles.panelTitle}>המתכון</h2>
           <div className={styles.reference}>
@@ -464,7 +478,9 @@ export default function DarkroomScreen() {
           {message && <p className={`${styles.status} ${styles.ok}`} role="status">{message}</p>}
           {error && <p className={`${styles.status} ${styles.error}`} role="alert">{error}</p>}
         </div>
+        )}
 
+        {learningSource !== "jpeg" && (
         <div className={styles.actions}>
           <button className={styles.secondary} type="button" onClick={() => void chooseOutput()}>
             {outputDir ? "החלפת תיקיית ייצוא" : "בחירת תיקיית ייצוא"}
@@ -494,6 +510,7 @@ export default function DarkroomScreen() {
             {busy ? "כותב…" : suggestedRecipe && sameRecipe(current, suggestedRecipe) ? "אשר וייצא" : "תקן וייצא"}
           </button>
         </div>
+        )}
       </aside>
     </div>
   );

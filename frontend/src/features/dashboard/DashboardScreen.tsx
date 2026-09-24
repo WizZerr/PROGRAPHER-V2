@@ -63,8 +63,8 @@ export default function DashboardScreen() {
           <span className={styles.kicker}>סביבת העבודה</span>
           <h2>מוכנים להתחיל.</h2>
           <p>
-            סדר הבדיקה: סורקים תיקיית אירוע, בונים בסיס מ-RAW ו-XMP במעבדה,
-            סוקרים בגלריה ומייצאים XMP ל-Lightroom. המקור נשאר ללא שינוי.
+            סדר הבדיקה: סורקים תיקיית אירוע, בונים פרופיל RAW או פרופיל JPEG במעבדה,
+            סוקרים בגלריה. רק פרופיל RAW מייצא XMP ל-Lightroom. המקור נשאר ללא שינוי.
           </p>
         </div>
 

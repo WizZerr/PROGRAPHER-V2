@@ -8,6 +8,7 @@ class TestingProfileRequest(BaseModel):
     edits_root: str = Field(min_length=1)
     photographer_id: str = "local-photographer"
     event_label: str = "reference"
+    learning_source: Literal["raw", "jpeg"] = "raw"
 
 
 class RecipeValues(BaseModel):
@@ -30,6 +31,7 @@ class TestingProfileSummary(BaseModel):
     profile_id: str
     created_at: str
     photographer_id: str
+    learning_source: Literal["raw", "jpeg"] = "raw"
     raw_root: str
     edits_root: str
     event_label: str
@@ -63,6 +65,7 @@ class ReviewFile(BaseModel):
 class ReviewSheet(BaseModel):
     event_id: str
     event_name: str
+    learning_source: Literal["raw", "jpeg"] = "raw"
     quality_claim_allowed: bool = False
     baseline: BaselineValues | None
     files: list[ReviewFile]

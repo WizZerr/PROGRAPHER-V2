@@ -247,3 +247,185 @@ def test_review_and_export_leave_raw_unchanged(
     assert blocked.json()["skipped"] == 1
     assert "לא הוחלף" in blocked.json()["files"][0]["reason"]
     assert raw_path.read_bytes() == original
+
+
+def _jpeg(path: Path, payload: bytes) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_bytes(payload)
+
+
+def test_jpeg_profile_counts_unique_pairs_and_has_no_baseline(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    monkeypatch.setenv("PROGRAPHER_DATA_DIR", str(tmp_path / "data"))
+    originals = tmp_path / "jpeg-originals"
+    edits = tmp_path / "jpeg-edits"
+    _jpeg(originals / "IMG_0001.jpg", b"jpeg-a" * 200)
+    _jpeg(originals / "IMG_0002.jpeg", b"jpeg-b" * 200)
+    _raw(originals / "IMG_0003.ARW", b"raw-ignored" * 200)
+    _jpeg(edits / "IMG_0001.jpg", b"edit-a" * 200)
+    _jpeg(edits / "IMG_0002.jpg", b"edit-b" * 200)
+
+    with TestClient(create_app()) as client:
+        response = client.post(
+            "/api/testing/profile",
+            headers=HEADERS,
+            json={
+                "raw_root": str(originals),
+                "edits_root": str(edits),
+                "learning_source": "jpeg",
+            },
+        )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["learning_source"] == "jpeg"
+    assert body["usable_pairs"] == 2
+    assert body["matched_pairs"] == 2
+    assert body["baseline"] is None
+    assert body["raw_files"] == 2
+    assert any("אינם JPEG" in warning for warning in body["warnings"])
+    assert "Lightroom" in body["note"]
+
+
+def test_jpeg_profile_does_not_merge_shared_filenames(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    monkeypatch.setenv("PROGRAPHER_DATA_DIR", str(tmp_path / "data"))
+    originals = tmp_path / "two-cameras"
+    edits = tmp_path / "edits"
+    _jpeg(originals / "cam-a" / "IMG_0001.jpg", b"camera-a" * 200)
+    _jpeg(originals / "cam-b" / "IMG_0001.jpg", b"camera-b" * 200)
+    _jpeg(edits / "IMG_0001.jpg", b"one-edit" * 200)
+
+    with TestClient(create_app()) as client:
+        response = client.post(
+            "/api/testing/profile",
+            headers=HEADERS,
+            json={
+                "raw_root": str(originals),
+                "edits_root": str(edits),
+                "learning_source": "jpeg",
+            },
+        )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["baseline"] is None
+    assert body["usable_pairs"] == 0
+    assert body["ambiguous_raw"] == 2
+
+
+def test_jpeg_profile_review_lists_only_jpeg_and_refuses_export(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    monkeypatch.setenv("PROGRAPHER_DATA_DIR", str(tmp_path / "data"))
+    event = tmp_path / "event"
+    _jpeg(event / "IMG_0200.jpg", b"event-jpeg" * 200)
+    _raw(event / "IMG_0201.ARW", b"event-raw" * 200)
+    originals = tmp_path / "originals"
+    edits = tmp_path / "edits"
+    _jpeg(originals / "IMG_0001.jpg", b"src" * 200)
+    _jpeg(edits / "IMG_0001.jpg", b"dst" * 200)
+    output = tmp_path / "export"
+
+    with TestClient(create_app()) as client:
+        opened = client.post(
+            "/api/events/open-folder",
+            headers=HEADERS,
+            json={"path": str(event)},
+        )
+        assert opened.status_code == 200
+        event_id = opened.json()["event"]["id"]
+        profile = client.post(
+            "/api/testing/profile",
+            headers=HEADERS,
+            json={
+                "raw_root": str(originals),
+                "edits_root": str(edits),
+                "learning_source": "jpeg",
+            },
+        )
+        assert profile.status_code == 200
+        sheet = client.get(
+            f"/api/testing/events/{event_id}/review",
+            headers=HEADERS,
+        )
+        assert sheet.status_code == 200
+        body = sheet.json()
+        assert body["learning_source"] == "jpeg"
+        assert body["baseline"] is None
+        assert len(body["files"]) == 1
+        assert body["files"][0]["filename"] == "IMG_0200.jpg"
+        assert body["files"][0]["suggested"] is None
+        exported = client.post(
+            "/api/testing/export",
+            headers=HEADERS,
+            json={
+                "event_id": event_id,
+                "output_dir": str(output),
+                "items": [
+                    {
+                        "fingerprint": body["files"][0]["fingerprint"],
+                        "exposure": 0.2,
+                        "temperature": 5200,
+                        "tint": 4,
+                        "decision": "corrected",
+                    }
+                ],
+            },
+        )
+
+    assert exported.status_code == 422
+    assert "JPEG" in exported.json()["detail"]
+    assert not output.exists() or not any(output.rglob("*.xmp"))
+
+
+def test_switching_learning_source_clears_reviews(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    monkeypatch.setenv("PROGRAPHER_DATA_DIR", str(tmp_path / "data"))
+    raw_root = tmp_path / "raw"
+    raw_root.mkdir()
+    _raw(raw_root / "IMG_0001.ARW", b"raw-a" * 400)
+    _xmp(
+        raw_root / "IMG_0001.xmp",
+        exposure="+0.20",
+        temperature="5000",
+        tint="+4",
+        raw_name="IMG_0001.ARW",
+    )
+    jpeg_root = tmp_path / "jpeg"
+    _jpeg(jpeg_root / "IMG_0001.jpg", b"jpeg-a" * 200)
+
+    with TestClient(create_app()) as client:
+        first = client.post(
+            "/api/testing/profile",
+            headers=HEADERS,
+            json={"raw_root": str(raw_root), "edits_root": str(raw_root)},
+        )
+        assert first.status_code == 200
+        assert first.json()["learning_source"] == "raw"
+        document = tmp_path / "data" / "testing_profile.json"
+        stored = __import__("json").loads(document.read_text(encoding="utf-8"))
+        stored["reviews"] = {"event:abc": {"decision": "approved"}}
+        document.write_text(__import__("json").dumps(stored), encoding="utf-8")
+
+        second = client.post(
+            "/api/testing/profile",
+            headers=HEADERS,
+            json={
+                "raw_root": str(jpeg_root),
+                "edits_root": str(jpeg_root),
+                "learning_source": "jpeg",
+            },
+        )
+
+    assert second.status_code == 200
+    saved = __import__("json").loads(document.read_text(encoding="utf-8"))
+    assert saved["summary"]["learning_source"] == "jpeg"
+    assert saved["reviews"] == {}

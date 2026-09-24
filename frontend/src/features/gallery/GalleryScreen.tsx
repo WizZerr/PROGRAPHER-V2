@@ -8,6 +8,7 @@ import { useTestingNav } from "@/features/testing/TestingNav";
 import styles from "./GalleryScreen.module.css";
 
 function statusLabel(status: string) {
+  if (status === "jpeg") return "JPEG";
   if (status === "matched") return "יש עריכת צלם";
   if (status === "ambiguous") return "שם לא חד";
   return "בלי XMP";
@@ -49,7 +50,11 @@ function GalleryCard({
       <span className={styles.meta}>
         <span>{statusLabel(file.pair_status)}</span>
         <bdi>
-          {file.suggested?.exposure != null ? file.suggested.exposure.toFixed(2) : "—"}
+          {file.pair_status === "jpeg"
+            ? "בלי מתכון"
+            : file.suggested?.exposure != null
+              ? file.suggested.exposure.toFixed(2)
+              : "—"}
         </bdi>
       </span>
     </button>
@@ -108,7 +113,11 @@ export default function GalleryScreen() {
 
       {error && <p className={styles.error}>{error}</p>}
       {sheet && sheet.files.length === 0 && (
-        <p className={styles.empty}>באירוע הזה אין קבצי RAW.</p>
+        <p className={styles.empty}>
+          {sheet.learning_source === "jpeg"
+            ? "באירוע הזה אין קבצי JPEG."
+            : "באירוע הזה אין קבצי RAW."}
+        </p>
       )}
 
       <div className={styles.grid}>
