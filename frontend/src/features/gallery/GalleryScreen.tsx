@@ -63,7 +63,7 @@ function GalleryCard({
     );
     observer.observe(node);
     return () => observer.disconnect();
-  }, [eventCatalogRevision, setGalleryEventId]);
+  }, []);
 
   return (
     <button
@@ -161,13 +161,13 @@ export default function GalleryScreen() {
       .then((items) => {
         if (cancelled) return;
         setEvents(items);
-        if (
-          galleryEventId &&
-          !items.some((item) => item.id === galleryEventId)
-        ) {
-          setGalleryEventId("");
-          setSheet(null);
-        }
+        setGalleryEventId((current) => {
+          if (current && !items.some((item) => item.id === current)) {
+            setSheet(null);
+            return "";
+          }
+          return current;
+        });
         setError("");
       })
       .catch((cause: unknown) => {
