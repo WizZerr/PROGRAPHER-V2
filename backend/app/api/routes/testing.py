@@ -7,6 +7,8 @@ from app.schemas.testing import (
     ExportRecipesRequest,
     ExportRecipesResponse,
     ReviewSheet,
+    SaveReviewRequest,
+    SaveReviewResponse,
     TestingProfileRequest,
     TestingProfileSummary,
 )
@@ -16,6 +18,7 @@ from app.testing.profile import (
     build_review_sheet,
     build_testing_profile,
     export_testing_recipes,
+    save_testing_review,
 )
 
 router = APIRouter(prefix="/api/testing", tags=["testing"])
@@ -72,6 +75,26 @@ def review(event_id: str) -> ReviewSheet:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=str(exc),
+        ) from exc
+
+
+@router.post("/review", response_model=SaveReviewResponse)
+def save_review(payload: SaveReviewRequest) -> SaveReviewResponse:
+    try:
+        return save_testing_review(
+            event_id=payload.event_id,
+            item=payload.item,
+        )
+    except ValueError as exc:
+        detail = str(exc)
+        missing = detail in {"האירוע לא נמצא.", "הקובץ לא נמצא באירוע."}
+        raise HTTPException(
+            status_code=(
+                status.HTTP_404_NOT_FOUND
+                if missing
+                else status.HTTP_422_UNPROCESSABLE_CONTENT
+            ),
+            detail=detail,
         ) from exc
 
 
