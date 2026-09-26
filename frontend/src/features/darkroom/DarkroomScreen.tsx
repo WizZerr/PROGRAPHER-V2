@@ -6,6 +6,7 @@ import CameraPreview from "@/features/review/CameraPreview";
 import {
   exportRecipes,
   getReviewSheet,
+  saveReview,
   type LearningSource,
   type ReviewFile,
 } from "@/features/testing/testing.api";
@@ -42,11 +43,14 @@ function illustrationStyle(recipe: Recipe, enabled: boolean): CSSProperties {
   if (!enabled) return {};
   const brightness = Math.min(1.8, Math.max(0.45, 1 + recipe.exposure * 0.18));
   const warmth = Math.max(-40, Math.min(40, (recipe.temperature - 5500) / 80));
+  const tintShift = Math.max(-18, Math.min(18, recipe.tint * 0.12));
   return {
     ["--preview-brightness" as string]: String(brightness),
     ["--preview-sepia" as string]: warmth > 0 ? "0.25" : "0",
-    ["--preview-saturate" as string]: "1.05",
-    ["--preview-hue" as string]: `${-warmth * 0.35}deg`,
+    ["--preview-saturate" as string]: String(
+      Math.min(1.22, 1.05 + Math.abs(recipe.tint) * 0.001),
+    ),
+    ["--preview-hue" as string]: `${-warmth * 0.35 + tintShift}deg`,
   };
 }
 
@@ -68,7 +72,9 @@ export default function DarkroomScreen() {
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [dirty, setDirty] = useState(false);
   const dragOrigin = useRef<Recipe | null>(null);
+  const drafts = useRef<Record<string, Recipe>>({});
 
   const file = files.find((item) => item.fingerprint === selection?.fingerprint) ?? null;
   const index = file ? files.findIndex((item) => item.fingerprint === file.fingerprint) : -1;
@@ -98,6 +104,7 @@ export default function DarkroomScreen() {
     setTemperature(recipe.temperature);
     setTint(recipe.tint);
     setReady(true);
+    setDirty(true);
   }, [current]);
 
   useEffect(() => {
@@ -115,7 +122,10 @@ export default function DarkroomScreen() {
         const match = sheet.files.find(
           (item) => item.fingerprint === selection.fingerprint,
         );
-        const source = match?.saved_review ?? match?.suggested;
+        const draft = match
+          ? drafts.current[`${selection.eventId}:${match.fingerprint}`]
+          : undefined;
+        const source = draft ?? match?.saved_review ?? match?.suggested;
         if (
           source?.exposure != null &&
           source.temperature != null &&
@@ -125,8 +135,10 @@ export default function DarkroomScreen() {
           setTemperature(source.temperature);
           setTint(source.tint);
           setReady(true);
+          setDirty(Boolean(draft));
         } else {
           setReady(false);
+          setDirty(false);
         }
         setHistory([]);
         setFuture([]);
@@ -158,6 +170,7 @@ export default function DarkroomScreen() {
       setExposure(previous.exposure);
       setTemperature(previous.temperature);
       setTint(previous.tint);
+      setDirty(true);
       return items.slice(0, -1);
     });
   }
@@ -170,6 +183,7 @@ export default function DarkroomScreen() {
       setExposure(next.exposure);
       setTemperature(next.temperature);
       setTint(next.tint);
+      setDirty(true);
       return items.slice(1);
     });
   }
@@ -185,12 +199,72 @@ export default function DarkroomScreen() {
     return selected;
   }
 
-  async function save() {
+  function decisionForCurrent(): "approved" | "corrected" {
+    return suggestedRecipe && sameRecipe(current, suggestedRecipe)
+      ? "approved"
+      : "corrected";
+  }
+
+  function markCurrentSaved(recipe: Recipe) {
+    if (!file) return;
+    setFiles((items) =>
+      items.map((item) =>
+        item.fingerprint === file.fingerprint
+          ? {
+              ...item,
+              saved_review: {
+                exposure: recipe.exposure,
+                temperature: recipe.temperature,
+                tint: recipe.tint,
+                process_version: item.photographer?.process_version ?? null,
+                camera_profile: item.photographer?.camera_profile ?? null,
+              },
+            }
+          : item,
+      ),
+    );
+    if (selection) {
+      delete drafts.current[`${selection.eventId}:${file.fingerprint}`];
+    }
+    setDirty(false);
+  }
+
+  function stashDraft() {
+    if (!selection || !file || !ready || !dirty) return;
+    drafts.current[`${selection.eventId}:${file.fingerprint}`] = { ...current };
+  }
+
+  async function saveCurrentReview() {
+    if (!selection || !file || !ready) return;
+    const decision = decisionForCurrent();
+    setBusy(true);
+    setError("");
+    setMessage("");
+    try {
+      await saveReview({
+        event_id: selection.eventId,
+        item: {
+          fingerprint: file.fingerprint,
+          exposure,
+          temperature,
+          tint,
+          decision,
+        },
+      });
+      markCurrentSaved(current);
+      setMessage(decision === "approved" ? "האישור נשמר." : "התיקון נשמר.");
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "שמירת התיקון נכשלה.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function exportCurrent() {
     if (!selection || !file || !ready) return;
     const folder = outputDir || (await chooseOutput());
     if (!folder) return;
-    const decision =
-      suggestedRecipe && sameRecipe(current, suggestedRecipe) ? "approved" : "corrected";
+    const decision = decisionForCurrent();
     setBusy(true);
     setError("");
     setMessage("");
@@ -210,7 +284,8 @@ export default function DarkroomScreen() {
       });
       const item = result.files[0];
       if (item?.status === "written") {
-        setMessage(decision === "approved" ? "המתכון אושר ונכתב." : "התיקון נכתב.");
+        markCurrentSaved(current);
+        setMessage(decision === "approved" ? "המתכון אושר ויוצא." : "התיקון נשמר ויוצא.");
       } else {
         setError(item?.reason || "הייצוא לא נכתב.");
       }
@@ -221,11 +296,22 @@ export default function DarkroomScreen() {
     }
   }
 
+  function openSelectedPhoto(fingerprint: string) {
+    if (!selection) return;
+    stashDraft();
+    openPhoto(selection.eventId, fingerprint);
+  }
+
+  function returnToGallery() {
+    stashDraft();
+    openGallery();
+  }
+
   function move(step: number) {
     if (!selection || index < 0) return;
     const next = files[index + step];
     if (!next) return;
-    openPhoto(selection.eventId, next.fingerprint);
+    openSelectedPhoto(next.fingerprint);
   }
 
   function updateCompare(clientX: number) {
@@ -242,7 +328,7 @@ export default function DarkroomScreen() {
       const typing =
         target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement;
       if (event.key === "Escape") {
-        openGallery();
+        returnToGallery();
         return;
       }
       if (typing && event.key !== "z" && event.key !== "Z") return;
@@ -254,7 +340,7 @@ export default function DarkroomScreen() {
         move(-1);
       } else if (event.key === "Enter" && !typing && learningSource !== "jpeg") {
         event.preventDefault();
-        void save();
+        void exportCurrent();
       } else if ((event.key === "z" || event.key === "Z") && (event.metaKey || event.ctrlKey)) {
         event.preventDefault();
         if (event.shiftKey) redo();
@@ -366,7 +452,7 @@ export default function DarkroomScreen() {
               key={item.fingerprint}
               type="button"
               className={item.fingerprint === file.fingerprint ? `${styles.thumb} ${styles.thumbActive}` : styles.thumb}
-              onClick={() => openPhoto(selection.eventId, item.fingerprint)}
+              onClick={() => openSelectedPhoto(item.fingerprint)}
               aria-label={item.filename}
             >
               {Math.abs(itemIndex - index) <= 12 && (
@@ -427,7 +513,10 @@ export default function DarkroomScreen() {
               aria-label="חשיפה"
               onPointerDown={rememberBeforeDrag}
               onPointerUp={commitDrag}
-              onChange={(event) => setExposure(Number(event.target.value))}
+              onChange={(event) => {
+                setExposure(Number(event.target.value));
+                setDirty(true);
+              }}
             />
           </label>
           <label className={`${styles.slider} ${styles.temperature}`}>
@@ -445,7 +534,10 @@ export default function DarkroomScreen() {
               aria-label="טמפרטורה"
               onPointerDown={rememberBeforeDrag}
               onPointerUp={commitDrag}
-              onChange={(event) => setTemperature(Number(event.target.value))}
+              onChange={(event) => {
+                setTemperature(Number(event.target.value));
+                setDirty(true);
+              }}
             />
           </label>
           <label className={styles.slider}>
@@ -463,7 +555,10 @@ export default function DarkroomScreen() {
               aria-label="גוון"
               onPointerDown={rememberBeforeDrag}
               onPointerUp={commitDrag}
-              onChange={(event) => setTint(Number(event.target.value))}
+              onChange={(event) => {
+                setTint(Number(event.target.value));
+                setDirty(true);
+              }}
             />
           </label>
 
@@ -474,7 +569,7 @@ export default function DarkroomScreen() {
           >
             {showIllustration ? "ההמחשה הגסה פעילה" : "הצג המחשה גסה"}
           </button>
-          <p className={styles.keys}>חצים למעבר · Enter לייצוא · ⌘Z או Ctrl+Z לביטול · B להחזיק את המקור</p>
+          <p className={styles.keys}>חצים למעבר · Enter לייצוא · שינויים שלא נשמרו נשמרים כטיוטה במעבר · ⌘Z או Ctrl+Z לביטול · B להחזיק את המקור</p>
           {message && <p className={`${styles.status} ${styles.ok}`} role="status">{message}</p>}
           {error && <p className={`${styles.status} ${styles.error}`} role="alert">{error}</p>}
         </div>
@@ -502,12 +597,20 @@ export default function DarkroomScreen() {
             ביטול
           </button>
           <button
+            className={styles.secondary}
+            type="button"
+            disabled={!ready || busy}
+            onClick={() => void saveCurrentReview()}
+          >
+            {busy ? "שומר…" : suggestedRecipe && sameRecipe(current, suggestedRecipe) ? "שמור אישור" : "שמור תיקון"}
+          </button>
+          <button
             className={styles.primary}
             type="button"
             disabled={!ready || busy}
-            onClick={() => void save()}
+            onClick={() => void exportCurrent()}
           >
-            {busy ? "כותב…" : suggestedRecipe && sameRecipe(current, suggestedRecipe) ? "אשר וייצא" : "תקן וייצא"}
+            {busy ? "כותב…" : "ייצא XMP"}
           </button>
         </div>
         )}
