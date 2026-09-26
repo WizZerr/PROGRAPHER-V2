@@ -96,6 +96,15 @@ export async function getTestingProfile(
   }
 }
 
+export async function activateTestingProfile(
+  learningSource: LearningSource,
+): Promise<TestingProfile> {
+  return apiRequest<TestingProfile>("/api/testing/profile/activate", {
+    method: "POST",
+    body: JSON.stringify({ learning_source: learningSource }),
+  });
+}
+
 export async function createTestingProfile(input: {
   raw_root: string;
   edits_root: string;
