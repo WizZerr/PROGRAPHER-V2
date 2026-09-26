@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import AppShell from "@/components/layout/AppShell";
 import DashboardScreen from "@/features/dashboard/DashboardScreen";
 import EventsScreen from "@/features/events/EventsScreen";
@@ -40,22 +40,23 @@ export default function WorkspaceScreen() {
   const [activeView, setActiveView] = useState<WorkspaceView>("dashboard");
   const [galleryMounted, setGalleryMounted] = useState(false);
 
-  useEffect(() => {
-    if (activeView === "gallery") {
+  function selectView(view: WorkspaceView) {
+    if (view === "gallery") {
       setGalleryMounted(true);
     }
-  }, [activeView]);
+    setActiveView(view);
+  }
 
   return (
     <TestingNavProvider
-      onOpenDarkroom={() => setActiveView("darkroom")}
-      onOpenGallery={() => setActiveView("gallery")}
+      onOpenDarkroom={() => selectView("darkroom")}
+      onOpenGallery={() => selectView("gallery")}
     >
       <AppShell
         activeView={activeView}
         title={titles[activeView]}
         immersive={activeView === "darkroom"}
-        onSelect={setActiveView}
+        onSelect={selectView}
       >
         {galleryMounted && (
           <div
