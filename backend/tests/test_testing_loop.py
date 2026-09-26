@@ -488,8 +488,6 @@ def test_jpeg_profile_rejects_identical_before_after_files(
             },
         )
 
-    assert response.status_code == 200
-    body = response.json()
-    assert body["usable_pairs"] == 0
-    assert any("אותו קובץ פיזי" in warning for warning in body["warnings"])
+    assert response.status_code == 422
+    assert "שתי תיקיות נפרדות" in response.json()["detail"]
 
