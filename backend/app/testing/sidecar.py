@@ -46,6 +46,7 @@ def write_testing_sidecar(
     relative_path: str,
     recipe: TargetRecipe,
     output_dir: str | Path,
+    export_namespace: str | None = None,
 ) -> Path:
     """
     Write a Lightroom sidecar into a folder the tester chose.
@@ -61,7 +62,11 @@ def write_testing_sidecar(
     destination_root.mkdir(parents=True, exist_ok=True)
 
     relative = Path(relative_path)
-    destination = destination_root / relative.with_suffix(".xmp")
+    namespace = Path(export_namespace).name if export_namespace else ""
+    destination_base = (
+        destination_root / namespace if namespace else destination_root
+    )
+    destination = destination_base / relative.with_suffix(".xmp")
     if destination.resolve() == raw.resolve():
         raise SidecarExportError("ייצוא לא יכול להחליף את קובץ ה-RAW.")
 
