@@ -2,6 +2,7 @@
 
 import { useEffect, useState, type CSSProperties } from "react";
 import { apiBlob } from "@/lib/api";
+import previewStyles from "./CameraPreview.module.css";
 
 type CameraPreviewProps = {
   eventId: string;
@@ -44,9 +45,26 @@ export default function CameraPreview({
   }, [eventId, fingerprint]);
 
   if (failed || !url) {
+    const stateClassName = [previewStyles.state, className]
+      .filter(Boolean)
+      .join(" ");
+
     return (
-      <div className={className} style={style} role="img" aria-label={alt}>
-        <span>{failed ? "אין תצוגת מצלמה" : "טוען תצוגה"}</span>
+      <div
+        className={stateClassName}
+        style={style}
+        role="img"
+        aria-label={failed ? (alt || "אין תצוגה זמינה") : (alt || "טוען תצוגה")}
+        title={failed ? "אין תצוגה זמינה" : undefined}
+      >
+        {failed ? (
+          <span className={previewStyles.failedIcon} aria-hidden="true">×</span>
+        ) : (
+          <span className={previewStyles.spinner} aria-hidden="true" />
+        )}
+        <span className={previewStyles.srOnly}>
+          {failed ? "אין תצוגה זמינה" : "טוען תצוגה"}
+        </span>
       </div>
     );
   }
