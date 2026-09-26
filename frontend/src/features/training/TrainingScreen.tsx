@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { open } from "@tauri-apps/plugin-dialog";
 import {
+  activateTestingProfile,
   createTestingProfile,
   getTestingProfile,
   type LearningSource,
@@ -20,7 +21,7 @@ export default function TrainingScreen() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
 
-  function applyProfile(value: TestingProfile | null) {
+  const applyProfile = useCallback((value: TestingProfile | null) => {
     setProfile(value);
     if (!value) return;
     setRawRoot(value.raw_root);
@@ -28,7 +29,7 @@ export default function TrainingScreen() {
     setPhotographerId(value.photographer_id);
     setEventLabel(value.event_label);
     setLearningSource(value.learning_source);
-  }
+  }, []);
 
   useEffect(() => {
     void getTestingProfile()
@@ -36,22 +37,17 @@ export default function TrainingScreen() {
       .catch((cause: unknown) => {
         setError(cause instanceof Error ? cause.message : "טעינת הפרופיל נכשלה.");
       });
-  }, []);
+  }, [applyProfile]);
 
   async function switchLearningSource(source: LearningSource) {
     setLearningSource(source);
     setError("");
     try {
-      const existing = await getTestingProfile(source);
-      if (existing) {
-        applyProfile(existing);
-      } else {
-        setProfile(null);
-        setRawRoot("");
-        setEditsRoot("");
-      }
-    } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "טעינת המסלול נכשלה.");
+      applyProfile(await activateTestingProfile(source));
+    } catch {
+      setProfile(null);
+      setRawRoot("");
+      setEditsRoot("");
     }
   }
 
