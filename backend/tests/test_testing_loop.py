@@ -656,3 +656,97 @@ def test_explicit_jpeg_review_does_not_depend_on_active_raw_profile(
     assert len(body["files"]) == 1
     assert body["files"][0]["filename"] == "IMG_1000.jpg"
     assert body["files"][0]["pair_status"] == "jpeg"
+
+
+def test_delete_event_keeps_source_files_and_purges_reviews(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    monkeypatch.setenv("PROGRAPHER_DATA_DIR", str(tmp_path / "data"))
+
+    reference = tmp_path / "reference"
+    reference.mkdir()
+    _raw(reference / "IMG_0001.ARW", b"reference-raw" * 300)
+    _xmp(
+        reference / "IMG_0001.xmp",
+        exposure="+0.20",
+        temperature="5100",
+        tint="+3",
+        raw_name="IMG_0001.ARW",
+    )
+
+    event = tmp_path / "event"
+    event.mkdir()
+    raw_path = event / "IMG_0200.ARW"
+    _raw(raw_path, b"event-raw" * 400)
+    original_bytes = raw_path.read_bytes()
+
+    with TestClient(create_app()) as client:
+        profile = client.post(
+            "/api/testing/profile",
+            headers=HEADERS,
+            json={"raw_root": str(reference), "edits_root": str(reference)},
+        )
+        assert profile.status_code == 200
+
+        opened = client.post(
+            "/api/events/open-folder",
+            headers=HEADERS,
+            json={"path": str(event)},
+        )
+        assert opened.status_code == 200
+        event_id = opened.json()["event"]["id"]
+
+        sheet = client.get(
+            f"/api/testing/events/{event_id}/review?learning_source=raw",
+            headers=HEADERS,
+        )
+        assert sheet.status_code == 200
+        file = sheet.json()["files"][0]
+
+        saved = client.post(
+            "/api/testing/review",
+            headers=HEADERS,
+            json={
+                "event_id": event_id,
+                "item": {
+                    "fingerprint": file["fingerprint"],
+                    "exposure": 0.4,
+                    "temperature": 5300,
+                    "tint": 5,
+                    "decision": "corrected",
+                },
+            },
+        )
+        assert saved.status_code == 200
+
+        removed = client.delete(
+            f"/api/events/{event_id}",
+            headers=HEADERS,
+        )
+        assert removed.status_code == 200
+        body = removed.json()
+        assert body["removed_from_catalog"] is True
+        assert body["source_files_deleted"] is False
+
+        listed = client.get("/api/events", headers=HEADERS)
+        assert listed.status_code == 200
+        assert all(item["id"] != event_id for item in listed.json()["events"])
+
+        reopened = client.post(
+            "/api/events/open-folder",
+            headers=HEADERS,
+            json={"path": str(event)},
+        )
+        assert reopened.status_code == 200
+        assert reopened.json()["event"]["id"] == event_id
+
+        fresh_sheet = client.get(
+            f"/api/testing/events/{event_id}/review?learning_source=raw",
+            headers=HEADERS,
+        )
+        assert fresh_sheet.status_code == 200
+        assert fresh_sheet.json()["files"][0]["saved_review"] is None
+
+    assert raw_path.is_file()
+    assert raw_path.read_bytes() == original_bytes
