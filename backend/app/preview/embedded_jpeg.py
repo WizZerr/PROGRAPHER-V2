@@ -10,15 +10,17 @@ class PreviewUnavailable(ValueError):
     pass
 
 
-_READ_LIMIT = 32 * 1024 * 1024
+_READ_LIMIT = 64 * 1024 * 1024
 _MIN_JPEG_BYTES = 800
+_JPEG_EXTENSIONS = {".jpg", ".jpeg"}
 
 
 def extract_embedded_jpeg(path: Path) -> bytes | None:
     """
-    Return the largest JPEG embedded near the start of a camera file.
+    Fallback extractor for a JPEG preview embedded in a camera RAW.
 
-    The file is only read. This is a camera preview, not a Lightroom render.
+    This never mutates the source. It is intentionally a fallback; supported
+    RAW files are first offered to rawpy/LibRaw.
     """
     with path.open("rb") as handle:
         blob = handle.read(_READ_LIMIT)
@@ -33,12 +35,44 @@ def extract_embedded_jpeg(path: Path) -> bytes | None:
         if end < 0:
             break
         chunk = blob[marker : end + 2]
-        if len(chunk) >= _MIN_JPEG_BYTES and (best is None or len(chunk) > len(best)):
+        if len(chunk) >= _MIN_JPEG_BYTES and (
+            best is None or len(chunk) > len(best)
+        ):
             best = chunk
         start = marker + 2
-        if best is not None and len(best) > 1_500_000:
-            break
     return best
+
+
+def _rawpy_preview(path: Path) -> bytes | None:
+    try:
+        import rawpy
+    except ImportError:
+        return None
+
+    try:
+        with rawpy.imread(str(path)) as raw:
+            thumb = raw.extract_thumb()
+        if thumb.format == rawpy.ThumbFormat.JPEG:
+            return bytes(thumb.data)
+    except Exception:
+        # Unsupported/corrupt RAW falls through to the embedded-JPEG fallback.
+        return None
+    return None
+
+
+def _preview_bytes(path: Path, extension: str, source_type: str) -> bytes | None:
+    if source_type == "rendered" and extension in _JPEG_EXTENSIONS:
+        try:
+            return path.read_bytes()
+        except OSError:
+            return None
+
+    if source_type == "raw":
+        preview = _rawpy_preview(path)
+        if preview is not None:
+            return preview
+
+    return extract_embedded_jpeg(path)
 
 
 def camera_preview_bytes(event_id: str, fingerprint: str) -> bytes:
@@ -58,7 +92,7 @@ def camera_preview_bytes(event_id: str, fingerprint: str) -> bytes:
     if not path.is_file() or not path.is_relative_to(root):
         raise PreviewUnavailable("הקובץ אינו זמין בתוך תיקיית האירוע.")
 
-    preview = extract_embedded_jpeg(path)
+    preview = _preview_bytes(path, match.extension, match.source_type)
     if preview is None:
         raise PreviewUnavailable("אין תצוגת מצלמה בקובץ הזה.")
     return preview
