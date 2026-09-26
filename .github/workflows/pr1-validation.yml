@@ -1,0 +1,64 @@
+name: PR1 validation
+
+on:
+  pull_request:
+    branches:
+      - ui-v2-overhaul
+  workflow_dispatch:
+
+jobs:
+  windows-validation:
+    runs-on: windows-latest
+    timeout-minutes: 25
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: backend/requirements-lock.txt
+
+      - name: Install backend test dependencies
+        shell: pwsh
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r backend/requirements-lock.txt
+
+      - name: Run PR1 backend tests
+        working-directory: backend
+        shell: pwsh
+        run: |
+          python -m pytest tests/test_testing_loop.py tests/test_camera_preview.py -q
+
+      - name: Node 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install frontend dependencies
+        working-directory: frontend
+        shell: pwsh
+        run: npm.cmd ci
+
+      - name: TypeScript check
+        working-directory: frontend
+        shell: pwsh
+        run: npx.cmd tsc --noEmit
+
+      - name: Next production build
+        working-directory: frontend
+        shell: pwsh
+        run: npm.cmd run build
+
+      - name: Rust stable
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Tauri Rust check
+        shell: pwsh
+        run: cargo check --manifest-path frontend/src-tauri/Cargo.toml
