@@ -119,9 +119,11 @@ def scan_jpeg_pairs(originals_root: str | Path, edits_root: str | Path) -> JpegP
             unmatched += 1
             continue
 
-        # The same JPEG selected as both "original" and "edited" is not a
-        # supervised before/after example. Keep it out of the usable dataset.
-        if source.fingerprint == chosen.fingerprint:
+        # Selecting the exact same physical file as both "original" and
+        # "edited" is a configuration mistake. Different files with identical
+        # bytes remain valid: an intentionally unchanged photo is still a
+        # meaningful identity target.
+        if Path(source.absolute_path).resolve() == Path(chosen.absolute_path).resolve():
             identical += 1
             continue
 
