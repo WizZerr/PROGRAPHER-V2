@@ -3,6 +3,7 @@ from fastapi.responses import Response
 
 from app.schemas.events import (
     EventAvailabilityResponse,
+    EventDeleteResponse,
     EventFileListResponse,
     EventFileRecord,
     EventListResponse,
@@ -15,9 +16,11 @@ from app.schemas.events import (
     EventSummary,
 )
 from app.preview.embedded_jpeg import PreviewUnavailable, camera_preview_bytes
+from app.testing.profile import forget_event_reviews
 from app.services.event_scan_jobs import get_scan_job, start_scan_job
 from app.services.event_service import (
     EventOpenError,
+    delete_event,
     event_availability,
     list_event_files,
     list_events,
@@ -55,6 +58,25 @@ def _open_response(result) -> EventOpenResponse:
 def get_events() -> EventListResponse:
     return EventListResponse(
         events=[_summary(record) for record in list_events()]
+    )
+
+
+@router.delete("/{event_id}", response_model=EventDeleteResponse)
+def remove_event(event_id: str) -> EventDeleteResponse:
+    try:
+        event = delete_event(event_id)
+    except EventOpenError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(exc),
+        ) from exc
+
+    forget_event_reviews(event_id)
+    return EventDeleteResponse(
+        event_id=event.id,
+        name=event.name,
+        removed_from_catalog=True,
+        source_files_deleted=False,
     )
 
 
