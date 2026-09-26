@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import AppShell from "@/components/layout/AppShell";
 import DashboardScreen from "@/features/dashboard/DashboardScreen";
 import EventsScreen from "@/features/events/EventsScreen";
@@ -20,24 +20,29 @@ const titles: Record<WorkspaceView, string> = {
   training: "מעבדת למידה",
 };
 
+function ActiveScreen({ view }: { view: WorkspaceView }) {
+  switch (view) {
+    case "events":
+      return <EventsScreen />;
+    case "darkroom":
+      return <DarkroomScreen />;
+    case "profile":
+      return <ProfileScreen />;
+    case "training":
+      return <TrainingScreen />;
+    case "dashboard":
+    default:
+      return <DashboardScreen />;
+  }
+}
+
 export default function WorkspaceScreen() {
   const [activeView, setActiveView] = useState<WorkspaceView>("dashboard");
+  const [galleryMounted, setGalleryMounted] = useState(false);
 
-  const screen = useMemo(() => {
-    switch (activeView) {
-      case "events":
-        return <EventsScreen />;
-      case "gallery":
-        return <GalleryScreen />;
-      case "darkroom":
-        return <DarkroomScreen />;
-      case "profile":
-        return <ProfileScreen />;
-      case "training":
-        return <TrainingScreen />;
-      case "dashboard":
-      default:
-        return <DashboardScreen />;
+  useEffect(() => {
+    if (activeView === "gallery") {
+      setGalleryMounted(true);
     }
   }, [activeView]);
 
@@ -52,7 +57,17 @@ export default function WorkspaceScreen() {
         immersive={activeView === "darkroom"}
         onSelect={setActiveView}
       >
-        {screen}
+        {galleryMounted && (
+          <div
+            hidden={activeView !== "gallery"}
+            style={{ minHeight: "100%" }}
+            aria-hidden={activeView !== "gallery"}
+          >
+            <GalleryScreen />
+          </div>
+        )}
+
+        {activeView !== "gallery" && <ActiveScreen view={activeView} />}
       </AppShell>
     </TestingNavProvider>
   );
