@@ -1,3 +1,5 @@
+from typing import Literal
+
 from fastapi import APIRouter, HTTPException, status
 
 from app.schemas.testing import (
@@ -18,8 +20,10 @@ router = APIRouter(prefix="/api/testing", tags=["testing"])
 
 
 @router.get("/profile", response_model=TestingProfileSummary)
-def get_profile() -> TestingProfileSummary:
-    profile = active_testing_profile()
+def get_profile(
+    learning_source: Literal["raw", "jpeg"] | None = None,
+) -> TestingProfileSummary:
+    profile = active_testing_profile(learning_source)
     if profile is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
