@@ -57,11 +57,47 @@ def profile_path() -> Path:
     return user_data_dir() / "testing_profile.json"
 
 
+def _empty_profile_document() -> dict:
+    return {
+        "active_source": "raw",
+        "profiles": {},
+        "reviews": {"raw": {}, "jpeg": {}},
+    }
+
+
+def _normalize_profile_document(document: dict) -> dict:
+    if "profiles" in document:
+        normalized = _empty_profile_document()
+        normalized["active_source"] = document.get("active_source") or "raw"
+        normalized["profiles"] = dict(document.get("profiles") or {})
+        reviews = document.get("reviews") or {}
+        normalized["reviews"] = {
+            "raw": dict(reviews.get("raw") or {}),
+            "jpeg": dict(reviews.get("jpeg") or {}),
+        }
+        return normalized
+
+    # Backward-compatible migration from the first PR format:
+    # {"summary": <one profile>, "reviews": {...}}
+    summary = document.get("summary")
+    if not isinstance(summary, dict):
+        return _empty_profile_document()
+
+    source = summary.get("learning_source") or "raw"
+    normalized = _empty_profile_document()
+    normalized["active_source"] = source
+    normalized["profiles"][source] = summary
+    normalized["reviews"][source] = dict(document.get("reviews") or {})
+    return normalized
+
+
 def load_profile_document() -> dict | None:
     path = profile_path()
     if not path.exists():
         return None
-    return json.loads(path.read_text(encoding="utf-8"))
+    return _normalize_profile_document(
+        json.loads(path.read_text(encoding="utf-8"))
+    )
 
 
 def _write_document(document: dict) -> None:
@@ -73,6 +109,15 @@ def _write_document(document: dict) -> None:
         encoding="utf-8",
     )
     temporary.replace(path)
+
+
+def _reviews_for(document: dict, learning_source: str) -> dict:
+    reviews = document.setdefault("reviews", {"raw": {}, "jpeg": {}})
+    source_reviews = reviews.get(learning_source)
+    if not isinstance(source_reviews, dict):
+        source_reviews = {}
+        reviews[learning_source] = source_reviews
+    return source_reviews
 
 
 def _recipe_from_target(recipe: TargetRecipe | None) -> RecipeValues | None:
@@ -117,20 +162,13 @@ def _round_exposure(value: float) -> float:
 
 
 def _persist_profile(summary: TestingProfileSummary) -> None:
-    previous = load_profile_document() or {}
-    previous_summary = previous.get("summary") or {}
-    previous_source = previous_summary.get("learning_source") or "raw"
-    reviews = (
-        {}
-        if previous_source != summary.learning_source
-        else previous.get("reviews") or {}
-    )
-    _write_document(
-        {
-            "summary": summary.model_dump(),
-            "reviews": reviews,
-        }
-    )
+    document = load_profile_document() or _empty_profile_document()
+    profiles = dict(document.get("profiles") or {})
+    profiles[summary.learning_source] = summary.model_dump()
+    document["profiles"] = profiles
+    document["active_source"] = summary.learning_source
+    _reviews_for(document, summary.learning_source)
+    _write_document(document)
 
 
 def _profile_id(identity: dict) -> str:
@@ -350,11 +388,17 @@ def build_testing_profile(
     return summary
 
 
-def active_testing_profile() -> TestingProfileSummary | None:
+def active_testing_profile(
+    learning_source: Literal["raw", "jpeg"] | None = None,
+) -> TestingProfileSummary | None:
     document = load_profile_document()
-    if not document or "summary" not in document:
+    if not document:
         return None
-    return TestingProfileSummary.model_validate(document["summary"])
+    source = learning_source or document.get("active_source") or "raw"
+    summary = (document.get("profiles") or {}).get(source)
+    if not isinstance(summary, dict):
+        return None
+    return TestingProfileSummary.model_validate(summary)
 
 
 def build_review_sheet(event_id: str) -> ReviewSheet:
