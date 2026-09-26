@@ -30,6 +30,7 @@ class EventRecord:
     total_files: int
     raw_files: int
     rendered_files: int
+    jpeg_files: int
     created_at: str
     updated_at: str
 
@@ -272,7 +273,11 @@ class EventStore:
                     ) AS raw_files,
                     COUNT(f.id) FILTER (
                         WHERE f.present = 1 AND f.source_type = 'rendered'
-                    ) AS rendered_files
+                    ) AS rendered_files,
+                    COUNT(f.id) FILTER (
+                        WHERE f.present = 1
+                          AND f.extension IN ('.jpg', '.jpeg')
+                    ) AS jpeg_files
                 FROM events e
                 LEFT JOIN event_files f ON f.event_id = e.id
                 WHERE e.id = ?
@@ -291,6 +296,7 @@ class EventStore:
             total_files=int(row["total_files"] or 0),
             raw_files=int(row["raw_files"] or 0),
             rendered_files=int(row["rendered_files"] or 0),
+            jpeg_files=int(row["jpeg_files"] or 0),
             created_at=row["created_at"],
             updated_at=row["updated_at"],
         )
