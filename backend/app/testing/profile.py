@@ -512,7 +512,10 @@ def activate_testing_profile(
     return TestingProfileSummary.model_validate(summary)
 
 
-def build_review_sheet(event_id: str) -> ReviewSheet:
+def build_review_sheet(
+    event_id: str,
+    learning_source: Literal["raw", "jpeg"] | None = None,
+) -> ReviewSheet:
     store = EventStore()
     try:
         event = store.get_event(event_id)
@@ -520,9 +523,9 @@ def build_review_sheet(event_id: str) -> ReviewSheet:
     except (KeyError, EventOpenError) as exc:
         raise ValueError("האירוע לא נמצא.") from exc
 
-    profile = active_testing_profile()
-    learning_source = profile.learning_source if profile else "raw"
-    if learning_source == "jpeg":
+    profile = active_testing_profile(learning_source) if learning_source else active_testing_profile()
+    source = learning_source or (profile.learning_source if profile else "raw")
+    if source == "jpeg":
         rows = [
             ReviewFile(
                 fingerprint=item.fingerprint,
@@ -639,11 +642,7 @@ def save_testing_review(
     event_id: str,
     item: ExportRecipeItem,
 ) -> SaveReviewResponse:
-    profile = active_testing_profile()
-    if profile is not None and profile.learning_source == "jpeg":
-        raise ValueError("פרופיל JPEG לא שומר מתכון Lightroom.")
-
-    sheet = build_review_sheet(event_id)
+    sheet = build_review_sheet(event_id, "raw")
     source = next(
         (row for row in sheet.files if row.fingerprint == item.fingerprint),
         None,
@@ -698,11 +697,7 @@ def export_testing_recipes(
     output_dir: str,
     items: list[ExportRecipeItem],
 ) -> ExportRecipesResponse:
-    profile = active_testing_profile()
-    if profile is not None and profile.learning_source == "jpeg":
-        raise ValueError("פרופיל JPEG לא מייצא מתכון Lightroom.")
-
-    sheet = build_review_sheet(event_id)
+    sheet = build_review_sheet(event_id, "raw")
     by_fingerprint = {item.fingerprint: item for item in sheet.files}
     results: list[ExportFileResult] = []
     document = load_profile_document() or _empty_profile_document()
