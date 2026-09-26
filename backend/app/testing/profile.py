@@ -477,6 +477,22 @@ def active_testing_profile(
     return TestingProfileSummary.model_validate(summary)
 
 
+def activate_testing_profile(
+    learning_source: Literal["raw", "jpeg"],
+) -> TestingProfileSummary:
+    document = load_profile_document()
+    if not document:
+        raise ValueError("עדיין אין פרופיל בדיקה.")
+    summary = (document.get("profiles") or {}).get(learning_source)
+    if not isinstance(summary, dict):
+        raise ValueError(
+            "עדיין אין מסלול בדיקה שמור לסוג החומר שנבחר."
+        )
+    document["active_source"] = learning_source
+    _write_document(document)
+    return TestingProfileSummary.model_validate(summary)
+
+
 def build_review_sheet(event_id: str) -> ReviewSheet:
     store = EventStore()
     try:
