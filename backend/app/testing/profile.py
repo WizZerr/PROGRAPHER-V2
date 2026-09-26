@@ -115,7 +115,18 @@ def _normalize_profile_document(document: dict) -> dict:
     if "profiles" in document:
         normalized = _empty_profile_document()
         normalized["active_source"] = document.get("active_source") or "raw"
-        normalized["profiles"] = dict(document.get("profiles") or {})
+        profiles: dict[str, dict] = {}
+        for source, raw_summary in (document.get("profiles") or {}).items():
+            if not isinstance(raw_summary, dict):
+                continue
+            summary = dict(raw_summary)
+            summary.setdefault(
+                "learning_material",
+                "jpeg_pairs" if source == "jpeg" else "raw_xmp",
+            )
+            summary.setdefault("dataset_manifest_path", None)
+            profiles[source] = summary
+        normalized["profiles"] = profiles
         reviews = document.get("reviews") or {}
         normalized["reviews"] = {
             "raw": dict(reviews.get("raw") or {}),
