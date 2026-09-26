@@ -19,6 +19,7 @@ class EventSummary(BaseModel):
     total_files: int
     raw_files: int
     rendered_files: int
+    jpeg_files: int
     created_at: str
     updated_at: str
 
