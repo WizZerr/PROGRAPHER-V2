@@ -3,6 +3,7 @@ from typing import Literal
 from fastapi import APIRouter, HTTPException, status
 
 from app.schemas.testing import (
+    ActivateTestingProfileRequest,
     ExportRecipesRequest,
     ExportRecipesResponse,
     ReviewSheet,
@@ -10,6 +11,7 @@ from app.schemas.testing import (
     TestingProfileSummary,
 )
 from app.testing.profile import (
+    activate_testing_profile,
     active_testing_profile,
     build_review_sheet,
     build_testing_profile,
@@ -30,6 +32,19 @@ def get_profile(
             detail="עדיין אין פרופיל בדיקה. יש לבנות אותו מתיקיית RAW או JPEG.",
         )
     return profile
+
+
+@router.post("/profile/activate", response_model=TestingProfileSummary)
+def activate_profile(
+    payload: ActivateTestingProfileRequest,
+) -> TestingProfileSummary:
+    try:
+        return activate_testing_profile(payload.learning_source)
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(exc),
+        ) from exc
 
 
 @router.post("/profile", response_model=TestingProfileSummary)
