@@ -44,10 +44,15 @@ export default function TrainingScreen() {
     setError("");
     try {
       applyProfile(await activateTestingProfile(source));
-    } catch {
-      setProfile(null);
-      setRawRoot("");
-      setEditsRoot("");
+    } catch (cause) {
+      const message = cause instanceof Error ? cause.message : "";
+      if (message.includes("עדיין אין")) {
+        setProfile(null);
+        setRawRoot("");
+        setEditsRoot("");
+        return;
+      }
+      setError(message || "טעינת המסלול נכשלה.");
     }
   }
 
