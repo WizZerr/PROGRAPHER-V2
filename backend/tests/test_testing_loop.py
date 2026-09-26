@@ -249,6 +249,15 @@ def test_review_and_export_leave_raw_unchanged(
     assert 'crs:Temperature="5300"' in text
     assert "testing-loop-v1" in text
 
+    foreign_destination = event / event_id / "IMG_0100.xmp"
+    _xmp(
+        foreign_destination,
+        exposure="+0.10",
+        temperature="5000",
+        tint="+1",
+        raw_name="IMG_0100.ARW",
+    )
+
     with TestClient(create_app()) as client:
         blocked = client.post(
             "/api/testing/export",
