@@ -20,21 +20,40 @@ export default function TrainingScreen() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
 
+  function applyProfile(value: TestingProfile | null) {
+    setProfile(value);
+    if (!value) return;
+    setRawRoot(value.raw_root);
+    setEditsRoot(value.edits_root);
+    setPhotographerId(value.photographer_id);
+    setEventLabel(value.event_label);
+    setLearningSource(value.learning_source);
+  }
+
   useEffect(() => {
     void getTestingProfile()
-      .then((value) => {
-        setProfile(value);
-        if (!value) return;
-        setRawRoot(value.raw_root);
-        setEditsRoot(value.edits_root);
-        setPhotographerId(value.photographer_id);
-        setEventLabel(value.event_label);
-        setLearningSource(value.learning_source ?? "raw");
-      })
+      .then(applyProfile)
       .catch((cause: unknown) => {
         setError(cause instanceof Error ? cause.message : "טעינת הפרופיל נכשלה.");
       });
   }, []);
+
+  async function switchLearningSource(source: LearningSource) {
+    setLearningSource(source);
+    setError("");
+    try {
+      const existing = await getTestingProfile(source);
+      if (existing) {
+        applyProfile(existing);
+      } else {
+        setProfile(null);
+        setRawRoot("");
+        setEditsRoot("");
+      }
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "טעינת המסלול נכשלה.");
+    }
+  }
 
   async function chooseFolder(target: "raw" | "edits") {
     setError("");
@@ -85,8 +104,8 @@ export default function TrainingScreen() {
         <h2>מעבדת בדיקה</h2>
         <p>
           {learningSource === "jpeg"
-            ? "פרופיל JPEG לומד רק מזוגות JPEG מקורי ו-JPEG ערוך. אין בו מתכון Lightroom, והוא לא מתערבב עם פרופיל RAW."
-            : "פרופיל RAW לומד מ-RAW ומ-XMP של Lightroom. בונים ממנו בסיס חציון לחשיפה, טמפרטורה וגוון. הוא לא מתערבב עם פרופיל JPEG."}
+            ? "מסלול JPEG בונה מאגר מזווג של JPEG מקורי ו-JPEG ערוך. הזוגות נשמרים כ-Dataset לבדיקה ואימון עתידי; בשלב הזה עדיין אין מודל JPEG מאומן."
+            : "מסלול RAW קורא RAW ו-XMP של Lightroom ובונה בסיס בדיקה לחשיפה, טמפרטורה וגוון. נתוני RAW ו-JPEG נשמרים בנפרד."}
         </p>
       </section>
 
@@ -111,14 +130,14 @@ export default function TrainingScreen() {
           <button
             className={learningSource === "raw" ? styles.primary : styles.secondary}
             type="button"
-            onClick={() => setLearningSource("raw")}
+            onClick={() => void switchLearningSource("raw")}
           >
             למידה מ-RAW
           </button>
           <button
             className={learningSource === "jpeg" ? styles.primary : styles.secondary}
             type="button"
-            onClick={() => setLearningSource("jpeg")}
+            onClick={() => void switchLearningSource("jpeg")}
           >
             למידה מ-JPEG
           </button>
@@ -148,11 +167,16 @@ export default function TrainingScreen() {
 
       {profile && (
         <section className={styles.panel}>
-          <h3>הבסיס הנוכחי</h3>
+          <h3>{profile.learning_source === "jpeg" ? "מאגר ה-JPEG הנוכחי" : "בסיס ה-RAW הנוכחי"}</h3>
           <p className={styles.note}>
             מסלול: {profile.learning_source === "jpeg" ? "JPEG" : "RAW"}
           </p>
           <p className={styles.note}>{profile.note}</p>
+          {profile.dataset_manifest_path && (
+            <p className={styles.note}>
+              Manifest: <bdi className={styles.ltr}>{profile.dataset_manifest_path}</bdi>
+            </p>
+          )}
           <div className={styles.metrics}>
             <div className={styles.metric}>
               <span>{profile.learning_source === "jpeg" ? "JPEG" : "RAW"}</span>
