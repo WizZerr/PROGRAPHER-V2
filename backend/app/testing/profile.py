@@ -247,15 +247,14 @@ def _build_jpeg_testing_profile(
     photographer_id: str,
     event_label: str,
 ) -> TestingProfileSummary:
-    originals_path = Path(raw_root).expanduser().resolve(strict=True)
-    edits_path = Path(edits_root).expanduser().resolve(strict=True)
-    if originals_path == edits_path:
-        raise ValueError(
-            "במסלול JPEG צריך לבחור שתי תיקיות נפרדות: מקור וערוך."
-        )
-
     try:
-        scan = scan_jpeg_pairs(raw_root, edits_root)
+        originals_path = Path(raw_root).expanduser().resolve(strict=True)
+        edits_path = Path(edits_root).expanduser().resolve(strict=True)
+        if originals_path == edits_path:
+            raise ValueError(
+                "במסלול JPEG צריך לבחור שתי תיקיות נפרדות: מקור וערוך."
+            )
+        scan = scan_jpeg_pairs(originals_path, edits_path)
     except (OSError, ValueError) as exc:
         raise ValueError(str(exc)) from exc
 
