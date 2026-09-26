@@ -59,6 +59,9 @@ export default function DarkroomScreen() {
     selection,
     outputDir,
     setOutputDir,
+    getReviewSheetCache,
+    setReviewSheetCache,
+    patchCachedReview,
     getDraft,
     setDraft,
     clearDraft,
@@ -81,6 +84,7 @@ export default function DarkroomScreen() {
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [dirty, setDirty] = useState(false);
   const dragOrigin = useRef<Recipe | null>(null);
 
@@ -122,43 +126,81 @@ export default function DarkroomScreen() {
     if (!selection) {
       setFiles([]);
       setReady(false);
+      setLoading(false);
       return;
     }
 
-    void getReviewSheet(selection.eventId)
+    let cancelled = false;
+
+    function applySheet(sheet: Awaited<ReturnType<typeof getReviewSheet>>) {
+      if (cancelled) return;
+      setFiles(sheet.files);
+      setLearningSource(sheet.learning_source ?? selection!.learningSource);
+      setSheetNote(sheet.note);
+
+      const match = sheet.files.find(
+        (item) => item.fingerprint === selection!.fingerprint,
+      );
+      const draft = match
+        ? getDraft(selection!.eventId, match.fingerprint)
+        : null;
+      const source = draft ?? match?.saved_review ?? match?.suggested;
+
+      if (
+        source?.exposure != null &&
+        source.temperature != null &&
+        source.tint != null
+      ) {
+        setExposure(source.exposure);
+        setTemperature(source.temperature);
+        setTint(source.tint);
+        setReady(true);
+        setDirty(Boolean(draft));
+      } else {
+        setReady(false);
+        setDirty(false);
+      }
+
+      setHistory([]);
+      setFuture([]);
+      setError("");
+      setMessage("");
+      setLoading(false);
+    }
+
+    const cached = getReviewSheetCache(
+      selection.eventId,
+      selection.learningSource,
+    );
+
+    if (cached) {
+      applySheet(cached);
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    setLoading(true);
+    setFiles([]);
+    setReady(false);
+    setError("");
+
+    void getReviewSheet(selection.eventId, selection.learningSource)
       .then((sheet) => {
-        setFiles(sheet.files);
-        setLearningSource(sheet.learning_source ?? "raw");
-        setSheetNote(sheet.note);
-        const match = sheet.files.find(
-          (item) => item.fingerprint === selection.fingerprint,
-        );
-        const draft = match
-          ? getDraft(selection.eventId, match.fingerprint)
-          : null;
-        const source = draft ?? match?.saved_review ?? match?.suggested;
-        if (
-          source?.exposure != null &&
-          source.temperature != null &&
-          source.tint != null
-        ) {
-          setExposure(source.exposure);
-          setTemperature(source.temperature);
-          setTint(source.tint);
-          setReady(true);
-          setDirty(Boolean(draft));
-        } else {
-          setReady(false);
-          setDirty(false);
-        }
-        setHistory([]);
-        setFuture([]);
-        setError("");
-        setMessage("");
+        setReviewSheetCache(sheet);
+        applySheet(sheet);
       })
       .catch((cause: unknown) => {
-        setError(cause instanceof Error ? cause.message : "טעינת התמונה נכשלה.");
+        if (cancelled) return;
+        setError(
+          cause instanceof Error ? cause.message : "טעינת התמונה נכשלה.",
+        );
+        setLoading(false);
       });
+
+    return () => {
+      cancelled = true;
+    };
   }, [selection]);
 
   function rememberBeforeDrag() {
@@ -224,6 +266,14 @@ export default function DarkroomScreen() {
 
   function markCurrentSaved(recipe: Recipe) {
     if (!file) return;
+    if (selection) {
+      patchCachedReview(
+        selection.eventId,
+        selection.learningSource,
+        file.fingerprint,
+        recipe,
+      );
+    }
     setFiles((items) =>
       items.map((item) =>
         item.fingerprint === file.fingerprint
@@ -316,7 +366,7 @@ export default function DarkroomScreen() {
   function openSelectedPhoto(fingerprint: string) {
     if (!selection) return;
     stashDraft();
-    openPhoto(selection.eventId, fingerprint);
+    openPhoto(selection.eventId, fingerprint, selection.learningSource);
   }
 
   function returnToGallery() {
@@ -381,12 +431,28 @@ export default function DarkroomScreen() {
     };
   });
 
+  if (selection && loading) {
+    return (
+      <div className={styles.empty}>
+        <div className={styles.loadingBox} role="status" aria-live="polite">
+          <span className={styles.loadingSpinner} aria-hidden="true" />
+          <h2>טוען את התמונה…</h2>
+          <p>מכין את חדר העריכה ואת נתוני האירוע.</p>
+        </div>
+      </div>
+    );
+  }
+
   if (!selection || !file) {
     return (
       <div className={styles.empty}>
         <div>
           <h2>חדר עריכה</h2>
-          <p>בוחרים תמונה מהגלריה. כאן מאשרים או מתקנים, ואז מייצאים ל-Lightroom.</p>
+          <p>
+            {error
+              ? error
+              : "בוחרים תמונה מהגלריה. כאן מאשרים או מתקנים, ואז מייצאים ל-Lightroom."}
+          </p>
           <button className={styles.primary} type="button" onClick={openGallery}>
             אל הגלריה
           </button>
