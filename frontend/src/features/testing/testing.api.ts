@@ -65,6 +65,14 @@ export type ReviewSheet = {
   note: string;
 };
 
+export type SaveReviewResult = {
+  event_id: string;
+  fingerprint: string;
+  decision: "approved" | "corrected";
+  recipe: RecipeValues;
+  saved_at: string;
+};
+
 export type ExportResult = {
   event_id: string;
   output_dir: string;
@@ -120,6 +128,22 @@ export async function createTestingProfile(input: {
 
 export async function getReviewSheet(eventId: string): Promise<ReviewSheet> {
   return apiRequest<ReviewSheet>(`/api/testing/events/${eventId}/review`);
+}
+
+export async function saveReview(input: {
+  event_id: string;
+  item: {
+    fingerprint: string;
+    exposure: number;
+    temperature: number;
+    tint: number;
+    decision: "approved" | "corrected";
+  };
+}): Promise<SaveReviewResult> {
+  return apiRequest<SaveReviewResult>("/api/testing/review", {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
 }
 
 export async function exportRecipes(input: {
