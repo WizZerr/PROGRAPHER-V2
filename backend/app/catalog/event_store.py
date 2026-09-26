@@ -345,6 +345,15 @@ class EventStore:
 
         return [self.get_event(row["id"]) for row in rows]
 
+    def delete_event(self, event_id: str) -> EventRecord:
+        event = self.get_event(event_id)
+        with self._connect() as db:
+            db.execute(
+                "DELETE FROM events WHERE id = ?",
+                (event_id,),
+            )
+        return event
+
     def availability(self, event_id: str) -> EventAvailability:
         event = self.get_event(event_id)
         root = Path(event.root_path)
