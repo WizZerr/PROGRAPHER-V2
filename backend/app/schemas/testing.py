@@ -80,9 +80,9 @@ class ReviewSheet(BaseModel):
 
 class ExportRecipeItem(BaseModel):
     fingerprint: str = Field(min_length=1)
-    exposure: float
-    temperature: int
-    tint: int
+    exposure: float = Field(ge=-5.0, le=5.0)
+    temperature: int = Field(ge=2000, le=50000)
+    tint: int = Field(ge=-150, le=150)
     decision: Literal["approved", "corrected"] = "corrected"
 
 
