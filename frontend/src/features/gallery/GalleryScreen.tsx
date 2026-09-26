@@ -161,13 +161,13 @@ export default function GalleryScreen() {
       .then((items) => {
         if (cancelled) return;
         setEvents(items);
-        setGalleryEventId((current) => {
-          if (current && !items.some((item) => item.id === current)) {
-            setSheet(null);
-            return "";
-          }
-          return current;
-        });
+        if (
+          galleryEventId &&
+          !items.some((item) => item.id === galleryEventId)
+        ) {
+          setGalleryEventId("");
+          setSheet(null);
+        }
         setError("");
       })
       .catch((cause: unknown) => {
