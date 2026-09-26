@@ -422,8 +422,9 @@ def test_jpeg_profile_review_lists_only_jpeg_and_refuses_export(
             },
         )
 
-    assert exported.status_code == 422
-    assert "JPEG" in exported.json()["detail"]
+    assert exported.status_code == 200
+    assert exported.json()["written"] == 0
+    assert exported.json()["skipped"] == 1
     assert not output.exists() or not any(output.rglob("*.xmp"))
 
 
@@ -601,3 +602,57 @@ def test_same_named_exports_from_different_events_are_isolated(
     assert first.is_file()
     assert second.is_file()
     assert first != second
+
+
+def test_explicit_jpeg_review_does_not_depend_on_active_raw_profile(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    monkeypatch.setenv("PROGRAPHER_DATA_DIR", str(tmp_path / "data"))
+
+    raw_reference = tmp_path / "raw-reference"
+    raw_reference.mkdir()
+    _raw(raw_reference / "IMG_0001.ARW", b"raw-reference" * 300)
+    _xmp(
+        raw_reference / "IMG_0001.xmp",
+        exposure="+0.20",
+        temperature="5100",
+        tint="+3",
+        raw_name="IMG_0001.ARW",
+    )
+
+    jpeg_event = tmp_path / "jpeg-event"
+    _jpeg(jpeg_event / "IMG_1000.jpg", b"jpeg-event" * 300)
+
+    with TestClient(create_app()) as client:
+        profile = client.post(
+            "/api/testing/profile",
+            headers=HEADERS,
+            json={
+                "raw_root": str(raw_reference),
+                "edits_root": str(raw_reference),
+                "learning_source": "raw",
+            },
+        )
+        assert profile.status_code == 200
+        assert profile.json()["learning_source"] == "raw"
+
+        opened = client.post(
+            "/api/events/open-folder",
+            headers=HEADERS,
+            json={"path": str(jpeg_event)},
+        )
+        assert opened.status_code == 200
+        event_id = opened.json()["event"]["id"]
+
+        sheet = client.get(
+            f"/api/testing/events/{event_id}/review?learning_source=jpeg",
+            headers=HEADERS,
+        )
+
+    assert sheet.status_code == 200
+    body = sheet.json()
+    assert body["learning_source"] == "jpeg"
+    assert len(body["files"]) == 1
+    assert body["files"][0]["filename"] == "IMG_1000.jpg"
+    assert body["files"][0]["pair_status"] == "jpeg"
