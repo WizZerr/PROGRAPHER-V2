@@ -86,6 +86,19 @@ class ExportRecipeItem(BaseModel):
     decision: Literal["approved", "corrected"] = "corrected"
 
 
+class SaveReviewRequest(BaseModel):
+    event_id: str = Field(min_length=1)
+    item: ExportRecipeItem
+
+
+class SaveReviewResponse(BaseModel):
+    event_id: str
+    fingerprint: str
+    decision: Literal["approved", "corrected"]
+    recipe: RecipeValues
+    saved_at: str
+
+
 class ExportRecipesRequest(BaseModel):
     event_id: str = Field(min_length=1)
     output_dir: str = Field(min_length=1)
