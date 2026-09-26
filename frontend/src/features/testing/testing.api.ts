@@ -126,8 +126,16 @@ export async function createTestingProfile(input: {
   });
 }
 
-export async function getReviewSheet(eventId: string): Promise<ReviewSheet> {
-  return apiRequest<ReviewSheet>(`/api/testing/events/${eventId}/review`);
+export async function getReviewSheet(
+  eventId: string,
+  learningSource?: LearningSource,
+): Promise<ReviewSheet> {
+  const query = learningSource
+    ? `?learning_source=${encodeURIComponent(learningSource)}`
+    : "";
+  return apiRequest<ReviewSheet>(
+    `/api/testing/events/${eventId}/review${query}`,
+  );
 }
 
 export async function saveReview(input: {
