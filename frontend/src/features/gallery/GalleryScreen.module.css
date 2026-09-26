@@ -36,6 +36,7 @@
 }
 
 .field {
+  position: relative;
   width: clamp(220px, 24vw, 320px);
   min-width: 0;
   max-width: 100%;
@@ -50,7 +51,9 @@
   min-width: 0;
   max-width: 100%;
   min-height: 44px;
-  padding: 0 12px;
+  padding: 0 12px 0 38px;
+  appearance: none;
+  -webkit-appearance: none;
   border: 1px solid var(--pg-border);
   border-radius: 12px;
   background: var(--pg-surface-3);
@@ -58,8 +61,25 @@
   font: inherit;
 }
 
+.field::after {
+  content: "";
+  position: absolute;
+  left: 16px;
+  bottom: 18px;
+  width: 7px;
+  height: 7px;
+  border-right: 1.5px solid var(--pg-text-secondary);
+  border-bottom: 1.5px solid var(--pg-text-secondary);
+  transform: rotate(45deg);
+  pointer-events: none;
+}
+
 .field select:disabled {
   opacity: 0.65;
+}
+
+.field:has(select:disabled)::after {
+  opacity: 0.5;
 }
 
 .viewSwitcher {
