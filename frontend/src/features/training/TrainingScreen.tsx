@@ -173,46 +173,119 @@ export default function TrainingScreen() {
       {error && <p className={styles.error}>{error}</p>}
 
       {profile && (
-        <section className={styles.panel}>
-          <h3>{profile.learning_source === "jpeg" ? "מאגר ה-JPEG הנוכחי" : "בסיס ה-RAW הנוכחי"}</h3>
-          <p className={styles.note}>
-            מסלול: {profile.learning_source === "jpeg" ? "JPEG" : "RAW"}
-          </p>
-          <p className={styles.note}>{profile.note}</p>
-          {profile.dataset_manifest_path && (
-            <p className={styles.note}>
-              Manifest: <bdi className={styles.ltr}>{profile.dataset_manifest_path}</bdi>
-            </p>
-          )}
-          <div className={styles.metrics}>
-            <div className={styles.metric}>
-              <span>{profile.learning_source === "jpeg" ? "JPEG" : "RAW"}</span>
-              <strong className={styles.ltr}>{profile.raw_files}</strong>
+        <section className={styles.profilePanel}>
+          <div className={styles.profileHeader}>
+            <div>
+              <span className={styles.sectionEyebrow}>תוצאות הבדיקה</span>
+              <h3>
+                {profile.learning_source === "jpeg"
+                  ? "מאגר ה-JPEG הנוכחי"
+                  : "בסיס ה-RAW הנוכחי"}
+              </h3>
             </div>
-            <div className={styles.metric}>
-              <span>זוגות</span>
-              <strong className={styles.ltr}>{profile.matched_pairs}</strong>
-            </div>
-            <div className={styles.metric}>
-              <span>שמישים</span>
-              <strong className={styles.ltr}>{profile.usable_pairs}</strong>
-            </div>
-            <div className={styles.metric}>
-              <span>חשיפה</span>
-              <strong className={styles.ltr}>{profile.baseline ? profile.baseline.exposure : "—"}</strong>
-            </div>
-            <div className={styles.metric}>
-              <span>טמפרטורה</span>
-              <strong className={styles.ltr}>{profile.baseline ? `${profile.baseline.temperature} K` : "—"}</strong>
-            </div>
-            <div className={styles.metric}>
-              <span>גוון</span>
-              <strong className={styles.ltr}>{profile.baseline ? profile.baseline.tint : "—"}</strong>
-            </div>
+            <span className={styles.sourceBadge}>
+              {profile.learning_source === "jpeg" ? "JPEG" : "RAW"}
+            </span>
           </div>
-          {profile.warnings.map((warning) => (
-            <p className={styles.warning} key={warning}>{warning}</p>
-          ))}
+
+          <div className={styles.profileInfo}>
+            <div className={styles.infoBlock}>
+              <span>מצב המסלול</span>
+              <p>{profile.note}</p>
+            </div>
+
+            {profile.dataset_manifest_path && (
+              <div className={styles.infoBlock}>
+                <span>קובץ Manifest</span>
+                <bdi className={styles.pathValue}>
+                  {profile.dataset_manifest_path}
+                </bdi>
+              </div>
+            )}
+          </div>
+
+          <div
+            className={
+              profile.learning_source === "jpeg"
+                ? `${styles.metrics} ${styles.metricsJpeg}`
+                : styles.metrics
+            }
+          >
+            <div className={styles.metric}>
+              <span>
+                {profile.learning_source === "jpeg" ? "קובצי JPEG" : "קובצי RAW"}
+              </span>
+              <strong>
+                <bdi>{profile.raw_files.toLocaleString("he-IL")}</bdi>
+              </strong>
+            </div>
+
+            <div className={styles.metric}>
+              <span>זוגות שנמצאו</span>
+              <strong>
+                <bdi>{profile.matched_pairs.toLocaleString("he-IL")}</bdi>
+              </strong>
+            </div>
+
+            <div className={styles.metric}>
+              <span>זוגות שמישים</span>
+              <strong>
+                <bdi>{profile.usable_pairs.toLocaleString("he-IL")}</bdi>
+              </strong>
+            </div>
+
+            {profile.learning_source === "raw" && (
+              <>
+                <div className={styles.metric}>
+                  <span>חשיפה בסיסית</span>
+                  <strong>
+                    <bdi>
+                      {profile.baseline
+                        ? profile.baseline.exposure.toFixed(2)
+                        : "לא זמין"}
+                    </bdi>
+                  </strong>
+                </div>
+
+                <div className={styles.metric}>
+                  <span>טמפרטורה בסיסית</span>
+                  <strong>
+                    <bdi>
+                      {profile.baseline
+                        ? `${profile.baseline.temperature} K`
+                        : "לא זמין"}
+                    </bdi>
+                  </strong>
+                </div>
+
+                <div className={styles.metric}>
+                  <span>גוון בסיסי</span>
+                  <strong>
+                    <bdi>
+                      {profile.baseline
+                        ? profile.baseline.tint
+                        : "לא זמין"}
+                    </bdi>
+                  </strong>
+                </div>
+              </>
+            )}
+          </div>
+
+          {profile.warnings.length > 0 && (
+            <div className={styles.warningStack}>
+              <div className={styles.warningHeader}>
+                <strong>מה צריך לדעת על המדגם הזה</strong>
+                <span>{profile.warnings.length}</span>
+              </div>
+              {profile.warnings.map((warning) => (
+                <div className={styles.warning} key={warning}>
+                  <span className={styles.warningDot} aria-hidden="true" />
+                  <p>{warning}</p>
+                </div>
+              ))}
+            </div>
+          )}
         </section>
       )}
     </div>
