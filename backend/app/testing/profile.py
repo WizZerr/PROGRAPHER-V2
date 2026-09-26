@@ -32,8 +32,8 @@ PROFILE_NOTE = (
     "אותו מתכון מוצע לכל תמונה. זו אינה עריכה לפי תמונה, ואין כאן טענת איכות."
 )
 JPEG_PROFILE_NOTE = (
-    "פרופיל JPEG נפרד מפרופיל RAW. נספרים רק זוגות של JPEG מקורי ו-JPEG ערוך. "
-    "אין כאן מתכון Lightroom, וקבצי RAW לא נכנסים לפרופיל הזה."
+    "מאגר JPEG נפרד ממסלול RAW. נשמרים רק זוגות חד-משמעיים של JPEG מקורי "
+    "ו-JPEG ערוך במניפסט נתונים. עדיין אין כאן מודל מאומן או מתכון Lightroom."
 )
 JPEG_REVIEW_NOTE = (
     "פרופיל JPEG. מוצגים רק קובצי JPEG. אין מתכון Lightroom ואין ייצוא XMP."
@@ -55,6 +55,52 @@ def _utc_now() -> str:
 
 def profile_path() -> Path:
     return user_data_dir() / "testing_profile.json"
+
+
+def _dataset_manifest_path(profile_id: str) -> Path:
+    return user_data_dir() / "testing_datasets" / profile_id / "manifest.json"
+
+
+def _write_jpeg_manifest(
+    *,
+    profile_id: str,
+    created_at: str,
+    photographer_id: str,
+    event_label: str,
+    originals_root: str,
+    edits_root: str,
+    scan,
+) -> Path:
+    path = _dataset_manifest_path(profile_id)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    payload = {
+        "schema_version": 1,
+        "kind": "jpeg_pairs",
+        "profile_id": profile_id,
+        "created_at": created_at,
+        "photographer_id": photographer_id,
+        "event_label": event_label or "reference",
+        "originals_root": originals_root,
+        "edits_root": edits_root,
+        "pairs": [
+            {
+                "original_path": pair.original_path,
+                "edited_path": pair.edited_path,
+                "original_relative_path": pair.original_relative_path,
+                "edited_relative_path": pair.edited_relative_path,
+                "original_fingerprint": pair.original_fingerprint,
+                "edited_fingerprint": pair.edited_fingerprint,
+            }
+            for pair in scan.pairs
+        ],
+    }
+    temporary = path.with_suffix(".json.tmp")
+    temporary.write_text(
+        json.dumps(payload, ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )
+    temporary.replace(path)
+    return path
 
 
 def _empty_profile_document() -> dict:
@@ -204,6 +250,10 @@ def _build_jpeg_testing_profile(
         warnings.append(
             f"{scan.unmatched_files} קובצי JPEG מקור בלי JPEG ערוך תואם לא נכנסו."
         )
+    if scan.identical_pairs:
+        warnings.append(
+            f"{scan.identical_pairs} זוגות זהים לחלוטין נפסלו כי מקור וערוך הם אותו קובץ."
+        )
     if scan.matched_pairs == 0:
         warnings.append("אין זוגות JPEG חד-משמעיים.")
     elif scan.matched_pairs < TUNING_PAIR_THRESHOLD:
@@ -217,15 +267,29 @@ def _build_jpeg_testing_profile(
         "raw_root": str(Path(raw_root).expanduser().resolve()),
         "edits_root": str(Path(edits_root).expanduser().resolve()),
         "photographer_id": photographer_id,
-        "usable_pairs": scan.matched_pairs,
-        "baseline": None,
-        "created_at": created_at,
+        "event_label": event_label or "reference",
+        "pairs": [
+            [pair.original_fingerprint, pair.edited_fingerprint]
+            for pair in scan.pairs
+        ],
     }
+    profile_id = _profile_id(identity)
+    manifest_path = _write_jpeg_manifest(
+        profile_id=profile_id,
+        created_at=created_at,
+        photographer_id=photographer_id,
+        event_label=event_label,
+        originals_root=identity["raw_root"],
+        edits_root=identity["edits_root"],
+        scan=scan,
+    )
     return TestingProfileSummary(
-        profile_id=_profile_id(identity),
+        profile_id=profile_id,
         created_at=created_at,
         photographer_id=photographer_id,
         learning_source="jpeg",
+        learning_material="jpeg_pairs",
+        dataset_manifest_path=str(manifest_path),
         raw_root=identity["raw_root"],
         edits_root=identity["edits_root"],
         event_label=event_label or "reference",
@@ -357,9 +421,13 @@ def build_testing_profile(
         "raw_root": str(Path(raw_root).expanduser().resolve()),
         "edits_root": str(Path(edits_root).expanduser().resolve()),
         "photographer_id": photographer_id,
+        "event_label": event_label or "reference",
+        "source_fingerprints": sorted(
+            candidate.source.fingerprint
+            for candidate in preview.candidates
+        ),
         "usable_pairs": len(usable_exposure),
         "baseline": baseline.model_dump() if baseline else None,
-        "created_at": created_at,
     }
 
     summary = TestingProfileSummary(
@@ -367,6 +435,8 @@ def build_testing_profile(
         created_at=created_at,
         photographer_id=photographer_id,
         learning_source="raw",
+        learning_material="raw_xmp",
+        dataset_manifest_path=None,
         raw_root=identity["raw_root"],
         edits_root=identity["edits_root"],
         event_label=event_label or "reference",
@@ -440,8 +510,8 @@ def build_review_sheet(event_id: str) -> ReviewSheet:
 
     baseline = profile.baseline if profile else None
     baseline_recipe = _baseline_recipe(baseline)
-    document = load_profile_document() or {}
-    reviews = document.get("reviews") or {}
+    document = load_profile_document() or _empty_profile_document()
+    reviews = _reviews_for(document, "raw")
 
     preview = build_dataset_preview(
         raw_root=event.root_path,
@@ -536,8 +606,8 @@ def export_testing_recipes(
     sheet = build_review_sheet(event_id)
     by_fingerprint = {item.fingerprint: item for item in sheet.files}
     results: list[ExportFileResult] = []
-    document = load_profile_document() or {"summary": None, "reviews": {}}
-    reviews = dict(document.get("reviews") or {})
+    document = load_profile_document() or _empty_profile_document()
+    reviews = _reviews_for(document, "raw")
 
     for item in items:
         source = by_fingerprint.get(item.fingerprint)
@@ -608,9 +678,8 @@ def export_testing_recipes(
             )
         )
 
-    document["reviews"] = reviews
-    if document.get("summary") is not None or reviews:
-        _write_document(document)
+    document.setdefault("reviews", {"raw": {}, "jpeg": {}})["raw"] = reviews
+    _write_document(document)
 
     written_count = sum(item.status == "written" for item in results)
     return ExportRecipesResponse(
