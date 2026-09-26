@@ -105,7 +105,7 @@ export default function GalleryScreen() {
             {events.map((event) => (
               <option key={event.id} value={event.id}>
                 {event.name} · {sheet?.learning_source === "jpeg"
-                  ? event.rendered_files + " JPEG"
+                  ? event.jpeg_files + " JPEG"
                   : event.raw_files + " RAW"}
               </option>
             ))}
