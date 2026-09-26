@@ -222,7 +222,9 @@ export default function EventsScreen() {
 
     return (
       <>
-        האירוע נקלט. קובצי <bdi dir="ltr">RAW</bdi>: {result.event.raw_files}
+        האירוע נקלט. <bdi dir="ltr">RAW</bdi>: {result.event.raw_files}
+        {" · "}
+        <bdi dir="ltr">JPEG</bdi>: {result.event.jpeg_files}
         {result.duplicate_files_ignored > 0
           ? ` · קבצים כפולים שלא נוספו: ${result.duplicate_files_ignored}`
           : ""}
@@ -250,8 +252,8 @@ export default function EventsScreen() {
           <div>
             <h2>אירועים</h2>
             <p>
-              בחר תיקיית צילום מהמחשב. ProGrapher קורא את המקורות מהמיקום
-              שלהם ואינו מעתיק או משנה את קובצי ה־RAW.
+              בחר תיקיית צילום מהמחשב. ProGrapher קורא את קובצי המקור מהמיקום
+              שלהם ואינו מעתיק או משנה את התמונות.
             </p>
           </div>
 
@@ -313,7 +315,7 @@ export default function EventsScreen() {
 
       {events.length === 0 ? (
         <div className={styles.empty}>
-          עדיין אין אירועים. בחר תיקיית RAW כדי ליצור את האירוע הראשון.
+          עדיין אין אירועים. בחר תיקיית צילום כדי ליצור את האירוע הראשון.
         </div>
       ) : (
         <div className={styles.grid}>
