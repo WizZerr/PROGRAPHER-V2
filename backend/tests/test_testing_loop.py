@@ -285,6 +285,16 @@ def test_jpeg_profile_counts_unique_pairs_and_has_no_baseline(
     assert body["matched_pairs"] == 2
     assert body["baseline"] is None
     assert body["raw_files"] == 2
+    assert body["learning_material"] == "jpeg_pairs"
+    manifest = Path(body["dataset_manifest_path"])
+    assert manifest.is_file()
+    stored_manifest = __import__("json").loads(manifest.read_text(encoding="utf-8"))
+    assert stored_manifest["kind"] == "jpeg_pairs"
+    assert len(stored_manifest["pairs"]) == 2
+    assert all(
+        pair["original_fingerprint"] != pair["edited_fingerprint"]
+        for pair in stored_manifest["pairs"]
+    )
     assert any("אינם JPEG" in warning for warning in body["warnings"])
     assert "Lightroom" in body["note"]
 
@@ -384,7 +394,7 @@ def test_jpeg_profile_review_lists_only_jpeg_and_refuses_export(
     assert not output.exists() or not any(output.rglob("*.xmp"))
 
 
-def test_switching_learning_source_clears_reviews(
+def test_switching_learning_source_preserves_both_profiles_and_reviews(
     tmp_path: Path,
     monkeypatch,
 ) -> None:
@@ -399,8 +409,11 @@ def test_switching_learning_source_clears_reviews(
         tint="+4",
         raw_name="IMG_0001.ARW",
     )
-    jpeg_root = tmp_path / "jpeg"
-    _jpeg(jpeg_root / "IMG_0001.jpg", b"jpeg-a" * 200)
+
+    jpeg_originals = tmp_path / "jpeg-originals"
+    jpeg_edits = tmp_path / "jpeg-edits"
+    _jpeg(jpeg_originals / "IMG_0001.jpg", b"jpeg-original" * 200)
+    _jpeg(jpeg_edits / "IMG_0001.jpg", b"jpeg-edited" * 200)
 
     with TestClient(create_app()) as client:
         first = client.post(
@@ -410,22 +423,73 @@ def test_switching_learning_source_clears_reviews(
         )
         assert first.status_code == 200
         assert first.json()["learning_source"] == "raw"
+
         document = tmp_path / "data" / "testing_profile.json"
         stored = __import__("json").loads(document.read_text(encoding="utf-8"))
-        stored["reviews"] = {"event:abc": {"decision": "approved"}}
-        document.write_text(__import__("json").dumps(stored), encoding="utf-8")
+        stored["reviews"]["raw"]["event:abc"] = {"decision": "approved"}
+        document.write_text(
+            __import__("json").dumps(stored),
+            encoding="utf-8",
+        )
 
         second = client.post(
             "/api/testing/profile",
             headers=HEADERS,
             json={
-                "raw_root": str(jpeg_root),
-                "edits_root": str(jpeg_root),
+                "raw_root": str(jpeg_originals),
+                "edits_root": str(jpeg_edits),
+                "learning_source": "jpeg",
+            },
+        )
+        assert second.status_code == 200
+
+        activated = client.post(
+            "/api/testing/profile/activate",
+            headers=HEADERS,
+            json={"learning_source": "raw"},
+        )
+        assert activated.status_code == 200
+        assert activated.json()["learning_source"] == "raw"
+
+        raw_profile = client.get(
+            "/api/testing/profile?learning_source=raw",
+            headers=HEADERS,
+        )
+        jpeg_profile = client.get(
+            "/api/testing/profile?learning_source=jpeg",
+            headers=HEADERS,
+        )
+        assert raw_profile.status_code == 200
+        assert jpeg_profile.status_code == 200
+
+    saved = __import__("json").loads(document.read_text(encoding="utf-8"))
+    assert set(saved["profiles"]) == {"raw", "jpeg"}
+    assert saved["active_source"] == "raw"
+    assert saved["reviews"]["raw"]["event:abc"]["decision"] == "approved"
+    assert saved["reviews"]["jpeg"] == {}
+
+
+def test_jpeg_profile_rejects_identical_before_after_files(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    monkeypatch.setenv("PROGRAPHER_DATA_DIR", str(tmp_path / "data"))
+    same = tmp_path / "same"
+    _jpeg(same / "IMG_0001.jpg", b"same-jpeg" * 200)
+
+    with TestClient(create_app()) as client:
+        response = client.post(
+            "/api/testing/profile",
+            headers=HEADERS,
+            json={
+                "raw_root": str(same),
+                "edits_root": str(same),
                 "learning_source": "jpeg",
             },
         )
 
-    assert second.status_code == 200
-    saved = __import__("json").loads(document.read_text(encoding="utf-8"))
-    assert saved["summary"]["learning_source"] == "jpeg"
-    assert saved["reviews"] == {}
+    assert response.status_code == 200
+    body = response.json()
+    assert body["usable_pairs"] == 0
+    assert any("זהים לחלוטין" in warning for warning in body["warnings"])
+
