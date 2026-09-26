@@ -23,6 +23,8 @@ export type TestingProfile = {
   created_at: string;
   photographer_id: string;
   learning_source: LearningSource;
+  learning_material: "raw_xmp" | "jpeg_pairs";
+  dataset_manifest_path: string | null;
   raw_root: string;
   edits_root: string;
   event_label: string;
@@ -78,9 +80,14 @@ export type ExportResult = {
   note: string;
 };
 
-export async function getTestingProfile(): Promise<TestingProfile | null> {
+export async function getTestingProfile(
+  learningSource?: LearningSource,
+): Promise<TestingProfile | null> {
   try {
-    return await apiRequest<TestingProfile>("/api/testing/profile");
+    const query = learningSource
+      ? `?learning_source=${encodeURIComponent(learningSource)}`
+      : "";
+    return await apiRequest<TestingProfile>(`/api/testing/profile${query}`);
   } catch (error) {
     if (error instanceof Error && error.message.includes("אין פרופיל")) {
       return null;
