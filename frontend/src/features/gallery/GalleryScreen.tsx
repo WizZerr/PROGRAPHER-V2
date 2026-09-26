@@ -63,7 +63,7 @@ function GalleryCard({
     );
     observer.observe(node);
     return () => observer.disconnect();
-  }, [eventCatalogRevision, galleryEventId, setGalleryEventId]);
+  }, [eventCatalogRevision, setGalleryEventId]);
 
   return (
     <button
