@@ -183,7 +183,7 @@ export default function GalleryScreen() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [eventCatalogRevision, setGalleryEventId]);
 
   useEffect(() => {
     if (!galleryEventId || !selectedSource) {
