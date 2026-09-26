@@ -112,8 +112,11 @@ export default function DarkroomScreen() {
     setTemperature(recipe.temperature);
     setTint(recipe.tint);
     setReady(true);
+    if (selection && file) {
+      setDraft(selection.eventId, file.fingerprint, recipe);
+    }
     setDirty(true);
-  }, [current]);
+  }, [current, file, selection, setDraft]);
 
   useEffect(() => {
     if (!selection) {
@@ -178,6 +181,9 @@ export default function DarkroomScreen() {
       setExposure(previous.exposure);
       setTemperature(previous.temperature);
       setTint(previous.tint);
+      if (selection && file) {
+        setDraft(selection.eventId, file.fingerprint, previous);
+      }
       setDirty(true);
       return items.slice(0, -1);
     });
@@ -191,6 +197,9 @@ export default function DarkroomScreen() {
       setExposure(next.exposure);
       setTemperature(next.temperature);
       setTint(next.tint);
+      if (selection && file) {
+        setDraft(selection.eventId, file.fingerprint, next);
+      }
       setDirty(true);
       return items.slice(1);
     });
@@ -522,7 +531,12 @@ export default function DarkroomScreen() {
               onPointerDown={rememberBeforeDrag}
               onPointerUp={commitDrag}
               onChange={(event) => {
-                setExposure(Number(event.target.value));
+                const value = Number(event.target.value);
+                const recipe = { ...current, exposure: value };
+                setExposure(value);
+                if (selection && file) {
+                  setDraft(selection.eventId, file.fingerprint, recipe);
+                }
                 setDirty(true);
               }}
             />
@@ -543,7 +557,12 @@ export default function DarkroomScreen() {
               onPointerDown={rememberBeforeDrag}
               onPointerUp={commitDrag}
               onChange={(event) => {
-                setTemperature(Number(event.target.value));
+                const value = Number(event.target.value);
+                const recipe = { ...current, temperature: value };
+                setTemperature(value);
+                if (selection && file) {
+                  setDraft(selection.eventId, file.fingerprint, recipe);
+                }
                 setDirty(true);
               }}
             />
@@ -564,7 +583,12 @@ export default function DarkroomScreen() {
               onPointerDown={rememberBeforeDrag}
               onPointerUp={commitDrag}
               onChange={(event) => {
-                setTint(Number(event.target.value));
+                const value = Number(event.target.value);
+                const recipe = { ...current, tint: value };
+                setTint(value);
+                if (selection && file) {
+                  setDraft(selection.eventId, file.fingerprint, recipe);
+                }
                 setDirty(true);
               }}
             />
