@@ -29,6 +29,8 @@ type TestingNavValue = {
   setGalleryEventId: (value: string) => void;
   galleryViewMode: GalleryViewMode;
   setGalleryViewMode: (value: GalleryViewMode) => void;
+  eventCatalogRevision: number;
+  notifyEventCatalogChanged: (eventId?: string) => void;
 
   getReviewSheetCache: (
     eventId: string,
@@ -71,6 +73,7 @@ export function TestingNavProvider({
   const [galleryEventId, setGalleryEventId] = useState("");
   const [galleryViewMode, setGalleryViewMode] =
     useState<GalleryViewMode>("standard");
+  const [eventCatalogRevision, setEventCatalogRevision] = useState(0);
 
   const drafts = useRef<Record<string, RecipeDraft>>({});
   const reviewSheets = useRef<Record<string, ReviewSheet>>({});
@@ -94,6 +97,17 @@ export function TestingNavProvider({
         setGalleryEventId,
         galleryViewMode,
         setGalleryViewMode,
+        eventCatalogRevision,
+        notifyEventCatalogChanged: (eventId) => {
+          if (eventId) {
+            for (const key of Object.keys(reviewSheets.current)) {
+              if (key.endsWith(`:${eventId}`)) {
+                delete reviewSheets.current[key];
+              }
+            }
+          }
+          setEventCatalogRevision((current) => current + 1);
+        },
 
         getReviewSheetCache: (eventId, learningSource) =>
           reviewSheets.current[sheetKey(eventId, learningSource)] ?? null,
@@ -156,6 +170,7 @@ export function TestingNavProvider({
           setSelection((current) =>
             current?.eventId === eventId ? null : current,
           );
+          setEventCatalogRevision((current) => current + 1);
         },
 
         openPhoto: (eventId, fingerprint, learningSource) => {
