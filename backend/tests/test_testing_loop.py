@@ -196,6 +196,30 @@ def test_review_and_export_leave_raw_unchanged(
         assert files[0]["suggested"]["temperature"] == 5600
         assert files[0]["suggested"]["exposure"] == 0.5
 
+        saved = client.post(
+            "/api/testing/review",
+            headers=HEADERS,
+            json={
+                "event_id": event_id,
+                "item": {
+                    "fingerprint": files[0]["fingerprint"],
+                    "exposure": 0.25,
+                    "temperature": 5300,
+                    "tint": 5,
+                    "decision": "corrected",
+                },
+            },
+        )
+        assert saved.status_code == 200
+        assert not output.exists()
+
+        refreshed = client.get(
+            f"/api/testing/events/{event_id}/review",
+            headers=HEADERS,
+        )
+        assert refreshed.status_code == 200
+        assert refreshed.json()["files"][0]["saved_review"]["temperature"] == 5300
+
         exported = client.post(
             "/api/testing/export",
             headers=HEADERS,
@@ -219,7 +243,7 @@ def test_review_and_export_leave_raw_unchanged(
     assert body["written"] == 1
     written = Path(body["files"][0]["path"])
     assert written.name == "IMG_0100.xmp"
-    assert written.parent == output.resolve()
+    assert written.parent == (output / event_id).resolve()
     assert raw_path.read_bytes() == original
     text = written.read_text(encoding="utf-8")
     assert 'crs:Temperature="5300"' in text
@@ -491,3 +515,80 @@ def test_jpeg_profile_rejects_identical_before_after_files(
     assert response.status_code == 422
     assert "שתי תיקיות נפרדות" in response.json()["detail"]
 
+
+
+def test_same_named_exports_from_different_events_are_isolated(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    monkeypatch.setenv("PROGRAPHER_DATA_DIR", str(tmp_path / "data"))
+    reference = tmp_path / "reference"
+    reference.mkdir()
+    _raw(reference / "IMG_0001.ARW", b"reference" * 400)
+    _xmp(
+        reference / "IMG_0001.xmp",
+        exposure="+0.30",
+        temperature="5200",
+        tint="+2",
+        raw_name="IMG_0001.ARW",
+    )
+
+    event_a = tmp_path / "event-a"
+    event_b = tmp_path / "event-b"
+    event_a.mkdir()
+    event_b.mkdir()
+    _raw(event_a / "IMG_0100.ARW", b"event-a" * 500)
+    _raw(event_b / "IMG_0100.ARW", b"event-b" * 500)
+    output = tmp_path / "export"
+
+    with TestClient(create_app()) as client:
+        profile = client.post(
+            "/api/testing/profile",
+            headers=HEADERS,
+            json={"raw_root": str(reference), "edits_root": str(reference)},
+        )
+        assert profile.status_code == 200
+
+        event_ids = []
+        for folder in (event_a, event_b):
+            opened = client.post(
+                "/api/events/open-folder",
+                headers=HEADERS,
+                json={"path": str(folder)},
+            )
+            assert opened.status_code == 200
+            event_id = opened.json()["event"]["id"]
+            event_ids.append(event_id)
+
+            sheet = client.get(
+                f"/api/testing/events/{event_id}/review",
+                headers=HEADERS,
+            )
+            assert sheet.status_code == 200
+            file = sheet.json()["files"][0]
+
+            exported = client.post(
+                "/api/testing/export",
+                headers=HEADERS,
+                json={
+                    "event_id": event_id,
+                    "output_dir": str(output),
+                    "items": [
+                        {
+                            "fingerprint": file["fingerprint"],
+                            "exposure": 0.3,
+                            "temperature": 5200,
+                            "tint": 2,
+                            "decision": "approved",
+                        }
+                    ],
+                },
+            )
+            assert exported.status_code == 200
+            assert exported.json()["written"] == 1
+
+    first = output / event_ids[0] / "IMG_0100.xmp"
+    second = output / event_ids[1] / "IMG_0100.xmp"
+    assert first.is_file()
+    assert second.is_file()
+    assert first != second
