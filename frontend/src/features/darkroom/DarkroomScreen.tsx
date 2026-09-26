@@ -525,7 +525,7 @@ export default function DarkroomScreen() {
         <div className={styles.meta}>
           <p className={styles.fileName}>{file.filename}</p>
           <p className={styles.metaNote}>
-            {index + 1} / {files.length}
+            <bdi dir="ltr">{index + 1} / {files.length}</bdi>
           </p>
         </div>
 
@@ -553,10 +553,11 @@ export default function DarkroomScreen() {
       <aside className={styles.panel}>
         {learningSource === "jpeg" ? (
           <div className={styles.panelBody}>
-            <h2 className={styles.panelTitle}>מסלול JPEG</h2>
+            <h2 className={styles.panelTitle}>JPEG · מצב צפייה ב-PR1</h2>
             <p className={styles.keys}>{sheetNote}</p>
             <p className={styles.keys}>
-              זוגות JPEG משמשים כרגע כ-Dataset בדיקה. עדיין אין מודל JPEG מאומן, סליידרים של Lightroom או ייצוא XMP.
+              התמונה והניווט פעילים לצורך בדיקת ה-Pipeline. עריכת JPEG חכמה,
+              סליידרים וייצוא תוצאה יתווספו רק אחרי שמודל ה-JPEG ייבנה ויימדד.
             </p>
           </div>
         ) : (
@@ -670,6 +671,18 @@ export default function DarkroomScreen() {
           <p className={styles.keys}>חצים למעבר · Enter לייצוא · שינויים שלא נשמרו נשמרים כטיוטה במעבר · ⌘Z או Ctrl+Z לביטול · B להחזיק את המקור</p>
           {message && <p className={`${styles.status} ${styles.ok}`} role="status">{message}</p>}
           {error && <p className={`${styles.status} ${styles.error}`} role="alert">{error}</p>}
+        </div>
+        )}
+
+        {learningSource === "jpeg" && (
+        <div className={styles.actions}>
+          <button
+            className={styles.primary}
+            type="button"
+            onClick={returnToGallery}
+          >
+            חזרה לגלריה
+          </button>
         </div>
         )}
 
