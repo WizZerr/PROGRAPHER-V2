@@ -104,7 +104,9 @@ export default function GalleryScreen() {
             {events.length === 0 && <option value="">אין אירועים</option>}
             {events.map((event) => (
               <option key={event.id} value={event.id}>
-                {event.name} · {event.raw_files} RAW
+                {event.name} · {sheet?.learning_source === "jpeg"
+                  ? event.rendered_files + " JPEG"
+                  : event.raw_files + " RAW"}
               </option>
             ))}
           </select>
