@@ -35,6 +35,13 @@ class EventListResponse(BaseModel):
     events: list[EventSummary]
 
 
+class EventDeleteResponse(BaseModel):
+    event_id: str
+    name: str
+    removed_from_catalog: bool = True
+    source_files_deleted: bool = False
+
+
 class EventAvailabilityResponse(BaseModel):
     event_id: str
     root_exists: bool
