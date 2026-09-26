@@ -45,6 +45,7 @@ type TestingNavValue = {
   getDraft: (eventId: string, fingerprint: string) => RecipeDraft | null;
   setDraft: (eventId: string, fingerprint: string, recipe: RecipeDraft) => void;
   clearDraft: (eventId: string, fingerprint: string) => void;
+  forgetEvent: (eventId: string) => void;
 
   openPhoto: (
     eventId: string,
@@ -135,6 +136,26 @@ export function TestingNavProvider({
         },
         clearDraft: (eventId, fingerprint) => {
           delete drafts.current[draftKey(eventId, fingerprint)];
+        },
+        forgetEvent: (eventId) => {
+          for (const key of Object.keys(drafts.current)) {
+            if (key.startsWith(`${eventId}:`)) {
+              delete drafts.current[key];
+            }
+          }
+
+          for (const key of Object.keys(reviewSheets.current)) {
+            if (key.endsWith(`:${eventId}`)) {
+              delete reviewSheets.current[key];
+            }
+          }
+
+          setGalleryEventId((current) =>
+            current === eventId ? "" : current,
+          );
+          setSelection((current) =>
+            current?.eventId === eventId ? null : current,
+          );
         },
 
         openPhoto: (eventId, fingerprint, learningSource) => {
