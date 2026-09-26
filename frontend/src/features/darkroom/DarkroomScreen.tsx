@@ -384,10 +384,10 @@ export default function DarkroomScreen() {
       <aside className={styles.panel}>
         {learningSource === "jpeg" ? (
           <div className={styles.panelBody}>
-            <h2 className={styles.panelTitle}>פרופיל JPEG</h2>
+            <h2 className={styles.panelTitle}>מסלול JPEG</h2>
             <p className={styles.keys}>{sheetNote}</p>
             <p className={styles.keys}>
-              לפרופיל הזה אין סליידרים של Lightroom ואין ייצוא XMP.
+              זוגות JPEG משמשים כרגע כ-Dataset בדיקה. עדיין אין מודל JPEG מאומן, סליידרים של Lightroom או ייצוא XMP.
             </p>
           </div>
         ) : (
