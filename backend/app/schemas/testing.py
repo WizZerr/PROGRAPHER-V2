@@ -11,6 +11,10 @@ class TestingProfileRequest(BaseModel):
     learning_source: Literal["raw", "jpeg"] = "raw"
 
 
+class ActivateTestingProfileRequest(BaseModel):
+    learning_source: Literal["raw", "jpeg"]
+
+
 class RecipeValues(BaseModel):
     exposure: float | None = None
     temperature: int | None = None
