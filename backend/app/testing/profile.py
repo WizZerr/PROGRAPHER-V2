@@ -185,6 +185,23 @@ def _reviews_for(document: dict, learning_source: str) -> dict:
     return source_reviews
 
 
+def forget_event_reviews(event_id: str) -> None:
+    document = load_profile_document()
+    if not document:
+        return
+
+    changed = False
+    prefix = f"{event_id}:"
+    for source in ("raw", "jpeg"):
+        reviews = _reviews_for(document, source)
+        for key in [key for key in reviews if key.startswith(prefix)]:
+            del reviews[key]
+            changed = True
+
+    if changed:
+        _write_document(document)
+
+
 def _recipe_from_target(recipe: TargetRecipe | None) -> RecipeValues | None:
     if recipe is None:
         return None
