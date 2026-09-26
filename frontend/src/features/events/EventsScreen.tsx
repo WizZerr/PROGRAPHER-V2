@@ -24,7 +24,7 @@ function sleep(ms: number) {
 }
 
 export default function EventsScreen() {
-  const { forgetEvent } = useTestingNav();
+  const { forgetEvent, notifyEventCatalogChanged } = useTestingNav();
   const [events, setEvents] = useState<EventSummary[]>([]);
   const [availability, setAvailability] = useState<
     Record<string, EventAvailability>
@@ -84,6 +84,7 @@ export default function EventsScreen() {
         }
 
         setNotice(progress.result);
+        notifyEventCatalogChanged(progress.result.event.id);
         await refresh();
         return;
       }
@@ -146,6 +147,7 @@ export default function EventsScreen() {
       setMessage(
         `האירוע "${result.event.name}" קושר מחדש. נמצאו ${result.matched_files} קבצים מוכרים.`,
       );
+      notifyEventCatalogChanged(result.event.id);
       await refresh();
     } catch (cause) {
       setError(
