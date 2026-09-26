@@ -36,6 +36,7 @@ def _summary(record) -> EventSummary:
         total_files=record.total_files,
         raw_files=record.raw_files,
         rendered_files=record.rendered_files,
+        jpeg_files=record.jpeg_files,
         created_at=record.created_at,
         updated_at=record.updated_at,
     )
