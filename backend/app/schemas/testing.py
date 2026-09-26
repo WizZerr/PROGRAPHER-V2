@@ -32,6 +32,8 @@ class TestingProfileSummary(BaseModel):
     created_at: str
     photographer_id: str
     learning_source: Literal["raw", "jpeg"] = "raw"
+    learning_material: Literal["raw_xmp", "jpeg_pairs"]
+    dataset_manifest_path: str | None = None
     raw_root: str
     edits_root: str
     event_label: str
