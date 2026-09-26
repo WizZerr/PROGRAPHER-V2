@@ -211,6 +211,36 @@
   gap: var(--pg-space-4);
 }
 
+.cardActions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.deleteButton {
+  min-height: 32px;
+  padding: 0 10px;
+  border: 1px solid rgba(255, 107, 107, 0.32);
+  border-radius: var(--pg-radius-md);
+  background: rgba(180, 35, 35, 0.08);
+  color: #ff9a9a;
+  font: inherit;
+  font-size: var(--pg-font-xs);
+  font-weight: var(--pg-weight-bold);
+  cursor: pointer;
+}
+
+.deleteButton:hover,
+.deleteButton:focus-visible {
+  background: rgba(180, 35, 35, 0.18);
+  border-color: rgba(255, 107, 107, 0.52);
+}
+
+.deleteButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
 .card h4 {
   margin: 0;
   font-size: var(--pg-font-lg);
@@ -299,6 +329,79 @@
   margin-top: var(--pg-space-1);
   color: var(--pg-text-muted);
   font-size: var(--pg-font-xs);
+}
+
+.modalBackdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(0, 0, 0, 0.72);
+  backdrop-filter: blur(8px);
+}
+
+.deleteDialog {
+  width: min(100%, 460px);
+  padding: 24px;
+  border: 1px solid var(--pg-border-strong);
+  border-radius: var(--pg-radius-xl);
+  background: #151519;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.5);
+}
+
+.dialogEyebrow {
+  display: block;
+  margin-bottom: 8px;
+  color: #ff9a9a;
+  font-size: var(--pg-font-xs);
+  font-weight: var(--pg-weight-bold);
+}
+
+.deleteDialog h3 {
+  margin: 0;
+  font-size: 22px;
+}
+
+.deleteDialog p {
+  margin: 12px 0 0;
+  color: var(--pg-text-secondary);
+  line-height: 1.7;
+}
+
+.dialogActions {
+  display: flex;
+  gap: 10px;
+  margin-top: 22px;
+}
+
+.dialogCancel,
+.dialogDelete {
+  flex: 1;
+  min-height: 44px;
+  border-radius: var(--pg-radius-md);
+  font: inherit;
+  font-weight: var(--pg-weight-bold);
+  cursor: pointer;
+}
+
+.dialogCancel {
+  border: 1px solid var(--pg-border-strong);
+  background: transparent;
+  color: var(--pg-text);
+}
+
+.dialogDelete {
+  border: 1px solid rgba(255, 107, 107, 0.35);
+  background: rgba(180, 35, 35, 0.2);
+  color: #ffaaaa;
+}
+
+.dialogCancel:disabled,
+.dialogDelete:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
 }
 
 @media (max-width: 900px) {
