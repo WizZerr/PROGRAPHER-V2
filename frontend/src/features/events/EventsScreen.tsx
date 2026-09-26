@@ -2,7 +2,9 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { open } from "@tauri-apps/plugin-dialog";
+import { useTestingNav } from "@/features/testing/TestingNav";
 import {
+  deleteEvent,
   getEventAvailability,
   getEventScanProgress,
   listEvents,
@@ -22,6 +24,7 @@ function sleep(ms: number) {
 }
 
 export default function EventsScreen() {
+  const { forgetEvent } = useTestingNav();
   const [events, setEvents] = useState<EventSummary[]>([]);
   const [availability, setAvailability] = useState<
     Record<string, EventAvailability>
@@ -31,6 +34,7 @@ export default function EventsScreen() {
   const [notice, setNotice] = useState<EventOpenResponse | null>(null);
   const [message, setMessage] = useState<string>("");
   const [error, setError] = useState<string>("");
+  const [deleteTarget, setDeleteTarget] = useState<EventSummary | null>(null);
 
   const refreshAvailability = useCallback(async (items: EventSummary[]) => {
     const pairs = await Promise.all(
@@ -148,6 +152,33 @@ export default function EventsScreen() {
         cause instanceof Error
           ? cause.message
           : "לא ניתן לקשר מחדש את האירוע לתיקייה שנבחרה.",
+      );
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function removeEvent() {
+    if (!deleteTarget) return;
+
+    setBusy(true);
+    setError("");
+    setMessage("");
+    setNotice(null);
+
+    try {
+      const removed = await deleteEvent(deleteTarget.id);
+      forgetEvent(deleteTarget.id);
+      setDeleteTarget(null);
+      setMessage(
+        `האירוע "${removed.name}" הוסר מ-ProGrapher. קובצי המקור נשארו ללא שינוי.`,
+      );
+      await refresh();
+    } catch (cause) {
+      setError(
+        cause instanceof Error
+          ? cause.message
+          : "לא ניתן להסיר את האירוע.",
       );
     } finally {
       setBusy(false);
@@ -299,11 +330,21 @@ export default function EventsScreen() {
                     </p>
                   </div>
 
-                  <span
-                    className={unavailable ? styles.missing : styles.ready}
-                  >
-                    {unavailable ? "מקור חסר" : "מקומי"}
-                  </span>
+                  <div className={styles.cardActions}>
+                    <span
+                      className={unavailable ? styles.missing : styles.ready}
+                    >
+                      {unavailable ? "מקור חסר" : "מקומי"}
+                    </span>
+                    <button
+                      type="button"
+                      className={styles.deleteButton}
+                      onClick={() => setDeleteTarget(event)}
+                      disabled={busy}
+                    >
+                      הסר
+                    </button>
+                  </div>
                 </div>
 
                 {unavailable ? (
@@ -342,6 +383,44 @@ export default function EventsScreen() {
           })}
         </div>
       )}
+
+      {deleteTarget ? (
+        <div className={styles.modalBackdrop}>
+          <div
+            className={styles.deleteDialog}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="delete-event-title"
+          >
+            <span className={styles.dialogEyebrow}>הסרת אירוע</span>
+            <h3 id="delete-event-title">
+              להסיר את &quot;{deleteTarget.name}&quot;?
+            </h3>
+            <p>
+              האירוע יוסר מהספרייה המקומית של ProGrapher בלבד.
+              קובצי התמונות בתיקייה המקורית לא יימחקו ולא ישתנו.
+            </p>
+            <div className={styles.dialogActions}>
+              <button
+                type="button"
+                className={styles.dialogCancel}
+                onClick={() => setDeleteTarget(null)}
+                disabled={busy}
+              >
+                ביטול
+              </button>
+              <button
+                type="button"
+                className={styles.dialogDelete}
+                onClick={() => void removeEvent()}
+                disabled={busy}
+              >
+                {busy ? "מסיר…" : "הסר מ-ProGrapher"}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </section>
   );
 }
