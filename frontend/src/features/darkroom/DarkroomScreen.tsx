@@ -55,7 +55,16 @@ function illustrationStyle(recipe: Recipe, enabled: boolean): CSSProperties {
 }
 
 export default function DarkroomScreen() {
-  const { selection, outputDir, setOutputDir, openPhoto, openGallery } = useTestingNav();
+  const {
+    selection,
+    outputDir,
+    setOutputDir,
+    getDraft,
+    setDraft,
+    clearDraft,
+    openPhoto,
+    openGallery,
+  } = useTestingNav();
   const frameRef = useRef<HTMLDivElement>(null);
   const [files, setFiles] = useState<ReviewFile[]>([]);
   const [learningSource, setLearningSource] = useState<LearningSource>("raw");
@@ -74,7 +83,6 @@ export default function DarkroomScreen() {
   const [busy, setBusy] = useState(false);
   const [dirty, setDirty] = useState(false);
   const dragOrigin = useRef<Recipe | null>(null);
-  const drafts = useRef<Record<string, Recipe>>({});
 
   const file = files.find((item) => item.fingerprint === selection?.fingerprint) ?? null;
   const index = file ? files.findIndex((item) => item.fingerprint === file.fingerprint) : -1;
@@ -123,8 +131,8 @@ export default function DarkroomScreen() {
           (item) => item.fingerprint === selection.fingerprint,
         );
         const draft = match
-          ? drafts.current[`${selection.eventId}:${match.fingerprint}`]
-          : undefined;
+          ? getDraft(selection.eventId, match.fingerprint)
+          : null;
         const source = draft ?? match?.saved_review ?? match?.suggested;
         if (
           source?.exposure != null &&
@@ -224,14 +232,14 @@ export default function DarkroomScreen() {
       ),
     );
     if (selection) {
-      delete drafts.current[`${selection.eventId}:${file.fingerprint}`];
+      clearDraft(selection.eventId, file.fingerprint);
     }
     setDirty(false);
   }
 
   function stashDraft() {
     if (!selection || !file || !ready || !dirty) return;
-    drafts.current[`${selection.eventId}:${file.fingerprint}`] = { ...current };
+    setDraft(selection.eventId, file.fingerprint, current);
   }
 
   async function saveCurrentReview() {
