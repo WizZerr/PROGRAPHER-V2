@@ -292,7 +292,7 @@ def test_jpeg_profile_counts_unique_pairs_and_has_no_baseline(
     assert stored_manifest["kind"] == "jpeg_pairs"
     assert len(stored_manifest["pairs"]) == 2
     assert all(
-        pair["original_fingerprint"] != pair["edited_fingerprint"]
+        pair["original_path"] != pair["edited_path"]
         for pair in stored_manifest["pairs"]
     )
     assert any("אינם JPEG" in warning for warning in body["warnings"])
@@ -491,5 +491,5 @@ def test_jpeg_profile_rejects_identical_before_after_files(
     assert response.status_code == 200
     body = response.json()
     assert body["usable_pairs"] == 0
-    assert any("זהים לחלוטין" in warning for warning in body["warnings"])
+    assert any("אותו קובץ פיזי" in warning for warning in body["warnings"])
 
