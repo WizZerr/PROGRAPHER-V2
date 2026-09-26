@@ -47,6 +47,17 @@ def list_event_files(
         raise EventOpenError("האירוע לא נמצא.") from exc
 
 
+def delete_event(
+    event_id: str,
+    store: EventStore | None = None,
+):
+    event_store = store or EventStore()
+    try:
+        return event_store.delete_event(event_id)
+    except KeyError as exc:
+        raise EventOpenError("האירוע לא נמצא.") from exc
+
+
 def event_availability(
     event_id: str,
     store: EventStore | None = None,
