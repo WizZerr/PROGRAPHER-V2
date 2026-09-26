@@ -68,9 +68,12 @@ def create_profile(payload: TestingProfileRequest) -> TestingProfileSummary:
 
 
 @router.get("/events/{event_id}/review", response_model=ReviewSheet)
-def review(event_id: str) -> ReviewSheet:
+def review(
+    event_id: str,
+    learning_source: Literal["raw", "jpeg"] | None = None,
+) -> ReviewSheet:
     try:
-        return build_review_sheet(event_id)
+        return build_review_sheet(event_id, learning_source)
     except ValueError as exc:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
