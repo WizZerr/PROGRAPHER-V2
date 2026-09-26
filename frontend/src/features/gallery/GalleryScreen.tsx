@@ -63,7 +63,7 @@ function GalleryCard({
     );
     observer.observe(node);
     return () => observer.disconnect();
-  }, []);
+  }, [eventCatalogRevision, galleryEventId, setGalleryEventId]);
 
   return (
     <button
@@ -134,6 +134,7 @@ export default function GalleryScreen() {
     setGalleryEventId,
     galleryViewMode,
     setGalleryViewMode,
+    eventCatalogRevision,
     getReviewSheetCache,
     setReviewSheetCache,
     openPhoto,
@@ -228,6 +229,7 @@ export default function GalleryScreen() {
     selectedSource,
     getReviewSheetCache,
     setReviewSheetCache,
+    eventCatalogRevision,
   ]);
 
   useEffect(() => {
