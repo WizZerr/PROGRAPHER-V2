@@ -7,6 +7,7 @@ export type EventSummary = {
   total_files: number;
   raw_files: number;
   rendered_files: number;
+  jpeg_files: number;
   created_at: string;
   updated_at: string;
 };
