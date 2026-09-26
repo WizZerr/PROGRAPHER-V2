@@ -130,6 +130,12 @@ def _normalize_profile_document(document: dict) -> dict:
         return _empty_profile_document()
 
     source = summary.get("learning_source") or "raw"
+    summary = dict(summary)
+    summary.setdefault(
+        "learning_material",
+        "jpeg_pairs" if source == "jpeg" else "raw_xmp",
+    )
+    summary.setdefault("dataset_manifest_path", None)
     normalized = _empty_profile_document()
     normalized["active_source"] = source
     normalized["profiles"][source] = summary
