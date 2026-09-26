@@ -269,7 +269,7 @@ def _build_jpeg_testing_profile(
         )
     if scan.identical_pairs:
         warnings.append(
-            f"{scan.identical_pairs} זוגות זהים לחלוטין נפסלו כי מקור וערוך הם אותו קובץ."
+            f"{scan.identical_pairs} זוגות נפסלו כי אותו קובץ פיזי נבחר גם כמקור וגם כערוך."
         )
     if scan.matched_pairs == 0:
         warnings.append("אין זוגות JPEG חד-משמעיים.")
