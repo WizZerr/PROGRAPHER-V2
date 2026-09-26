@@ -143,7 +143,9 @@ export default function GalleryScreen() {
   const [sheet, setSheet] = useState<ReviewSheet | null>(null);
   const [loadingEvents, setLoadingEvents] = useState(true);
   const [loadingSheet, setLoadingSheet] = useState(false);
+  const [renderLimit, setRenderLimit] = useState(240);
   const [error, setError] = useState("");
+  const loadMoreRef = useRef<HTMLDivElement>(null);
 
   const selectedEvent = useMemo(
     () => events.find((event) => event.id === galleryEventId) ?? null,
@@ -180,7 +182,7 @@ export default function GalleryScreen() {
     return () => {
       cancelled = true;
     };
-  }, [galleryEventId, setGalleryEventId]);
+  }, []);
 
   useEffect(() => {
     if (!galleryEventId || !selectedSource) {
@@ -228,9 +230,32 @@ export default function GalleryScreen() {
     setReviewSheetCache,
   ]);
 
+  useEffect(() => {
+    setRenderLimit(240);
+  }, [sheet?.event_id]);
+
+  useEffect(() => {
+    const node = loadMoreRef.current;
+    if (!node || !sheet || renderLimit >= sheet.files.length) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (!entry?.isIntersecting) return;
+        setRenderLimit((current) =>
+          Math.min(sheet.files.length, current + 240),
+        );
+      },
+      { rootMargin: "700px" },
+    );
+
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [sheet, renderLimit]);
+
   function selectEvent(value: string) {
     setGalleryEventId(value);
     setSheet(null);
+    setRenderLimit(240);
     setError("");
   }
 
@@ -343,7 +368,7 @@ export default function GalleryScreen() {
           <div
             className={`${styles.grid} ${styles[`grid_${galleryViewMode}`]}`}
           >
-            {sheet.files.map((file) => (
+            {sheet.files.slice(0, renderLimit).map((file) => (
               <GalleryCard
                 key={file.fingerprint}
                 eventId={sheet.event_id}
@@ -359,6 +384,17 @@ export default function GalleryScreen() {
               />
             ))}
           </div>
+
+          {renderLimit < sheet.files.length && (
+            <div
+              ref={loadMoreRef}
+              className={styles.moreState}
+              aria-live="polite"
+            >
+              מציג {renderLimit.toLocaleString("he-IL")} מתוך{" "}
+              {sheet.files.length.toLocaleString("he-IL")} · ממשיך לטעון בגלילה
+            </div>
+          )}
         </>
       )}
     </div>
