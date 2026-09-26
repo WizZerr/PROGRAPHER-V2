@@ -17,6 +17,7 @@ from app.schemas.testing import (
     ExportRecipeItem,
     ExportRecipesResponse,
     RecipeValues,
+    SaveReviewResponse,
     ReviewFile,
     ReviewSheet,
     TestingProfileSummary,
@@ -43,8 +44,9 @@ REVIEW_NOTE = (
     "תצוגה מקומית אינה התוצאה של Lightroom."
 )
 EXPORT_NOTE = (
-    "קובצי ה-XMP נכתבו לתיקייה שנבחרה. קובצי ה-RAW לא נפתחו לכתיבה. "
-    "כדי לבדוק ב-Lightroom יש להניח את ה-XMP ליד קובץ המקור באותו שם."
+    "קובצי ה-XMP נכתבו לתת-תיקייה נפרדת של האירוע כדי למנוע התנגשויות שמות. "
+    "קובצי ה-RAW לא נפתחו לכתיבה. כדי לבדוק ב-Lightroom יש להניח את ה-XMP "
+    "ליד קובץ המקור באותו שם."
 )
 TUNING_PAIR_THRESHOLD = 30
 
@@ -632,6 +634,64 @@ def build_review_sheet(event_id: str) -> ReviewSheet:
     )
 
 
+def save_testing_review(
+    *,
+    event_id: str,
+    item: ExportRecipeItem,
+) -> SaveReviewResponse:
+    profile = active_testing_profile()
+    if profile is not None and profile.learning_source == "jpeg":
+        raise ValueError("פרופיל JPEG לא שומר מתכון Lightroom.")
+
+    sheet = build_review_sheet(event_id)
+    source = next(
+        (row for row in sheet.files if row.fingerprint == item.fingerprint),
+        None,
+    )
+    if source is None:
+        raise ValueError("הקובץ לא נמצא באירוע.")
+
+    photographer = source.photographer
+    recipe = RecipeValues(
+        exposure=float(item.exposure),
+        temperature=int(item.temperature),
+        tint=int(item.tint),
+        process_version=(
+            photographer.process_version if photographer else None
+        ),
+        camera_profile=(
+            photographer.camera_profile if photographer else None
+        ),
+    )
+
+    document = load_profile_document() or _empty_profile_document()
+    reviews = _reviews_for(document, "raw")
+    key = f"{event_id}:{item.fingerprint}"
+    previous = reviews.get(key)
+    previous_export = (
+        previous.get("exported_path")
+        if isinstance(previous, dict)
+        else None
+    )
+    saved_at = _utc_now()
+    reviews[key] = {
+        "decision": item.decision,
+        "recipe": recipe.model_dump(),
+        "exported_path": previous_export,
+        "updated_at": saved_at,
+    }
+    document.setdefault("reviews", {"raw": {}, "jpeg": {}})["raw"] = reviews
+    _write_document(document)
+
+    return SaveReviewResponse(
+        event_id=event_id,
+        fingerprint=item.fingerprint,
+        decision=item.decision,
+        recipe=recipe,
+        saved_at=saved_at,
+    )
+
+
 def export_testing_recipes(
     *,
     event_id: str,
@@ -681,6 +741,7 @@ def export_testing_recipes(
                 relative_path=source.relative_path,
                 recipe=recipe,
                 output_dir=output_dir,
+                export_namespace=event_id,
             )
         except SidecarExportError as exc:
             results.append(
