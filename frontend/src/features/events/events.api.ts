@@ -25,6 +25,13 @@ export type EventOpenResponse = {
   new_files_added: number;
 };
 
+export type EventDeleteResponse = {
+  event_id: string;
+  name: string;
+  removed_from_catalog: boolean;
+  source_files_deleted: boolean;
+};
+
 export type EventAvailability = {
   event_id: string;
   root_exists: boolean;
@@ -108,4 +115,14 @@ export async function relinkEvent(
     method: "POST",
     body: JSON.stringify({ path }),
   });
+}
+
+
+export async function deleteEvent(
+  eventId: string,
+): Promise<EventDeleteResponse> {
+  return apiRequest<EventDeleteResponse>(
+    `/api/events/${encodeURIComponent(eventId)}`,
+    { method: "DELETE" },
+  );
 }
