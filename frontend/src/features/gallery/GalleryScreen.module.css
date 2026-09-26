@@ -24,6 +24,12 @@
   font-size: 15px;
 }
 
+.toolbarActions {
+  display: flex;
+  align-items: end;
+  gap: 10px;
+}
+
 .field {
   display: grid;
   gap: 6px;
@@ -42,18 +48,87 @@
   font: inherit;
 }
 
+.field select:disabled {
+  opacity: 0.65;
+}
+
+.viewSwitcher {
+  height: 44px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid var(--pg-border);
+  border-radius: 12px;
+  background: var(--pg-surface-2);
+}
+
+.viewButton {
+  width: 38px;
+  height: 34px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--pg-text-muted);
+  font: inherit;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.viewButton:hover,
+.viewButton:focus-visible {
+  color: var(--pg-text);
+  background: var(--pg-surface-3);
+}
+
+.viewButtonActive {
+  color: var(--pg-text);
+  background: var(--pg-surface-selected);
+}
+
+.viewButton:focus-visible {
+  outline: 2px solid #f4f4f5;
+  outline-offset: 2px;
+}
+
+.gallerySummary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 0 2px;
+  color: var(--pg-text-secondary);
+  font-size: 13px;
+}
+
+.gallerySummary strong {
+  color: var(--pg-text);
+  font-size: 14px;
+  font-weight: 600;
+}
+
 .grid {
   display: grid;
+}
+
+.grid_standard {
   grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
   gap: 12px;
 }
 
-.card {
-  display: grid;
+.grid_compact {
+  grid-template-columns: repeat(auto-fill, minmax(118px, 1fr));
   gap: 8px;
-  padding: 8px;
+}
+
+.grid_list {
+  grid-template-columns: 1fr;
+  gap: 6px;
+}
+
+.card {
+  min-width: 0;
   border: 1px solid var(--pg-border);
-  border-radius: 16px;
   background: var(--pg-surface-2);
   color: inherit;
   text-align: right;
@@ -71,6 +146,33 @@
   outline-offset: 3px;
 }
 
+.card_standard,
+.card_compact {
+  display: grid;
+}
+
+.card_standard {
+  gap: 8px;
+  padding: 8px;
+  border-radius: 16px;
+}
+
+.card_compact {
+  gap: 6px;
+  padding: 6px;
+  border-radius: 12px;
+}
+
+.card_list {
+  min-height: 64px;
+  display: grid;
+  grid-template-columns: 76px minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+  padding: 6px;
+  border-radius: 10px;
+}
+
 .thumb {
   aspect-ratio: 3 / 2;
   border-radius: 10px;
@@ -78,11 +180,28 @@
   background: #101013;
 }
 
+.card_compact .thumb {
+  border-radius: 8px;
+}
+
+.card_list .thumb {
+  width: 76px;
+  height: 50px;
+  aspect-ratio: auto;
+  border-radius: 7px;
+}
+
 .thumb img,
 .thumb div {
   width: 100%;
   height: 100%;
   object-fit: cover;
+}
+
+.cardText {
+  min-width: 0;
+  display: grid;
+  gap: 6px;
 }
 
 .card strong {
@@ -97,6 +216,14 @@
   white-space: nowrap;
 }
 
+.card_compact strong {
+  font-size: 11px;
+}
+
+.card_list strong {
+  font-size: 13px;
+}
+
 .meta {
   display: flex;
   justify-content: space-between;
@@ -105,18 +232,106 @@
   font-size: 12px;
 }
 
+.card_compact .meta {
+  font-size: 10px;
+}
+
+.card_list .meta {
+  justify-content: flex-start;
+  gap: 16px;
+}
+
 .meta bdi {
   direction: ltr;
   unicode-bidi: isolate;
 }
 
-.error,
-.empty {
-  margin: 0;
+.loadingState,
+.emptyState {
+  min-height: 170px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 28px;
+  border: 1px solid var(--pg-border);
+  border-radius: 16px;
+  background: var(--pg-surface-2);
   color: var(--pg-text-secondary);
+  text-align: center;
+}
+
+.loadingState > div,
+.emptyState {
+  flex-direction: column;
+}
+
+.loadingState > div {
+  display: grid;
+  gap: 4px;
+  text-align: right;
+}
+
+.loadingState strong,
+.emptyState strong {
+  color: var(--pg-text);
   font-size: 15px;
+  font-weight: 600;
+}
+
+.loadingState span:not(.spinner),
+.emptyState span {
+  font-size: 13px;
+}
+
+.spinner {
+  width: 24px;
+  height: 24px;
+  flex: 0 0 24px;
+  border: 2px solid var(--pg-border-strong);
+  border-top-color: #f4f4f5;
+  border-radius: 50%;
+  animation: gallerySpin 0.8s linear infinite;
 }
 
 .error {
+  margin: 0;
   color: var(--pg-danger);
+  font-size: 15px;
+}
+
+@keyframes gallerySpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 900px) {
+  .toolbar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .toolbarActions {
+    align-items: stretch;
+    flex-wrap: wrap;
+  }
+
+  .field {
+    flex: 1;
+  }
+
+  .grid_standard {
+    grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  }
+
+  .grid_compact {
+    grid-template-columns: repeat(auto-fill, minmax(105px, 1fr));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spinner {
+    animation: none;
+  }
 }
