@@ -73,7 +73,7 @@ export default function TrainingScreen() {
     if (!selected || Array.isArray(selected)) return;
     if (target === "raw") {
       setRawRoot(selected);
-      if (!editsRoot) setEditsRoot(selected);
+      if (learningSource === "raw" && !editsRoot) setEditsRoot(selected);
       return;
     }
     setEditsRoot(selected);
@@ -86,7 +86,8 @@ export default function TrainingScreen() {
       setProfile(
         await createTestingProfile({
           raw_root: rawRoot,
-          edits_root: editsRoot || rawRoot,
+          edits_root:
+            learningSource === "jpeg" ? editsRoot : editsRoot || rawRoot,
           photographer_id: photographerId,
           event_label: eventLabel,
           learning_source: learningSource,
@@ -150,7 +151,12 @@ export default function TrainingScreen() {
           <button className={styles.secondary} type="button" onClick={() => void chooseFolder("edits")}>
             {learningSource === "jpeg" ? "תיקיית JPEG ערוך" : "תיקיית XMP"}
           </button>
-          <button className={styles.primary} type="button" disabled={busy || !rawRoot} onClick={() => void build()}>
+          <button
+            className={styles.primary}
+            type="button"
+            disabled={busy || !rawRoot || (learningSource === "jpeg" && !editsRoot)}
+            onClick={() => void build()}
+          >
             {busy ? "קורא קבצים…" : "בנה בסיס בדיקה"}
           </button>
         </div>
