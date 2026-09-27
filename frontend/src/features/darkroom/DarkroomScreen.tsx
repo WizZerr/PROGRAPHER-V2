@@ -584,7 +584,17 @@ export default function DarkroomScreen() {
             {file.saved_review && (
               <div>
                 <span>המתכון השמור</span>
-                <bdi>{formatRecipe(file.saved_review)}</bdi>
+                <bdi>{formatRecipe(
+                  file.saved_review.exposure != null &&
+                  file.saved_review.temperature != null &&
+                  file.saved_review.tint != null
+                    ? {
+                        exposure: file.saved_review.exposure,
+                        temperature: file.saved_review.temperature,
+                        tint: file.saved_review.tint,
+                      }
+                    : null,
+                )}</bdi>
               </div>
             )}
           </div>
