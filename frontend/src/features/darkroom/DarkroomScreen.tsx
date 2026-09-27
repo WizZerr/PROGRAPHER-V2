@@ -121,6 +121,10 @@ export default function DarkroomScreen() {
     const active = activeThumbRef.current;
     if (!active) return;
 
+    // Keep keyboard focus attached to the currently selected thumbnail.
+    // Otherwise a mouse-selected thumbnail keeps its focus outline even
+    // after ArrowLeft/ArrowRight move the actual selection elsewhere.
+    active.focus({ preventScroll: true });
     active.scrollIntoView({
       behavior: "auto",
       block: "nearest",
