@@ -69,6 +69,9 @@ export default function DarkroomScreen() {
     openGallery,
   } = useTestingNav();
   const frameRef = useRef<HTMLDivElement>(null);
+  const filmstripRef = useRef<HTMLDivElement>(null);
+  const activeThumbRef = useRef<HTMLButtonElement>(null);
+  const [filmstripWindow, setFilmstripWindow] = useState({ start: 0, end: 24 });
   const [files, setFiles] = useState<ReviewFile[]>([]);
   const [learningSource, setLearningSource] = useState<LearningSource>("raw");
   const [sheetNote, setSheetNote] = useState("");
@@ -94,6 +97,48 @@ export default function DarkroomScreen() {
     () => ({ exposure, temperature, tint }),
     [exposure, temperature, tint],
   );
+
+  const updateFilmstripWindow = useCallback(() => {
+    const strip = filmstripRef.current;
+    if (!strip) return;
+
+    const thumbStride = 100; // 92px thumbnail + 8px gap
+    const preload = 8;
+    const start = Math.max(0, Math.floor(strip.scrollLeft / thumbStride) - preload);
+    const end = Math.min(
+      Math.max(0, files.length - 1),
+      Math.ceil((strip.scrollLeft + strip.clientWidth) / thumbStride) + preload,
+    );
+
+    setFilmstripWindow((currentWindow) =>
+      currentWindow.start === start && currentWindow.end === end
+        ? currentWindow
+        : { start, end },
+    );
+  }, [files.length]);
+
+  useEffect(() => {
+    const active = activeThumbRef.current;
+    if (!active) return;
+
+    active.scrollIntoView({
+      behavior: "auto",
+      block: "nearest",
+      inline: "center",
+    });
+
+    requestAnimationFrame(updateFilmstripWindow);
+  }, [file?.fingerprint, updateFilmstripWindow]);
+
+  useEffect(() => {
+    updateFilmstripWindow();
+    const strip = filmstripRef.current;
+    if (!strip) return;
+
+    const observer = new ResizeObserver(updateFilmstripWindow);
+    observer.observe(strip);
+    return () => observer.disconnect();
+  }, [updateFilmstripWindow]);
 
   const suggestion =
     file?.baseline ?? file?.photographer ?? file?.suggested ?? null;
@@ -530,16 +575,22 @@ export default function DarkroomScreen() {
           </p>
         </div>
 
-        <div className={styles.filmstrip} aria-label="תמונות האירוע">
+        <div
+          ref={filmstripRef}
+          className={styles.filmstrip}
+          aria-label="תמונות האירוע"
+          onScroll={updateFilmstripWindow}
+        >
           {files.map((item, itemIndex) => (
             <button
               key={item.fingerprint}
+              ref={item.fingerprint === file.fingerprint ? activeThumbRef : null}
               type="button"
               className={item.fingerprint === file.fingerprint ? `${styles.thumb} ${styles.thumbActive}` : styles.thumb}
               onClick={() => openSelectedPhoto(item.fingerprint)}
               aria-label={item.filename}
             >
-              {Math.abs(itemIndex - index) <= 12 && (
+              {itemIndex >= filmstripWindow.start && itemIndex <= filmstripWindow.end && (
                 <CameraPreview
                   eventId={selection.eventId}
                   fingerprint={item.fingerprint}
