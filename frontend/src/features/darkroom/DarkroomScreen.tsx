@@ -566,7 +566,7 @@ export default function DarkroomScreen() {
           <h2 className={styles.panelTitle}>המתכון</h2>
           <div className={styles.reference}>
             <div>
-              <span>עריכת הצלם</span>
+              <span>עריכת הצלם המקורית</span>
               <bdi>{formatRecipe(file.photographer && file.photographer.exposure != null && file.photographer.temperature != null && file.photographer.tint != null ? {
                 exposure: file.photographer.exposure,
                 temperature: file.photographer.temperature,
@@ -581,6 +581,12 @@ export default function DarkroomScreen() {
                 tint: file.baseline.tint,
               } : null)}</bdi>
             </div>
+            {file.saved_review && (
+              <div>
+                <span>המתכון השמור</span>
+                <bdi>{formatRecipe(file.saved_review)}</bdi>
+              </div>
+            )}
           </div>
 
           <label className={styles.slider}>
