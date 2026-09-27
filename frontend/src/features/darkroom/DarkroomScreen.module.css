@@ -179,6 +179,9 @@
 
 .thumbActive {
   border-color: #f4f4f5;
+  box-shadow:
+    0 0 0 2px #09090b,
+    0 0 0 4px #f4f4f5;
 }
 
 .panel {
@@ -313,9 +316,13 @@
 .secondary:focus-visible,
 .toggle:focus-visible,
 .handle:focus-visible,
-.thumb:focus-visible {
+.thumb:focus-visible:not(.thumbActive) {
   outline: 2px solid #f4f4f5;
   outline-offset: 3px;
+}
+
+.thumbActive:focus-visible {
+  outline: none;
 }
 
 .status {
