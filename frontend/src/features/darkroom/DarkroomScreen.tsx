@@ -95,7 +95,8 @@ export default function DarkroomScreen() {
     [exposure, temperature, tint],
   );
 
-  const suggestion = file?.saved_review ?? file?.suggested ?? null;
+  const suggestion =
+    file?.baseline ?? file?.photographer ?? file?.suggested ?? null;
   const suggestedRecipe =
     suggestion?.exposure != null &&
     suggestion.temperature != null &&
