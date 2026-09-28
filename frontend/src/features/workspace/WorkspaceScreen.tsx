@@ -9,15 +9,16 @@ import DarkroomScreen from "@/features/darkroom/DarkroomScreen";
 import ProfileScreen from "@/features/profile/ProfileScreen";
 import TrainingScreen from "@/features/training/TrainingScreen";
 import { TestingNavProvider } from "@/features/testing/TestingNav";
+import { WorkspaceNavProvider } from "./workspace-nav";
 import type { WorkspaceView } from "./workspace.types";
 
 const titles: Record<WorkspaceView, string> = {
-  dashboard: "לוח בקרה",
+  dashboard: "ראשי",
   events: "אירועים",
   gallery: "גלריה",
   darkroom: "חדר עריכה",
   profile: "הפרופיל שלי",
-  training: "מעבדת למידה",
+  training: "למידה",
 };
 
 function ActiveScreen({ view }: { view: WorkspaceView }) {
@@ -52,6 +53,7 @@ export default function WorkspaceScreen() {
       onOpenDarkroom={() => selectView("darkroom")}
       onOpenGallery={() => selectView("gallery")}
     >
+    <WorkspaceNavProvider onSelect={selectView}>
       <AppShell
         activeView={activeView}
         title={titles[activeView]}
@@ -70,6 +72,7 @@ export default function WorkspaceScreen() {
 
         {activeView !== "gallery" && <ActiveScreen view={activeView} />}
       </AppShell>
+    </WorkspaceNavProvider>
     </TestingNavProvider>
   );
 }

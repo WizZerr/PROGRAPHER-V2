@@ -16,7 +16,7 @@
 
 .toolbar h2 {
   margin: 0;
-  font-size: 32px;
+  font-size: 28px;
   letter-spacing: -0.04em;
 }
 
@@ -113,11 +113,12 @@
 
 .viewButtonActive {
   color: var(--pg-text);
-  background: var(--pg-surface-selected);
+  background: var(--pg-accent-soft);
+  box-shadow: inset 0 0 0 1px rgba(116, 103, 248, 0.45);
 }
 
 .viewButton:focus-visible {
-  outline: 2px solid #f4f4f5;
+  outline: 2px solid #7467f8;
   outline-offset: 2px;
 }
 
@@ -172,7 +173,7 @@
 }
 
 .card:focus-visible {
-  outline: 2px solid #f4f4f5;
+  outline: 2px solid #7467f8;
   outline-offset: 3px;
 }
 
@@ -319,7 +320,7 @@
   height: 24px;
   flex: 0 0 24px;
   border: 2px solid var(--pg-border-strong);
-  border-top-color: #f4f4f5;
+  border-top-color: #7467f8;
   border-radius: 50%;
   animation: gallerySpin 0.8s linear infinite;
 }

@@ -84,7 +84,11 @@ export default function Sidebar({ activeView, onSelect }: SidebarProps) {
     <aside className={styles.sidebar}>
       <div className={styles.brand}>
         <div className={styles.brandMark} aria-hidden="true">
-          P
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+            <path d="M4 3.5h10v11H4z" stroke="currentColor" strokeWidth="1.4" />
+            <path d="M4 3.5h3.2v3.2H4z" fill="currentColor" />
+            <path d="M9 7.2 13.2 14H4.8L9 7.2Z" stroke="currentColor" strokeWidth="1.2" />
+          </svg>
         </div>
         <div className={styles.brandText}>
           <span className={styles.brandName}>ProGrapher</span>

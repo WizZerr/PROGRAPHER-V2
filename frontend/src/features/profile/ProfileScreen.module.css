@@ -17,11 +17,8 @@
 .hero {
   min-height: 210px;
   padding: clamp(28px, 4vw, 44px);
-  border-radius: var(--pg-radius-2xl);
-  background:
-    radial-gradient(circle at 10% 0%, rgba(255, 255, 255, 0.055), transparent 34%),
-    linear-gradient(145deg, #17171b 0%, #111114 58%, #0e0e11 100%);
-  box-shadow: var(--pg-shadow-soft);
+  border-radius: var(--pg-radius-xl);
+  background: var(--pg-surface-2);
 }
 
 .eyebrow,
@@ -34,7 +31,7 @@
 
 .hero h2 {
   margin: var(--pg-space-3) 0 0;
-  font-size: clamp(32px, 4vw, 46px);
+  font-size: 32px;
   font-weight: var(--pg-weight-semibold);
   letter-spacing: -0.04em;
 }

@@ -124,11 +124,20 @@
   font-weight: var(--pg-weight-semibold);
 }
 
+.sourceRaw {
+  border-color: var(--pg-border-strong);
+}
+
+.sourceJpeg {
+  border-color: rgba(116, 103, 248, 0.55);
+  background: var(--pg-accent-soft);
+}
+
 .sourceBadge {
   min-width: 74px;
   padding: 8px 14px;
   border: 1px solid var(--pg-border-strong);
-  border-radius: var(--pg-radius-pill);
+  border-radius: 8px;
   background: var(--pg-surface-3);
   color: var(--pg-text);
   font-size: var(--pg-font-sm);

@@ -1,9 +1,7 @@
 .state {
   display: grid;
   place-items: center;
-  background:
-    radial-gradient(circle at 50% 42%, rgba(255, 255, 255, 0.045), transparent 38%),
-    #101013;
+  background: #050608;
   color: var(--pg-text-muted);
 }
 

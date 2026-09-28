@@ -654,6 +654,9 @@ export default function DarkroomScreen() {
             )}
           </div>
 
+          <details className={styles.group} open>
+            <summary>אור</summary>
+            <div className={styles.groupBody}>
           <label className={styles.slider}>
             <span className={styles.sliderHeader}>
               חשיפה
@@ -680,7 +683,12 @@ export default function DarkroomScreen() {
               }}
             />
           </label>
-          <label className={`${styles.slider} ${styles.temperature}`}>
+            </div>
+          </details>
+          <details className={styles.group} open>
+            <summary>צבע</summary>
+            <div className={styles.groupBody}>
+          <label className={styles.slider}>
             <span className={styles.sliderHeader}>
               טמפרטורה
               <bdi>{temperature} K</bdi>
@@ -732,6 +740,8 @@ export default function DarkroomScreen() {
               }}
             />
           </label>
+            </div>
+          </details>
 
           <button
             type="button"

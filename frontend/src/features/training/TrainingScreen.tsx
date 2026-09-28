@@ -183,7 +183,13 @@ export default function TrainingScreen() {
                   : "בסיס ה-RAW הנוכחי"}
               </h3>
             </div>
-            <span className={styles.sourceBadge}>
+            <span
+              className={
+                profile.learning_source === "jpeg"
+                  ? `${styles.sourceBadge} ${styles.sourceJpeg}`
+                  : `${styles.sourceBadge} ${styles.sourceRaw}`
+              }
+            >
               {profile.learning_source === "jpeg" ? "JPEG" : "RAW"}
             </span>
           </div>
