@@ -24,12 +24,110 @@
 }
 
 .dock {
-  display: flex;
-  gap: 8px;
-  padding: 10px 14px 12px;
+  min-height: 64px;
+  padding: 9px 14px;
   border-top: 1px solid var(--pg-border);
-  background: #0b1018;
+  background: linear-gradient(180deg, #0b1018, #090e15);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
   direction: rtl;
+}
+
+.dockCommit,
+.dockTools {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.dockCommit {
+  flex: 0 0 auto;
+}
+
+.dockTools {
+  min-width: 0;
+  flex: 1 1 auto;
+  justify-content: flex-start;
+}
+
+.saveButton,
+.exportButton,
+.dockTool {
+  height: 40px;
+  border-radius: 8px;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    border-color 140ms ease,
+    background 140ms ease,
+    color 140ms ease,
+    transform 140ms ease;
+}
+
+.saveButton {
+  min-width: 120px;
+  padding: 0 18px;
+  border: 1px solid transparent;
+  background: var(--pg-accent);
+  color: white;
+  box-shadow: 0 8px 20px rgba(111, 91, 255, 0.18);
+}
+
+.saveButton:hover:not(:disabled) {
+  background: var(--pg-accent-hover);
+  transform: translateY(-1px);
+}
+
+.exportButton {
+  min-width: 104px;
+  padding: 0 16px;
+  border: 1px solid rgba(138, 123, 255, 0.66);
+  background: rgba(111, 91, 255, 0.08);
+  color: #c9c2ff;
+}
+
+.exportButton:hover:not(:disabled) {
+  border-color: rgba(160, 148, 255, 0.92);
+  background: rgba(111, 91, 255, 0.14);
+  color: white;
+}
+
+.dockTool {
+  padding: 0 11px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--pg-text-secondary);
+}
+
+.dockTool:hover:not(:disabled) {
+  border-color: var(--pg-border);
+  background: var(--pg-surface-hover);
+  color: var(--pg-text);
+}
+
+.dockToolIcon {
+  margin-inline-end: 6px;
+  color: var(--pg-text-muted);
+  font-size: 15px;
+}
+
+.dockDivider {
+  width: 1px;
+  height: 24px;
+  margin: 0 2px;
+  background: var(--pg-border);
+}
+
+.saveButton:disabled,
+.exportButton:disabled,
+.dockTool:disabled {
+  opacity: 0.38;
+  cursor: default;
+  transform: none;
 }
 
 .groupPending {
@@ -240,6 +338,84 @@
   letter-spacing: -0.025em;
 }
 
+.panelHeading {
+  min-height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.previewToggle {
+  height: 30px;
+  padding: 0 8px 0 9px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid var(--pg-border);
+  border-radius: 8px;
+  background: #101826;
+  color: var(--pg-text-muted);
+  font: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    border-color 140ms ease,
+    background 140ms ease,
+    color 140ms ease;
+}
+
+.previewToggle:hover {
+  border-color: var(--pg-border-strong);
+  color: var(--pg-text);
+}
+
+.previewToggleOn {
+  border-color: rgba(138, 123, 255, 0.62);
+  background: rgba(111, 91, 255, 0.12);
+  color: #d9d4ff;
+}
+
+.previewToggleLabel {
+  white-space: nowrap;
+}
+
+.previewSwitch {
+  position: relative;
+  width: 28px;
+  height: 16px;
+  flex: 0 0 28px;
+  border-radius: 999px;
+  background: #2a3342;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06);
+  transition: background 140ms ease;
+}
+
+.previewSwitch span {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #9aa6b8;
+  transition:
+    left 140ms ease,
+    background 140ms ease,
+    box-shadow 140ms ease;
+}
+
+.previewToggleOn .previewSwitch {
+  background: rgba(111, 91, 255, 0.48);
+}
+
+.previewToggleOn .previewSwitch span {
+  left: 14px;
+  background: #f4f2ff;
+  box-shadow: 0 0 8px rgba(138, 123, 255, 0.7);
+}
+
 .reference {
   display: grid;
   gap: 0;
@@ -431,21 +607,7 @@
   font: inherit;
 }
 
-.toggle {
-  min-height: 42px;
-  border: 1px solid var(--pg-border);
-  border-radius: 12px;
-  background: transparent;
-  color: var(--pg-text);
-  font: inherit;
-  font-size: 14px;
-  cursor: pointer;
-}
 
-.toggleOn {
-  background: var(--pg-surface-selected);
-  border-color: var(--pg-border-strong);
-}
 
 .actions {
   display: grid;
@@ -489,7 +651,10 @@
 
 .primary:focus-visible,
 .secondary:focus-visible,
-.toggle:focus-visible,
+.previewToggle:focus-visible,
+.saveButton:focus-visible,
+.exportButton:focus-visible,
+.dockTool:focus-visible,
 .handle:focus-visible,
 .thumb:focus-visible:not(.thumbActive) {
   outline: 2px solid #7467f8;
@@ -578,11 +743,49 @@
   }
 }
 
+@media (max-width: 1120px) {
+  .dock {
+    gap: 8px;
+    padding-inline: 10px;
+  }
+
+  .dockTool {
+    padding-inline: 8px;
+  }
+
+  .dockToolIcon {
+    display: none;
+  }
+}
+
+@media (max-width: 900px) {
+  .dock {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .dockCommit,
+  .dockTools {
+    width: 100%;
+  }
+
+  .dockCommit > button {
+    flex: 1;
+  }
+
+  .dockTools {
+    overflow-x: auto;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .thumb,
   .primary,
   .secondary,
-  .toggle {
+  .previewToggle,
+  .saveButton,
+  .exportButton,
+  .dockTool {
     transition: none;
   }
 
