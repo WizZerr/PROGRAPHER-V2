@@ -39,10 +39,11 @@ def list_events(store: EventStore | None = None):
 def list_event_files(
     event_id: str,
     store: EventStore | None = None,
+    limit: int | None = None,
 ) -> list[EventFile]:
     event_store = store or EventStore()
     try:
-        return event_store.list_files(event_id)
+        return event_store.list_files(event_id, limit=limit)
     except KeyError as exc:
         raise EventOpenError("האירוע לא נמצא.") from exc
 
