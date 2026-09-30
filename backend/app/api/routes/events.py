@@ -148,9 +148,9 @@ def scan_status(job_id: str) -> EventScanStatusResponse:
     "/{event_id}/files",
     response_model=EventFileListResponse,
 )
-def files(event_id: str) -> EventFileListResponse:
+def files(event_id: str, limit: int | None = None) -> EventFileListResponse:
     try:
-        records = list_event_files(event_id)
+        records = list_event_files(event_id, limit=limit)
     except EventOpenError as exc:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
