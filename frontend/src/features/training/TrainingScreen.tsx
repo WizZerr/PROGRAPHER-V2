@@ -128,7 +128,7 @@ export default function TrainingScreen() {
           onClick={() => void switchLearningSource("jpeg")}
         >
           <strong>JPEG</strong>
-          <span>JPEG מקור + JPEG ערוך. בלי מתכון Lightroom.</span>
+          <span>JPEG מקור + JPEG ערוך. ללא נתוני פיתוח של Lightroom.</span>
         </button>
       </div>
 
