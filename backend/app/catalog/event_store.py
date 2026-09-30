@@ -301,27 +301,35 @@ class EventStore:
             updated_at=row["updated_at"],
         )
 
-    def list_files(self, event_id: str) -> list[EventFile]:
+    def list_files(
+        self,
+        event_id: str,
+        limit: int | None = None,
+    ) -> list[EventFile]:
         self.get_event(event_id)
 
+        query = """
+            SELECT
+                fingerprint,
+                absolute_path,
+                relative_path,
+                filename,
+                extension,
+                source_type,
+                size_bytes,
+                present
+            FROM event_files
+            WHERE event_id = ? AND present = 1
+            ORDER BY relative_path, filename
+        """
+        params: list[object] = [event_id]
+
+        if limit is not None:
+            query += " LIMIT ?"
+            params.append(max(1, int(limit)))
+
         with self._connect() as db:
-            rows = db.execute(
-                """
-                SELECT
-                    fingerprint,
-                    absolute_path,
-                    relative_path,
-                    filename,
-                    extension,
-                    source_type,
-                    size_bytes,
-                    present
-                FROM event_files
-                WHERE event_id = ? AND present = 1
-                ORDER BY relative_path, filename
-                """,
-                (event_id,),
-            ).fetchall()
+            rows = db.execute(query, params).fetchall()
 
         return [
             EventFile(
