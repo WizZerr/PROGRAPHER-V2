@@ -581,7 +581,7 @@ export default function DarkroomScreen() {
             </button>
           )}
           {showIllustration && (
-            <p className={styles.truth}>המחשה גסה בלבד. הצבע הסופי נקבע ב-Lightroom.</p>
+            <p className={styles.truth}>תצוגה משוערת בלבד · התוצאה הסופית נקבעת ב-Lightroom.</p>
           )}
         </div>
 
@@ -619,21 +619,58 @@ export default function DarkroomScreen() {
         </div>
         {learningSource !== "jpeg" && (
           <div className={styles.dock}>
-            <button className={styles.secondary} type="button" onClick={() => void chooseOutput()}>
-              {outputDir ? "החלפת תיקיית ייצוא" : "בחירת תיקיית ייצוא"}
-            </button>
-            <button className={styles.secondary} type="button" disabled={!suggestedRecipe} onClick={() => suggestedRecipe && applyRecipe(suggestedRecipe, true)}>
-              איפוס להצעה
-            </button>
-            <button className={styles.secondary} type="button" disabled={history.length === 0} onClick={undo}>
-              ביטול
-            </button>
-            <button className={styles.secondary} type="button" disabled={!ready || busy} onClick={() => void saveCurrentReview()}>
-              {busy ? "שומר…" : suggestedRecipe && sameRecipe(current, suggestedRecipe) ? "שמור אישור" : "שמור תיקון"}
-            </button>
-            <button className={styles.primary} type="button" disabled={!ready || busy} onClick={() => void exportCurrent()}>
-              {busy ? "כותב…" : "ייצא XMP"}
-            </button>
+            <div className={styles.dockCommit}>
+              <button
+                className={styles.saveButton}
+                type="button"
+                disabled={!ready || busy}
+                onClick={() => void saveCurrentReview()}
+              >
+                {busy
+                  ? "שומר…"
+                  : suggestedRecipe && sameRecipe(current, suggestedRecipe)
+                    ? "אשר עריכה"
+                    : "שמור תיקון"}
+              </button>
+              <button
+                className={styles.exportButton}
+                type="button"
+                disabled={!ready || busy}
+                onClick={() => void exportCurrent()}
+              >
+                {busy ? "מייצא…" : "ייצוא XMP"}
+              </button>
+            </div>
+
+            <div className={styles.dockTools}>
+              <button
+                className={styles.dockTool}
+                type="button"
+                onClick={() => void chooseOutput()}
+              >
+                <span className={styles.dockToolIcon} aria-hidden="true">⌑</span>
+                {outputDir ? "החלף תיקיית ייצוא" : "תיקיית ייצוא"}
+              </button>
+              <span className={styles.dockDivider} aria-hidden="true" />
+              <button
+                className={styles.dockTool}
+                type="button"
+                disabled={!suggestedRecipe}
+                onClick={() => suggestedRecipe && applyRecipe(suggestedRecipe, true)}
+              >
+                <span className={styles.dockToolIcon} aria-hidden="true">↺</span>
+                איפוס ל-ProGrapher
+              </button>
+              <button
+                className={styles.dockTool}
+                type="button"
+                disabled={history.length === 0}
+                onClick={undo}
+              >
+                <span className={styles.dockToolIcon} aria-hidden="true">↶</span>
+                בטל שינוי
+              </button>
+            </div>
           </div>
         )}
       </section>
@@ -650,7 +687,25 @@ export default function DarkroomScreen() {
           </div>
         ) : (
         <div className={styles.panelBody}>
-          <h2 className={styles.panelTitle}>עריכה</h2>
+          <div className={styles.panelHeading}>
+            <h2 className={styles.panelTitle}>עריכה</h2>
+            <button
+              type="button"
+              className={
+                showIllustration
+                  ? `${styles.previewToggle} ${styles.previewToggleOn}`
+                  : styles.previewToggle
+              }
+              aria-pressed={showIllustration}
+              title="תצוגה משוערת בלבד — התוצאה הסופית נקבעת ב-Lightroom"
+              onClick={() => setShowIllustration((value) => !value)}
+            >
+              <span className={styles.previewToggleLabel}>תצוגה מקדימה</span>
+              <span className={styles.previewSwitch} aria-hidden="true">
+                <span />
+              </span>
+            </button>
+          </div>
           <div className={styles.reference}>
             <div>
               <span>עריכת הצלם</span>
@@ -829,13 +884,6 @@ export default function DarkroomScreen() {
             </details>
           ))}
 
-          <button
-            type="button"
-            className={showIllustration ? `${styles.toggle} ${styles.toggleOn}` : styles.toggle}
-            onClick={() => setShowIllustration((value) => !value)}
-          >
-            {showIllustration ? "ההמחשה הגסה פעילה" : "הצג המחשה גסה"}
-          </button>
           <p className={styles.keys}>חצים למעבר · Enter לייצוא · שינויים שלא נשמרו נשמרים כטיוטה במעבר · ⌘Z או Ctrl+Z לביטול · B להחזיק את המקור</p>
           {message && <p className={`${styles.status} ${styles.ok}`} role="status">{message}</p>}
           {error && <p className={`${styles.status} ${styles.error}`} role="alert">{error}</p>}
