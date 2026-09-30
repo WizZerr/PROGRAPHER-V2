@@ -78,9 +78,14 @@ export type EventFileRecord = {
   present: boolean;
 };
 
-export async function listEventFiles(eventId: string): Promise<EventFileRecord[]> {
+export async function listEventFiles(
+  eventId: string,
+  limit?: number,
+): Promise<EventFileRecord[]> {
+  const suffix =
+    limit == null ? "" : `?limit=${Math.max(1, Math.floor(limit))}`;
   const response = await apiRequest<{ files: EventFileRecord[] }>(
-    `/api/events/${encodeURIComponent(eventId)}/files`,
+    `/api/events/${encodeURIComponent(eventId)}/files${suffix}`,
   );
   return response.files;
 }
