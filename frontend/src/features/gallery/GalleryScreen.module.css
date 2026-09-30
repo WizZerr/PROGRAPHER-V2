@@ -230,6 +230,9 @@
   color: inherit;
   text-align: right;
   cursor: pointer;
+  transition:
+    transform var(--pg-transition-fast),
+    background var(--pg-transition-fast);
 }
 
 .card:hover .thumb,
@@ -274,6 +277,13 @@
   border-radius: 10px;
   overflow: hidden;
   background: #101013;
+  transition:
+    box-shadow var(--pg-transition-fast),
+    transform var(--pg-transition-fast);
+}
+
+.card:hover .thumb {
+  transform: translateY(-1px);
 }
 
 .card_compact .thumb {
@@ -409,31 +419,25 @@
   }
 }
 
-@media (max-width: 1150px) {
-  .toolbar {
-    grid-template-columns: 1fr;
-    align-items: stretch;
-  }
-
-  .toolbarActions {
-    width: 100%;
-    align-items: end;
-    flex-wrap: wrap;
+@media (max-width: 1180px) {
+  .search {
+    width: clamp(120px, 16vw, 190px);
+    flex-basis: 190px;
   }
 
   .field {
-    flex: 1 1 260px;
-    width: auto;
+    width: clamp(170px, 18vw, 220px);
+    min-width: 150px;
   }
 }
 
 @media (max-width: 900px) {
-  .toolbarActions {
-    align-items: stretch;
+  .search {
+    display: none;
   }
 
   .field {
-    flex: 1 1 100%;
+    width: min(240px, 42vw);
   }
 
   .grid_standard {
