@@ -9,7 +9,7 @@
 .workspace {
   min-height: 0;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 340px;
+  grid-template-columns: minmax(0, 1fr) 356px;
   direction: ltr;
 }
 
@@ -220,63 +220,180 @@
   display: flex;
   flex-direction: column;
   border-left: 1px solid var(--pg-border);
-  background: #10131a;
+  background: #0b1018;
   direction: rtl;
 }
 
 .panelBody {
   min-height: 0;
   overflow: auto;
-  padding: 22px 18px 12px;
+  padding: 18px 16px 14px;
   display: grid;
   align-content: start;
-  gap: 18px;
+  gap: 14px;
 }
 
 .panelTitle {
   margin: 0;
-  font-size: 20px;
-  font-weight: 600;
-  letter-spacing: -0.03em;
+  font-size: 19px;
+  font-weight: 700;
+  letter-spacing: -0.025em;
 }
 
 .reference {
   display: grid;
-  gap: 8px;
+  gap: 0;
+  overflow: hidden;
+  border: 1px solid var(--pg-border);
+  border-radius: 10px;
+  background: #0e1420;
 }
 
 .reference div {
+  min-height: 36px;
+  padding: 7px 10px;
   display: flex;
+  align-items: center;
   justify-content: space-between;
   gap: 12px;
+  border-bottom: 1px solid var(--pg-divider);
   color: var(--pg-text-secondary);
-  font-size: 14px;
+  font-size: 12px;
+}
+
+.reference div:last-child {
+  border-bottom: 0;
 }
 
 .reference bdi {
   direction: ltr;
   unicode-bidi: isolate;
+  font-family: "Inter", sans-serif;
   font-variant-numeric: tabular-nums;
   color: var(--pg-text);
+  font-size: 12px;
+  font-weight: 600;
 }
 
 .slider {
   display: grid;
-  gap: 8px;
+  gap: 7px;
 }
 
 .sliderHeader {
   display: flex;
+  align-items: center;
   justify-content: space-between;
-  gap: 12px;
-  font-size: 15px;
+  gap: 10px;
+  color: var(--pg-text-secondary);
+  font-size: 13px;
+  font-weight: 500;
 }
 
-.sliderHeader bdi {
+.sliderControls {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  direction: ltr;
+}
+
+.sliderValue {
+  min-width: 68px;
+  height: 28px;
+  padding: 0 8px;
+  display: inline-grid;
+  place-items: center;
+  border: 1px solid var(--pg-border);
+  border-radius: 7px;
+  background: #111927;
+  color: var(--pg-text);
   direction: ltr;
   unicode-bidi: isolate;
+  font-family: "Inter", sans-serif;
   font-variant-numeric: tabular-nums;
+  font-size: 12px;
   font-weight: 600;
+}
+
+.sliderReset {
+  width: 28px;
+  height: 28px;
+  display: inline-grid;
+  place-items: center;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--pg-text-muted);
+  font: inherit;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.sliderReset:hover:not(:disabled) {
+  border-color: var(--pg-border);
+  background: var(--pg-surface-hover);
+  color: var(--pg-text);
+}
+
+.sliderReset:disabled {
+  opacity: 0.28;
+  cursor: default;
+}
+
+.range {
+  --range-track: linear-gradient(90deg, #3a414d, #aeb7c5);
+  width: 100%;
+  height: 18px;
+  margin: 0;
+  appearance: none;
+  -webkit-appearance: none;
+  background: transparent;
+  cursor: pointer;
+}
+
+.range::-webkit-slider-runnable-track {
+  height: 6px;
+  border-radius: 999px;
+  background: var(--range-track);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+}
+
+.range::-webkit-slider-thumb {
+  width: 15px;
+  height: 15px;
+  margin-top: -4.5px;
+  appearance: none;
+  -webkit-appearance: none;
+  border: 2px solid #f3f7ff;
+  border-radius: 50%;
+  background: var(--pg-accent);
+  box-shadow: 0 0 0 2px rgba(111, 91, 255, 0.2);
+}
+
+.range:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.exposureRange {
+  --range-track: linear-gradient(90deg, #080b10 0%, #5f6878 48%, #f4f7fb 100%);
+}
+
+.temperatureRange {
+  --range-track: linear-gradient(90deg, #3b82f6 0%, #93c5fd 28%, #eef1f4 50%, #fdba74 72%, #f97316 100%);
+}
+
+.tintRange {
+  --range-track: linear-gradient(90deg, #22c55e 0%, #86efac 28%, #d5d9df 50%, #e879f9 72%, #d946ef 100%);
+}
+
+.rangeHint {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: #5f6b80;
+  font-size: 10px;
+  line-height: 1;
 }
 
 .group {
@@ -305,11 +422,7 @@
 }
 
 .slider input {
-  width: 100%;
-  height: 22px;
-  margin: 0;
-  accent-color: #7467f8;
-  cursor: pointer;
+  font: inherit;
 }
 
 .toggle {
@@ -333,7 +446,7 @@
   gap: 8px;
   padding: 12px 18px 18px;
   border-top: 1px solid var(--pg-divider);
-  background: #10131a;
+  background: #0b1018;
 }
 
 .primary,
