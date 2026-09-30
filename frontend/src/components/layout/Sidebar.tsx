@@ -17,8 +17,8 @@ const items: Array<{ id: WorkspaceView; label: string }> = [
 
 function NavIcon({ view }: { view: WorkspaceView }) {
   const common = {
-    width: 18,
-    height: 18,
+    width: 23,
+    height: 23,
     viewBox: "0 0 24 24",
     fill: "none",
     stroke: "currentColor",
@@ -84,7 +84,7 @@ export default function Sidebar({ activeView, onSelect }: SidebarProps) {
     <aside className={styles.sidebar}>
       <div className={styles.brand}>
         <div className={styles.brandMark} aria-hidden="true">
-          <svg width="26" height="26" viewBox="0 0 26 26" fill="none">
+          <svg width="33" height="33" viewBox="0 0 26 26" fill="none">
             <path
               d="M7 21V5.2h7.2c3.8 0 6.3 2.1 6.3 5.4 0 3.4-2.5 5.5-6.3 5.5H10.8V21H7Z"
               fill="currentColor"
