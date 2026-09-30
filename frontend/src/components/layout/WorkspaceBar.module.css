@@ -1,13 +1,14 @@
 .bar {
-  height: 56px;
-  min-height: 56px;
-  padding: 0 16px;
+  height: 58px;
+  min-height: 58px;
+  padding: 0 14px;
   border-bottom: 1px solid var(--pg-border);
   background: #0b1018;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
+  gap: 14px;
+  overflow: hidden;
 }
 
 .identity,
@@ -19,7 +20,8 @@
 }
 
 .identity {
-  flex: 1;
+  flex: 1 1 280px;
+  overflow: hidden;
 }
 
 .kicker,
@@ -30,7 +32,12 @@
   white-space: nowrap;
 }
 
+.kicker {
+  flex: 0 0 auto;
+}
+
 .title {
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   font-size: 14px;
@@ -46,7 +53,36 @@
   font-variant-numeric: tabular-nums;
 }
 
+.detail {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.counter {
+  flex: 0 0 auto;
+}
+
 .tools {
   flex: 0 1 auto;
+  height: 100%;
   justify-content: flex-end;
+  flex-wrap: nowrap;
+  overflow: hidden;
+}
+
+@media (max-width: 1180px) {
+  .bar {
+    gap: 10px;
+    padding-inline: 10px;
+  }
+
+  .kicker,
+  .detail {
+    display: none;
+  }
+
+  .identity {
+    flex-basis: 150px;
+  }
 }
