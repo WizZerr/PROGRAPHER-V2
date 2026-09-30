@@ -1,9 +1,15 @@
 .screen {
   min-height: 100%;
-  padding: 28px 32px 48px;
+  padding: 26px 30px 44px;
   display: grid;
+  grid-template-columns: minmax(300px, 0.82fr) minmax(0, 1.8fr);
   align-content: start;
   gap: 16px;
+}
+
+.screen > .error,
+.screen > .success {
+  grid-column: 1 / -1;
 }
 
 .hero,
@@ -16,10 +22,13 @@
 }
 
 .hero {
-  min-height: 210px;
-  padding: clamp(28px, 4vw, 44px);
+  grid-column: 1 / -1;
+  min-height: 158px;
+  padding: 26px 30px;
   border-radius: var(--pg-radius-xl);
-  background: var(--pg-surface-2);
+  background:
+    radial-gradient(circle at 92% 20%, rgba(111, 91, 255, 0.18), transparent 30%),
+    linear-gradient(145deg, #0f1623, #0b1018);
 }
 
 .eyebrow,
@@ -47,8 +56,18 @@
 .grid,
 .formGrid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: var(--pg-space-4);
+}
+
+.grid {
+  grid-column: 1;
+  grid-row: 2;
+  grid-template-columns: 1fr;
+  align-self: start;
+}
+
+.formGrid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 .card,
@@ -57,6 +76,22 @@
 .readinessCard {
   padding: var(--pg-space-5);
   border-radius: var(--pg-radius-lg);
+}
+
+.sourceCard {
+  grid-column: 2;
+  grid-row: 2;
+}
+
+.styleCard {
+  grid-column: 2;
+  grid-row: 3 / span 2;
+}
+
+.readinessCard {
+  grid-column: 1;
+  grid-row: 3;
+  align-self: start;
 }
 
 .cardHeader {
@@ -95,8 +130,8 @@
 }
 
 .statusBadge {
-  background: rgba(88, 166, 255, 0.1);
-  color: #8fc5ff;
+  background: rgba(111, 91, 255, 0.14);
+  color: #a99fff;
 }
 
 .path,
@@ -246,9 +281,10 @@
 
 .primaryButton {
   margin-top: var(--pg-space-5);
-  border: 1px solid var(--pg-border-strong);
-  background: var(--pg-text);
-  color: var(--pg-bg);
+  border: 1px solid rgba(138, 123, 255, 0.62);
+  background: var(--pg-accent);
+  color: white;
+  box-shadow: 0 8px 24px rgba(111, 91, 255, 0.18);
 }
 
 .secondaryButton:disabled,
@@ -296,7 +332,22 @@
   line-height: 1.8;
 }
 
-@media (max-width: 900px) {
+@media (max-width: 1100px) {
+  .screen {
+    grid-template-columns: 1fr;
+  }
+
+  .hero,
+  .grid,
+  .sourceCard,
+  .styleCard,
+  .readinessCard,
+  .screen > .error,
+  .screen > .success {
+    grid-column: 1;
+    grid-row: auto;
+  }
+
   .grid,
   .formGrid,
   .sourceOptions {
