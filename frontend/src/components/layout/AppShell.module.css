@@ -13,65 +13,73 @@
   top: 0;
   height: 100vh;
   min-height: 100vh;
-  padding: 18px 12px 14px;
+  padding: 14px 12px 14px;
   border-left: 1px solid var(--pg-border);
-  background: var(--pg-surface-1);
+  background:
+    radial-gradient(circle at 88% 2%, rgba(111, 91, 255, 0.08), transparent 22%),
+    var(--pg-surface-1);
   display: flex;
   flex-direction: column;
   z-index: 10;
 }
 
 .brand {
-  height: 52px;
-  padding: 0 10px;
+  min-height: 76px;
+  padding: 8px 10px 14px;
   display: flex;
   align-items: center;
-  gap: 11px;
+  gap: 13px;
+  border-bottom: 1px solid var(--pg-divider);
 }
 
 .brandMark {
-  width: 32px;
-  height: 32px;
-  flex: 0 0 32px;
-  border-radius: 8px;
+  width: 44px;
+  height: 44px;
+  flex: 0 0 44px;
+  border-radius: 12px;
   display: grid;
   place-items: center;
-  background: linear-gradient(145deg, #6f5bff, #69c7ff);
-  box-shadow: 0 0 18px rgba(111, 91, 255, 0.35);
-  color: #f5f7fa;
+  background:
+    radial-gradient(circle at 70% 24%, rgba(255, 255, 255, 0.18), transparent 22%),
+    linear-gradient(145deg, #6f5bff 12%, #7567ff 52%, #69c7ff 100%);
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.08) inset,
+    0 10px 26px rgba(111, 91, 255, 0.24);
+  color: #f8f9ff;
 }
 
 .brandText {
   min-width: 0;
   display: grid;
+  gap: 4px;
   line-height: 1.05;
 }
 
 .brandName {
-  font-size: 15px;
-  font-weight: var(--pg-weight-semibold);
-  letter-spacing: -0.025em;
+  font-family: "Inter", sans-serif;
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: -0.035em;
   direction: ltr;
   text-align: right;
 }
 
 .brandMeta {
-  margin-top: 3px;
   color: var(--pg-text-muted);
-  font-size: 11px;
+  font-size: 11.5px;
   font-weight: var(--pg-weight-medium);
 }
 
 .nav {
-  margin-top: 22px;
+  margin-top: 16px;
   display: grid;
-  gap: 4px;
+  gap: 5px;
 }
 
 .navItem {
   position: relative;
   width: 100%;
-  min-height: 44px;
+  min-height: 46px;
   border: 1px solid transparent;
   border-radius: 10px;
   padding: 0 12px;
@@ -84,11 +92,14 @@
   cursor: pointer;
   transition:
     background var(--pg-transition-fast),
-    color var(--pg-transition-fast);
+    border-color var(--pg-transition-fast),
+    color var(--pg-transition-fast),
+    transform var(--pg-transition-fast);
 }
 
 .navItem:hover {
   background: var(--pg-surface-hover);
+  border-color: rgba(160, 180, 210, 0.12);
   color: var(--pg-text);
 }
 
@@ -109,9 +120,13 @@
 }
 
 .active {
-  background: rgba(111, 91, 255, 0.18);
+  background:
+    linear-gradient(90deg, rgba(111, 91, 255, 0.22), rgba(111, 91, 255, 0.11));
+  border-color: rgba(138, 123, 255, 0.34);
   color: var(--pg-text);
-  box-shadow: inset 0 0 0 1px rgba(138, 123, 255, 0.35);
+  box-shadow:
+    inset 3px 0 0 rgba(138, 123, 255, 0.92),
+    0 8px 20px rgba(7, 11, 18, 0.18);
 }
 
 .active .navIcon {
@@ -219,8 +234,15 @@
   }
 
   .brand {
+    min-height: 68px;
     padding-inline: 0;
     justify-content: center;
+  }
+
+  .brandMark {
+    width: 42px;
+    height: 42px;
+    flex-basis: 42px;
   }
 
   .brandText,
