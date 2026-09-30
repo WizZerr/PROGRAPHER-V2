@@ -348,6 +348,7 @@
   appearance: none;
   -webkit-appearance: none;
   background: transparent;
+  direction: ltr;
   cursor: pointer;
 }
 
@@ -392,8 +393,13 @@
   align-items: center;
   justify-content: space-between;
   color: #5f6b80;
+  direction: ltr;
   font-size: 10px;
   line-height: 1;
+}
+
+.rangeHint span {
+  direction: rtl;
 }
 
 .group {
