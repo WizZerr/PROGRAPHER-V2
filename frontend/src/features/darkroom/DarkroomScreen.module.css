@@ -19,8 +19,18 @@
   border: 1px solid var(--pg-border);
   border-radius: 8px;
   background: transparent;
-  color: var(--pg-text);
+  color: var(--pg-text-secondary);
   cursor: pointer;
+  transition:
+    border-color var(--pg-transition-fast),
+    background var(--pg-transition-fast),
+    color var(--pg-transition-fast);
+}
+
+.navStep:hover {
+  border-color: rgba(138, 123, 255, 0.4);
+  background: var(--pg-surface-hover);
+  color: var(--pg-text);
 }
 
 .dock {
@@ -297,6 +307,15 @@
   overflow: hidden;
   background: #121216;
   cursor: pointer;
+  transition:
+    border-color var(--pg-transition-fast),
+    box-shadow var(--pg-transition-fast),
+    transform var(--pg-transition-fast);
+}
+
+.thumb:hover:not(.thumbActive) {
+  border-color: rgba(138, 123, 255, 0.4);
+  transform: translateY(-1px);
 }
 
 .thumb img,
@@ -591,6 +610,11 @@
   letter-spacing: 0.04em;
   cursor: pointer;
   list-style: none;
+  transition: color var(--pg-transition-fast);
+}
+
+.group summary:hover {
+  color: var(--pg-text);
 }
 
 .group summary::-webkit-details-marker {
@@ -655,6 +679,8 @@
 .saveButton:focus-visible,
 .exportButton:focus-visible,
 .dockTool:focus-visible,
+.navStep:focus-visible,
+.sliderReset:focus-visible,
 .handle:focus-visible,
 .thumb:focus-visible:not(.thumbActive) {
   outline: 2px solid #7467f8;
@@ -740,6 +766,16 @@
   .panel {
     border-left: 0;
     border-top: 1px solid var(--pg-divider);
+  }
+}
+
+@media (max-width: 1260px) {
+  .workspace {
+    grid-template-columns: minmax(0, 1fr) 336px;
+  }
+
+  .panelBody {
+    padding-inline: 14px;
   }
 }
 
