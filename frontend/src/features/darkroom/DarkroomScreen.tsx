@@ -37,7 +37,9 @@ function formatRecipe(recipe: Recipe | null | undefined) {
   ) {
     return "חסר";
   }
-  return `${recipe.exposure.toFixed(2)} / ${recipe.temperature} K / ${recipe.tint}`;
+  const exposure = `${recipe.exposure >= 0 ? "+" : ""}${recipe.exposure.toFixed(2)}`;
+  const tint = `${recipe.tint >= 0 ? "+" : ""}${recipe.tint}`;
+  return `${exposure} / ${recipe.temperature}K / ${tint}`;
 }
 
 function illustrationStyle(recipe: Recipe, enabled: boolean): CSSProperties {
