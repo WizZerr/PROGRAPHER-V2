@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import StatusBadge from "@/components/common/StatusBadge";
 import { getRuntimeInfo } from "@/features/dashboard/dashboard.api";
 import EventCover from "@/features/events/EventCover";
 import { listEvents, type EventSummary } from "@/features/events/events.api";
@@ -85,27 +84,43 @@ export default function DashboardScreen() {
         <div className={styles.heroVisual}>
           {hero ? <EventCover eventId={hero.id} label={hero.name} /> : <div className={styles.heroFallback} />}
         </div>
-        <div className={styles.heroCopy}>
-          <div className={styles.heroStatus}>
-            {state === "checking" && <StatusBadge tone="warning">מתחבר למנוע…</StatusBadge>}
-            {state === "connected" && <StatusBadge tone="success">המנוע מחובר</StatusBadge>}
-            {state === "error" && <StatusBadge tone="danger">המנוע אינו זמין</StatusBadge>}
+        <div className={styles.heroShade} aria-hidden="true" />
+
+        <div
+          className={`${styles.heroEngine} ${state === "error" ? styles.heroEngineError : ""}`}
+        >
+          <span className={styles.engineDot} aria-hidden="true" />
+          <div>
+            <strong>
+              {state === "checking"
+                ? "מתחבר למנוע"
+                : state === "connected"
+                  ? "המנוע מחובר"
+                  : "המנוע אינו זמין"}
+            </strong>
+            <span>ProGrapher Engine</span>
           </div>
-          <span className={styles.kicker}>סביבת העבודה</span>
-          <h2>מוכנים להתחיל.</h2>
-          <p>
-            {hero
-              ? `${hero.name} · ${hero.total_files.toLocaleString("he-IL")} תמונות במחשב שלך.`
-              : "סורקים אירוע, בונים פרופיל RAW או JPEG, וסוקרים בגלריה. המקור נשאר במקומו."}
-          </p>
+        </div>
+
+        <div className={styles.heroCopy}>
+          <span className={styles.heroGreeting}>שלום,</span>
+          <h2>
+            <span>סביבת העבודה</span>
+            <span className={styles.heroAccent}>מוכנים להתחיל.</span>
+          </h2>
+          <p>כל מה שצריך לעריכה חכמה ומדויקת — כאן, במחשב שלך.</p>
+
           <div className={styles.actions}>
             <button className={styles.primary} type="button" onClick={() => openView("events")}>
-              + אירוע חדש
+              <span className={styles.actionIcon} aria-hidden="true">＋</span>
+              אירוע חדש
             </button>
             <button className={styles.secondary} type="button" onClick={() => (latest ? openEvent(latest.id) : openView("events"))}>
+              <span className={styles.actionIcon} aria-hidden="true">◷</span>
               פתח אירוע אחרון
             </button>
             <button className={styles.secondary} type="button" onClick={() => openView("gallery")}>
+              <span className={styles.actionIcon} aria-hidden="true">▧</span>
               עבור לגלריה
             </button>
           </div>
@@ -128,11 +143,19 @@ export default function DashboardScreen() {
                 <div className={styles.eventCover}>
                   <EventCover eventId={event.id} label={event.name} />
                 </div>
-                <strong>{event.name}</strong>
-                <span>{formatDate(event.updated_at || event.created_at)}</span>
-                <span>
-                  <bdi>{event.total_files.toLocaleString("he-IL")}</bdi> תמונות · RAW <bdi>{event.raw_files}</bdi>
-                </span>
+                <div className={styles.eventBody}>
+                  <strong>{event.name}</strong>
+                  <div className={styles.eventMeta}>
+                    <span>
+                      <span className={styles.metaIcon} aria-hidden="true">□</span>
+                      {formatDate(event.updated_at || event.created_at)}
+                    </span>
+                    <span>
+                      <span className={styles.metaIcon} aria-hidden="true">▧</span>
+                      <bdi>{event.total_files.toLocaleString("he-IL")}</bdi> תמונות
+                    </span>
+                  </div>
+                </div>
               </button>
             ))}
           </div>
@@ -141,17 +164,26 @@ export default function DashboardScreen() {
 
       <section className={styles.system}>
         <article className={styles.card}>
-          <span>הפרופיל הפעיל</span>
+          <div className={styles.cardTopline}>
+            <span className={styles.systemIcon} aria-hidden="true">◉</span>
+            <span>הפרופיל הפעיל</span>
+          </div>
           <strong>{profile ? (profile.learning_source === "jpeg" ? "JPEG" : "RAW") : "לא הוגדר"}</strong>
           <small>{profile ? `${profile.usable_pairs.toLocaleString("he-IL")} זוגות שמישים` : "הלמידה מחכה לחומר"}</small>
         </article>
         <article className={styles.card}>
-          <span>עיבוד מקומי</span>
+          <div className={styles.cardTopline}>
+            <span className={styles.systemIcon} aria-hidden="true">▣</span>
+            <span>עיבוד מקומי</span>
+          </div>
           <strong>{engine ? `127.0.0.1:${engine.port}` : "—"}</strong>
           <small>{runtime?.service ?? "המנוע עדיין לא זמין"}</small>
         </article>
         <article className={styles.card}>
-          <span>מערכת</span>
+          <div className={styles.cardTopline}>
+            <span className={styles.systemIcon} aria-hidden="true">▤</span>
+            <span>מערכת</span>
+          </div>
           <strong>{platform}</strong>
           <small>גרסה {runtime?.version ?? "—"}</small>
         </article>
