@@ -403,7 +403,7 @@ export default function DarkroomScreen() {
       const item = result.files[0];
       if (item?.status === "written") {
         markCurrentSaved(current);
-        setMessage(decision === "approved" ? "המתכון אושר ויוצא." : "התיקון נשמר ויוצא.");
+        setMessage(decision === "approved" ? "האישור נשמר וה-XMP יוצא." : "התיקון נשמר וה-XMP יוצא.");
       } else {
         setError(item?.reason || "הייצוא לא נכתב.");
       }
@@ -648,10 +648,10 @@ export default function DarkroomScreen() {
           </div>
         ) : (
         <div className={styles.panelBody}>
-          <h2 className={styles.panelTitle}>המתכון</h2>
+          <h2 className={styles.panelTitle}>עריכה</h2>
           <div className={styles.reference}>
             <div>
-              <span>עריכת הצלם המקורית</span>
+              <span>עריכת הצלם</span>
               <bdi>{formatRecipe(file.photographer && file.photographer.exposure != null && file.photographer.temperature != null && file.photographer.tint != null ? {
                 exposure: file.photographer.exposure,
                 temperature: file.photographer.temperature,
@@ -659,7 +659,7 @@ export default function DarkroomScreen() {
               } : null)}</bdi>
             </div>
             <div>
-              <span>הצעת הבסיס</span>
+              <span>הצעת ProGrapher</span>
               <bdi>{formatRecipe(file.baseline && file.baseline.exposure != null && file.baseline.temperature != null && file.baseline.tint != null ? {
                 exposure: file.baseline.exposure,
                 temperature: file.baseline.temperature,
@@ -668,7 +668,7 @@ export default function DarkroomScreen() {
             </div>
             {file.saved_review && (
               <div>
-                <span>המתכון השמור</span>
+                <span>עריכה שמורה</span>
                 <bdi>{formatRecipe(
                   file.saved_review.exposure != null &&
                   file.saved_review.temperature != null &&
@@ -687,12 +687,25 @@ export default function DarkroomScreen() {
           <details className={styles.group} open>
             <summary>אור</summary>
             <div className={styles.groupBody}>
-          <label className={styles.slider}>
-            <span className={styles.sliderHeader}>
-              חשיפה
-              <bdi>{exposure.toFixed(2)}</bdi>
-            </span>
+          <div className={styles.slider}>
+            <div className={styles.sliderHeader}>
+              <span>חשיפה</span>
+              <span className={styles.sliderControls}>
+                <bdi className={styles.sliderValue}>{exposure >= 0 ? "+" : ""}{exposure.toFixed(2)}</bdi>
+                <button
+                  type="button"
+                  className={styles.sliderReset}
+                  title="איפוס להצעת ProGrapher"
+                  aria-label="איפוס חשיפה להצעת ProGrapher"
+                  disabled={!ready || !suggestedRecipe || exposure === suggestedRecipe.exposure}
+                  onClick={() => suggestedRecipe && applyRecipe({ ...current, exposure: suggestedRecipe.exposure }, true)}
+                >
+                  ↶
+                </button>
+              </span>
+            </div>
             <input
+              className={`${styles.range} ${styles.exposureRange}`}
               type="range"
               min={-5}
               max={5}
@@ -712,18 +725,34 @@ export default function DarkroomScreen() {
                 setDirty(true);
               }}
             />
-          </label>
+            <div className={styles.rangeHint} aria-hidden="true">
+              <span>כהה</span><span>ניטרלי</span><span>בהיר</span>
+            </div>
+          </div>
             </div>
           </details>
           <details className={styles.group} open>
             <summary>צבע</summary>
             <div className={styles.groupBody}>
-          <label className={styles.slider}>
-            <span className={styles.sliderHeader}>
-              טמפרטורה
-              <bdi>{temperature} K</bdi>
-            </span>
+          <div className={styles.slider}>
+            <div className={styles.sliderHeader}>
+              <span>טמפרטורה</span>
+              <span className={styles.sliderControls}>
+                <bdi className={styles.sliderValue}>{temperature} K</bdi>
+                <button
+                  type="button"
+                  className={styles.sliderReset}
+                  title="איפוס להצעת ProGrapher"
+                  aria-label="איפוס טמפרטורה להצעת ProGrapher"
+                  disabled={!ready || !suggestedRecipe || temperature === suggestedRecipe.temperature}
+                  onClick={() => suggestedRecipe && applyRecipe({ ...current, temperature: suggestedRecipe.temperature }, true)}
+                >
+                  ↶
+                </button>
+              </span>
+            </div>
             <input
+              className={`${styles.range} ${styles.temperatureRange}`}
               type="range"
               min={2000}
               max={50000}
@@ -743,13 +772,29 @@ export default function DarkroomScreen() {
                 setDirty(true);
               }}
             />
-          </label>
-          <label className={styles.slider}>
-            <span className={styles.sliderHeader}>
-              גוון
-              <bdi>{tint}</bdi>
-            </span>
+            <div className={styles.rangeHint} aria-hidden="true">
+              <span>קר</span><span>ניטרלי</span><span>חם</span>
+            </div>
+          </div>
+          <div className={styles.slider}>
+            <div className={styles.sliderHeader}>
+              <span>גוון</span>
+              <span className={styles.sliderControls}>
+                <bdi className={styles.sliderValue}>{tint >= 0 ? "+" : ""}{tint}</bdi>
+                <button
+                  type="button"
+                  className={styles.sliderReset}
+                  title="איפוס להצעת ProGrapher"
+                  aria-label="איפוס גוון להצעת ProGrapher"
+                  disabled={!ready || !suggestedRecipe || tint === suggestedRecipe.tint}
+                  onClick={() => suggestedRecipe && applyRecipe({ ...current, tint: suggestedRecipe.tint }, true)}
+                >
+                  ↶
+                </button>
+              </span>
+            </div>
             <input
+              className={`${styles.range} ${styles.tintRange}`}
               type="range"
               min={-150}
               max={150}
@@ -769,7 +814,10 @@ export default function DarkroomScreen() {
                 setDirty(true);
               }}
             />
-          </label>
+            <div className={styles.rangeHint} aria-hidden="true">
+              <span>ירוק</span><span>ניטרלי</span><span>מג׳נטה</span>
+            </div>
+          </div>
             </div>
           </details>
           {["נוכחות", "עקומת טון", "HSL / Color Mixer", "פירוט", "עדשה", "טרנספורם", "אפקטים"].map((group) => (
