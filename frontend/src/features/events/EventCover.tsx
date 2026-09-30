@@ -16,7 +16,7 @@ export default function EventCover({
 
   useEffect(() => {
     let cancelled = false;
-    void listEventFiles(eventId)
+    void listEventFiles(eventId, 1)
       .then((files) => {
         if (cancelled) return;
         const cover = files.find((file) => file.present) ?? files[0];
