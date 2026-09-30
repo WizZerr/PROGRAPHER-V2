@@ -61,7 +61,6 @@
 
 .grid {
   grid-column: 1;
-  grid-row: 2;
   grid-template-columns: 1fr;
   align-self: start;
 }
@@ -80,17 +79,14 @@
 
 .sourceCard {
   grid-column: 2;
-  grid-row: 2;
 }
 
 .styleCard {
   grid-column: 2;
-  grid-row: 3 / span 2;
 }
 
 .readinessCard {
   grid-column: 1;
-  grid-row: 3;
   align-self: start;
 }
 
@@ -345,7 +341,6 @@
   .screen > .error,
   .screen > .success {
     grid-column: 1;
-    grid-row: auto;
   }
 
   .grid,
