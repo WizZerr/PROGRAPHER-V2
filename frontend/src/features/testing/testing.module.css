@@ -15,7 +15,9 @@
 }
 
 .labHead {
+  min-height: 72px;
   justify-content: space-between;
+  padding: 0 2px;
 }
 
 .labHead h2 {
@@ -25,11 +27,54 @@
 }
 
 .steps {
+  min-width: min(100%, 520px);
   margin: 0;
   padding: 0;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0;
   list-style: none;
   color: var(--pg-text-muted);
-  font-size: 13px;
+  font-size: 12px;
+  counter-reset: lab-step;
+}
+
+.steps li {
+  position: relative;
+  min-height: 38px;
+  padding-top: 24px;
+  text-align: center;
+  counter-increment: lab-step;
+}
+
+.steps li::before {
+  content: counter(lab-step);
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 20px;
+  height: 20px;
+  margin-left: -10px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--pg-border-strong);
+  border-radius: 50%;
+  background: #0b1018;
+  color: var(--pg-text-muted);
+  font-family: "Inter", sans-serif;
+  font-size: 10px;
+  z-index: 2;
+}
+
+.steps li:not(:last-child)::after {
+  content: "";
+  position: absolute;
+  top: 10px;
+  left: -50%;
+  width: 100%;
+  height: 1px;
+  background: var(--pg-border);
+  z-index: 1;
 }
 
 .stepOn {
@@ -37,14 +82,10 @@
 }
 
 .stepOn::before {
-  content: "";
-  display: inline-block;
-  width: 7px;
-  height: 7px;
-  margin-inline-end: 6px;
-  border-radius: 50%;
-  background: var(--pg-accent);
-  box-shadow: 0 0 10px rgba(111, 91, 255, 0.8);
+  border-color: rgba(138, 123, 255, 0.8) !important;
+  background: var(--pg-accent) !important;
+  color: white !important;
+  box-shadow: 0 0 14px rgba(111, 91, 255, 0.38);
 }
 
 .lab {
@@ -54,12 +95,14 @@
 
 .labCard,
 .labCardActive {
-  min-height: 108px;
-  padding: 18px;
+  position: relative;
+  min-height: 132px;
+  padding: 20px 22px;
   border-radius: 16px;
   display: grid;
   align-content: center;
-  gap: 6px;
+  gap: 8px;
+  overflow: hidden;
   text-align: right;
   cursor: pointer;
   font: inherit;
@@ -72,16 +115,19 @@
 }
 
 .labCardActive {
-  border: 1px solid rgba(138, 123, 255, 0.7);
+  border: 1px solid rgba(138, 123, 255, 0.72);
   background:
-    linear-gradient(180deg, rgba(111, 91, 255, 0.16), rgba(111, 91, 255, 0.04)),
+    radial-gradient(circle at 92% 12%, rgba(105, 199, 255, 0.12), transparent 32%),
+    linear-gradient(180deg, rgba(111, 91, 255, 0.18), rgba(111, 91, 255, 0.04)),
     var(--pg-surface-2);
-  box-shadow: 0 0 28px rgba(111, 91, 255, 0.12);
+  box-shadow: inset 4px 0 0 var(--pg-accent), 0 0 28px rgba(111, 91, 255, 0.12);
 }
 
 .labCard strong,
 .labCardActive strong {
-  font-size: 22px;
+  font-family: "Inter", sans-serif;
+  font-size: 25px;
+  letter-spacing: -0.025em;
 }
 
 .labCard span,
@@ -454,6 +500,15 @@
 }
 
 @media (max-width: 980px) {
+  .labHead {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .steps {
+    width: 100%;
+  }
+
   .workspace {
     grid-template-columns: 1fr;
   }
