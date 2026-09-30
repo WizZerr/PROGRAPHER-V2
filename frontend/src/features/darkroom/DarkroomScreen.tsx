@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { open } from "@tauri-apps/plugin-dialog";
+import WorkspaceBar from "@/components/layout/WorkspaceBar";
 import CameraPreview from "@/features/review/CameraPreview";
 import {
   exportRecipes,
@@ -516,6 +517,16 @@ export default function DarkroomScreen() {
 
   return (
     <div className={styles.room}>
+      <WorkspaceBar
+        kicker="חדר עריכה"
+        title={file.filename}
+        detail={learningSource === "jpeg" ? "JPEG" : "RAW"}
+        counter={`${index + 1} / ${files.length}`}
+      >
+        <button className={styles.navStep} type="button" onClick={() => move(-1)} aria-label="תמונה קודמת">‹</button>
+        <button className={styles.navStep} type="button" onClick={() => move(1)} aria-label="תמונה הבאה">›</button>
+      </WorkspaceBar>
+      <div className={styles.workspace}>
       <section className={styles.stage}>
         <div
           ref={frameRef}
@@ -604,6 +615,25 @@ export default function DarkroomScreen() {
             </button>
           ))}
         </div>
+        {learningSource !== "jpeg" && (
+          <div className={styles.dock}>
+            <button className={styles.secondary} type="button" onClick={() => void chooseOutput()}>
+              {outputDir ? "החלפת תיקיית ייצוא" : "בחירת תיקיית ייצוא"}
+            </button>
+            <button className={styles.secondary} type="button" disabled={!suggestedRecipe} onClick={() => suggestedRecipe && applyRecipe(suggestedRecipe, true)}>
+              איפוס להצעה
+            </button>
+            <button className={styles.secondary} type="button" disabled={history.length === 0} onClick={undo}>
+              ביטול
+            </button>
+            <button className={styles.secondary} type="button" disabled={!ready || busy} onClick={() => void saveCurrentReview()}>
+              {busy ? "שומר…" : suggestedRecipe && sameRecipe(current, suggestedRecipe) ? "שמור אישור" : "שמור תיקון"}
+            </button>
+            <button className={styles.primary} type="button" disabled={!ready || busy} onClick={() => void exportCurrent()}>
+              {busy ? "כותב…" : "ייצא XMP"}
+            </button>
+          </div>
+        )}
       </section>
 
       <aside className={styles.panel}>
@@ -742,6 +772,12 @@ export default function DarkroomScreen() {
           </label>
             </div>
           </details>
+          {["נוכחות", "עקומת טון", "HSL / Color Mixer", "פירוט", "עדשה", "טרנספורם", "אפקטים"].map((group) => (
+            <details key={group} className={styles.group}>
+              <summary>{group}</summary>
+              <p className={styles.groupPending}>הקבוצה שמורה למבנה Lightroom. אין בה ערכים כל עוד אין מתכון אמיתי.</p>
+            </details>
+          ))}
 
           <button
             type="button"
@@ -768,46 +804,8 @@ export default function DarkroomScreen() {
         </div>
         )}
 
-        {learningSource !== "jpeg" && (
-        <div className={styles.actions}>
-          <button className={styles.secondary} type="button" onClick={() => void chooseOutput()}>
-            {outputDir ? "החלפת תיקיית ייצוא" : "בחירת תיקיית ייצוא"}
-          </button>
-          <button
-            className={styles.secondary}
-            type="button"
-            disabled={!suggestedRecipe}
-            onClick={() => suggestedRecipe && applyRecipe(suggestedRecipe, true)}
-          >
-            איפוס להצעה
-          </button>
-          <button
-            className={styles.secondary}
-            type="button"
-            disabled={history.length === 0}
-            onClick={undo}
-          >
-            ביטול
-          </button>
-          <button
-            className={styles.secondary}
-            type="button"
-            disabled={!ready || busy}
-            onClick={() => void saveCurrentReview()}
-          >
-            {busy ? "שומר…" : suggestedRecipe && sameRecipe(current, suggestedRecipe) ? "שמור אישור" : "שמור תיקון"}
-          </button>
-          <button
-            className={styles.primary}
-            type="button"
-            disabled={!ready || busy}
-            onClick={() => void exportCurrent()}
-          >
-            {busy ? "כותב…" : "ייצא XMP"}
-          </button>
-        </div>
-        )}
       </aside>
+      </div>
     </div>
   );
 }

@@ -1,8 +1,9 @@
 .screen {
-  width: min(100%, 1440px);
-  margin: 0 auto;
+  min-height: 100%;
+  padding: 28px 32px 48px;
   display: grid;
-  gap: var(--pg-space-5);
+  align-content: start;
+  gap: 16px;
 }
 
 .hero,
@@ -134,11 +135,9 @@
 }
 
 .sourceOptionSelected {
-  border-color: rgba(112, 226, 155, 0.34);
-  background:
-    linear-gradient(180deg, rgba(112, 226, 155, 0.055), transparent),
-    var(--pg-surface-1);
-  box-shadow: 0 0 0 1px rgba(112, 226, 155, 0.06) inset;
+  border-color: rgba(138, 123, 255, 0.7);
+  background: rgba(111, 91, 255, 0.12);
+  box-shadow: 0 0 24px rgba(111, 91, 255, 0.16);
 }
 
 .sourceOption:disabled {

@@ -102,14 +102,35 @@ export default function TrainingScreen() {
 
   return (
     <div className={styles.screen}>
-      <section className={styles.hero}>
-        <h2>מעבדת בדיקה</h2>
-        <p>
-          {learningSource === "jpeg"
-            ? "מסלול JPEG בונה מאגר מזווג של JPEG מקורי ו-JPEG ערוך. הזוגות נשמרים כ-Dataset לבדיקה ואימון עתידי; בשלב הזה עדיין אין מודל JPEG מאומן."
-            : "מסלול RAW קורא RAW ו-XMP של Lightroom ובונה בסיס בדיקה לחשיפה, טמפרטורה וגוון. נתוני RAW ו-JPEG נשמרים בנפרד."}
-        </p>
-      </section>
+      <header className={styles.labHead}>
+        <div>
+          <span className={styles.sectionEyebrow}>מעבדת בדיקה</span>
+          <h2>למידה</h2>
+        </div>
+        <ol className={styles.steps}>
+          <li className={rawRoot ? styles.stepOn : undefined}>בחירת תיקיות</li>
+          <li className={profile && profile.matched_pairs > 0 ? styles.stepOn : undefined}>זיהוי זוגות</li>
+          <li className={profile && profile.usable_pairs > 0 ? styles.stepOn : undefined}>בסיס לבדיקה</li>
+        </ol>
+      </header>
+      <div className={styles.lab}>
+        <button
+          type="button"
+          className={learningSource === "raw" ? styles.labCardActive : styles.labCard}
+          onClick={() => void switchLearningSource("raw")}
+        >
+          <strong>RAW</strong>
+          <span>RAW + XMP. בסיס חשיפה, טמפרטורה וגוון.</span>
+        </button>
+        <button
+          type="button"
+          className={learningSource === "jpeg" ? styles.labCardActive : styles.labCard}
+          onClick={() => void switchLearningSource("jpeg")}
+        >
+          <strong>JPEG</strong>
+          <span>JPEG מקור + JPEG ערוך. בלי מתכון Lightroom.</span>
+        </button>
+      </div>
 
       <section className={styles.panel}>
         <div className={styles.row}>
@@ -127,22 +148,6 @@ export default function TrainingScreen() {
               onChange={(event) => setEventLabel(event.target.value)}
             />
           </label>
-        </div>
-        <div className={styles.actions}>
-          <button
-            className={learningSource === "raw" ? styles.primary : styles.secondary}
-            type="button"
-            onClick={() => void switchLearningSource("raw")}
-          >
-            למידה מ-RAW
-          </button>
-          <button
-            className={learningSource === "jpeg" ? styles.primary : styles.secondary}
-            type="button"
-            onClick={() => void switchLearningSource("jpeg")}
-          >
-            למידה מ-JPEG
-          </button>
         </div>
         <div className={styles.actions}>
           <button className={styles.secondary} type="button" onClick={() => void chooseFolder("raw")}>

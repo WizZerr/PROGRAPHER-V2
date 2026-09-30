@@ -1,0 +1,52 @@
+.bar {
+  height: 56px;
+  min-height: 56px;
+  padding: 0 16px;
+  border-bottom: 1px solid var(--pg-border);
+  background: #0b1018;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.identity,
+.tools {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.identity {
+  flex: 1;
+}
+
+.kicker,
+.detail,
+.counter {
+  color: var(--pg-text-muted);
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.detail,
+.counter {
+  direction: ltr;
+  unicode-bidi: isolate;
+  font-family: "Inter", sans-serif;
+  font-variant-numeric: tabular-nums;
+}
+
+.tools {
+  flex: 0 1 auto;
+  justify-content: flex-end;
+}

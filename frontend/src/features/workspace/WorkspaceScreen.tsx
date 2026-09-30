@@ -12,15 +12,6 @@ import { TestingNavProvider } from "@/features/testing/TestingNav";
 import { WorkspaceNavProvider } from "./workspace-nav";
 import type { WorkspaceView } from "./workspace.types";
 
-const titles: Record<WorkspaceView, string> = {
-  dashboard: "ראשי",
-  events: "אירועים",
-  gallery: "גלריה",
-  darkroom: "חדר עריכה",
-  profile: "הפרופיל שלי",
-  training: "למידה",
-};
-
 function ActiveScreen({ view }: { view: WorkspaceView }) {
   switch (view) {
     case "events":
@@ -56,8 +47,7 @@ export default function WorkspaceScreen() {
     <WorkspaceNavProvider onSelect={selectView}>
       <AppShell
         activeView={activeView}
-        title={titles[activeView]}
-        immersive={activeView === "darkroom"}
+        immersive={activeView === "darkroom" || activeView === "gallery"}
         onSelect={selectView}
       >
         {galleryMounted && (

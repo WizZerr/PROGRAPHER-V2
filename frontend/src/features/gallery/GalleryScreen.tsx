@@ -13,6 +13,7 @@ import {
   useTestingNav,
   type GalleryViewMode,
 } from "@/features/testing/TestingNav";
+import WorkspaceBar from "@/components/layout/WorkspaceBar";
 import styles from "./GalleryScreen.module.css";
 
 function statusLabel(status: string) {
@@ -81,6 +82,7 @@ function GalleryCard({
           />
         )}
       </div>
+      <span className={`${styles.statusDot} ${styles[`dot_${file.pair_status}`] || ""}`} title={statusLabel(file.pair_status)} />
       <div className={styles.cardText}>
         <strong>{file.filename}</strong>
         <span className={styles.meta}>
@@ -146,6 +148,7 @@ export default function GalleryScreen() {
   const [loadingSheet, setLoadingSheet] = useState(false);
   const [renderLimit, setRenderLimit] = useState(240);
   const [error, setError] = useState("");
+  const [query, setQuery] = useState("");
   const loadMoreRef = useRef<HTMLDivElement>(null);
 
   const selectedEvent = useMemo(
@@ -254,6 +257,13 @@ export default function GalleryScreen() {
     return () => observer.disconnect();
   }, [sheet, renderLimit]);
 
+  const visibleFiles = useMemo(() => {
+    const files = sheet?.files ?? [];
+    const needle = query.trim().toLowerCase();
+    if (!needle) return files;
+    return files.filter((file) => file.filename.toLowerCase().includes(needle));
+  }, [query, sheet]);
+
   function selectEvent(value: string) {
     setGalleryEventId(value);
     setSheet(null);
@@ -263,14 +273,19 @@ export default function GalleryScreen() {
 
   return (
     <div className={styles.screen}>
-      <div className={styles.toolbar}>
-        <div>
-          <h2>גלריה</h2>
-          <p>
-            בוחרים אירוע פעם אחת. הבחירה והתמונות נשמרות בזמן העבודה באפליקציה.
-          </p>
-        </div>
-
+      <WorkspaceBar
+        kicker="גלריה"
+        title={selectedEvent?.name || "בחירת אירוע"}
+        detail={selectedEvent ? eventCountLabel(selectedEvent) : undefined}
+        counter={sheet ? `${visibleFiles.length.toLocaleString("he-IL")} / ${sheet.files.length.toLocaleString("he-IL")}` : undefined}
+      >
+        <input
+          className={styles.search}
+          value={query}
+          onChange={(event) => setQuery(event.target.value)}
+          placeholder="חיפוש לפי שם קובץ"
+          aria-label="חיפוש לפי שם קובץ"
+        />
         <div className={styles.toolbarActions}>
           <div className={styles.viewSwitcher} aria-label="תצוגת גלריה">
             <ViewButton
@@ -314,7 +329,8 @@ export default function GalleryScreen() {
             </select>
           </label>
         </div>
-      </div>
+      </WorkspaceBar>
+      <div className={styles.workspace}>
 
       {!loadingEvents && events.length === 0 && (
         <div className={styles.emptyState}>
@@ -370,7 +386,7 @@ export default function GalleryScreen() {
           <div
             className={`${styles.grid} ${styles[`grid_${galleryViewMode}`]}`}
           >
-            {sheet.files.slice(0, renderLimit).map((file) => (
+            {visibleFiles.slice(0, renderLimit).map((file) => (
               <GalleryCard
                 key={file.fingerprint}
                 eventId={sheet.event_id}
@@ -387,18 +403,19 @@ export default function GalleryScreen() {
             ))}
           </div>
 
-          {renderLimit < sheet.files.length && (
+          {renderLimit < visibleFiles.length && (
             <div
               ref={loadMoreRef}
               className={styles.moreState}
               aria-live="polite"
             >
               מציג {renderLimit.toLocaleString("he-IL")} מתוך{" "}
-              {sheet.files.length.toLocaleString("he-IL")} · ממשיך לטעון בגלילה
+              {visibleFiles.length.toLocaleString("he-IL")} · ממשיך לטעון בגלילה
             </div>
           )}
         </>
       )}
+      </div>
     </div>
   );
 }

@@ -1,10 +1,11 @@
 .shell {
-  min-height: 100vh;
+  height: 100vh;
   display: grid;
   grid-template-columns: var(--pg-sidebar-width) minmax(0, 1fr);
-  background: transparent;
+  background: var(--pg-bg);
   color: var(--pg-text);
   direction: rtl;
+  overflow: hidden;
 }
 
 .sidebar {
@@ -35,7 +36,8 @@
   border-radius: 8px;
   display: grid;
   place-items: center;
-  background: linear-gradient(145deg, #7467f8, #5cc8ff);
+  background: linear-gradient(145deg, #6f5bff, #69c7ff);
+  box-shadow: 0 0 18px rgba(111, 91, 255, 0.35);
   color: #f5f7fa;
 }
 
@@ -107,8 +109,9 @@
 }
 
 .active {
-  background: var(--pg-accent-soft);
+  background: rgba(111, 91, 255, 0.18);
   color: var(--pg-text);
+  box-shadow: inset 0 0 0 1px rgba(138, 123, 255, 0.35);
 }
 
 .active .navIcon {
@@ -140,9 +143,11 @@
 
 .main {
   min-width: 0;
-  min-height: 100vh;
+  min-height: 0;
+  height: 100vh;
   display: flex;
   flex-direction: column;
+  background: var(--pg-bg-elevated);
 }
 
 .header {
@@ -184,7 +189,7 @@
 .content {
   flex: 1;
   min-height: 0;
-  padding: clamp(24px, 3vw, 42px);
+  overflow: auto;
 }
 
 .mainImmersive {

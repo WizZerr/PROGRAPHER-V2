@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import StatusBadge from "@/components/common/StatusBadge";
 import { getRuntimeInfo } from "@/features/dashboard/dashboard.api";
+import EventCover from "@/features/events/EventCover";
 import { listEvents, type EventSummary } from "@/features/events/events.api";
 import { getTestingProfile, type TestingProfile } from "@/features/testing/testing.api";
 import { useTestingNav } from "@/features/testing/TestingNav";
@@ -13,6 +14,16 @@ import type { EngineInfo, RuntimeInfo } from "@/types/engine";
 import styles from "./DashboardScreen.module.css";
 
 type ConnectionState = "checking" | "connected" | "error";
+
+function formatDate(value: string) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  return new Intl.DateTimeFormat("he-IL", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  }).format(date);
+}
 
 export default function DashboardScreen() {
   const openView = useWorkspaceNav();
@@ -31,11 +42,7 @@ export default function DashboardScreen() {
     async function connect() {
       const detected = detectDesktopPlatform();
       setPlatform(
-        detected === "windows"
-          ? "Windows"
-          : detected === "macos"
-            ? "macOS"
-            : detected,
+        detected === "windows" ? "Windows" : detected === "macos" ? "macOS" : detected,
       );
 
       try {
@@ -45,9 +52,7 @@ export default function DashboardScreen() {
           listEvents().catch(() => [] as EventSummary[]),
           getTestingProfile().catch(() => null),
         ]);
-
         if (cancelled) return;
-
         setEngine(engineInfo);
         setRuntime(runtimeInfo);
         setEvents(eventList);
@@ -55,125 +60,101 @@ export default function DashboardScreen() {
         setState("connected");
       } catch (err) {
         if (cancelled) return;
-
         setError(err instanceof Error ? err.message : String(err));
         setState("error");
       }
     }
 
     void connect();
-
     return () => {
       cancelled = true;
     };
   }, []);
 
   const latest = events[0] ?? null;
+  const hero = latest;
 
-  function openLatest() {
-    if (!latest) {
-      openView("events");
-      return;
-    }
-    setGalleryEventId(latest.id);
+  function openEvent(eventId: string) {
+    setGalleryEventId(eventId);
     openGallery();
   }
 
   return (
     <div className={styles.page}>
       <section className={styles.hero}>
+        <div className={styles.heroVisual}>
+          {hero ? <EventCover eventId={hero.id} label={hero.name} /> : <div className={styles.heroFallback} />}
+        </div>
         <div className={styles.heroCopy}>
+          <div className={styles.heroStatus}>
+            {state === "checking" && <StatusBadge tone="warning">מתחבר למנוע…</StatusBadge>}
+            {state === "connected" && <StatusBadge tone="success">המנוע מחובר</StatusBadge>}
+            {state === "error" && <StatusBadge tone="danger">המנוע אינו זמין</StatusBadge>}
+          </div>
           <span className={styles.kicker}>סביבת העבודה</span>
           <h2>מוכנים להתחיל.</h2>
           <p>
-            סורקים אירוע, בונים פרופיל RAW או JPEG, וסוקרים בגלריה. רק פרופיל RAW מייצא XMP.
-            קובצי המקור נשארים במקומם.
+            {hero
+              ? `${hero.name} · ${hero.total_files.toLocaleString("he-IL")} תמונות במחשב שלך.`
+              : "סורקים אירוע, בונים פרופיל RAW או JPEG, וסוקרים בגלריה. המקור נשאר במקומו."}
           </p>
-        </div>
-        <div className={styles.heroStatus}>
-          {state === "checking" && <StatusBadge tone="warning">מתחבר למנוע…</StatusBadge>}
-          {state === "connected" && <StatusBadge tone="success">המנוע מחובר</StatusBadge>}
-          {state === "error" && <StatusBadge tone="danger">המנוע אינו זמין</StatusBadge>}
-        </div>
-      </section>
-
-      <div className={styles.actions}>
-        <button className={styles.primary} type="button" onClick={() => openView("events")}>
-          אירוע חדש
-        </button>
-        <button className={styles.secondary} type="button" onClick={openLatest}>
-          פתח אירוע אחרון
-        </button>
-        <button className={styles.secondary} type="button" onClick={() => openView("gallery")}>
-          עבור לגלריה
-        </button>
-      </div>
-
-      <section className={styles.split}>
-        <div>
-          <div className={styles.sectionHeader}>
-            <h3>אירועים אחרונים</h3>
-            <button className={styles.textButton} type="button" onClick={() => openView("events")}>
-              כל האירועים
+          <div className={styles.actions}>
+            <button className={styles.primary} type="button" onClick={() => openView("events")}>
+              + אירוע חדש
+            </button>
+            <button className={styles.secondary} type="button" onClick={() => (latest ? openEvent(latest.id) : openView("events"))}>
+              פתח אירוע אחרון
+            </button>
+            <button className={styles.secondary} type="button" onClick={() => openView("gallery")}>
+              עבור לגלריה
             </button>
           </div>
-          {events.length === 0 ? (
-            <p className={styles.empty}>עדיין אין אירועים בספרייה.</p>
-          ) : (
-            <div className={styles.eventList}>
-              {events.slice(0, 4).map((event) => (
-                <button
-                  key={event.id}
-                  type="button"
-                  className={styles.eventRow}
-                  onClick={() => {
-                    setGalleryEventId(event.id);
-                    openGallery();
-                  }}
-                >
-                  <strong>{event.name}</strong>
-                  <span>
-                    <bdi>{event.total_files}</bdi> תמונות · RAW <bdi>{event.raw_files}</bdi> · JPEG <bdi>{event.jpeg_files}</bdi>
-                  </span>
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-
-        <div>
-          <div className={styles.sectionHeader}>
-            <h3>פרופיל</h3>
-          </div>
-          <article className={styles.card}>
-            <span className={styles.cardLabel}>מסלול פעיל</span>
-            <strong>{profile ? (profile.learning_source === "jpeg" ? "JPEG" : "RAW") : "לא הוגדר"}</strong>
-            <small>{profile ? profile.event_label : "הלמידה מחכה לחומר של הצלם"}</small>
-          </article>
         </div>
       </section>
 
-      <section className={styles.section} aria-labelledby="system-title">
+      <section>
         <div className={styles.sectionHeader}>
-          <h3 id="system-title">מצב מקומי</h3>
+          <h3>אירועים אחרונים</h3>
+          <button className={styles.textButton} type="button" onClick={() => openView("events")}>
+            כל האירועים
+          </button>
         </div>
-        <div className={styles.grid}>
-          <article className={styles.card}>
-            <span className={styles.cardLabel}>מנוע</span>
-            <strong>{runtime?.service ?? "—"}</strong>
-            <small>גרסה {runtime?.version ?? "—"}</small>
-          </article>
-          <article className={styles.card}>
-            <span className={styles.cardLabel}>חיבור</span>
-            <strong>{engine ? `127.0.0.1:${engine.port}` : "—"}</strong>
-            <small>עיבוד מקומי</small>
-          </article>
-          <article className={styles.card}>
-            <span className={styles.cardLabel}>מחשב</span>
-            <strong>{platform}</strong>
-            <small>Windows / macOS</small>
-          </article>
-        </div>
+        {events.length === 0 ? (
+          <p className={styles.empty}>עדיין אין אירועים. האירוע הראשון נוצר מתיקייה מקומית.</p>
+        ) : (
+          <div className={styles.eventStrip}>
+            {events.slice(0, 4).map((event) => (
+              <button key={event.id} type="button" className={styles.eventCard} onClick={() => openEvent(event.id)}>
+                <div className={styles.eventCover}>
+                  <EventCover eventId={event.id} label={event.name} />
+                </div>
+                <strong>{event.name}</strong>
+                <span>{formatDate(event.updated_at || event.created_at)}</span>
+                <span>
+                  <bdi>{event.total_files.toLocaleString("he-IL")}</bdi> תמונות · RAW <bdi>{event.raw_files}</bdi>
+                </span>
+              </button>
+            ))}
+          </div>
+        )}
+      </section>
+
+      <section className={styles.system}>
+        <article className={styles.card}>
+          <span>הפרופיל הפעיל</span>
+          <strong>{profile ? (profile.learning_source === "jpeg" ? "JPEG" : "RAW") : "לא הוגדר"}</strong>
+          <small>{profile ? `${profile.usable_pairs.toLocaleString("he-IL")} זוגות שמישים` : "הלמידה מחכה לחומר"}</small>
+        </article>
+        <article className={styles.card}>
+          <span>עיבוד מקומי</span>
+          <strong>{engine ? `127.0.0.1:${engine.port}` : "—"}</strong>
+          <small>{runtime?.service ?? "המנוע עדיין לא זמין"}</small>
+        </article>
+        <article className={styles.card}>
+          <span>מערכת</span>
+          <strong>{platform}</strong>
+          <small>גרסה {runtime?.version ?? "—"}</small>
+        </article>
       </section>
 
       {state === "error" && (

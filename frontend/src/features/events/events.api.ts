@@ -70,6 +70,21 @@ export type EventScanProgress = {
   result: EventOpenResponse | null;
 };
 
+export type EventFileRecord = {
+  fingerprint: string;
+  filename: string;
+  extension: string;
+  source_type: string;
+  present: boolean;
+};
+
+export async function listEventFiles(eventId: string): Promise<EventFileRecord[]> {
+  const response = await apiRequest<{ files: EventFileRecord[] }>(
+    `/api/events/${encodeURIComponent(eventId)}/files`,
+  );
+  return response.files;
+}
+
 export async function listEvents(): Promise<EventSummary[]> {
   const response = await apiRequest<EventListResponse>("/api/events");
   return response.events;

@@ -1,8 +1,93 @@
 .screen {
-  width: min(100%, 1440px);
-  margin: 0 auto;
+  min-height: 100%;
+  padding: 28px 32px 40px;
   display: grid;
-  gap: var(--pg-space-5);
+  align-content: start;
+  gap: 16px;
+}
+
+.labHead,
+.steps,
+.lab {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.labHead {
+  justify-content: space-between;
+}
+
+.labHead h2 {
+  margin: 4px 0 0;
+  font-size: 32px;
+  letter-spacing: -0.03em;
+}
+
+.steps {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  color: var(--pg-text-muted);
+  font-size: 13px;
+}
+
+.stepOn {
+  color: var(--pg-text);
+}
+
+.stepOn::before {
+  content: "";
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  margin-inline-end: 6px;
+  border-radius: 50%;
+  background: var(--pg-accent);
+  box-shadow: 0 0 10px rgba(111, 91, 255, 0.8);
+}
+
+.lab {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+}
+
+.labCard,
+.labCardActive {
+  min-height: 108px;
+  padding: 18px;
+  border-radius: 16px;
+  display: grid;
+  align-content: center;
+  gap: 6px;
+  text-align: right;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+}
+
+.labCard {
+  border: 1px solid var(--pg-border);
+  background: var(--pg-surface-2);
+}
+
+.labCardActive {
+  border: 1px solid rgba(138, 123, 255, 0.7);
+  background:
+    linear-gradient(180deg, rgba(111, 91, 255, 0.16), rgba(111, 91, 255, 0.04)),
+    var(--pg-surface-2);
+  box-shadow: 0 0 28px rgba(111, 91, 255, 0.12);
+}
+
+.labCard strong,
+.labCardActive strong {
+  font-size: 22px;
+}
+
+.labCard span,
+.labCardActive span {
+  color: var(--pg-text-secondary);
+  font-size: 13px;
 }
 
 .hero h2,

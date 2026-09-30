@@ -184,7 +184,7 @@ export default function ProfileScreen() {
   return (
     <section className={styles.screen}>
       <div className={styles.hero}>
-        <span className={styles.eyebrow}>הגדרת פרופיל</span>
+        <span className={styles.eyebrow}>DNA של העריכה</span>
         <h2>הפרופיל שלי</h2>
         <p>
           הפרופיל האישי ייווצר בתוך ProGrapher מנתוני עריכה אמיתיים שלך.

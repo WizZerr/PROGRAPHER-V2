@@ -1,16 +1,81 @@
 .screen {
-  width: min(100%, 1440px);
-  margin: 0 auto;
+  min-height: 100%;
+  padding: 28px 32px 40px;
   display: grid;
-  gap: var(--pg-space-5);
+  align-content: start;
+  gap: 18px;
+}
+
+.libraryCard {
+  display: grid;
+  grid-template-columns: 168px minmax(0, 1fr);
+  min-height: 148px;
+  border: 1px solid var(--pg-border);
+  border-radius: 16px;
+  overflow: hidden;
+  background: var(--pg-surface-2);
+}
+
+.libraryCover {
+  min-height: 148px;
+  background: #101826;
+}
+
+.libraryBody {
+  min-width: 0;
+  padding: 14px 16px;
+  display: grid;
+  align-content: space-between;
+  gap: 8px;
+}
+
+.libraryTitleRow,
+.libraryFooter,
+.libraryStats {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.libraryTitleRow h4 {
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 16px;
+}
+
+.libraryStats {
+  justify-content: flex-start;
+}
+
+.libraryStats div {
+  min-width: 72px;
+  display: grid;
+}
+
+.libraryStats strong {
+  font-family: "Inter", sans-serif;
+  font-variant-numeric: tabular-nums;
+}
+
+.libraryStats span,
+.libraryFooter {
+  color: var(--pg-text-muted);
+  font-size: 12px;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
 }
 
 .hero {
-  min-height: 210px;
-  padding: clamp(28px, 4vw, 44px);
-  border: 1px solid var(--pg-border);
-  border-radius: var(--pg-radius-xl);
-  background: var(--pg-surface-2);
+  padding: 4px 0 8px;
+  border: 0;
+  background: transparent;
 }
 
 .eyebrow {

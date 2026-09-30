@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { open } from "@tauri-apps/plugin-dialog";
 import { useTestingNav } from "@/features/testing/TestingNav";
+import EventCover from "./EventCover";
 import {
   deleteEvent,
   getEventAvailability,
@@ -325,61 +326,31 @@ export default function EventsScreen() {
               status && (!status.root_exists || status.missing_files > 0);
 
             return (
-              <article key={event.id} className={styles.card}>
-                <div className={styles.cardTop}>
-                  <div>
+              <article key={event.id} className={styles.libraryCard}>
+                <div className={styles.libraryCover}>
+                  <EventCover eventId={event.id} label={event.name} />
+                </div>
+                <div className={styles.libraryBody}>
+                  <div className={styles.libraryTitleRow}>
                     <h4>{event.name}</h4>
-                    <p className={styles.path} title={event.root_path}>
-                      {event.root_path}
-                    </p>
-                  </div>
-
-                  <div className={styles.cardActions}>
-                    <span
-                      className={unavailable ? styles.missing : styles.ready}
-                    >
+                    <span className={unavailable ? styles.missing : styles.ready}>
                       {unavailable ? "מקור חסר" : "מקומי"}
                     </span>
-                    <button
-                      type="button"
-                      className={styles.deleteButton}
-                      onClick={() => setDeleteTarget(event)}
-                      disabled={busy}
-                    >
-                      הסר
-                    </button>
                   </div>
-                </div>
-
-                {unavailable ? (
-                  <div className={styles.missingPanel}>
-                    <span>
-                      {!status.root_exists
-                        ? "תיקיית המקור אינה זמינה."
-                        : `${status.missing_files} קבצי מקור אינם זמינים.`}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => void relink(event)}
-                      disabled={busy}
-                    >
-                      איתור מחדש
-                    </button>
+                  <p className={styles.path} title={event.root_path}>{event.root_path}</p>
+                  <div className={styles.libraryStats}>
+                    <div><strong>{event.total_files.toLocaleString("he-IL")}</strong><span>סה״כ</span></div>
+                    <div><strong>{event.raw_files.toLocaleString("he-IL")}</strong><span>RAW</span></div>
+                    <div><strong>{event.rendered_files.toLocaleString("he-IL")}</strong><span>JPG / TIFF</span></div>
                   </div>
-                ) : null}
-
-                <div className={styles.stats}>
-                  <div>
-                    <strong>{event.raw_files}</strong>
-                    <span>RAW</span>
-                  </div>
-                  <div>
-                    <strong>{event.rendered_files}</strong>
-                    <span>JPG / TIFF</span>
-                  </div>
-                  <div>
-                    <strong>{event.total_files}</strong>
-                    <span>סה״כ</span>
+                  <div className={styles.libraryFooter}>
+                    <span>עודכן {new Date(event.updated_at || event.created_at).toLocaleDateString("he-IL")}</span>
+                    <div className={styles.cardActions}>
+                      {unavailable ? (
+                        <button type="button" onClick={() => void relink(event)} disabled={busy}>איתור מחדש</button>
+                      ) : null}
+                      <button type="button" className={styles.deleteButton} onClick={() => setDeleteTarget(event)} disabled={busy}>הסר</button>
+                    </div>
                   </div>
                 </div>
               </article>
