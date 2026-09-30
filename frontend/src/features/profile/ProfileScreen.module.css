@@ -15,8 +15,7 @@
 .hero,
 .card,
 .sourceCard,
-.styleCard,
-.readinessCard {
+.styleCard {
   border: 1px solid var(--pg-border);
   background: var(--pg-surface-2);
 }
@@ -71,8 +70,7 @@
 
 .card,
 .sourceCard,
-.styleCard,
-.readinessCard {
+.styleCard {
   padding: var(--pg-space-5);
   border-radius: var(--pg-radius-lg);
 }
@@ -85,11 +83,6 @@
   grid-column: 2;
 }
 
-.readinessCard {
-  grid-column: 1;
-  align-self: start;
-}
-
 .cardHeader {
   display: flex;
   align-items: flex-start;
@@ -99,8 +92,7 @@
 
 .card h3,
 .sourceCard h3,
-.styleCard h3,
-.readinessCard h3 {
+.styleCard h3 {
   margin: var(--pg-space-2) 0 0;
   font-size: var(--pg-font-xl);
 }
@@ -128,6 +120,51 @@
 .statusBadge {
   background: rgba(111, 91, 255, 0.14);
   color: #a99fff;
+}
+
+.readinessInline {
+  margin-top: 16px;
+  padding: 14px;
+  border: 1px solid rgba(241, 199, 106, 0.18);
+  border-radius: 12px;
+  background: rgba(241, 199, 106, 0.045);
+}
+
+.readinessInlineHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  color: var(--pg-text-secondary);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.readinessInlineHeader > span:last-child {
+  min-width: 24px;
+  height: 24px;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  background: rgba(241, 199, 106, 0.1);
+  color: var(--pg-warning);
+  font-family: "Inter", sans-serif;
+  font-size: 11px;
+}
+
+.readinessInline ul {
+  margin: 10px 0 0;
+  padding-right: 18px;
+  color: var(--pg-warning);
+  font-size: 12px;
+  line-height: 1.65;
+}
+
+.readinessReady {
+  margin-top: 10px;
+  color: var(--pg-success);
+  font-size: 12px;
+  font-weight: 600;
 }
 
 .path,
@@ -158,11 +195,17 @@
   font: inherit;
   text-align: right;
   cursor: pointer;
+  transition:
+    transform var(--pg-transition-fast),
+    border-color var(--pg-transition-fast),
+    background var(--pg-transition-fast),
+    box-shadow var(--pg-transition-fast);
 }
 
 .sourceOption:hover:not(:disabled) {
-  border-color: var(--pg-border-strong);
+  border-color: rgba(138, 123, 255, 0.34);
   background: var(--pg-surface-2);
+  transform: translateY(-1px);
 }
 
 .sourceOptionSelected {
@@ -273,6 +316,15 @@
   border: 1px solid var(--pg-border-strong);
   background: var(--pg-surface-1);
   color: var(--pg-text);
+  transition:
+    border-color var(--pg-transition-fast),
+    background var(--pg-transition-fast),
+    color var(--pg-transition-fast);
+}
+
+.secondaryButton:hover:not(:disabled) {
+  border-color: rgba(138, 123, 255, 0.5);
+  background: var(--pg-surface-hover);
 }
 
 .primaryButton {
@@ -281,6 +333,16 @@
   background: var(--pg-accent);
   color: white;
   box-shadow: 0 8px 24px rgba(111, 91, 255, 0.18);
+  transition:
+    transform var(--pg-transition-fast),
+    background var(--pg-transition-fast),
+    box-shadow var(--pg-transition-fast);
+}
+
+.primaryButton:hover:not(:disabled) {
+  background: var(--pg-accent-hover);
+  box-shadow: 0 10px 26px rgba(111, 91, 255, 0.24);
+  transform: translateY(-1px);
 }
 
 .secondaryButton:disabled,
@@ -321,13 +383,6 @@
   color: var(--pg-text-muted);
 }
 
-.readinessCard ul {
-  margin: var(--pg-space-4) 0 0;
-  padding-right: 20px;
-  color: #ffd45c;
-  line-height: 1.8;
-}
-
 @media (max-width: 1100px) {
   .screen {
     grid-template-columns: 1fr;
@@ -337,7 +392,6 @@
   .grid,
   .sourceCard,
   .styleCard,
-  .readinessCard,
   .screen > .error,
   .screen > .success {
     grid-column: 1;
