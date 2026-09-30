@@ -231,9 +231,26 @@ export default function ProfileScreen() {
           </div>
 
           <p>
-            מצב Ready לא יינתן רק בגלל בחירת פריסט או סיום אימון. קודם
-            נצטרך נתונים תקינים והערכת איכות.
+            הפרופיל הופך למוכן רק אחרי שיש מספיק חומר עריכה תקין והמערכת
+            עוברת בדיקת איכות.
           </p>
+
+          <div className={styles.readinessInline}>
+            <div className={styles.readinessInlineHeader}>
+              <span>מה חסר כרגע</span>
+              <span>{overview?.readiness_reasons.length ?? 0}</span>
+            </div>
+
+            {(overview?.readiness_reasons.length ?? 0) > 0 ? (
+              <ul>
+                {(overview?.readiness_reasons ?? []).map((reason) => (
+                  <li key={reason}>{reason}</li>
+                ))}
+              </ul>
+            ) : (
+              <div className={styles.readinessReady}>הפרופיל מוכן לשלב הבא.</div>
+            )}
+          </div>
         </article>
       </div>
 
@@ -379,16 +396,6 @@ export default function ProfileScreen() {
         </button>
       </article>
 
-      <article className={styles.readinessCard}>
-        <span className={styles.label}>מוכנות הפרופיל</span>
-        <h3>מה עדיין חסר לפרופיל אישי?</h3>
-
-        <ul>
-          {(overview?.readiness_reasons ?? []).map((reason) => (
-            <li key={reason}>{reason}</li>
-          ))}
-        </ul>
-      </article>
     </section>
   );
 }
