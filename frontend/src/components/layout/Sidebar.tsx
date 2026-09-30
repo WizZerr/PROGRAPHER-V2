@@ -84,10 +84,21 @@ export default function Sidebar({ activeView, onSelect }: SidebarProps) {
     <aside className={styles.sidebar}>
       <div className={styles.brand}>
         <div className={styles.brandMark} aria-hidden="true">
-          <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-            <path d="M4 3.5h10v11H4z" stroke="currentColor" strokeWidth="1.4" />
-            <path d="M4 3.5h3.2v3.2H4z" fill="currentColor" />
-            <path d="M9 7.2 13.2 14H4.8L9 7.2Z" stroke="currentColor" strokeWidth="1.2" />
+          <svg width="26" height="26" viewBox="0 0 26 26" fill="none">
+            <path
+              d="M7 21V5.2h7.2c3.8 0 6.3 2.1 6.3 5.4 0 3.4-2.5 5.5-6.3 5.5H10.8V21H7Z"
+              fill="currentColor"
+            />
+            <path
+              d="M10.8 8.3v4.6h3.1c1.8 0 2.8-.8 2.8-2.3 0-1.5-1-2.3-2.8-2.3h-3.1Z"
+              fill="#0B1018"
+            />
+            <path
+              d="M18.9 4.7 21.6 7.4"
+              stroke="rgba(255,255,255,.7)"
+              strokeWidth="1.2"
+              strokeLinecap="round"
+            />
           </svg>
         </div>
         <div className={styles.brandText}>
