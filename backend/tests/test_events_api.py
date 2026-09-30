@@ -48,6 +48,33 @@ def test_open_and_list_event_folder(tmp_path: Path, monkeypatch) -> None:
     assert len(listed.json()["events"]) == 1
 
 
+
+def test_event_files_limit_returns_only_requested_rows(tmp_path: Path, monkeypatch) -> None:
+    data_dir = tmp_path / "data"
+    event_dir = tmp_path / "אירוע עטיפה"
+    event_dir.mkdir()
+    (event_dir / "IMG_0001.ARW").write_bytes(b"raw-a" * 500)
+    (event_dir / "IMG_0002.ARW").write_bytes(b"raw-b" * 500)
+
+    monkeypatch.setenv("PROGRAPHER_DATA_DIR", str(data_dir))
+    monkeypatch.setenv("PROGRAPHER_ENGINE_SECRET", "phase6-test-secret")
+
+    with TestClient(create_app()) as client:
+        opened = client.post(
+            "/api/events/open-folder",
+            headers=HEADERS,
+            json={"path": str(event_dir)},
+        )
+        event_id = opened.json()["event"]["id"]
+        limited = client.get(
+            f"/api/events/{event_id}/files?limit=1",
+            headers=HEADERS,
+        )
+
+    assert limited.status_code == 200
+    assert len(limited.json()["files"]) == 1
+
+
 def test_missing_folder_returns_explicit_error(tmp_path: Path, monkeypatch) -> None:
     monkeypatch.setenv("PROGRAPHER_DATA_DIR", str(tmp_path / "data"))
     monkeypatch.setenv("PROGRAPHER_ENGINE_SECRET", "phase6-test-secret")
