@@ -20,6 +20,23 @@
   --pg-border-strong: rgba(160, 180, 210, 0.22);
   --pg-divider: rgba(120, 145, 180, 0.14);
 
+  /* Cinematic background system */
+  --pg-canvas-deep: #05070b;
+  --pg-canvas-mid: #080d16;
+  --pg-canvas-raised: #0b111c;
+  --pg-ambient-primary: rgba(116, 103, 248, 0.055);
+  --pg-ambient-primary-strong: rgba(116, 103, 248, 0.10);
+  --pg-ambient-secondary: rgba(105, 199, 255, 0.025);
+  --pg-grid-line: rgba(130, 150, 180, 0.025);
+  --pg-ghost-line: rgba(150, 165, 195, 0.045);
+  --pg-ghost-text: rgba(150, 145, 230, 0.025);
+  --pg-vignette: rgba(0, 0, 0, 0.18);
+  --pg-grain-opacity: 0.02;
+  --pg-grain-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180' viewBox='0 0 180 180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.78' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.55'/%3E%3C/svg%3E");
+  --pg-shadow-contact:
+    0 1px 0 rgba(255, 255, 255, 0.025) inset,
+    0 14px 38px rgba(0, 0, 0, 0.14);
+
   --pg-accent: #6f5bff;
   --pg-accent-hover: #8a7bff;
   --pg-accent-text: #f5f7fa;
