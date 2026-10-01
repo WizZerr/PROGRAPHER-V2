@@ -343,9 +343,15 @@ export default function GalleryScreen() {
           )}
           <div className={styles.eventPickerText}>
             <strong>{selectedEvent?.name || "בחר אירוע"}</strong>
-            <span>{selectedEvent ? eventCountLabel(selectedEvent) : "אירוע"}</span>
+            <span>
+              {selectedEvent
+                ? eventCountLabel(selectedEvent)
+                : events.length > 0
+                  ? `${events.length.toLocaleString("he-IL")} אירועים זמינים`
+                  : "אין אירועים זמינים"}
+            </span>
           </div>
-          <span className={styles.eventPickerArrow} aria-hidden="true">⌄</span>
+          <span className={styles.eventPickerArrow} aria-hidden="true" />
           <select
             value={galleryEventId}
             onChange={(event) => selectEvent(event.target.value)}
