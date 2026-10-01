@@ -43,7 +43,7 @@
 }
 
 .hero::after {
-  content: "DNA";
+  content: "טביעת עריכה";
   position: absolute;
   left: 34px;
   bottom: -30px;
