@@ -169,6 +169,10 @@ export default function GalleryScreen() {
     [events, galleryEventId],
   );
   const selectedSource = selectedEvent ? eventSource(selectedEvent) : null;
+  const libraryPhotoCount = useMemo(
+    () => events.reduce((total, event) => total + event.total_files, 0),
+    [events],
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -309,13 +313,22 @@ export default function GalleryScreen() {
         }
       >
         <div className={styles.topIdentity}>
-          <span className={styles.topKicker}>גלריה</span>
-          <strong>{selectedEvent?.name || "בחירת אירוע"}</strong>
-          {selectedEvent ? (
-            <span>{eventCountLabel(selectedEvent)}</span>
-          ) : (
-            <span>בחר אירוע כדי להתחיל</span>
-          )}
+          <span className={styles.galleryMark} aria-hidden="true">
+            <i />
+            <i />
+            <i />
+            <i />
+          </span>
+
+          <div className={styles.topIdentityCopy}>
+            <span className={styles.topKicker}>ספריית תמונות</span>
+            <strong>{selectedEvent?.name || "גלריה"}</strong>
+            <span>
+              {selectedEvent
+                ? eventCountLabel(selectedEvent)
+                : "בחר אירוע כדי לפתוח את סביבת העבודה"}
+            </span>
+          </div>
         </div>
 
         {sheet ? (
@@ -338,7 +351,18 @@ export default function GalleryScreen() {
               <span>{sheet.files.length.toLocaleString("he-IL")} תמונות</span>
             </div>
           </>
-        ) : null}
+        ) : (
+          <div className={styles.libraryStats}>
+            <div>
+              <strong>{events.length.toLocaleString("he-IL")}</strong>
+              <span>אירועים</span>
+            </div>
+            <div>
+              <strong>{libraryPhotoCount.toLocaleString("he-IL")}</strong>
+              <span>תמונות</span>
+            </div>
+          </div>
+        )}
       </div>
 
       <div className={styles.controlBar}>
@@ -377,12 +401,6 @@ export default function GalleryScreen() {
             ))}
           </select>
         </div>
-
-        {sheet ? (
-          <span className={styles.photoCount}>
-            {sheet.files.length.toLocaleString("he-IL")} תמונות
-          </span>
-        ) : null}
 
         <div className={styles.searchWrap}>
           <span aria-hidden="true">⌕</span>
