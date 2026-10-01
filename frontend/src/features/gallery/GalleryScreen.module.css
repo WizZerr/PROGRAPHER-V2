@@ -1714,3 +1714,177 @@
   mask-image: radial-gradient(ellipse at center, #000 0 42%, transparent 78%);
   -webkit-mask-image: radial-gradient(ellipse at center, #000 0 42%, transparent 78%);
 }
+
+
+/* =========================================================
+   PHOTOGRAPHIC BACKGROUND V2 — REAL CONTACT SHEET
+   ========================================================= */
+
+.screen::after {
+  content: "גיליון קשר";
+  padding: 0 clamp(22px, 3vw, 48px) clamp(18px, 3vh, 34px);
+  color: rgba(188, 181, 255, 0.028);
+  font-family: "Heebo", "Inter", sans-serif;
+  font-size: clamp(90px, 11vw, 176px);
+  font-weight: 700;
+  letter-spacing: -0.055em;
+  line-height: 0.8;
+  direction: rtl;
+  justify-content: flex-end;
+  background-image:
+    linear-gradient(var(--pg-grid-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--pg-grid-line) 1px, transparent 1px);
+  background-size: 118px 82px;
+  opacity: 0.55;
+}
+
+.galleryBackdrop {
+  position: absolute !important;
+  inset: 0;
+  z-index: 0 !important;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.galleryBackdropFrame {
+  position: absolute;
+  overflow: hidden;
+  border: 1px solid rgba(155, 166, 194, 0.075);
+  border-radius: 16px;
+  background: #0b111a;
+  box-shadow:
+    0 28px 76px rgba(0, 0, 0, 0.32),
+    0 0 0 1px rgba(255, 255, 255, 0.012) inset;
+  filter: saturate(0.68) brightness(0.52);
+}
+
+.galleryBackdropFrame > div,
+.galleryBackdropFrame img {
+  width: 100%;
+  height: 100%;
+}
+
+.galleryBackdropFrame img {
+  object-fit: cover;
+}
+
+.galleryBackdropEmpty .galleryBackdropFrame1 {
+  top: 16%;
+  right: -3%;
+  width: clamp(300px, 25vw, 470px);
+  aspect-ratio: 4 / 5;
+  opacity: 0.16;
+  transform: rotate(4deg);
+}
+
+.galleryBackdropEmpty .galleryBackdropFrame2 {
+  top: 23%;
+  right: 22%;
+  width: clamp(260px, 22vw, 420px);
+  aspect-ratio: 3 / 2;
+  opacity: 0.11;
+  transform: rotate(-3deg);
+}
+
+.galleryBackdropEmpty .galleryBackdropFrame3 {
+  bottom: 4%;
+  left: -4%;
+  width: clamp(330px, 28vw, 520px);
+  aspect-ratio: 4 / 5;
+  opacity: 0.14;
+  transform: rotate(-5deg);
+}
+
+.galleryBackdropEmpty .galleryBackdropFrame4 {
+  top: 43%;
+  left: 21%;
+  width: clamp(250px, 20vw, 390px);
+  aspect-ratio: 3 / 2;
+  opacity: 0.085;
+  transform: rotate(3deg);
+}
+
+.galleryBackdropEmpty .galleryBackdropFrame5 {
+  top: 12%;
+  left: 4%;
+  width: clamp(220px, 18vw, 340px);
+  aspect-ratio: 4 / 3;
+  opacity: 0.07;
+  transform: rotate(-2deg);
+}
+
+.galleryBackdropEmpty .galleryBackdropVeil {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 72% 36%, rgba(116, 103, 248, 0.07), transparent 28%),
+    linear-gradient(
+      180deg,
+      rgba(5, 7, 11, 0.82) 0%,
+      rgba(5, 7, 11, 0.48) 34%,
+      rgba(5, 7, 11, 0.68) 62%,
+      rgba(5, 7, 11, 0.94) 100%
+    ),
+    linear-gradient(
+      90deg,
+      rgba(5, 7, 11, 0.76) 0%,
+      rgba(5, 7, 11, 0.42) 48%,
+      rgba(5, 7, 11, 0.82) 100%
+    );
+  backdrop-filter: blur(2.5px);
+}
+
+.galleryBackdropActive .galleryBackdropFrame {
+  top: 104px;
+  right: -4%;
+  width: min(50vw, 760px);
+  height: calc(100% - 104px);
+  border-radius: 0;
+  opacity: 0.055;
+  filter: saturate(0.55) brightness(0.42) blur(1px);
+  transform: none;
+}
+
+.galleryBackdropActive .galleryBackdropVeil {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(90deg, rgba(5, 7, 11, 0.99) 0%, rgba(5, 7, 11, 0.94) 48%, rgba(5, 7, 11, 0.78) 100%),
+    linear-gradient(180deg, rgba(5, 7, 11, 0.55), rgba(5, 7, 11, 0.92));
+}
+
+.topBar,
+.controlBar,
+.workspace {
+  position: relative;
+  z-index: 2;
+}
+
+.eventStart {
+  background: transparent;
+}
+
+.eventStart::before {
+  opacity: 0.18;
+}
+
+.eventStartCard {
+  backdrop-filter: blur(10px);
+  background:
+    linear-gradient(180deg, rgba(17, 25, 38, 0.92), rgba(11, 17, 27, 0.95));
+}
+
+@container gallery (max-width: 900px) {
+  .galleryBackdropEmpty .galleryBackdropFrame4,
+  .galleryBackdropEmpty .galleryBackdropFrame5 {
+    display: none;
+  }
+
+  .galleryBackdropEmpty .galleryBackdropFrame1 {
+    right: -18%;
+  }
+
+  .galleryBackdropEmpty .galleryBackdropFrame3 {
+    left: -20%;
+  }
+}
