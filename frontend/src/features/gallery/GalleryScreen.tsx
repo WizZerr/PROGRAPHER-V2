@@ -13,7 +13,7 @@ import {
   useTestingNav,
   type GalleryViewMode,
 } from "@/features/testing/TestingNav";
-import WorkspaceBar from "@/components/layout/WorkspaceBar";
+import EventCover from "@/features/events/EventCover";
 import styles from "./GalleryScreen.module.css";
 
 function statusLabel(status: string) {
@@ -81,19 +81,28 @@ function GalleryCard({
             alt=""
           />
         )}
+        <span
+          className={`${styles.statusDot} ${styles[`dot_${file.pair_status}`] || ""}`}
+          title={statusLabel(file.pair_status)}
+        />
+        {file.saved_review ? (
+          <span className={styles.reviewedBadge} title="נשמרה עריכה">✓</span>
+        ) : null}
       </div>
-      <span className={`${styles.statusDot} ${styles[`dot_${file.pair_status}`] || ""}`} title={statusLabel(file.pair_status)} />
+
       <div className={styles.cardText}>
         <strong>{file.filename}</strong>
-        <span className={styles.meta}>
-          <span>{statusLabel(file.pair_status)}</span>
-          <bdi>
-            {file.pair_status === "jpeg"
-              ? "בלי מתכון"
-              : file.suggested?.exposure != null
-                ? file.suggested.exposure.toFixed(2)
-                : "—"}
-          </bdi>
+        <span className={styles.cardStatus} title={statusLabel(file.pair_status)}>
+          <span
+            className={`${styles.inlineDot} ${styles[`dot_${file.pair_status}`] || ""}`}
+          />
+          {file.pair_status === "matched"
+            ? "עריכת צלם"
+            : file.pair_status === "jpeg"
+              ? "JPEG"
+              : file.pair_status === "ambiguous"
+                ? "לבדיקה"
+                : "ללא XMP"}
         </span>
       </div>
     </button>
@@ -125,7 +134,8 @@ function ViewButton({
       title={label}
       onClick={onClick}
     >
-      <span aria-hidden="true">{glyph}</span>
+      <span className={styles.viewButtonGlyph} aria-hidden="true">{glyph}</span>
+      <span className={styles.viewButtonLabel}>{label}</span>
     </button>
   );
 }
@@ -149,6 +159,9 @@ export default function GalleryScreen() {
   const [renderLimit, setRenderLimit] = useState(240);
   const [error, setError] = useState("");
   const [query, setQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState<
+    "all" | "matched" | "unmatched" | "ambiguous" | "jpeg"
+  >("all");
   const loadMoreRef = useRef<HTMLDivElement>(null);
 
   const selectedEvent = useMemo(
@@ -260,76 +273,159 @@ export default function GalleryScreen() {
   const visibleFiles = useMemo(() => {
     const files = sheet?.files ?? [];
     const needle = query.trim().toLowerCase();
-    if (!needle) return files;
-    return files.filter((file) => file.filename.toLowerCase().includes(needle));
-  }, [query, sheet]);
+
+    return files.filter((file) => {
+      if (needle && !file.filename.toLowerCase().includes(needle)) {
+        return false;
+      }
+
+      if (statusFilter === "all") return true;
+      if (statusFilter === "matched") return file.pair_status === "matched";
+      if (statusFilter === "ambiguous") return file.pair_status === "ambiguous";
+      if (statusFilter === "jpeg") return file.pair_status === "jpeg";
+      return (
+        file.pair_status !== "matched" &&
+        file.pair_status !== "jpeg" &&
+        file.pair_status !== "ambiguous"
+      );
+    });
+  }, [query, sheet, statusFilter]);
 
   function selectEvent(value: string) {
     setGalleryEventId(value);
     setSheet(null);
     setRenderLimit(240);
+    setStatusFilter("all");
     setError("");
   }
 
   return (
     <div className={styles.screen}>
-      <WorkspaceBar
-        kicker="גלריה"
-        title={selectedEvent?.name || "בחירת אירוע"}
-        detail={selectedEvent ? eventCountLabel(selectedEvent) : undefined}
-        counter={sheet ? `${visibleFiles.length.toLocaleString("he-IL")} / ${sheet.files.length.toLocaleString("he-IL")}` : undefined}
-      >
-        <input
-          className={styles.search}
-          value={query}
-          onChange={(event) => setQuery(event.target.value)}
-          placeholder="חיפוש לפי שם קובץ"
-          aria-label="חיפוש לפי שם קובץ"
-        />
-        <div className={styles.toolbarActions}>
-          <div className={styles.viewSwitcher} aria-label="תצוגת גלריה">
-            <ViewButton
-              mode="standard"
-              current={galleryViewMode}
-              label="תמונות גדולות"
-              glyph="▦"
-              onClick={() => setGalleryViewMode("standard")}
-            />
-            <ViewButton
-              mode="compact"
-              current={galleryViewMode}
-              label="תמונות קטנות"
-              glyph="▦▦"
-              onClick={() => setGalleryViewMode("compact")}
-            />
-            <ViewButton
-              mode="list"
-              current={galleryViewMode}
-              label="רשימה"
-              glyph="☷"
-              onClick={() => setGalleryViewMode("list")}
-            />
-          </div>
-
-          <label className={styles.field}>
-            <span>אירוע</span>
-            <select
-              value={galleryEventId}
-              onChange={(event) => selectEvent(event.target.value)}
-              disabled={loadingEvents}
-            >
-              <option value="">
-                {loadingEvents ? "טוען אירועים…" : "בחר אירוע"}
-              </option>
-              {events.map((event) => (
-                <option key={event.id} value={event.id}>
-                  {event.name} · {eventCountLabel(event)}
-                </option>
-              ))}
-            </select>
-          </label>
+      <div className={styles.topBar}>
+        <div className={styles.topIdentity}>
+          <span className={styles.topKicker}>גלריה</span>
+          <strong>{selectedEvent?.name || "בחירת אירוע"}</strong>
+          {selectedEvent ? (
+            <span>{eventCountLabel(selectedEvent)}</span>
+          ) : (
+            <span>בחר אירוע כדי להתחיל</span>
+          )}
         </div>
-      </WorkspaceBar>
+
+        <div className={styles.topCounter}>
+          {sheet ? (
+            <>
+              <button type="button" aria-label="תמונה קודמת" disabled>‹</button>
+              <bdi>{visibleFiles.length.toLocaleString("he-IL")} / {sheet.files.length.toLocaleString("he-IL")}</bdi>
+              <button type="button" aria-label="תמונה הבאה" disabled>›</button>
+            </>
+          ) : (
+            <bdi>—</bdi>
+          )}
+        </div>
+
+        <div className={styles.topUtility}>
+          {selectedSource ? (
+            <span className={styles.sourceChip}>{selectedSource === "raw" ? "RAW" : "JPEG"}</span>
+          ) : null}
+          <span>{sheet ? `${sheet.files.length.toLocaleString("he-IL")} תמונות` : "ספריית תמונות"}</span>
+        </div>
+      </div>
+
+      <div className={styles.controlBar}>
+        <div className={styles.eventPicker}>
+          {selectedEvent ? (
+            <div className={styles.eventPickerThumb}>
+              <EventCover eventId={selectedEvent.id} label={selectedEvent.name} />
+            </div>
+          ) : (
+            <div className={styles.eventPickerPlaceholder}>▧</div>
+          )}
+          <div className={styles.eventPickerText}>
+            <strong>{selectedEvent?.name || "בחר אירוע"}</strong>
+            <span>{selectedEvent ? eventCountLabel(selectedEvent) : "אירוע"}</span>
+          </div>
+          <span className={styles.eventPickerArrow} aria-hidden="true">⌄</span>
+          <select
+            value={galleryEventId}
+            onChange={(event) => selectEvent(event.target.value)}
+            disabled={loadingEvents}
+            aria-label="בחירת אירוע"
+          >
+            <option value="">
+              {loadingEvents ? "טוען אירועים…" : "בחר אירוע"}
+            </option>
+            {events.map((event) => (
+              <option key={event.id} value={event.id}>
+                {event.name} · {eventCountLabel(event)}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <span className={styles.photoCount}>
+          {sheet ? `${sheet.files.length.toLocaleString("he-IL")} תמונות` : "—"}
+        </span>
+
+        <div className={styles.searchWrap}>
+          <span aria-hidden="true">⌕</span>
+          <input
+            className={styles.search}
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder="חיפוש לפי שם קובץ…"
+            aria-label="חיפוש לפי שם קובץ"
+          />
+        </div>
+
+        <label className={styles.filterControl}>
+          <span aria-hidden="true">▽</span>
+          <select
+            value={statusFilter}
+            onChange={(event) =>
+              setStatusFilter(
+                event.target.value as
+                  | "all"
+                  | "matched"
+                  | "unmatched"
+                  | "ambiguous"
+                  | "jpeg",
+              )
+            }
+            aria-label="סינון גלריה"
+          >
+            <option value="all">הכל</option>
+            <option value="matched">עם עריכת צלם</option>
+            <option value="unmatched">ללא XMP</option>
+            <option value="ambiguous">לבדיקה</option>
+            <option value="jpeg">JPEG</option>
+          </select>
+        </label>
+
+        <div className={styles.viewSwitcher} aria-label="תצוגת גלריה">
+          <ViewButton
+            mode="standard"
+            current={galleryViewMode}
+            label="סטנדרטי"
+            glyph="▦"
+            onClick={() => setGalleryViewMode("standard")}
+          />
+          <ViewButton
+            mode="compact"
+            current={galleryViewMode}
+            label="קומפקטי"
+            glyph="▦"
+            onClick={() => setGalleryViewMode("compact")}
+          />
+          <ViewButton
+            mode="list"
+            current={galleryViewMode}
+            label="רשימה"
+            glyph="☷"
+            onClick={() => setGalleryViewMode("list")}
+          />
+        </div>
+      </div>
       <div className={styles.workspace}>
 
       {!loadingEvents && events.length === 0 && (
@@ -375,14 +471,6 @@ export default function GalleryScreen() {
 
       {sheet && sheet.files.length > 0 && (
         <>
-          <div className={styles.gallerySummary}>
-            <strong>{sheet.event_name}</strong>
-            <span>
-              {sheet.files.length.toLocaleString("he-IL")} תמונות ·{" "}
-              {sheet.learning_source === "jpeg" ? "JPEG" : "RAW"}
-            </span>
-          </div>
-
           <div
             className={`${styles.grid} ${styles[`grid_${galleryViewMode}`]}`}
           >
