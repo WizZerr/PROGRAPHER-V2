@@ -16,13 +16,13 @@
    ========================================================= */
 
 .topBar {
-  min-height: 62px;
-  height: 62px;
-  padding: 0 18px;
+  min-height: 72px;
+  height: 72px;
+  padding: 0 22px;
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
   align-items: center;
-  gap: 18px;
+  gap: 22px;
   border-bottom: 1px solid rgba(120, 145, 180, 0.14);
   background:
     linear-gradient(180deg, #0c121c, #090e16);
@@ -39,7 +39,7 @@
 
 .topKicker {
   color: #6f7e98;
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 700;
 }
 
@@ -48,7 +48,7 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: 15px;
+  font-size: 17px;
   font-weight: 700;
 }
 
@@ -57,38 +57,38 @@
   overflow: hidden;
   color: #718099;
   font-family: "Inter", "Heebo", sans-serif;
-  font-size: 11px;
+  font-size: 12.5px;
   direction: ltr;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .topCounter {
-  min-width: 156px;
+  min-width: 176px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 12px;
+  gap: 14px;
   direction: ltr;
 }
 
 .topCounter bdi {
   color: #d8deea;
   font-family: "Inter", sans-serif;
-  font-size: 14px;
+  font-size: 16px;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
 }
 
 .topCounter button {
-  width: 28px;
-  height: 28px;
+  width: 32px;
+  height: 32px;
   border: 0;
   border-radius: 7px;
   background: transparent;
   color: #77859b;
   font: inherit;
-  font-size: 20px;
+  font-size: 22px;
 }
 
 .topCounter button:disabled {
@@ -100,14 +100,14 @@
   display: flex;
   align-items: center;
   justify-self: start;
-  gap: 10px;
+  gap: 12px;
   color: #75839a;
-  font-size: 11px;
+  font-size: 15px;
 }
 
 .sourceChip {
-  min-width: 44px;
-  height: 26px;
+  min-width: 52px;
+  height: 30px;
   padding: 0 8px;
   display: inline-grid;
   place-items: center;
@@ -116,23 +116,23 @@
   background: rgba(111, 91, 255, 0.08);
   color: #a99fff;
   font-family: "Inter", sans-serif;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
 }
 
 .controlBar {
-  min-height: 72px;
-  height: 72px;
-  padding: 0 16px;
+  min-height: 86px;
+  height: 86px;
+  padding: 0 18px;
   display: grid;
   grid-template-columns:
-    minmax(240px, 310px)
+    minmax(300px, 360px)
     auto
-    minmax(260px, 1fr)
+    minmax(300px, 1fr)
     auto
     auto;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
   border-bottom: 1px solid rgba(120, 145, 180, 0.16);
   background: #080d15;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
@@ -141,14 +141,14 @@
 .eventPicker {
   position: relative;
   min-width: 0;
-  height: 48px;
+  height: 60px;
   display: grid;
-  grid-template-columns: 48px minmax(0, 1fr) 18px;
+  grid-template-columns: 58px minmax(0, 1fr) 24px;
   align-items: center;
-  gap: 9px;
-  padding: 0 10px;
+  gap: 12px;
+  padding: 0 14px;
   border: 1px solid rgba(120, 145, 180, 0.2);
-  border-radius: 9px;
+  border-radius: 11px;
   background: #101722;
   overflow: hidden;
   transition:
@@ -176,11 +176,11 @@
 
 .eventPickerThumb,
 .eventPickerPlaceholder {
-  width: 48px;
-  height: 34px;
+  width: 58px;
+  height: 42px;
   overflow: hidden;
   border: 1px solid rgba(160, 180, 210, 0.18);
-  border-radius: 6px;
+  border-radius: 8px;
   background: #0b111a;
   pointer-events: none;
 }
@@ -199,13 +199,13 @@
   display: grid;
   place-items: center;
   color: #6f7e98;
-  font-size: 16px;
+  font-size: 18px;
 }
 
 .eventPickerText {
   min-width: 0;
   display: grid;
-  gap: 2px;
+  gap: 3px;
   pointer-events: none;
 }
 
@@ -213,7 +213,7 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: 13px;
+  font-size: 16px;
   font-weight: 700;
 }
 
@@ -221,36 +221,46 @@
   overflow: hidden;
   color: #6f7e98;
   font-family: "Inter", "Heebo", sans-serif;
-  font-size: 10px;
+  font-size: 12px;
   direction: ltr;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .eventPickerArrow {
-  color: #7d8aa0;
-  font-size: 18px;
-  line-height: 1;
+  width: 11px;
+  height: 11px;
+  justify-self: center;
+  border-right: 2px solid #93a0b5;
+  border-bottom: 2px solid #93a0b5;
+  transform: rotate(45deg) translateY(-2px);
   pointer-events: none;
+  transition:
+    border-color var(--pg-transition-fast),
+    transform var(--pg-transition-fast);
+}
+
+.eventPicker:hover .eventPickerArrow {
+  border-color: #d6ddea;
 }
 
 .photoCount {
-  min-width: 88px;
+  min-width: 102px;
   color: #8794aa;
-  font-size: 12px;
+  font-size: 14px;
   white-space: nowrap;
   text-align: center;
 }
 
 .searchWrap {
   min-width: 0;
-  height: 46px;
+  height: 58px;
   display: flex;
   align-items: center;
-  gap: 9px;
-  padding: 0 13px;
+  gap: 11px;
+  padding: 0 16px;
   border: 1px solid rgba(120, 145, 180, 0.2);
-  border-radius: 9px;
+  border-radius: 11px;
   background: #0d141e;
   color: #74839a;
   transition:
@@ -266,7 +276,7 @@
 .searchWrap > span {
   flex: 0 0 auto;
   font-family: "Inter", sans-serif;
-  font-size: 20px;
+  font-size: 23px;
   transform: rotate(-12deg);
 }
 
@@ -289,14 +299,14 @@
 
 .filterControl {
   position: relative;
-  width: 118px;
-  height: 46px;
+  width: 138px;
+  height: 58px;
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 0 11px;
+  gap: 10px;
+  padding: 0 14px;
   border: 1px solid rgba(120, 145, 180, 0.2);
-  border-radius: 9px;
+  border-radius: 11px;
   background: #0d141e;
   color: #8b98ad;
   overflow: hidden;
@@ -304,7 +314,7 @@
 
 .filterControl > span {
   flex: 0 0 auto;
-  font-size: 15px;
+  font-size: 18px;
   pointer-events: none;
 }
 
@@ -318,32 +328,32 @@
   background: transparent;
   color: #dce2ec;
   font: inherit;
-  font-size: 12px;
+  font-size: 14px;
   cursor: pointer;
 }
 
 .viewSwitcher {
-  height: 46px;
+  height: 58px;
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
 }
 
 .viewButton {
-  min-width: 96px;
-  height: 46px;
-  padding: 0 12px;
+  min-width: 118px;
+  height: 58px;
+  padding: 0 16px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: 10px;
   border: 1px solid rgba(120, 145, 180, 0.2);
   border-radius: 9px;
   background: #0d141e;
   color: #a8b3c7;
   font: inherit;
-  font-size: 12px;
-  font-weight: 600;
+  font-size: 15px;
+  font-weight: 700;
   cursor: pointer;
   transition:
     border-color var(--pg-transition-fast),
@@ -370,7 +380,7 @@
 
 .viewButtonGlyph {
   font-family: "Inter", sans-serif;
-  font-size: 14px;
+  font-size: 17px;
 }
 
 .viewButtonLabel {
@@ -672,32 +682,48 @@
    CONTENT-WIDTH RESPONSIVENESS
    ========================================================= */
 
-@container gallery (max-width: 1220px) {
+@container gallery (max-width: 1320px) {
   .controlBar {
     grid-template-columns:
-      minmax(205px, 250px)
+      minmax(255px, 300px)
       auto
-      minmax(180px, 1fr)
+      minmax(220px, 1fr)
       auto
       auto;
-    gap: 8px;
+    gap: 9px;
+  }
+
+  .eventPicker {
+    height: 56px;
+    grid-template-columns: 52px minmax(0, 1fr) 22px;
+  }
+
+  .eventPickerThumb,
+  .eventPickerPlaceholder {
+    width: 52px;
+    height: 38px;
   }
 
   .photoCount {
-    min-width: 70px;
+    min-width: 78px;
+    font-size: 13px;
   }
 
-  .viewButton {
-    min-width: 46px;
-    padding-inline: 10px;
-  }
-
-  .viewButtonLabel {
-    display: none;
+  .searchWrap,
+  .filterControl,
+  .viewButton,
+  .viewSwitcher {
+    height: 54px;
   }
 
   .filterControl {
-    width: 94px;
+    width: 118px;
+  }
+
+  .viewButton {
+    min-width: 100px;
+    padding-inline: 12px;
+    font-size: 14px;
   }
 
   .grid_standard {
@@ -705,7 +731,7 @@
   }
 }
 
-@container gallery (max-width: 940px) {
+@container gallery (max-width: 1120px) {
   .topBar {
     grid-template-columns: minmax(0, 1fr) auto;
   }
@@ -715,7 +741,35 @@
   }
 
   .controlBar {
-    grid-template-columns: minmax(185px, 235px) minmax(150px, 1fr) auto auto;
+    grid-template-columns:
+      minmax(220px, 270px)
+      auto
+      minmax(170px, 1fr)
+      auto
+      auto;
+  }
+
+  .viewButton {
+    min-width: 52px;
+    padding-inline: 11px;
+  }
+
+  .viewButtonLabel {
+    display: none;
+  }
+
+  .filterControl {
+    width: 102px;
+  }
+
+  .grid_standard {
+    grid-template-columns: repeat(auto-fill, minmax(175px, 1fr));
+  }
+}
+
+@container gallery (max-width: 900px) {
+  .controlBar {
+    grid-template-columns: minmax(190px, 240px) minmax(150px, 1fr) auto auto;
   }
 
   .photoCount {
@@ -727,8 +781,8 @@
   }
 
   .filterControl {
-    width: 48px;
-    padding-inline: 9px;
+    width: 54px;
+    padding-inline: 10px;
   }
 
   .filterControl select {
@@ -736,17 +790,13 @@
     inset: 0;
     opacity: 0;
   }
-
-  .grid_standard {
-    grid-template-columns: repeat(auto-fill, minmax(175px, 1fr));
-  }
 }
 
 @container gallery (max-width: 720px) {
   .topBar {
-    min-height: 54px;
-    height: 54px;
-    padding-inline: 10px;
+    min-height: 60px;
+    height: 60px;
+    padding-inline: 12px;
   }
 
   .topIdentity > span:last-child,
@@ -755,14 +805,14 @@
   }
 
   .topCounter {
-    min-width: 120px;
+    min-width: 128px;
   }
 
   .controlBar {
-    min-height: 64px;
-    height: 64px;
+    min-height: 72px;
+    height: 72px;
     padding-inline: 10px;
-    grid-template-columns: minmax(150px, 1fr) auto auto;
+    grid-template-columns: minmax(165px, 1fr) auto auto;
   }
 
   .searchWrap {
@@ -770,19 +820,25 @@
   }
 
   .eventPicker {
-    height: 44px;
-    grid-template-columns: 40px minmax(0, 1fr) 16px;
+    height: 52px;
+    grid-template-columns: 44px minmax(0, 1fr) 18px;
+    padding-inline: 10px;
   }
 
   .eventPickerThumb,
   .eventPickerPlaceholder {
-    width: 40px;
-    height: 30px;
+    width: 44px;
+    height: 32px;
+  }
+
+  .eventPickerText strong {
+    font-size: 14px;
   }
 
   .filterControl,
-  .viewButton {
-    height: 44px;
+  .viewButton,
+  .viewSwitcher {
+    height: 50px;
   }
 
   .workspace {
