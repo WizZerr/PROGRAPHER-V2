@@ -1050,9 +1050,12 @@
 
   .searchWrap,
   .filterControl,
-  .viewButton,
   .viewSwitcher {
     height: 54px;
+  }
+
+  .viewButton {
+    height: 44px;
   }
 
   .filterControl {
@@ -1211,9 +1214,12 @@
   }
 
   .filterControl,
-  .viewButton,
   .viewSwitcher {
     height: 50px;
+  }
+
+  .viewButton {
+    height: 40px;
   }
 
   .workspace {
