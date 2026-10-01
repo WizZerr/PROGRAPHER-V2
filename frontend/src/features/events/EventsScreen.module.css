@@ -2,7 +2,7 @@
   min-height: 100%;
   container-type: inline-size;
   container-name: events;
-  padding: 28px 30px 42px;
+  padding: 0 30px 42px;
   display: grid;
   align-content: start;
   gap: 22px;
@@ -547,7 +547,7 @@
 
 @media (max-width: 1320px) {
   .screen {
-    padding: 24px 24px 36px;
+    padding: 0 24px 36px;
   }
 
   .hero h2 {
@@ -603,7 +603,7 @@
 
 @media (max-width: 720px) {
   .screen {
-    padding: 18px;
+    padding: 0 18px 18px;
   }
 
   .libraryCard {
