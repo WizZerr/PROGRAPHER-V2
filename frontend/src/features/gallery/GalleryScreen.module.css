@@ -17,15 +17,24 @@
 
 .topBar {
   min-height: 72px;
-  height: 72px;
   padding: 0 22px;
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
   align-items: center;
   gap: 22px;
   border-bottom: 1px solid rgba(120, 145, 180, 0.14);
-  background:
-    linear-gradient(180deg, #0c121c, #090e16);
+  background: linear-gradient(180deg, #0c121c, #090e16);
+}
+
+.topBarEmpty {
+  min-height: 64px;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.topBarEmpty .topIdentity {
+  width: 100%;
+  justify-self: stretch;
+  justify-content: flex-start;
 }
 
 .topIdentity {
@@ -122,25 +131,25 @@
 
 .controlBar {
   min-height: 86px;
-  height: 86px;
-  padding: 0 18px;
-  display: grid;
-  grid-template-columns:
-    minmax(300px, 360px)
-    auto
-    minmax(300px, 1fr)
-    auto
-    auto;
+  padding: 14px 18px;
+  display: flex;
   align-items: center;
   gap: 12px;
+  direction: rtl;
   border-bottom: 1px solid rgba(120, 145, 180, 0.16);
   background: #080d15;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
 }
 
+.controlBar > * {
+  flex-shrink: 0;
+}
+
 .eventPicker {
   position: relative;
-  min-width: 0;
+  width: clamp(280px, 29vw, 360px);
+  min-width: 240px;
+  flex: 0 1 360px;
   height: 60px;
   display: grid;
   grid-template-columns: 58px minmax(0, 1fr) 24px;
@@ -246,6 +255,7 @@
 
 .photoCount {
   min-width: 102px;
+  flex: 0 0 auto;
   color: #8794aa;
   font-size: 14px;
   white-space: nowrap;
@@ -253,7 +263,8 @@
 }
 
 .searchWrap {
-  min-width: 0;
+  min-width: 180px;
+  flex: 1 1 360px;
   height: 58px;
   display: flex;
   align-items: center;
@@ -301,6 +312,7 @@
 .filterControl {
   position: relative;
   width: 138px;
+  flex: 0 0 138px;
   height: 58px;
   display: flex;
   align-items: center;
@@ -334,6 +346,7 @@
 }
 
 .viewSwitcher {
+  flex: 0 0 auto;
   height: 58px;
   display: inline-flex;
   align-items: center;
@@ -685,16 +698,14 @@
 
 @container gallery (max-width: 1320px) {
   .controlBar {
-    grid-template-columns:
-      minmax(255px, 300px)
-      auto
-      minmax(220px, 1fr)
-      auto
-      auto;
     gap: 9px;
+    padding-inline: 14px;
   }
 
   .eventPicker {
+    width: clamp(240px, 28vw, 300px);
+    min-width: 220px;
+    flex-basis: 300px;
     height: 56px;
     grid-template-columns: 52px minmax(0, 1fr) 22px;
   }
@@ -719,6 +730,7 @@
 
   .filterControl {
     width: 118px;
+    flex-basis: 118px;
   }
 
   .viewButton {
@@ -732,7 +744,7 @@
   }
 }
 
-@container gallery (max-width: 1120px) {
+@container gallery (max-width: 1160px) {
   .topBar {
     grid-template-columns: minmax(0, 1fr) auto;
   }
@@ -741,13 +753,26 @@
     display: none;
   }
 
+  .topBarEmpty {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
   .controlBar {
-    grid-template-columns:
-      minmax(220px, 270px)
-      auto
-      minmax(170px, 1fr)
-      auto
-      auto;
+    gap: 8px;
+  }
+
+  .photoCount {
+    display: none;
+  }
+
+  .eventPicker {
+    width: clamp(220px, 27vw, 270px);
+    min-width: 205px;
+    flex-basis: 270px;
+  }
+
+  .searchWrap {
+    min-width: 160px;
   }
 
   .viewButton {
@@ -761,6 +786,7 @@
 
   .filterControl {
     width: 102px;
+    flex-basis: 102px;
   }
 
   .grid_standard {
@@ -768,13 +794,17 @@
   }
 }
 
-@container gallery (max-width: 900px) {
-  .controlBar {
-    grid-template-columns: minmax(190px, 240px) minmax(150px, 1fr) auto auto;
+@container gallery (max-width: 930px) {
+  .topCounter {
+    display: none;
   }
 
-  .photoCount {
-    display: none;
+  .topBar {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .topIdentity {
+    justify-self: stretch;
   }
 
   .eventPickerText span {
@@ -783,6 +813,7 @@
 
   .filterControl {
     width: 54px;
+    flex-basis: 54px;
     padding-inline: 10px;
   }
 
@@ -791,12 +822,15 @@
     inset: 0;
     opacity: 0;
   }
+
+  .searchWrap {
+    min-width: 140px;
+  }
 }
 
-@container gallery (max-width: 720px) {
+@container gallery (max-width: 760px) {
   .topBar {
-    min-height: 60px;
-    height: 60px;
+    min-height: 58px;
     padding-inline: 12px;
   }
 
@@ -805,15 +839,9 @@
     display: none;
   }
 
-  .topCounter {
-    min-width: 128px;
-  }
-
   .controlBar {
     min-height: 72px;
-    height: 72px;
-    padding-inline: 10px;
-    grid-template-columns: minmax(165px, 1fr) auto auto;
+    padding: 10px;
   }
 
   .searchWrap {
@@ -821,6 +849,9 @@
   }
 
   .eventPicker {
+    min-width: 0;
+    flex: 1 1 auto;
+    width: auto;
     height: 52px;
     grid-template-columns: 44px minmax(0, 1fr) 18px;
     padding-inline: 10px;
@@ -856,17 +887,18 @@
   }
 }
 
-@container gallery (max-width: 500px) {
-  .topCounter {
+@container gallery (max-width: 560px) {
+  .topBar {
     display: none;
   }
 
-  .topBar {
-    grid-template-columns: 1fr;
+  .controlBar {
+    flex-wrap: wrap;
+    align-content: center;
   }
 
-  .controlBar {
-    grid-template-columns: minmax(0, 1fr) auto;
+  .eventPicker {
+    flex-basis: 100%;
   }
 
   .filterControl {
@@ -874,7 +906,7 @@
   }
 
   .viewSwitcher {
-    gap: 4px;
+    margin-inline-start: auto;
   }
 
   .grid_standard {
