@@ -26,7 +26,7 @@
   direction: ltr;
   border-bottom: 1px solid rgba(120, 145, 180, 0.15);
   background:
-    radial-gradient(circle at 88% 0%, rgba(8, 217, 214, 0.08), transparent 26%),
+    radial-gradient(circle at 88% 0%, rgba(255, 32, 78, 0.08), transparent 26%),
     linear-gradient(180deg, #0d141f, #090e16);
   box-shadow: 0 1px 0 rgba(255, 255, 255, 0.018) inset;
 }
@@ -59,19 +59,19 @@
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 4px;
-  border: 1px solid rgba(8, 217, 214, 0.3);
+  border: 1px solid rgba(255, 32, 78, 0.3);
   border-radius: 12px;
   background:
-    linear-gradient(145deg, rgba(8, 217, 214, 0.18), rgba(105, 199, 255, 0.07));
+    linear-gradient(145deg, rgba(255, 32, 78, 0.18), rgba(105, 199, 255, 0.07));
   box-shadow:
-    0 8px 22px rgba(8, 217, 214, 0.12),
+    0 8px 22px rgba(255, 32, 78, 0.12),
     0 1px 0 rgba(255, 255, 255, 0.08) inset;
 }
 
 .galleryMark i {
   display: block;
   border-radius: 2px;
-  background: #45eae7;
+  background: #ff607f;
   opacity: 0.88;
 }
 
@@ -199,10 +199,10 @@
   padding: 0 8px;
   display: inline-grid;
   place-items: center;
-  border: 1px solid rgba(8, 217, 214, 0.28);
+  border: 1px solid rgba(255, 32, 78, 0.28);
   border-radius: 7px;
-  background: rgba(8, 217, 214, 0.08);
-  color: #91f7f4;
+  background: rgba(255, 32, 78, 0.08);
+  color: #ff95a9;
   font-family: "Inter", sans-serif;
   font-size: 12px;
   font-weight: 700;
@@ -244,7 +244,7 @@
   align-items: center;
   gap: 11px;
   padding: 0 13px;
-  border: 1px solid rgba(8, 217, 214, 0.24);
+  border: 1px solid rgba(255, 32, 78, 0.24);
   border-radius: 12px;
   background:
     linear-gradient(180deg, #111927, #0d141f);
@@ -264,7 +264,7 @@
 
 .eventPicker:hover,
 .eventPickerOpen {
-  border-color: rgba(8, 217, 214, 0.58);
+  border-color: rgba(255, 32, 78, 0.58);
   background: #141d2b;
   box-shadow:
     inset -3px 0 0 #20dfdc,
@@ -324,7 +324,7 @@
 }
 
 .eventPickerKicker {
-  color: #3ce8e5 !important;
+  color: #ff5577 !important;
   font-family: inherit !important;
   font-size: 10.5px !important;
   font-weight: 700;
@@ -379,10 +379,10 @@
   max-height: min(520px, calc(100vh - 210px));
   padding: 10px;
   overflow: hidden;
-  border: 1px solid rgba(8, 217, 214, 0.28);
+  border: 1px solid rgba(255, 32, 78, 0.28);
   border-radius: 14px;
   background:
-    radial-gradient(circle at 90% 0%, rgba(8, 217, 214, 0.12), transparent 28%),
+    radial-gradient(circle at 90% 0%, rgba(255, 32, 78, 0.12), transparent 28%),
     #0c131e;
   box-shadow:
     0 24px 58px rgba(0, 0, 0, 0.42),
@@ -455,9 +455,9 @@
 }
 
 .eventMenuItemActive {
-  border-color: rgba(8, 217, 214, 0.34);
+  border-color: rgba(255, 32, 78, 0.34);
   background:
-    linear-gradient(90deg, rgba(8, 217, 214, 0.12), rgba(8, 217, 214, 0.035));
+    linear-gradient(90deg, rgba(255, 32, 78, 0.12), rgba(255, 32, 78, 0.035));
 }
 
 .eventMenuThumb {
@@ -526,9 +526,9 @@
 }
 
 .menuSourceRaw {
-  border: 1px solid rgba(8, 217, 214, 0.3);
-  background: rgba(8, 217, 214, 0.08);
-  color: #a7faf7;
+  border: 1px solid rgba(255, 32, 78, 0.3);
+  background: rgba(255, 32, 78, 0.08);
+  color: #ffadbd;
 }
 
 .menuSourceJpeg {
@@ -572,8 +572,8 @@
 }
 
 .searchWrap:focus-within {
-  border-color: rgba(8, 217, 214, 0.62);
-  box-shadow: 0 0 0 2px rgba(8, 217, 214, 0.09);
+  border-color: rgba(255, 32, 78, 0.62);
+  box-shadow: 0 0 0 2px rgba(255, 32, 78, 0.09);
 }
 
 .searchWrap > span {
@@ -630,7 +630,7 @@
 
 .filterControl:hover,
 .filterControlOpen {
-  border-color: rgba(8, 217, 214, 0.46);
+  border-color: rgba(255, 32, 78, 0.46);
   background: #121a27;
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
 }
@@ -688,7 +688,7 @@
   padding: 7px;
   display: grid;
   gap: 3px;
-  border: 1px solid rgba(8, 217, 214, 0.24);
+  border: 1px solid rgba(255, 32, 78, 0.24);
   border-radius: 12px;
   background: #0c131e;
   box-shadow:
@@ -718,8 +718,8 @@
 }
 
 .filterMenuItemActive {
-  border-color: rgba(8, 217, 214, 0.28);
-  background: rgba(8, 217, 214, 0.09);
+  border-color: rgba(255, 32, 78, 0.28);
+  background: rgba(255, 32, 78, 0.09);
 }
 
 .filterMenuCheck {
@@ -787,10 +787,10 @@
 
 .viewButtonActive {
   background:
-    linear-gradient(180deg, rgba(8, 217, 214, 0.92), rgba(91, 72, 225, 0.92));
+    linear-gradient(180deg, rgba(255, 32, 78, 0.92), rgba(91, 72, 225, 0.92));
   color: white;
   box-shadow:
-    0 7px 16px rgba(8, 217, 214, 0.20),
+    0 7px 16px rgba(255, 32, 78, 0.20),
     0 1px 0 rgba(255, 255, 255, 0.09) inset;
 }
 
@@ -867,15 +867,15 @@
 }
 
 .card:hover {
-  border-color: rgba(8, 217, 214, 0.48);
+  border-color: rgba(255, 32, 78, 0.48);
   box-shadow:
-    0 0 0 1px rgba(8, 217, 214, 0.1),
+    0 0 0 1px rgba(255, 32, 78, 0.1),
     0 10px 24px rgba(0, 0, 0, 0.18);
   transform: translateY(-1px);
 }
 
 .card:focus-visible {
-  outline: 2px solid #08d9d6;
+  outline: 2px solid #ff204e;
   outline-offset: 2px;
 }
 
@@ -1032,7 +1032,7 @@
   align-content: center;
   gap: 24px;
   background:
-    radial-gradient(circle at 82% 18%, rgba(8, 217, 214, 0.06), transparent 26%),
+    radial-gradient(circle at 82% 18%, rgba(255, 32, 78, 0.06), transparent 26%),
     radial-gradient(circle at 12% 90%, rgba(105, 199, 255, 0.035), transparent 24%);
 }
 
@@ -1080,10 +1080,10 @@
   padding: 0 13px;
   display: inline-flex;
   align-items: center;
-  border: 1px solid rgba(8, 217, 214, 0.22);
+  border: 1px solid rgba(255, 32, 78, 0.22);
   border-radius: 999px;
-  background: rgba(8, 217, 214, 0.07);
-  color: #8ef7f4;
+  background: rgba(255, 32, 78, 0.07);
+  color: #ff91a6;
   font-size: 11px;
   font-weight: 700;
 }
@@ -1117,15 +1117,15 @@
 }
 
 .eventStartCard:hover {
-  border-color: rgba(8, 217, 214, 0.5);
+  border-color: rgba(255, 32, 78, 0.5);
   box-shadow:
-    0 0 0 1px rgba(8, 217, 214, 0.07),
+    0 0 0 1px rgba(255, 32, 78, 0.07),
     0 20px 42px rgba(0, 0, 0, 0.2);
   transform: translateY(-3px);
 }
 
 .eventStartCard:focus-visible {
-  outline: 2px solid #08d9d6;
+  outline: 2px solid #ff204e;
   outline-offset: 3px;
 }
 
@@ -1170,9 +1170,9 @@
 }
 
 .eventStartRaw {
-  border: 1px solid rgba(8, 217, 214, 0.35);
+  border: 1px solid rgba(255, 32, 78, 0.35);
   background: rgba(33, 24, 73, 0.78);
-  color: #b6fbf9;
+  color: #ffbdc9;
 }
 
 .eventStartJpeg {
@@ -1222,10 +1222,10 @@
   flex: 0 0 34px;
   display: grid;
   place-items: center;
-  border: 1px solid rgba(8, 217, 214, 0.22);
+  border: 1px solid rgba(255, 32, 78, 0.22);
   border-radius: 9px;
-  background: rgba(8, 217, 214, 0.07);
-  color: #91f7f4;
+  background: rgba(255, 32, 78, 0.07);
+  color: #ff95a9;
   font-family: "Inter", sans-serif;
   font-size: 17px;
   transition:
@@ -1235,8 +1235,8 @@
 }
 
 .eventStartCard:hover .eventStartArrow {
-  border-color: rgba(8, 217, 214, 0.54);
-  background: rgba(8, 217, 214, 0.14);
+  border-color: rgba(255, 32, 78, 0.54);
+  background: rgba(255, 32, 78, 0.14);
   color: white;
 }
 
@@ -1281,7 +1281,7 @@
   height: 30px;
   flex: 0 0 30px;
   border: 2px solid #243044;
-  border-top-color: #08d9d6;
+  border-top-color: #ff204e;
   border-radius: 50%;
   animation: gallerySpin 0.8s linear infinite;
 }
