@@ -453,10 +453,56 @@ export default function GalleryScreen() {
       )}
 
       {!galleryEventId && !loadingEvents && events.length > 0 && (
-        <div className={styles.emptyState}>
-          <strong>בחר אירוע כדי לפתוח את הגלריה.</strong>
-          <span>האירוע שתבחר יישאר נבחר גם אם תעבור למסך אחר.</span>
-        </div>
+        <section className={styles.eventStart}>
+          <div className={styles.eventStartHead}>
+            <div>
+              <span className={styles.eventStartEyebrow}>ספריית אירועים</span>
+              <h2>בחר אירוע לפתיחת הגלריה</h2>
+              <p>
+                האירוע שתבחר יישאר פעיל גם אם תעבור בין מסכים, כך שאפשר
+                להמשיך לעבוד בלי לבחור אותו מחדש.
+              </p>
+            </div>
+
+            <span className={styles.eventStartCount}>
+              {events.length.toLocaleString("he-IL")} אירועים זמינים
+            </span>
+          </div>
+
+          <div className={styles.eventStartGrid}>
+            {events.slice(0, 4).map((event) => (
+              <button
+                key={event.id}
+                type="button"
+                className={styles.eventStartCard}
+                onClick={() => selectEvent(event.id)}
+              >
+                <div className={styles.eventStartCover}>
+                  <EventCover eventId={event.id} label={event.name} />
+                  <span
+                    className={
+                      eventSource(event) === "raw"
+                        ? styles.eventStartRaw
+                        : styles.eventStartJpeg
+                    }
+                  >
+                    {eventSource(event) === "raw" ? "RAW" : "JPEG"}
+                  </span>
+                </div>
+
+                <div className={styles.eventStartBody}>
+                  <div>
+                    <strong>{event.name}</strong>
+                    <span>{eventCountLabel(event)}</span>
+                  </div>
+                  <span className={styles.eventStartArrow} aria-hidden="true">
+                    ←
+                  </span>
+                </div>
+              </button>
+            ))}
+          </div>
+        </section>
       )}
 
       {loadingSheet && (
