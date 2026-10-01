@@ -261,11 +261,11 @@
     padding-inline: 0;
   }
 
-  .header,
-  .content:not(.contentImmersive) {
+  .header {
     padding-inline: var(--pg-space-6);
   }
 
+  .content,
   .contentImmersive {
     padding: 0;
   }
@@ -289,10 +289,7 @@
     display: none;
   }
 
-  .content:not(.contentImmersive) {
-    padding: var(--pg-space-5);
-  }
-
+  .content,
   .contentImmersive {
     padding: 0;
   }
