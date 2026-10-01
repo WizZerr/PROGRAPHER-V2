@@ -257,6 +257,20 @@ export default function EventsScreen() {
 
   return (
     <section className={styles.screen}>
+      {events.length > 0 ? (
+        <div className={styles.photographicBackdrop} aria-hidden="true">
+          {events.slice(0, 3).map((event, index) => (
+            <div
+              key={event.id}
+              className={`${styles.backdropFrame} ${styles[`backdropFrame${index + 1}`]}`}
+            >
+              <EventCover eventId={event.id} label={event.name} />
+            </div>
+          ))}
+          <div className={styles.backdropVeil} />
+        </div>
+      ) : null}
+
       <div className={styles.hero}>
         <span className={styles.eyebrow}>ספריית אירועים</span>
         <div className={styles.heroRow}>
