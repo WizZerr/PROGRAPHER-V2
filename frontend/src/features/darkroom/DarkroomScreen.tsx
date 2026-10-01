@@ -44,16 +44,26 @@ function formatRecipe(recipe: Recipe | null | undefined) {
 
 function illustrationStyle(recipe: Recipe, enabled: boolean): CSSProperties {
   if (!enabled) return {};
+
   const brightness = Math.min(1.8, Math.max(0.45, 1 + recipe.exposure * 0.18));
   const warmth = Math.max(-40, Math.min(40, (recipe.temperature - 5500) / 80));
-  const tintShift = Math.max(-18, Math.min(18, recipe.tint * 0.12));
+  const tintAmount = Math.min(1, Math.abs(recipe.tint) / 150);
+  const tintColor =
+    recipe.tint < 0
+      ? "rgb(42 201 122)"
+      : recipe.tint > 0
+        ? "rgb(218 74 184)"
+        : "transparent";
+
   return {
     ["--preview-brightness" as string]: String(brightness),
     ["--preview-sepia" as string]: warmth > 0 ? "0.25" : "0",
     ["--preview-saturate" as string]: String(
-      Math.min(1.22, 1.05 + Math.abs(recipe.tint) * 0.001),
+      Math.min(1.16, 1.03 + Math.abs(recipe.tint) * 0.0007),
     ),
-    ["--preview-hue" as string]: `${-warmth * 0.35 + tintShift}deg`,
+    ["--preview-hue" as string]: `${-warmth * 0.35}deg`,
+    ["--preview-tint-color" as string]: tintColor,
+    ["--preview-tint-opacity" as string]: String(tintAmount * 0.34),
   };
 }
 
@@ -545,16 +555,28 @@ export default function DarkroomScreen() {
             className={styles.photo}
           />
           {showIllustration && (
-            <CameraPreview
-              eventId={selection.eventId}
-              fingerprint={file.fingerprint}
-              alt={`המחשה ${file.filename}`}
-              className={styles.photoAfter}
-              style={{
-                ...previewStyle,
-                clipPath: `inset(0 0 0 ${split}%)`,
-              }}
-            />
+            <>
+              <CameraPreview
+                eventId={selection.eventId}
+                fingerprint={file.fingerprint}
+                alt={`המחשה ${file.filename}`}
+                className={styles.photoAfter}
+                style={{
+                  ...previewStyle,
+                  clipPath: `inset(0 0 0 ${split}%)`,
+                }}
+              />
+              {!holdOriginal && (
+                <span
+                  className={styles.tintOverlay}
+                  style={{
+                    ...previewStyle,
+                    clipPath: `inset(0 0 0 ${split}%)`,
+                  }}
+                  aria-hidden="true"
+                />
+              )}
+            </>
           )}
           <span className={`${styles.badge} ${styles.beforeBadge}`}>מקור</span>
           {showIllustration && (
