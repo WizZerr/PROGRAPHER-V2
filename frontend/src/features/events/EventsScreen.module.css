@@ -808,3 +808,153 @@
     linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.012), transparent);
   filter: blur(0.2px);
 }
+
+
+/* =========================================================
+   PHOTOGRAPHIC BACKGROUND V2 — REAL EVENT ARTWORK
+   ========================================================= */
+
+.screen::after {
+  content: "";
+  padding: 0;
+  display: block;
+  background-image:
+    linear-gradient(var(--pg-grid-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--pg-grid-line) 1px, transparent 1px);
+  background-size: 96px 96px;
+  opacity: 0.34;
+}
+
+.photographicBackdrop {
+  position: absolute !important;
+  inset: 0;
+  z-index: 0 !important;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.backdropFrame {
+  position: absolute;
+  overflow: hidden;
+  border: 1px solid rgba(155, 166, 194, 0.08);
+  border-radius: 18px;
+  background: #0b111a;
+  box-shadow:
+    0 34px 90px rgba(0, 0, 0, 0.34),
+    0 0 0 1px rgba(255, 255, 255, 0.015) inset;
+  opacity: 0.18;
+  filter: saturate(0.72) brightness(0.58);
+  transform-origin: center;
+}
+
+.backdropFrame > div,
+.backdropFrame img {
+  width: 100%;
+  height: 100%;
+}
+
+.backdropFrame img {
+  object-fit: cover;
+}
+
+.backdropFrame1 {
+  top: 78px;
+  left: -56px;
+  width: clamp(360px, 31vw, 610px);
+  aspect-ratio: 4 / 5;
+  transform: rotate(-4deg);
+  opacity: 0.19;
+}
+
+.backdropFrame2 {
+  top: 48px;
+  left: 23%;
+  width: clamp(310px, 27vw, 520px);
+  aspect-ratio: 3 / 2;
+  transform: rotate(3deg);
+  opacity: 0.11;
+}
+
+.backdropFrame3 {
+  right: -110px;
+  bottom: 8%;
+  width: clamp(350px, 30vw, 560px);
+  aspect-ratio: 4 / 5;
+  transform: rotate(5deg);
+  opacity: 0.105;
+}
+
+.backdropVeil {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(
+      90deg,
+      rgba(5, 7, 11, 0.90) 0%,
+      rgba(5, 7, 11, 0.70) 22%,
+      rgba(5, 7, 11, 0.84) 49%,
+      rgba(5, 7, 11, 0.92) 100%
+    ),
+    linear-gradient(
+      180deg,
+      rgba(5, 7, 11, 0.12) 0%,
+      rgba(5, 7, 11, 0.36) 42%,
+      rgba(5, 7, 11, 0.94) 100%
+    );
+  backdrop-filter: blur(2px);
+}
+
+.hero,
+.scanPanel,
+.success,
+.warning,
+.info,
+.error,
+.sectionHeader,
+.grid,
+.empty,
+.modalBackdrop {
+  position: relative;
+  z-index: 2;
+}
+
+.hero {
+  min-height: 210px;
+  padding: 26px 24px 20px;
+  display: grid;
+  align-content: center;
+}
+
+.hero::after {
+  content: "ארכיון צילום";
+  position: absolute;
+  top: 12px;
+  left: 22px;
+  color: rgba(188, 181, 255, 0.055);
+  font-size: clamp(54px, 6vw, 96px);
+  font-weight: 700;
+  letter-spacing: -0.055em;
+  line-height: 1;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+@container events (max-width: 920px) {
+  .backdropFrame2 {
+    display: none;
+  }
+
+  .backdropFrame1 {
+    left: -120px;
+    opacity: 0.14;
+  }
+
+  .backdropFrame3 {
+    right: -150px;
+    opacity: 0.08;
+  }
+
+  .hero::after {
+    opacity: 0.65;
+  }
+}
