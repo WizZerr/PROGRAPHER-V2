@@ -713,3 +713,62 @@
     transition: none;
   }
 }
+
+
+/* =========================================================
+   PROGRAPHER CINEMATIC BACKGROUND — HOME WORKSPACE
+   ========================================================= */
+
+.page {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 84% 3%, rgba(116, 103, 248, 0.09), transparent 30%),
+    radial-gradient(circle at 9% 80%, rgba(105, 199, 255, 0.024), transparent 26%),
+    radial-gradient(ellipse at 50% 44%, transparent 43%, rgba(0, 0, 0, 0.14) 100%),
+    linear-gradient(145deg, var(--pg-canvas-mid) 0%, var(--pg-canvas-deep) 58%, #04060a 100%);
+}
+
+.page::before,
+.page::after {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.page::before {
+  content: "";
+  background-image: var(--pg-grain-image);
+  background-size: 180px 180px;
+  opacity: var(--pg-grain-opacity);
+  mix-blend-mode: soft-light;
+}
+
+.page::after {
+  content: "WORKSPACE";
+  padding: 0 clamp(24px, 4vw, 64px) clamp(16px, 3vh, 40px);
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-start;
+  direction: ltr;
+  color: rgba(150, 145, 230, 0.018);
+  font-family: "Inter", sans-serif;
+  font-size: clamp(120px, 15vw, 240px);
+  font-weight: 700;
+  letter-spacing: -0.07em;
+  line-height: 0.76;
+  white-space: nowrap;
+  background-image:
+    linear-gradient(var(--pg-grid-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--pg-grid-line) 1px, transparent 1px);
+  background-size: 104px 104px;
+  mask-image: linear-gradient(to bottom, transparent 30%, #000 54%, #000 94%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to bottom, transparent 30%, #000 54%, #000 94%, transparent 100%);
+}
+
+.page > * {
+  position: relative;
+  z-index: 1;
+}
