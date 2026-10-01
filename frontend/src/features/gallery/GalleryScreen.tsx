@@ -301,7 +301,13 @@ export default function GalleryScreen() {
 
   return (
     <div className={styles.screen}>
-      <div className={styles.topBar}>
+      <div
+        className={
+          sheet
+            ? styles.topBar
+            : `${styles.topBar} ${styles.topBarEmpty}`
+        }
+      >
         <div className={styles.topIdentity}>
           <span className={styles.topKicker}>גלריה</span>
           <strong>{selectedEvent?.name || "בחירת אירוע"}</strong>
@@ -312,24 +318,27 @@ export default function GalleryScreen() {
           )}
         </div>
 
-        <div className={styles.topCounter}>
-          {sheet ? (
-            <>
+        {sheet ? (
+          <>
+            <div className={styles.topCounter}>
               <button type="button" aria-label="תמונה קודמת" disabled>‹</button>
-              <bdi>{visibleFiles.length.toLocaleString("he-IL")} / {sheet.files.length.toLocaleString("he-IL")}</bdi>
+              <bdi>
+                {visibleFiles.length.toLocaleString("he-IL")} /{" "}
+                {sheet.files.length.toLocaleString("he-IL")}
+              </bdi>
               <button type="button" aria-label="תמונה הבאה" disabled>›</button>
-            </>
-          ) : (
-            <bdi>—</bdi>
-          )}
-        </div>
+            </div>
 
-        <div className={styles.topUtility}>
-          {selectedSource ? (
-            <span className={styles.sourceChip}>{selectedSource === "raw" ? "RAW" : "JPEG"}</span>
-          ) : null}
-          <span>{sheet ? `${sheet.files.length.toLocaleString("he-IL")} תמונות` : "ספריית תמונות"}</span>
-        </div>
+            <div className={styles.topUtility}>
+              {selectedSource ? (
+                <span className={styles.sourceChip}>
+                  {selectedSource === "raw" ? "RAW" : "JPEG"}
+                </span>
+              ) : null}
+              <span>{sheet.files.length.toLocaleString("he-IL")} תמונות</span>
+            </div>
+          </>
+        ) : null}
       </div>
 
       <div className={styles.controlBar}>
@@ -369,9 +378,11 @@ export default function GalleryScreen() {
           </select>
         </div>
 
-        <span className={styles.photoCount}>
-          {sheet ? `${sheet.files.length.toLocaleString("he-IL")} תמונות` : "—"}
-        </span>
+        {sheet ? (
+          <span className={styles.photoCount}>
+            {sheet.files.length.toLocaleString("he-IL")} תמונות
+          </span>
+        ) : null}
 
         <div className={styles.searchWrap}>
           <span aria-hidden="true">⌕</span>
