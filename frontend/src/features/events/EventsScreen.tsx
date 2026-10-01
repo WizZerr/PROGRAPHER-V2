@@ -25,7 +25,12 @@ function sleep(ms: number) {
 }
 
 export default function EventsScreen() {
-  const { forgetEvent, notifyEventCatalogChanged } = useTestingNav();
+  const {
+    forgetEvent,
+    notifyEventCatalogChanged,
+    setGalleryEventId,
+    openGallery,
+  } = useTestingNav();
   const [events, setEvents] = useState<EventSummary[]>([]);
   const [availability, setAvailability] = useState<
     Record<string, EventAvailability>
@@ -159,6 +164,11 @@ export default function EventsScreen() {
     } finally {
       setBusy(false);
     }
+  }
+
+  function openEvent(eventId: string) {
+    setGalleryEventId(eventId);
+    openGallery();
   }
 
   async function removeEvent() {
@@ -326,7 +336,14 @@ export default function EventsScreen() {
               status && (!status.root_exists || status.missing_files > 0);
 
             return (
-              <article key={event.id} className={styles.libraryCard}>
+              <article
+                key={event.id}
+                className={
+                  unavailable
+                    ? `${styles.libraryCard} ${styles.libraryCardMissing}`
+                    : styles.libraryCard
+                }
+              >
                 <div className={styles.libraryCover}>
                   <EventCover eventId={event.id} label={event.name} />
                 </div>
@@ -344,12 +361,39 @@ export default function EventsScreen() {
                     <div><strong>{event.rendered_files.toLocaleString("he-IL")}</strong><span>JPG / TIFF</span></div>
                   </div>
                   <div className={styles.libraryFooter}>
-                    <span>עודכן {new Date(event.updated_at || event.created_at).toLocaleDateString("he-IL")}</span>
+                    <span>
+                      עודכן{" "}
+                      {new Date(event.updated_at || event.created_at).toLocaleDateString("he-IL")}
+                    </span>
                     <div className={styles.cardActions}>
-                      {unavailable ? (
-                        <button type="button" onClick={() => void relink(event)} disabled={busy}>איתור מחדש</button>
+                      {!unavailable ? (
+                        <button
+                          type="button"
+                          className={styles.openButton}
+                          onClick={() => openEvent(event.id)}
+                          disabled={busy}
+                        >
+                          פתח בגלריה
+                        </button>
                       ) : null}
-                      <button type="button" className={styles.deleteButton} onClick={() => setDeleteTarget(event)} disabled={busy}>הסר</button>
+                      {unavailable ? (
+                        <button
+                          type="button"
+                          className={styles.relinkButton}
+                          onClick={() => void relink(event)}
+                          disabled={busy}
+                        >
+                          איתור מחדש
+                        </button>
+                      ) : null}
+                      <button
+                        type="button"
+                        className={styles.deleteButton}
+                        onClick={() => setDeleteTarget(event)}
+                        disabled={busy}
+                      >
+                        הסר
+                      </button>
                     </div>
                   </div>
                 </div>
