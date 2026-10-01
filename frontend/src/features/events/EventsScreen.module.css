@@ -1,5 +1,7 @@
 .screen {
   min-height: 100%;
+  container-type: inline-size;
+  container-name: events;
   padding: 28px 30px 42px;
   display: grid;
   align-content: start;
@@ -610,6 +612,115 @@
 
   .libraryCover {
     min-height: 220px;
+  }
+}
+
+@container events (max-width: 1180px) {
+  .hero h2 {
+    font-size: 42px;
+  }
+
+  .hero p {
+    font-size: 15px;
+  }
+
+  .primaryButton {
+    min-width: 220px;
+    height: 54px;
+    font-size: 16px;
+  }
+
+  .grid {
+    grid-template-columns: 1fr;
+  }
+
+  .libraryCard {
+    grid-template-columns: 220px minmax(0, 1fr);
+    min-height: 196px;
+  }
+
+  .libraryCover {
+    min-height: 196px;
+  }
+
+  .libraryTitleRow h4 {
+    font-size: 18px;
+  }
+
+  .libraryStats strong {
+    font-size: 20px;
+  }
+}
+
+@container events (max-width: 760px) {
+  .heroRow {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .primaryButton {
+    width: 100%;
+  }
+
+  .sectionHeader h3 {
+    font-size: 26px;
+  }
+
+  .libraryCard {
+    grid-template-columns: 170px minmax(0, 1fr);
+    min-height: 178px;
+  }
+
+  .libraryCover {
+    min-height: 178px;
+  }
+
+  .libraryBody {
+    padding: 14px;
+    gap: 7px;
+  }
+
+  .libraryStats div {
+    min-width: 72px;
+    padding-inline: 10px;
+  }
+
+  .libraryStats strong {
+    font-size: 17px;
+  }
+
+  .libraryFooter {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .cardActions {
+    width: 100%;
+  }
+}
+
+@container events (max-width: 540px) {
+  .libraryCard {
+    grid-template-columns: 1fr;
+  }
+
+  .libraryCover {
+    min-height: 210px;
+  }
+
+  .libraryStats {
+    justify-content: space-between;
+  }
+
+  .libraryStats div {
+    min-width: 0;
+    flex: 1;
+  }
+
+  .openButton,
+  .relinkButton,
+  .deleteButton {
+    flex: 1;
   }
 }
 
