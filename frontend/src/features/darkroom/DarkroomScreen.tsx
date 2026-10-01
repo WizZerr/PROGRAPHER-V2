@@ -508,18 +508,119 @@ export default function DarkroomScreen() {
 
   if (!selection || !file) {
     return (
-      <div className={styles.empty}>
-        <div>
-          <h2>חדר עריכה</h2>
-          <p>
-            {error
-              ? error
-              : "בוחרים תמונה מהגלריה. כאן מאשרים או מתקנים, ואז מייצאים ל-Lightroom."}
-          </p>
-          <button className={styles.primary} type="button" onClick={openGallery}>
-            אל הגלריה
-          </button>
-        </div>
+      <div className={styles.emptyWorkspace}>
+        <section className={styles.emptyHero}>
+          <div className={styles.emptyCopy}>
+            <span className={styles.emptyEyebrow}>חדר עריכה</span>
+            <h2>
+              <span>העריכה מתחילה</span>
+              <span className={styles.emptyAccent}>מהתמונה הנכונה.</span>
+            </h2>
+            <p>
+              {error
+                ? error
+                : "בחר תמונה מהגלריה כדי לפתוח אותה בסביבת העריכה, להשוות מול המקור ולשמור תיקון או לייצא XMP ל-Lightroom."}
+            </p>
+
+            <div className={styles.emptyActions}>
+              <button
+                className={styles.emptyPrimary}
+                type="button"
+                onClick={openGallery}
+              >
+                <span className={styles.emptyButtonIcon} aria-hidden="true">
+                  ▧
+                </span>
+                פתח את הגלריה
+              </button>
+            </div>
+
+            <div className={styles.emptyCapabilities}>
+              <span>RAW + XMP</span>
+              <span>טיוטות נשמרות</span>
+              <span>ייצוא ל-Lightroom</span>
+            </div>
+          </div>
+
+          <div className={styles.emptyMock} aria-hidden="true">
+            <div className={styles.emptyMockTop}>
+              <span />
+              <span />
+              <span />
+            </div>
+
+            <div className={styles.emptyMockBody}>
+              <div className={styles.emptyMockCanvas}>
+                <div className={styles.emptyMockFrame}>
+                  <span className={styles.emptyMockPhotoIcon}>▧</span>
+                  <strong>בחר תמונה לעריכה</strong>
+                  <small>התצוגה תיפתח כאן</small>
+                </div>
+              </div>
+
+              <div className={styles.emptyMockPanel}>
+                <div className={styles.emptyMockPanelTitle}>
+                  <strong>עריכה</strong>
+                  <span>RAW</span>
+                </div>
+
+                <div className={styles.emptyControl}>
+                  <div>
+                    <span>חשיפה</span>
+                    <bdi>0.00</bdi>
+                  </div>
+                  <i className={styles.emptyExposureTrack} />
+                </div>
+
+                <div className={styles.emptyControl}>
+                  <div>
+                    <span>טמפרטורה</span>
+                    <bdi>5,500 K</bdi>
+                  </div>
+                  <i className={styles.emptyTemperatureTrack} />
+                </div>
+
+                <div className={styles.emptyControl}>
+                  <div>
+                    <span>גוון</span>
+                    <bdi>0</bdi>
+                  </div>
+                  <i className={styles.emptyTintTrack} />
+                </div>
+              </div>
+            </div>
+
+            <div className={styles.emptyMockFilmstrip}>
+              {Array.from({ length: 7 }).map((_, itemIndex) => (
+                <span key={itemIndex} />
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <section className={styles.emptyWorkflow} aria-label="תהליך העבודה">
+          <article>
+            <span className={styles.workflowIndex}>01</span>
+            <div>
+              <strong>בחר תמונה</strong>
+              <small>פתח אירוע מהגלריה ובחר את הפריים שדורש בדיקה.</small>
+            </div>
+          </article>
+          <article>
+            <span className={styles.workflowIndex}>02</span>
+            <div>
+              <strong>כוונן במדויק</strong>
+              <small>חשיפה, טמפרטורה וגוון נשמרים כטיוטה בזמן העבודה.</small>
+            </div>
+          </article>
+          <article>
+            <span className={styles.workflowIndex}>03</span>
+            <div>
+              <strong>שמור או ייצא</strong>
+              <small>אשר את העריכה או ייצא XMP מוכן להמשך ב-Lightroom.</small>
+            </div>
+          </article>
+        </section>
       </div>
     );
   }
