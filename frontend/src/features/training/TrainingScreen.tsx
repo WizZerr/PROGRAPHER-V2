@@ -103,9 +103,13 @@ export default function TrainingScreen() {
   return (
     <div className={styles.screen}>
       <header className={styles.labHead}>
-        <div>
-          <span className={styles.sectionEyebrow}>מעבדת בדיקה</span>
+        <div className={styles.headCopy}>
+          <span className={styles.sectionEyebrow}>מעבדת למידה</span>
           <h2>למידה</h2>
+          <p>
+            בונים בסיס בדיקה מחומר אמיתי, מאמתים התאמות ורק אז מתקדמים
+            לפרופיל חכם יותר.
+          </p>
         </div>
         <ol className={styles.steps}>
           <li className={rawRoot ? styles.stepOn : undefined}>בחירת תיקיות</li>
@@ -133,6 +137,16 @@ export default function TrainingScreen() {
       </div>
 
       <section className={styles.panel}>
+        <div className={styles.panelHead}>
+          <div>
+            <span className={styles.sectionEyebrow}>הגדרת המדגם</span>
+            <h3>בחר את החומר לבדיקה</h3>
+          </div>
+          <span className={styles.modeBadge}>
+            {learningSource === "raw" ? "RAW + XMP" : "JPEG PAIRS"}
+          </span>
+        </div>
+
         <div className={styles.row}>
           <label className={styles.field}>
             <span>צלם</span>
@@ -187,6 +201,7 @@ export default function TrainingScreen() {
                   ? "מאגר ה-JPEG הנוכחי"
                   : "בסיס ה-RAW הנוכחי"}
               </h3>
+              <p className={styles.profileLead}>{profile.note}</p>
             </div>
             <span
               className={
