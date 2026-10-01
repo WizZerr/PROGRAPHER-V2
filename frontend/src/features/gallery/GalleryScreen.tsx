@@ -348,6 +348,29 @@ export default function GalleryScreen() {
 
   return (
     <div className={styles.screen}>
+      {events.length > 0 ? (
+        <div
+          className={
+            selectedEvent
+              ? `${styles.galleryBackdrop} ${styles.galleryBackdropActive}`
+              : `${styles.galleryBackdrop} ${styles.galleryBackdropEmpty}`
+          }
+          aria-hidden="true"
+        >
+          {(selectedEvent ? [selectedEvent] : events.slice(0, 5)).map(
+            (event, index) => (
+              <div
+                key={event.id}
+                className={`${styles.galleryBackdropFrame} ${styles[`galleryBackdropFrame${index + 1}`]}`}
+              >
+                <EventCover eventId={event.id} label={event.name} />
+              </div>
+            ),
+          )}
+          <div className={styles.galleryBackdropVeil} />
+        </div>
+      ) : null}
+
       <div
         className={
           sheet
