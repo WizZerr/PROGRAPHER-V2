@@ -188,6 +188,15 @@
   filter: brightness(var(--preview-brightness, 1)) sepia(var(--preview-sepia, 0)) saturate(var(--preview-saturate, 1)) hue-rotate(var(--preview-hue, 0deg));
 }
 
+.tintOverlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: var(--preview-tint-color, transparent);
+  opacity: var(--preview-tint-opacity, 0);
+  mix-blend-mode: color;
+}
+
 .handle {
   position: absolute;
   top: 0;
