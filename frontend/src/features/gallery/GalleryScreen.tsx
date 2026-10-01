@@ -36,6 +36,20 @@ function eventCountLabel(event: EventSummary) {
   return parts.join(" · ");
 }
 
+type GalleryFilter = "all" | "matched" | "unmatched" | "ambiguous" | "jpeg";
+
+const FILTER_OPTIONS: Array<{ value: GalleryFilter; label: string; note: string }> = [
+  { value: "all", label: "הכל", note: "כל התמונות באירוע" },
+  { value: "matched", label: "עם עריכת צלם", note: "קבצים עם התאמת XMP" },
+  { value: "unmatched", label: "ללא XMP", note: "קבצים שדורשים בדיקה" },
+  { value: "ambiguous", label: "לבדיקה", note: "שמות שלא הותאמו בוודאות" },
+  { value: "jpeg", label: "JPEG", note: "קובצי JPEG בלבד" },
+];
+
+function filterLabel(value: GalleryFilter) {
+  return FILTER_OPTIONS.find((option) => option.value === value)?.label ?? "הכל";
+}
+
 function GalleryCard({
   eventId,
   file,
@@ -159,10 +173,12 @@ export default function GalleryScreen() {
   const [renderLimit, setRenderLimit] = useState(240);
   const [error, setError] = useState("");
   const [query, setQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState<
-    "all" | "matched" | "unmatched" | "ambiguous" | "jpeg"
-  >("all");
+  const [statusFilter, setStatusFilter] = useState<GalleryFilter>("all");
+  const [eventMenuOpen, setEventMenuOpen] = useState(false);
+  const [filterMenuOpen, setFilterMenuOpen] = useState(false);
   const loadMoreRef = useRef<HTMLDivElement>(null);
+  const eventMenuRef = useRef<HTMLDivElement>(null);
+  const filterMenuRef = useRef<HTMLDivElement>(null);
 
   const selectedEvent = useMemo(
     () => events.find((event) => event.id === galleryEventId) ?? null,
@@ -173,6 +189,32 @@ export default function GalleryScreen() {
     () => events.reduce((total, event) => total + event.total_files, 0),
     [events],
   );
+
+  useEffect(() => {
+    function handlePointerDown(event: PointerEvent) {
+      const target = event.target as Node;
+      if (eventMenuRef.current && !eventMenuRef.current.contains(target)) {
+        setEventMenuOpen(false);
+      }
+      if (filterMenuRef.current && !filterMenuRef.current.contains(target)) {
+        setFilterMenuOpen(false);
+      }
+    }
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        setEventMenuOpen(false);
+        setFilterMenuOpen(false);
+      }
+    }
+
+    document.addEventListener("pointerdown", handlePointerDown);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("pointerdown", handlePointerDown);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -296,6 +338,7 @@ export default function GalleryScreen() {
   }, [query, sheet, statusFilter]);
 
   function selectEvent(value: string) {
+    setEventMenuOpen(false);
     setGalleryEventId(value);
     setSheet(null);
     setRenderLimit(240);
@@ -366,40 +409,104 @@ export default function GalleryScreen() {
       </div>
 
       <div className={styles.controlBar}>
-        <div className={styles.eventPicker}>
-          {selectedEvent ? (
-            <div className={styles.eventPickerThumb}>
-              <EventCover eventId={selectedEvent.id} label={selectedEvent.name} />
-            </div>
-          ) : (
-            <div className={styles.eventPickerPlaceholder}>▧</div>
-          )}
-          <div className={styles.eventPickerText}>
-            <strong>{selectedEvent?.name || "בחר אירוע"}</strong>
-            <span>
-              {selectedEvent
-                ? eventCountLabel(selectedEvent)
-                : events.length > 0
-                  ? `${events.length.toLocaleString("he-IL")} אירועים זמינים`
-                  : "אין אירועים זמינים"}
-            </span>
-          </div>
-          <span className={styles.eventPickerArrow} aria-hidden="true" />
-          <select
-            value={galleryEventId}
-            onChange={(event) => selectEvent(event.target.value)}
+        <div className={styles.eventPickerShell} ref={eventMenuRef}>
+          <button
+            type="button"
+            className={
+              eventMenuOpen
+                ? `${styles.eventPicker} ${styles.eventPickerOpen}`
+                : styles.eventPicker
+            }
+            onClick={() => {
+              setEventMenuOpen((open) => !open);
+              setFilterMenuOpen(false);
+            }}
             disabled={loadingEvents}
-            aria-label="בחירת אירוע"
+            aria-haspopup="listbox"
+            aria-expanded={eventMenuOpen}
           >
-            <option value="">
-              {loadingEvents ? "טוען אירועים…" : "בחר אירוע"}
-            </option>
-            {events.map((event) => (
-              <option key={event.id} value={event.id}>
-                {event.name} · {eventCountLabel(event)}
-              </option>
-            ))}
-          </select>
+            {selectedEvent ? (
+              <div className={styles.eventPickerThumb}>
+                <EventCover eventId={selectedEvent.id} label={selectedEvent.name} />
+              </div>
+            ) : (
+              <div className={styles.eventPickerPlaceholder} aria-hidden="true">
+                <span />
+                <span />
+                <span />
+                <span />
+              </div>
+            )}
+
+            <div className={styles.eventPickerText}>
+              <span className={styles.eventPickerKicker}>אירוע פעיל</span>
+              <strong>{selectedEvent?.name || "בחר אירוע"}</strong>
+              <span>
+                {selectedEvent
+                  ? eventCountLabel(selectedEvent)
+                  : events.length > 0
+                    ? `${events.length.toLocaleString("he-IL")} אירועים זמינים`
+                    : "אין אירועים זמינים"}
+              </span>
+            </div>
+
+            <span className={styles.eventPickerArrow} aria-hidden="true" />
+          </button>
+
+          {eventMenuOpen ? (
+            <div className={styles.eventMenu} role="listbox" aria-label="בחירת אירוע">
+              <div className={styles.menuHeader}>
+                <div>
+                  <strong>האירועים שלי</strong>
+                  <span>{events.length.toLocaleString("he-IL")} אירועים</span>
+                </div>
+                <span className={styles.menuHint}>בחר כדי לפתוח</span>
+              </div>
+
+              <div className={styles.eventMenuList}>
+                {events.map((event) => {
+                  const active = event.id === galleryEventId;
+                  return (
+                    <button
+                      key={event.id}
+                      type="button"
+                      role="option"
+                      aria-selected={active}
+                      className={
+                        active
+                          ? `${styles.eventMenuItem} ${styles.eventMenuItemActive}`
+                          : styles.eventMenuItem
+                      }
+                      onClick={() => selectEvent(event.id)}
+                    >
+                      <div className={styles.eventMenuThumb}>
+                        <EventCover eventId={event.id} label={event.name} />
+                      </div>
+
+                      <div className={styles.eventMenuCopy}>
+                        <strong>{event.name}</strong>
+                        <span>{eventCountLabel(event)}</span>
+                      </div>
+
+                      <span
+                        className={
+                          eventSource(event) === "raw"
+                            ? `${styles.menuSourceBadge} ${styles.menuSourceRaw}`
+                            : `${styles.menuSourceBadge} ${styles.menuSourceJpeg}`
+                        }
+                      >
+                        {eventSource(event) === "raw" ? "RAW" : "JPEG"}
+                      </span>
+
+                      <span className={styles.menuCheck} aria-hidden="true">
+                        {active ? "✓" : ""}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          ) : null}
         </div>
 
         <div className={styles.searchWrap}>
@@ -413,29 +520,63 @@ export default function GalleryScreen() {
           />
         </div>
 
-        <label className={styles.filterControl}>
-          <span aria-hidden="true">▽</span>
-          <select
-            value={statusFilter}
-            onChange={(event) =>
-              setStatusFilter(
-                event.target.value as
-                  | "all"
-                  | "matched"
-                  | "unmatched"
-                  | "ambiguous"
-                  | "jpeg",
-              )
+        <div className={styles.filterShell} ref={filterMenuRef}>
+          <button
+            type="button"
+            className={
+              filterMenuOpen
+                ? `${styles.filterControl} ${styles.filterControlOpen}`
+                : styles.filterControl
             }
-            aria-label="סינון גלריה"
+            onClick={() => {
+              setFilterMenuOpen((open) => !open);
+              setEventMenuOpen(false);
+            }}
+            aria-haspopup="listbox"
+            aria-expanded={filterMenuOpen}
           >
-            <option value="all">הכל</option>
-            <option value="matched">עם עריכת צלם</option>
-            <option value="unmatched">ללא XMP</option>
-            <option value="ambiguous">לבדיקה</option>
-            <option value="jpeg">JPEG</option>
-          </select>
-        </label>
+            <span className={styles.filterIcon} aria-hidden="true">
+              <i />
+              <i />
+              <i />
+            </span>
+            <strong>{filterLabel(statusFilter)}</strong>
+            <span className={styles.filterArrow} aria-hidden="true" />
+          </button>
+
+          {filterMenuOpen ? (
+            <div className={styles.filterMenu} role="listbox" aria-label="סינון גלריה">
+              {FILTER_OPTIONS.map((option) => {
+                const active = option.value === statusFilter;
+                return (
+                  <button
+                    key={option.value}
+                    type="button"
+                    role="option"
+                    aria-selected={active}
+                    className={
+                      active
+                        ? `${styles.filterMenuItem} ${styles.filterMenuItemActive}`
+                        : styles.filterMenuItem
+                    }
+                    onClick={() => {
+                      setStatusFilter(option.value);
+                      setFilterMenuOpen(false);
+                    }}
+                  >
+                    <span className={styles.filterMenuCheck} aria-hidden="true">
+                      {active ? "✓" : ""}
+                    </span>
+                    <span>
+                      <strong>{option.label}</strong>
+                      <small>{option.note}</small>
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          ) : null}
+        </div>
 
         <div className={styles.viewSwitcher} aria-label="תצוגת גלריה">
           <ViewButton
