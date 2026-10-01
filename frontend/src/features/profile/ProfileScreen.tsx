@@ -187,8 +187,8 @@ export default function ProfileScreen() {
         <span className={styles.eyebrow}>DNA של העריכה</span>
         <h2>הפרופיל שלי</h2>
         <p>
-          הפרופיל האישי ייווצר בתוך ProGrapher מנתוני עריכה אמיתיים שלך.
-          בחירת סגנון כאן מתארת את היעד — היא אינה יוצרת מודל מוכן.
+          ProGrapher לומד את הדרך שבה אתה עורך באמת — מתוך חומר שכבר ערכת,
+          הבחירות שלך והעדפות הסגנון שאתה שומר לאורך העבודה.
         </p>
       </div>
 
@@ -199,8 +199,8 @@ export default function ProfileScreen() {
         <article className={styles.card}>
           <div className={styles.cardHeader}>
             <div>
-              <span className={styles.label}>חיבור ל־Lightroom</span>
-              <h3>זיהוי Lightroom</h3>
+              <span className={styles.label}>סביבת עבודה</span>
+              <h3>Lightroom Classic</h3>
             </div>
             <span
               className={
@@ -222,7 +222,7 @@ export default function ProfileScreen() {
         <article className={styles.card}>
           <div className={styles.cardHeader}>
             <div>
-              <span className={styles.label}>מצב הפרופיל</span>
+              <span className={styles.label}>מוכנות</span>
               <h3>מצב הפרופיל</h3>
             </div>
             <span className={styles.statusBadge}>
@@ -255,7 +255,7 @@ export default function ProfileScreen() {
       </div>
 
       <article className={styles.sourceCard}>
-        <span className={styles.label}>מקור העריכה</span>
+        <span className={styles.label}>01 · מקור הלמידה</span>
         <h3>מאיפה נלמד את הסגנון שלך?</h3>
 
         <div className={styles.sourceOptions}>
@@ -313,11 +313,11 @@ export default function ProfileScreen() {
       </article>
 
       <article className={styles.styleCard}>
-        <span className={styles.label}>יעד הסגנון</span>
+        <span className={styles.label}>02 · זהות הסגנון</span>
         <h3>איך נזהה את הסגנון שלך?</h3>
         <p className={styles.sourceIntro}>
-          השדות כאן אופציונליים. הם מתעדים את כיוון העבודה ולא מחליפים
-          נתוני עריכה אמיתיים.
+          ההגדרות כאן מתארות את כיוון העבודה שלך. הן לא מחליפות את נתוני
+          העריכה האמיתיים שמהם ProGrapher לומד.
         </p>
 
         <div className={styles.formGrid}>
@@ -392,7 +392,7 @@ export default function ProfileScreen() {
           onClick={() => void saveStyle()}
           disabled={busy}
         >
-          שמירת הגדרות הסגנון
+          {busy ? "שומר…" : "שמור הגדרות"}
         </button>
       </article>
 
