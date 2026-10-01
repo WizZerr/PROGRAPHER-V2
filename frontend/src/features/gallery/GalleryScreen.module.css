@@ -290,7 +290,8 @@
   background: transparent;
   color: var(--pg-text);
   font: inherit;
-  font-size: 13px;
+  font-size: 15px;
+  font-weight: 500;
 }
 
 .search::placeholder {
