@@ -1322,3 +1322,60 @@
     animation: none;
   }
 }
+
+
+/* =========================================================
+   PROGRAPHER CINEMATIC BACKGROUND — DARKROOM NEUTRAL MODE
+   ========================================================= */
+
+.workspace {
+  position: relative;
+  isolation: isolate;
+  background:
+    radial-gradient(ellipse at 44% 46%, rgba(255, 255, 255, 0.014), transparent 38%),
+    radial-gradient(ellipse at 50% 50%, transparent 46%, rgba(0, 0, 0, 0.2) 100%),
+    linear-gradient(180deg, #07090d, #05070b 64%, #040508);
+}
+
+.workspace::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-image: var(--pg-grain-image);
+  background-size: 180px 180px;
+  opacity: 0.006;
+  mix-blend-mode: soft-light;
+}
+
+.workspace > * {
+  position: relative;
+  z-index: 1;
+}
+
+.emptyWorkspace {
+  position: relative;
+  isolation: isolate;
+  background:
+    radial-gradient(circle at 84% 5%, rgba(116, 103, 248, 0.035), transparent 25%),
+    radial-gradient(ellipse at 50% 44%, transparent 44%, rgba(0, 0, 0, 0.14) 100%),
+    linear-gradient(145deg, #080d14, #05070b 60%, #04060a);
+}
+
+.emptyWorkspace::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-image: var(--pg-grain-image);
+  background-size: 180px 180px;
+  opacity: 0.009;
+  mix-blend-mode: soft-light;
+}
+
+.emptyWorkspace > * {
+  position: relative;
+  z-index: 1;
+}
