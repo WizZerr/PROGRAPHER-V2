@@ -19,7 +19,8 @@
   min-height: 88px;
   padding: 0 24px;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  grid-template-columns: minmax(260px, 1fr) auto minmax(320px, 1fr);
+  grid-template-areas: "utility counter identity";
   align-items: center;
   gap: 24px;
   border-bottom: 1px solid rgba(120, 145, 180, 0.15);
@@ -30,7 +31,8 @@
 }
 
 .topBarEmpty {
-  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-columns: minmax(260px, 1fr) minmax(320px, 1fr);
+  grid-template-areas: "utility identity";
 }
 
 .topBarEmpty .topIdentity {
@@ -38,6 +40,7 @@
 }
 
 .topIdentity {
+  grid-area: identity;
   min-width: 0;
   display: flex;
   align-items: center;
@@ -108,6 +111,7 @@
 }
 
 .libraryStats {
+  grid-area: utility;
   display: inline-flex;
   align-items: center;
   gap: 10px;
@@ -142,6 +146,7 @@
 }
 
 .topCounter {
+  grid-area: counter;
   min-width: 176px;
   display: inline-flex;
   align-items: center;
@@ -174,6 +179,7 @@
 }
 
 .topUtility {
+  grid-area: utility;
   min-width: 0;
   display: flex;
   align-items: center;
@@ -217,11 +223,17 @@
   flex-shrink: 0;
 }
 
+.eventPickerShell {
+  position: relative;
+  width: clamp(300px, 28vw, 370px);
+  min-width: 250px;
+  flex: 0 1 370px;
+  z-index: 30;
+}
+
 .eventPicker {
   position: relative;
-  width: clamp(280px, 27vw, 350px);
-  min-width: 240px;
-  flex: 0 1 350px;
+  width: 100%;
   height: 56px;
   display: grid;
   grid-template-columns: 52px minmax(0, 1fr) 22px;
@@ -229,9 +241,13 @@
   gap: 11px;
   padding: 0 13px;
   border: 1px solid rgba(138, 123, 255, 0.24);
-  border-radius: 11px;
+  border-radius: 12px;
   background:
     linear-gradient(180deg, #111927, #0d141f);
+  color: inherit;
+  font: inherit;
+  text-align: right;
+  cursor: pointer;
   overflow: hidden;
   box-shadow:
     inset -3px 0 0 rgba(118, 104, 255, 0.72),
@@ -242,25 +258,18 @@
     box-shadow var(--pg-transition-fast);
 }
 
-.eventPicker:hover {
-  border-color: rgba(138, 123, 255, 0.52);
+.eventPicker:hover,
+.eventPickerOpen {
+  border-color: rgba(138, 123, 255, 0.58);
   background: #141d2b;
   box-shadow:
     inset -3px 0 0 #8174ff,
-    0 8px 22px rgba(0, 0, 0, 0.12);
+    0 10px 26px rgba(0, 0, 0, 0.16);
 }
 
-.eventPicker select {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  opacity: 0;
-  cursor: pointer;
-}
-
-.eventPicker select:disabled {
+.eventPicker:disabled {
   cursor: wait;
+  opacity: 0.56;
 }
 
 .eventPickerThumb,
@@ -285,17 +294,37 @@
 }
 
 .eventPickerPlaceholder {
+  padding: 9px;
   display: grid;
-  place-items: center;
-  color: #6f7e98;
-  font-size: 18px;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 4px;
+}
+
+.eventPickerPlaceholder span {
+  display: block;
+  border-radius: 2px;
+  background: #7d70f8;
+  opacity: 0.82;
+}
+
+.eventPickerPlaceholder span:nth-child(2),
+.eventPickerPlaceholder span:nth-child(3) {
+  opacity: 0.34;
 }
 
 .eventPickerText {
   min-width: 0;
   display: grid;
-  gap: 3px;
+  gap: 2px;
   pointer-events: none;
+}
+
+.eventPickerKicker {
+  color: #8074f3 !important;
+  font-family: inherit !important;
+  font-size: 9px !important;
+  font-weight: 700;
+  direction: rtl !important;
 }
 
 .eventPickerText strong {
@@ -329,8 +358,177 @@
     transform var(--pg-transition-fast);
 }
 
-.eventPicker:hover .eventPickerArrow {
+.eventPicker:hover .eventPickerArrow,
+.eventPickerOpen .eventPickerArrow {
   border-color: #d6ddea;
+}
+
+.eventPickerOpen .eventPickerArrow {
+  transform: rotate(225deg) translate(-1px, -1px);
+}
+
+.eventMenu {
+  position: absolute;
+  top: calc(100% + 9px);
+  right: 0;
+  width: min(430px, 88vw);
+  max-height: min(520px, calc(100vh - 210px));
+  padding: 10px;
+  overflow: hidden;
+  border: 1px solid rgba(138, 123, 255, 0.28);
+  border-radius: 14px;
+  background:
+    radial-gradient(circle at 90% 0%, rgba(111, 91, 255, 0.12), transparent 28%),
+    #0c131e;
+  box-shadow:
+    0 24px 58px rgba(0, 0, 0, 0.42),
+    0 0 0 1px rgba(255, 255, 255, 0.02) inset;
+  backdrop-filter: blur(18px);
+}
+
+.menuHeader {
+  min-height: 58px;
+  padding: 8px 9px 11px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  border-bottom: 1px solid rgba(120, 145, 180, 0.12);
+}
+
+.menuHeader > div {
+  display: grid;
+  gap: 2px;
+}
+
+.menuHeader strong {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.menuHeader span {
+  color: #6f7e98;
+  font-size: 10px;
+}
+
+.menuHint {
+  min-width: max-content;
+  color: #8d82ee !important;
+}
+
+.eventMenuList {
+  max-height: 400px;
+  padding-top: 6px;
+  overflow: auto;
+  display: grid;
+  gap: 4px;
+  scrollbar-color: #2b3546 transparent;
+}
+
+.eventMenuItem {
+  min-width: 0;
+  min-height: 66px;
+  padding: 7px 8px;
+  display: grid;
+  grid-template-columns: 68px minmax(0, 1fr) auto 22px;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: right;
+  cursor: pointer;
+  transition:
+    border-color var(--pg-transition-fast),
+    background var(--pg-transition-fast);
+}
+
+.eventMenuItem:hover {
+  border-color: rgba(120, 145, 180, 0.14);
+  background: #111a27;
+}
+
+.eventMenuItemActive {
+  border-color: rgba(138, 123, 255, 0.34);
+  background:
+    linear-gradient(90deg, rgba(111, 91, 255, 0.12), rgba(111, 91, 255, 0.035));
+}
+
+.eventMenuThumb {
+  width: 68px;
+  height: 48px;
+  overflow: hidden;
+  border: 1px solid rgba(120, 145, 180, 0.16);
+  border-radius: 8px;
+  background: #070b11;
+}
+
+.eventMenuThumb > div,
+.eventMenuThumb img {
+  width: 100%;
+  height: 100%;
+}
+
+.eventMenuThumb img {
+  object-fit: cover;
+}
+
+.eventMenuCopy {
+  min-width: 0;
+  display: grid;
+  gap: 4px;
+}
+
+.eventMenuCopy strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.eventMenuCopy span {
+  overflow: hidden;
+  color: #6d7a90;
+  font-family: "Inter", "Heebo", sans-serif;
+  font-size: 10px;
+  direction: ltr;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.menuSourceBadge {
+  min-width: 44px;
+  height: 26px;
+  padding: 0 7px;
+  display: inline-grid;
+  place-items: center;
+  border-radius: 7px;
+  font-family: "Inter", sans-serif;
+  font-size: 9px;
+  font-weight: 700;
+}
+
+.menuSourceRaw {
+  border: 1px solid rgba(138, 123, 255, 0.3);
+  background: rgba(111, 91, 255, 0.08);
+  color: #b5adff;
+}
+
+.menuSourceJpeg {
+  border: 1px solid rgba(105, 199, 255, 0.28);
+  background: rgba(105, 199, 255, 0.07);
+  color: #8fd7ff;
+}
+
+.menuCheck {
+  width: 22px;
+  color: #8d82ff;
+  font-family: "Inter", sans-serif;
+  font-size: 13px;
+  text-align: center;
 }
 
 .photoCount {
@@ -389,40 +587,149 @@
   color: #68758a;
 }
 
-.filterControl {
+.filterShell {
   position: relative;
-  width: 124px;
-  flex: 0 0 124px;
+  width: 132px;
+  flex: 0 0 132px;
+  z-index: 28;
+}
+
+.filterControl {
+  width: 100%;
   height: 54px;
-  display: flex;
+  padding: 0 13px;
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr) 10px;
   align-items: center;
-  gap: 10px;
-  padding: 0 14px;
+  gap: 8px;
   border: 1px solid rgba(120, 145, 180, 0.2);
   border-radius: 11px;
   background: #0d141e;
-  color: #8b98ad;
-  overflow: hidden;
-}
-
-.filterControl > span {
-  flex: 0 0 auto;
-  font-size: 18px;
-  pointer-events: none;
-}
-
-.filterControl select {
-  width: 100%;
-  min-width: 0;
-  border: 0;
-  outline: 0;
-  appearance: none;
-  -webkit-appearance: none;
-  background: transparent;
-  color: #dce2ec;
+  color: #aeb8c9;
   font: inherit;
-  font-size: 14px;
   cursor: pointer;
+  transition:
+    border-color var(--pg-transition-fast),
+    background var(--pg-transition-fast),
+    box-shadow var(--pg-transition-fast);
+}
+
+.filterControl:hover,
+.filterControlOpen {
+  border-color: rgba(138, 123, 255, 0.46);
+  background: #121a27;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+}
+
+.filterControl strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.filterIcon {
+  width: 18px;
+  display: grid;
+  gap: 3px;
+}
+
+.filterIcon i {
+  height: 1px;
+  display: block;
+  background: #8492a8;
+}
+
+.filterIcon i:nth-child(1) {
+  width: 18px;
+}
+
+.filterIcon i:nth-child(2) {
+  width: 12px;
+}
+
+.filterIcon i:nth-child(3) {
+  width: 7px;
+}
+
+.filterArrow {
+  width: 8px;
+  height: 8px;
+  justify-self: end;
+  border-right: 1.5px solid #7f8da3;
+  border-bottom: 1.5px solid #7f8da3;
+  transform: rotate(45deg) translateY(-2px);
+}
+
+.filterControlOpen .filterArrow {
+  transform: rotate(225deg) translate(-1px, -1px);
+}
+
+.filterMenu {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  width: 270px;
+  padding: 7px;
+  display: grid;
+  gap: 3px;
+  border: 1px solid rgba(138, 123, 255, 0.24);
+  border-radius: 12px;
+  background: #0c131e;
+  box-shadow:
+    0 20px 48px rgba(0, 0, 0, 0.4),
+    0 0 0 1px rgba(255, 255, 255, 0.018) inset;
+  backdrop-filter: blur(16px);
+}
+
+.filterMenuItem {
+  min-height: 52px;
+  padding: 8px 9px;
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr);
+  align-items: center;
+  gap: 9px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: right;
+  cursor: pointer;
+}
+
+.filterMenuItem:hover {
+  background: #121a27;
+}
+
+.filterMenuItemActive {
+  border-color: rgba(138, 123, 255, 0.28);
+  background: rgba(111, 91, 255, 0.09);
+}
+
+.filterMenuCheck {
+  color: #8d82ff;
+  font-family: "Inter", sans-serif;
+  font-size: 12px;
+  text-align: center;
+}
+
+.filterMenuItem > span:last-child {
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+}
+
+.filterMenuItem strong {
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.filterMenuItem small {
+  color: #68758a;
+  font-size: 9.5px;
+  line-height: 1.4;
 }
 
 .viewSwitcher {
@@ -1029,10 +1336,13 @@
     padding-inline: 14px;
   }
 
-  .eventPicker {
-    width: clamp(240px, 28vw, 300px);
+  .eventPickerShell {
+    width: clamp(250px, 28vw, 310px);
     min-width: 220px;
-    flex-basis: 300px;
+    flex-basis: 310px;
+  }
+
+  .eventPicker {
     height: 56px;
     grid-template-columns: 52px minmax(0, 1fr) 22px;
   }
@@ -1058,7 +1368,7 @@
     height: 44px;
   }
 
-  .filterControl {
+  .filterShell {
     width: 118px;
     flex-basis: 118px;
   }
@@ -1076,7 +1386,8 @@
 
 @container gallery (max-width: 1160px) {
   .topBar {
-    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-columns: auto minmax(0, 1fr);
+    grid-template-areas: "counter identity";
   }
 
   .topUtility {
@@ -1084,7 +1395,8 @@
   }
 
   .topBarEmpty {
-    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-columns: auto minmax(0, 1fr);
+    grid-template-areas: "utility identity";
   }
 
   .libraryStats > div {
@@ -1099,10 +1411,10 @@
     display: none;
   }
 
-  .eventPicker {
-    width: clamp(220px, 27vw, 270px);
+  .eventPickerShell {
+    width: clamp(220px, 27vw, 280px);
     min-width: 205px;
-    flex-basis: 270px;
+    flex-basis: 280px;
   }
 
   .searchWrap {
@@ -1118,9 +1430,14 @@
     display: none;
   }
 
-  .filterControl {
+  .filterShell {
     width: 102px;
     flex-basis: 102px;
+  }
+
+  .filterControl {
+    grid-template-columns: 20px minmax(0, 1fr) 8px;
+    padding-inline: 10px;
   }
 
   .grid_standard {
@@ -1134,8 +1451,10 @@
     display: none;
   }
 
-  .topBar {
+  .topBar,
+  .topBarEmpty {
     grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: "identity";
   }
 
   .topIdentity {
@@ -1146,16 +1465,27 @@
     display: none;
   }
 
-  .filterControl {
+  .filterShell {
     width: 54px;
     flex-basis: 54px;
+  }
+
+  .filterControl {
+    grid-template-columns: 1fr;
     padding-inline: 10px;
   }
 
-  .filterControl select {
-    position: absolute;
-    inset: 0;
-    opacity: 0;
+  .filterControl strong,
+  .filterArrow {
+    display: none;
+  }
+
+  .filterIcon {
+    justify-self: center;
+  }
+
+  .filterMenu {
+    left: 0;
   }
 
   .searchWrap {
@@ -1194,10 +1524,13 @@
     display: none;
   }
 
-  .eventPicker {
+  .eventPickerShell {
     min-width: 0;
     flex: 1 1 auto;
     width: auto;
+  }
+
+  .eventPicker {
     height: 52px;
     grid-template-columns: 44px minmax(0, 1fr) 18px;
     padding-inline: 10px;
@@ -1246,11 +1579,11 @@
     align-content: center;
   }
 
-  .eventPicker {
+  .eventPickerShell {
     flex-basis: 100%;
   }
 
-  .filterControl {
+  .filterShell {
     display: none;
   }
 
