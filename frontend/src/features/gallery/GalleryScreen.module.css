@@ -16,40 +16,76 @@
    ========================================================= */
 
 .topBar {
-  min-height: 72px;
-  padding: 0 22px;
+  min-height: 88px;
+  padding: 0 24px;
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
   align-items: center;
-  gap: 22px;
-  border-bottom: 1px solid rgba(120, 145, 180, 0.14);
-  background: linear-gradient(180deg, #0c121c, #090e16);
+  gap: 24px;
+  border-bottom: 1px solid rgba(120, 145, 180, 0.15);
+  background:
+    radial-gradient(circle at 88% 0%, rgba(111, 91, 255, 0.08), transparent 26%),
+    linear-gradient(180deg, #0d141f, #090e16);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.018) inset;
 }
 
 .topBarEmpty {
-  min-height: 64px;
-  grid-template-columns: minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr) auto;
 }
 
 .topBarEmpty .topIdentity {
-  width: 100%;
-  justify-self: stretch;
-  justify-content: flex-start;
+  justify-self: end;
 }
 
 .topIdentity {
   min-width: 0;
   display: flex;
-  align-items: baseline;
-  gap: 10px;
+  align-items: center;
+  gap: 13px;
   overflow: hidden;
   justify-self: end;
 }
 
+.galleryMark {
+  width: 46px;
+  height: 46px;
+  flex: 0 0 46px;
+  padding: 9px;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 4px;
+  border: 1px solid rgba(138, 123, 255, 0.3);
+  border-radius: 12px;
+  background:
+    linear-gradient(145deg, rgba(111, 91, 255, 0.18), rgba(105, 199, 255, 0.07));
+  box-shadow:
+    0 8px 22px rgba(67, 53, 175, 0.12),
+    0 1px 0 rgba(255, 255, 255, 0.08) inset;
+}
+
+.galleryMark i {
+  display: block;
+  border-radius: 2px;
+  background: #8e82ff;
+  opacity: 0.88;
+}
+
+.galleryMark i:nth-child(2),
+.galleryMark i:nth-child(3) {
+  opacity: 0.46;
+}
+
+.topIdentityCopy {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+
 .topKicker {
-  color: #6f7e98;
-  font-size: 14px;
+  color: #7668e8;
+  font-size: 10.5px;
   font-weight: 700;
+  letter-spacing: 0.025em;
 }
 
 .topIdentity strong {
@@ -57,19 +93,52 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: 17px;
+  font-size: 22px;
   font-weight: 700;
+  letter-spacing: -0.025em;
 }
 
-.topIdentity > span:last-child {
+.topIdentityCopy > span:last-child {
   min-width: 0;
   overflow: hidden;
   color: #718099;
-  font-family: "Inter", "Heebo", sans-serif;
-  font-size: 12.5px;
-  direction: ltr;
+  font-size: 11px;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.libraryStats {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  justify-self: start;
+}
+
+.libraryStats > div {
+  min-width: 78px;
+  height: 50px;
+  padding: 7px 12px;
+  display: grid;
+  align-content: center;
+  gap: 2px;
+  border: 1px solid rgba(120, 145, 180, 0.14);
+  border-radius: 10px;
+  background: rgba(8, 13, 20, 0.55);
+}
+
+.libraryStats strong {
+  color: #eef2f8;
+  font-family: "Inter", sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.libraryStats span {
+  color: #69778d;
+  font-size: 9px;
+  font-weight: 600;
 }
 
 .topCounter {
@@ -130,15 +199,18 @@
 }
 
 .controlBar {
-  min-height: 86px;
-  padding: 14px 18px;
+  min-height: 78px;
+  padding: 11px 18px;
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   direction: rtl;
   border-bottom: 1px solid rgba(120, 145, 180, 0.16);
-  background: #080d15;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+  background:
+    linear-gradient(180deg, #0a1019, #080d15);
+  box-shadow:
+    0 8px 24px rgba(0, 0, 0, 0.08),
+    0 1px 0 rgba(255, 255, 255, 0.015) inset;
 }
 
 .controlBar > * {
@@ -147,27 +219,35 @@
 
 .eventPicker {
   position: relative;
-  width: clamp(280px, 29vw, 360px);
+  width: clamp(280px, 27vw, 350px);
   min-width: 240px;
-  flex: 0 1 360px;
-  height: 60px;
+  flex: 0 1 350px;
+  height: 56px;
   display: grid;
-  grid-template-columns: 58px minmax(0, 1fr) 24px;
+  grid-template-columns: 52px minmax(0, 1fr) 22px;
   align-items: center;
-  gap: 12px;
-  padding: 0 14px;
-  border: 1px solid rgba(120, 145, 180, 0.2);
+  gap: 11px;
+  padding: 0 13px;
+  border: 1px solid rgba(138, 123, 255, 0.24);
   border-radius: 11px;
-  background: #101722;
+  background:
+    linear-gradient(180deg, #111927, #0d141f);
   overflow: hidden;
+  box-shadow:
+    inset -3px 0 0 rgba(118, 104, 255, 0.72),
+    0 1px 0 rgba(255, 255, 255, 0.025);
   transition:
     border-color var(--pg-transition-fast),
-    background var(--pg-transition-fast);
+    background var(--pg-transition-fast),
+    box-shadow var(--pg-transition-fast);
 }
 
 .eventPicker:hover {
-  border-color: rgba(138, 123, 255, 0.42);
-  background: #131c29;
+  border-color: rgba(138, 123, 255, 0.52);
+  background: #141d2b;
+  box-shadow:
+    inset -3px 0 0 #8174ff,
+    0 8px 22px rgba(0, 0, 0, 0.12);
 }
 
 .eventPicker select {
@@ -185,8 +265,8 @@
 
 .eventPickerThumb,
 .eventPickerPlaceholder {
-  width: 58px;
-  height: 42px;
+  width: 52px;
+  height: 38px;
   overflow: hidden;
   border: 1px solid rgba(160, 180, 210, 0.18);
   border-radius: 8px;
@@ -222,7 +302,7 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 700;
 }
 
@@ -230,7 +310,7 @@
   overflow: hidden;
   color: #6f7e98;
   font-family: "Inter", "Heebo", sans-serif;
-  font-size: 12px;
+  font-size: 10.5px;
   direction: ltr;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -264,8 +344,8 @@
 
 .searchWrap {
   min-width: 180px;
-  flex: 1 1 360px;
-  height: 58px;
+  flex: 1 1 380px;
+  height: 54px;
   display: flex;
   align-items: center;
   gap: 11px;
@@ -311,9 +391,9 @@
 
 .filterControl {
   position: relative;
-  width: 138px;
-  flex: 0 0 138px;
-  height: 58px;
+  width: 124px;
+  flex: 0 0 124px;
+  height: 54px;
   display: flex;
   align-items: center;
   gap: 10px;
@@ -347,54 +427,55 @@
 
 .viewSwitcher {
   flex: 0 0 auto;
-  height: 58px;
+  height: 54px;
+  padding: 4px;
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: 3px;
+  border: 1px solid rgba(120, 145, 180, 0.18);
+  border-radius: 11px;
+  background: #0a1018;
 }
 
 .viewButton {
-  min-width: 118px;
-  height: 58px;
-  padding: 0 16px;
+  min-width: 104px;
+  height: 44px;
+  padding: 0 13px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 10px;
-  border: 1px solid rgba(120, 145, 180, 0.2);
-  border-radius: 9px;
-  background: #0d141e;
-  color: #a8b3c7;
+  gap: 8px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: #8e9aaf;
   font: inherit;
-  font-size: 15px;
+  font-size: 13px;
   font-weight: 700;
   cursor: pointer;
   transition:
-    border-color var(--pg-transition-fast),
     background var(--pg-transition-fast),
     color var(--pg-transition-fast),
     box-shadow var(--pg-transition-fast);
 }
 
 .viewButton:hover {
-  border-color: rgba(138, 123, 255, 0.38);
-  background: #131c29;
-  color: white;
+  background: #121a27;
+  color: #eef2f8;
 }
 
 .viewButtonActive {
-  border-color: rgba(138, 123, 255, 0.72);
   background:
-    linear-gradient(180deg, #6f5bff, #624ef1);
+    linear-gradient(180deg, rgba(111, 91, 255, 0.92), rgba(91, 72, 225, 0.92));
   color: white;
   box-shadow:
-    0 8px 18px rgba(86, 67, 242, 0.22),
-    0 1px 0 rgba(255, 255, 255, 0.08) inset;
+    0 7px 16px rgba(72, 57, 194, 0.20),
+    0 1px 0 rgba(255, 255, 255, 0.09) inset;
 }
 
 .viewButtonGlyph {
   font-family: "Inter", sans-serif;
-  font-size: 17px;
+  font-size: 14px;
 }
 
 .viewButtonLabel {
@@ -1000,7 +1081,11 @@
   }
 
   .topBarEmpty {
-    grid-template-columns: minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .libraryStats > div {
+    min-width: 68px;
   }
 
   .controlBar {
@@ -1041,7 +1126,8 @@
 }
 
 @container gallery (max-width: 930px) {
-  .topCounter {
+  .topCounter,
+  .libraryStats {
     display: none;
   }
 
@@ -1076,13 +1162,24 @@
 
 @container gallery (max-width: 760px) {
   .topBar {
-    min-height: 58px;
+    min-height: 64px;
     padding-inline: 12px;
   }
 
-  .topIdentity > span:last-child,
+  .galleryMark {
+    width: 40px;
+    height: 40px;
+    flex-basis: 40px;
+    padding: 8px;
+  }
+
+  .topIdentityCopy > span:last-child,
   .topKicker {
     display: none;
+  }
+
+  .topIdentity strong {
+    font-size: 18px;
   }
 
   .controlBar {
