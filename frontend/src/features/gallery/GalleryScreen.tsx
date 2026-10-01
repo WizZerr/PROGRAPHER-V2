@@ -485,18 +485,19 @@ export default function GalleryScreen() {
 
                       <div className={styles.eventMenuCopy}>
                         <strong>{event.name}</strong>
-                        <span>{eventCountLabel(event)}</span>
+                        <div className={styles.eventMenuMeta}>
+                          <span>{eventCountLabel(event)}</span>
+                          <span
+                            className={
+                              eventSource(event) === "raw"
+                                ? `${styles.menuSourceBadge} ${styles.menuSourceRaw}`
+                                : `${styles.menuSourceBadge} ${styles.menuSourceJpeg}`
+                            }
+                          >
+                            {eventSource(event) === "raw" ? "RAW" : "JPEG"}
+                          </span>
+                        </div>
                       </div>
-
-                      <span
-                        className={
-                          eventSource(event) === "raw"
-                            ? `${styles.menuSourceBadge} ${styles.menuSourceRaw}`
-                            : `${styles.menuSourceBadge} ${styles.menuSourceJpeg}`
-                        }
-                      >
-                        {eventSource(event) === "raw" ? "RAW" : "JPEG"}
-                      </span>
 
                       <span className={styles.menuCheck} aria-hidden="true">
                         {active ? "✓" : ""}
