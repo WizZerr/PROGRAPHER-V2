@@ -98,8 +98,8 @@
 - [x] לחזור ל-RAW בלי לבנות אותו מחדש.
 - [x] RAW profile עדיין קיים.
 - [x] ה-Review של RAW עדיין קיים.
-- [ ] לחזור ל-JPEG.
-- [ ] JPEG Dataset עדיין קיים.
+- [x] לחזור ל-JPEG.
+- [x] JPEG Dataset עדיין קיים.
 - [ ] אין ערבוב של Reviews או נתונים בין שני המסלולים.
 
 ## 5. Event / External Drive
