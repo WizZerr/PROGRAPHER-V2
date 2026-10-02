@@ -14,3 +14,9 @@ Phase 0 can finish on engineering evidence without pretending model quality has 
 
 ## D-005 — Existing faults are frozen before fixing
 Known dependency, metadata, range and OS assumptions are recorded first; fixes occur in the phase assigned by the master plan.
+
+
+## D-006 — JPEG learning uses an interpretable recipe-first research path before deeper models
+For JPEG Original/Edited pairs, do not invent Lightroom slider labels from pixels and do not jump directly to an unconstrained image-to-image generator. First validate an explicit JPEG edit representation (J0), then predict that representation from image features (J1), preserving candidate versions and measuring them on whole held-out events.
+
+Synthetic data may validate engineering plumbing but cannot establish photographer style or product quality. Real promotion decisions require representative photographer material with Train/Validation/Test separated by event/source group.
