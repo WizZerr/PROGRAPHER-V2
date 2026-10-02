@@ -1857,7 +1857,24 @@
 .controlBar,
 .workspace {
   position: relative;
+}
+
+.topBar {
+  z-index: 3;
+}
+
+.controlBar {
+  z-index: 40;
+  overflow: visible;
+}
+
+.workspace {
   z-index: 2;
+}
+
+.eventMenu,
+.filterMenu {
+  z-index: 60;
 }
 
 .eventStart {
