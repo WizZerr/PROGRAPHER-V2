@@ -574,9 +574,17 @@ def build_review_sheet(
     document = load_profile_document() or _empty_profile_document()
     reviews = _reviews_for(document, "raw")
 
+    event_root = Path(event.root_path).expanduser().resolve()
+    review_edits_root = event_root
+    if profile and profile.learning_source == "raw":
+        profile_raw_root = Path(profile.raw_root).expanduser().resolve()
+        profile_edits_root = Path(profile.edits_root).expanduser().resolve()
+        if profile_raw_root == event_root and profile_edits_root.exists():
+            review_edits_root = profile_edits_root
+
     preview = build_dataset_preview(
-        raw_root=event.root_path,
-        edits_root=event.root_path,
+        raw_root=str(event_root),
+        edits_root=str(review_edits_root),
         event_id=event.id,
         include_metadata=False,
     )
@@ -609,9 +617,7 @@ def build_review_sheet(
             if isinstance(saved_raw, dict) and saved_raw.get("recipe")
             else None
         )
-        if _complete(saved):
-            suggested = saved
-        elif baseline_recipe is not None:
+        if baseline_recipe is not None:
             suggested = baseline_recipe
         elif _complete(photographer):
             suggested = photographer
