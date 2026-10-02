@@ -3,9 +3,9 @@
 This checklist is intentionally narrower than the Master Plan. It records product behaviors that must not regress while PR #1 is reviewed and while later Brain work is added.
 
 ## Startup / shell
-- [ ] Tauri app starts without a second manual backend console.
-- [ ] Engine reaches Ready without abnormal delay.
-- [ ] Dashboard, Events, Gallery, Darkroom, Profile and Training open without runtime errors.
+- [x] Tauri app starts without a second manual backend console.
+- [x] Engine reaches Ready without abnormal delay.
+- [ ] Dashboard, Events, Gallery, Darkroom, Profile and Training open without runtime errors. *(Dashboard/Events/Gallery/Darkroom/Training confirmed; Profile still to re-check.)*
 - [ ] Closing and reopening preserves expected local state.
 
 ## Source safety
@@ -38,7 +38,7 @@ This checklist is intentionally narrower than the Master Plan. It records produc
 - [ ] Re-adding a deleted event does not resurrect stale review state.
 
 ## Performance
-- [ ] Startup remains within the accepted PR1 baseline.
+- [x] Startup remains within the accepted PR1 baseline.
 - [ ] 100+ image event loads progressively and remains responsive.
 - [ ] Already-viewed previews reuse cache.
 - [ ] Repeated navigation does not show an obvious unbounded memory regression.
