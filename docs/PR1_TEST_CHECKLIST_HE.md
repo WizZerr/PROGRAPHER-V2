@@ -100,7 +100,7 @@
 - [x] ה-Review של RAW עדיין קיים.
 - [x] לחזור ל-JPEG.
 - [x] JPEG Dataset עדיין קיים.
-- [ ] אין ערבוב של Reviews או נתונים בין שני המסלולים.
+- [x] אין ערבוב של Reviews או נתונים בין שני המסלולים.
 
 ## 5. Event / External Drive
 
