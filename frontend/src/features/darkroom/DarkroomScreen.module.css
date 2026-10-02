@@ -355,6 +355,7 @@
   overflow: auto;
   padding: 18px 16px 14px;
   display: grid;
+  grid-auto-rows: max-content;
   align-content: start;
   gap: 14px;
 }
@@ -446,8 +447,11 @@
 
 .reference {
   display: grid;
+  grid-auto-rows: minmax(42px, max-content);
   gap: 0;
   overflow: hidden;
+  min-height: max-content;
+  flex: 0 0 auto;
   border: 1px solid var(--pg-border);
   border-radius: 10px;
   background: #0e1420;
@@ -1262,7 +1266,7 @@
   }
 }
 
-@media (max-width: 1260px) {
+@media (min-width: 981px) and (max-width: 1260px) {
   .workspace {
     grid-template-columns: minmax(0, 1fr) 336px;
   }
