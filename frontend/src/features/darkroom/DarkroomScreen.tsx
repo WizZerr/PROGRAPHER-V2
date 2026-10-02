@@ -158,7 +158,7 @@ export default function DarkroomScreen() {
   }, [updateFilmstripWindow]);
 
   const suggestion =
-    file?.baseline ?? file?.photographer ?? file?.suggested ?? null;
+    file?.suggested ?? file?.baseline ?? file?.photographer ?? null;
   const suggestedRecipe =
     suggestion?.exposure != null &&
     suggestion.temperature != null &&
@@ -840,10 +840,10 @@ export default function DarkroomScreen() {
             </div>
             <div>
               <span>הצעת ProGrapher</span>
-              <bdi>{formatRecipe(file.baseline && file.baseline.exposure != null && file.baseline.temperature != null && file.baseline.tint != null ? {
-                exposure: file.baseline.exposure,
-                temperature: file.baseline.temperature,
-                tint: file.baseline.tint,
+              <bdi>{formatRecipe(file.suggested && file.suggested.exposure != null && file.suggested.temperature != null && file.suggested.tint != null ? {
+                exposure: file.suggested.exposure,
+                temperature: file.suggested.temperature,
+                tint: file.suggested.tint,
               } : null)}</bdi>
             </div>
             {file.saved_review && (
