@@ -150,3 +150,48 @@ Compare to held-out Photographer Edit
 
 לא מחליפים Recipe או Brain רק כי החדש מורכב יותר.
 הוא מתקדם רק אם הוא משפר reconstruction ובהמשך prediction על Validation/Test נפרדים.
+
+
+---
+
+## בדיקה סינתטית לפני שמגיע חומר מהצלם
+
+כל עוד אין עדיין זוגות JPEG אמיתיים של צלם, אפשר לבדוק שה־J0 עצמו עובד מתמטית ושמגבלות ה־Recipe נראות בפועל.
+
+הרצה:
+
+```powershell
+cd "C:\Users\Matann\Desktop\PROGRAPHER V2\backend"
+
+python training_lab\jpeg_j0_synthetic_benchmark.py --output "C:\Users\Matann\Desktop\jpeg_j0_synthetic" --clean
+```
+
+הסקריפט יוצר 12 זוגות Ground Truth:
+
+- 8 זוגות שבהם העריכה נוצרה ממשפחת ה־Recipe הגלובלית ש־J0 אמור לדעת לשחזר.
+- 4 זוגות Challenge עם עריכות מקומיות/סלקטיביות ש־Recipe גלובלי יחיד לא אמור לשחזר בצורה מושלמת.
+
+כך אנחנו בודקים שני דברים נפרדים:
+
+1. שה־inverse fitting והמדידה עובדים כאשר ה־representation מתאים למשימה.
+2. שהבדיקה אינה "עיוורת" ושהיא מסוגלת להראות פער כאשר מוסיפים עריכה מקומית שה־Recipe לא מסוגל לייצג.
+
+התוצרים החשובים:
+
+```text
+C:\Users\Matann\Desktop\jpeg_j0_synthetic\benchmark_summary.json
+C:\Users\Matann\Desktop\jpeg_j0_synthetic\j0_results\contact_sheet.jpg
+```
+
+ב־contact sheet העמודה האמצעית תסומן `GROUND TRUTH` ולא `PHOTOGRAPHER`, כי זו בדיקת הנדסה סינתטית בלבד.
+
+ה־benchmark עשוי להחזיר:
+
+```text
+J0 global-recipe sanity: PASS
+Local-edit limitation visible: YES
+```
+
+`PASS` כאן אינו אומר ש־ProGrapher יודע לערוך תמונות של צלם. הוא אומר רק שה־JPEG Recipe J0 וה־inverse fitting מסוגלים לשחזר עריכות מהמשפחה שהם תוכננו לייצג.
+
+כאשר יגיע חומר אמיתי מהצלם, חוזרים ל־manifest אמיתי ולבדיקת `Original | Photographer | J0 Reconstruction`.
