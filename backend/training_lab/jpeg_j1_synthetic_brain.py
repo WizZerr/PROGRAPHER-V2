@@ -401,19 +401,28 @@ def _generate_dataset(
         split = _split_for_event(event_id)
         for image_index in range(images_per_event):
             sample_id = f"{event_id}_{image_index + 1:03d}"
-            original = _make_scene(
+            generated_original = _make_scene(
                 event_index=event_index,
                 image_index=image_index,
                 width=width,
                 height=height,
             )
-            features = extract_features(original)
-            recipe = _ground_truth_recipe(features)
-            target = _apply_recipe_uint8(original, recipe)
 
             original_path = originals_dir / event_id / f"{sample_id}.jpg"
             target_path = targets_dir / event_id / f"{sample_id}.jpg"
-            _write_jpeg(original_path, original, quality=jpeg_quality)
+            _write_jpeg(original_path, generated_original, quality=jpeg_quality)
+
+            # Re-read the persisted JPEG before feature extraction and target creation.
+            # This keeps training and inference semantics tied to the actual JPEG bytes
+            # instead of the pre-encoding synthetic RGB array.
+            persisted_bgr = cv2.imread(str(original_path), cv2.IMREAD_COLOR)
+            if persisted_bgr is None:
+                raise RuntimeError(f"Could not decode generated original: {original_path}")
+            original = cv2.cvtColor(persisted_bgr, cv2.COLOR_BGR2RGB)
+
+            features = extract_features(original)
+            recipe = _ground_truth_recipe(features)
+            target = _apply_recipe_uint8(original, recipe)
             _write_jpeg(target_path, target, quality=jpeg_quality)
 
             records.append(
