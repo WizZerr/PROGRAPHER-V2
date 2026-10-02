@@ -92,12 +92,12 @@
 
 ## 4. מעבר RAW ↔ JPEG
 
-- [ ] לבנות RAW profile.
-- [ ] לבצע לפחות Review אחד.
-- [ ] לבנות JPEG Dataset.
-- [ ] לחזור ל-RAW בלי לבנות אותו מחדש.
-- [ ] RAW profile עדיין קיים.
-- [ ] ה-Review של RAW עדיין קיים.
+- [x] לבנות RAW profile.
+- [x] לבצע לפחות Review אחד.
+- [x] לבנות JPEG Dataset.
+- [x] לחזור ל-RAW בלי לבנות אותו מחדש.
+- [x] RAW profile עדיין קיים.
+- [x] ה-Review של RAW עדיין קיים.
 - [ ] לחזור ל-JPEG.
 - [ ] JPEG Dataset עדיין קיים.
 - [ ] אין ערבוב של Reviews או נתונים בין שני המסלולים.
@@ -145,7 +145,7 @@ GitHub Actions צריך לעבור:
 - [x] Next production build.
 - [x] Rust / Tauri `cargo check` על Windows.
 
-**ראיה עדכנית:** `PR1 validation` run #173 עבר בהצלחה על HEAD `69a51f1359d0b94003d7cd4a3bfc6d5101937db8`.
+**ראיה עדכנית:** `PR1 validation` run #187 עבר בהצלחה על HEAD `b53cc52146762ced2fa003958a624d28ee3139b7`.
 
 ## 7A. ראיות ידניות שכבר אושרו
 
