@@ -362,12 +362,13 @@ def _comparison_strip(
     *,
     label: str,
     mae: float,
+    target_label: str = "PHOTOGRAPHER",
 ) -> np.ndarray:
     tile_w = 420
     tile_h = 280
     header_h = 48
     footer_h = 34
-    labels = ("ORIGINAL", "PHOTOGRAPHER", "J0 RECONSTRUCTION")
+    labels = ("ORIGINAL", target_label, "J0 RECONSTRUCTION")
     tiles = [
         _fit_tile(original, tile_w, tile_h),
         _fit_tile(edited, tile_w, tile_h),
@@ -453,6 +454,7 @@ def run(
     aspect_tolerance: float,
     jpeg_quality: int,
     limit: int | None,
+    target_label: str = "PHOTOGRAPHER",
 ) -> dict:
     manifest = _read_json(manifest_path)
     if manifest.get("kind") != "jpeg_pairs":
@@ -568,6 +570,7 @@ def run(
                 reconstruction,
                 label=original_path.name,
                 mae=metric_values["reconstruction_mae_255"],
+                target_label=target_label,
             )
             comparison_path = (
                 comparisons_dir
@@ -652,6 +655,7 @@ def run(
         "manifest_profile_id": manifest.get("profile_id"),
         "manifest_photographer_id": manifest.get("photographer_id"),
         "manifest_event_label": manifest.get("event_label"),
+        "target_label": target_label,
         "pairs_requested": len(pairs),
         "pairs_completed": len(completed),
         "pairs_skipped": len(skipped),
@@ -763,6 +767,11 @@ def main() -> int:
         default=None,
         help="Optional limit for quick smoke tests",
     )
+    parser.add_argument(
+        "--target-label",
+        default="PHOTOGRAPHER",
+        help="Label shown above the target image in comparison strips",
+    )
     args = parser.parse_args()
 
     manifest_path = Path(args.manifest).expanduser().resolve(strict=True)
@@ -778,6 +787,7 @@ def main() -> int:
         aspect_tolerance=max(0.0, args.aspect_tolerance),
         jpeg_quality=min(100, max(50, args.jpeg_quality)),
         limit=max(1, args.limit) if args.limit is not None else None,
+        target_label=args.target_label.strip() or "PHOTOGRAPHER",
     )
     return 0
 
