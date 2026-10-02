@@ -57,3 +57,8 @@ This checklist is intentionally narrower than the Master Plan. It records produc
 
 ## Merge condition
 Do not merge PR #1 until the final automated gate is green and the remaining unchecked manual merge-smoke items above are either passed or explicitly documented as out of PR1 scope with a reason.
+
+
+## UI regressions verified — 2026-10-02
+- [x] Gallery event/filter menus stay above the photo grid.
+- [x] Event deletion confirmation is a true viewport modal with overlay.
