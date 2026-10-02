@@ -6,7 +6,7 @@ This checklist is intentionally narrower than the Master Plan. It records produc
 - [x] Tauri app starts without a second manual backend console.
 - [x] Engine reaches Ready without abnormal delay.
 - [ ] Dashboard, Events, Gallery, Darkroom, Profile and Training open without runtime errors. *(Dashboard/Events/Gallery/Darkroom/Training confirmed; Profile still to re-check.)*
-- [ ] Closing and reopening preserves expected local state.
+- [x] Closing and reopening preserves expected local state.
 
 ## Source safety
 - [x] RAW source hash remains unchanged after XMP export in the validated PR1 flow.
@@ -28,7 +28,7 @@ This checklist is intentionally narrower than the Master Plan. It records produc
 - [x] Original/Edited JPEG dataset creation was manually exercised.
 - [x] Production UI does not claim a trained JPEG model.
 - [x] Production JPEG path does not expose XMP export.
-- [ ] Final merge smoke confirms RAW and JPEG profiles remain independent across switching.
+- [x] Final merge smoke confirms RAW and JPEG profiles remain independent across switching.
 - [ ] Final merge smoke confirms gallery JPEG count/preview behavior on the current head.
 
 ## Event / storage
