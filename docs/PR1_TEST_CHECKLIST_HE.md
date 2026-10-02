@@ -197,3 +197,9 @@ GitHub Actions צריך לעבור:
 4. מעבר RAW/JPEG שומר את שני המסלולים.
 5. אין regression ב-startup.
 6. אין כתיבה לקבצי המקור.
+
+
+## QA fixes verified — 2026-10-02
+- [x] Gallery event dropdown renders above the photo grid with an active event.
+- [x] Gallery filter dropdown renders above the photo grid.
+- [x] Events delete confirmation renders as a centered viewport modal/overlay rather than inline below the event list.
