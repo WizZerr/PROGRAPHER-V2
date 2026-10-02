@@ -140,17 +140,47 @@
 
 GitHub Actions צריך לעבור:
 
-- [ ] Backend PR1 tests.
-- [ ] TypeScript `tsc --noEmit`.
-- [ ] Next production build.
-- [ ] Rust / Tauri `cargo check` על Windows.
+- [x] Backend PR1 tests.
+- [x] TypeScript `tsc --noEmit`.
+- [x] Next production build.
+- [x] Rust / Tauri `cargo check` על Windows.
+
+**ראיה עדכנית:** `PR1 validation` run #173 עבר בהצלחה על HEAD `69a51f1359d0b94003d7cd4a3bfc6d5101937db8`.
+
+## 7A. ראיות ידניות שכבר אושרו
+
+הסעיף הזה מרכז בדיקות שכבר בוצעו ידנית במהלך PR #1. הוא לא מחליף בדיקת startup/smoke סופית לפני Merge.
+
+- [x] RAW preview נתמך נטען ונבדקה גם תקלה של thumbnail שבור.
+- [x] מעבר קדימה/אחורה ב-Darkroom עובד.
+- [x] Undo / Redo עובדים.
+- [x] תיקון שלא נשמר נשמר כ-draft במעבר בין תמונות.
+- [x] תיקון שנשמר נשאר לאחר restart מלא.
+- [x] XMP חיצוני שלא נוצר על ידי ProGrapher אינו נדרס.
+- [x] XMP שנוצר על ידי ProGrapher ניתן לעדכון בטוח.
+- [x] שני אירועים עם אותו filename מייצאים לתיקיות אירוע נפרדות ואינם דורסים זה את זה.
+- [x] Hash של RAW מקור לפני ואחרי export נשאר זהה בבדיקה הידנית.
+- [x] מחיקת Event היא catalog-only וקובצי המקור נשארים פיזית ללא שינוי.
+- [x] עיצוב תוצאות מעבדת הלמידה נבדק ידנית לאחר ה-redesign.
+- [x] JPEG Dataset נבנה דרך ProGrapher עם ספירות source/edit/pairs תקינות במדגם ה-PR1.
+
+## 7B. Research Lab — לא חלק מטענת ה-PR
+
+לאחר בניית מסלול ה-JPEG של PR1 נוספו תחת `backend/training_lab/` כלי מחקר מבודדים בלבד.
+
+- J0 Synthetic הוכיח שה-Recipe/metric plumbing מסוגל לשחזר טרנספורמציות נתמכות ולחשוף מגבלה בעריכות מקומיות.
+- J1 Synthetic הוכיח end-to-end learning plumbing עם חלוקת Event-level.
+- מסלול Real-style smoke עבר Intake → J0 targets → Train-only J1 → Validation → Frozen Candidate → Locked Test.
+- ה-Locked Test הסינתטי לא שימש לאימון ולא שינה את משקלי ה-Candidate.
+
+הבדיקות האלו **אינן** הופכות את PR1 למודל JPEG מוצרי, אינן מוכיחות סגנון של צלם אמיתי, ואינן מחליפות את Gate הידני של PR1.
 
 ## עדיין לא נחשב "עובד"
 
 הדברים הבאים אינם טענה של PR #1 ואסור לסמן אותם כגמורים:
 
 - Import אמיתי מ-Lightroom Catalog `.lrcat`.
-- מודל JPEG מאומן.
+- מודל JPEG מאומן שמחובר למוצר או משמש כטענת איכות. כלי `training_lab` הם מחקר מבודד בלבד.
 - עריכה חכמה פר-תמונה ברמת Brain V2.
 - תוצאת preview זהה ל-Lightroom.
 - בדיקת macOS Apple Silicon.
