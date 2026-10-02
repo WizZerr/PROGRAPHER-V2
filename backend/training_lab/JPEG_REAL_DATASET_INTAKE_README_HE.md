@@ -323,3 +323,71 @@ python training_lab\jpeg_real_j0_batch.py --dataset-manifest "C:\Users\Matann\De
 - אין טענת 100% אוטומציה.
 
 השלב האמיתי מתחיל רק כאשר מגיעים כמה אירועים מקצועיים מאותו צלם, נשמרת הפרדה לפי אירוע, ויש Validation/Test שלא שימשו לאימון או לכיוון המודל.
+
+
+---
+
+## שלב 3 — J1 Real Candidate
+
+לאחר שנוצר `recipe_targets.json` מ־Train + Validation, אפשר לאמן Candidate ראשון:
+
+```powershell
+python training_lab\jpeg_real_j1_candidate.py --dataset-manifest "C:\Users\Matann\Desktop\jpeg_real_intake_smoke\dataset_manifest.json" --recipe-targets "C:\Users\Matann\Desktop\jpeg_real_j0_smoke\recipe_targets.json" --output "C:\Users\Matann\Desktop\jpeg_real_j1_smoke"
+```
+
+ה־Candidate:
+
+- מתאים משקלים רק על זוגות `Train`.
+- משתמש ב־Validation להערכה בלבד.
+- אינו פותח את Test.
+- משווה מול `No Edit` ומול `Mean Recipe`.
+- שומר Candidate immutable תחת:
+  `candidates/<candidate_id>/`.
+- שומר `model.npz`, חוזה מודל, תוצאות Validation ו־contact sheet.
+- אינו מקדם את עצמו אוטומטית ואינו מייצר טענת איכות.
+
+ב־smoke fixture אין לצפות למסקנת איכות, משום שיש מעט זוגות והעריכות הסינתטיות נועדו בעיקר לבדוק plumbing. המטרה היא לוודא שהמסלול:
+
+```text
+Train recipe targets
+      ↓
+Features
+      ↓
+Candidate fit
+      ↓
+Held-out Validation
+      ↓
+Immutable artifact
+```
+
+עובד בלי לגעת ב־Test.
+
+---
+
+## שלב 4 — Locked Test Audit
+
+רק אחרי ש־Candidate מוקפא ומחליטים שלא לכוון אותו יותר מול אותו Test, פותחים Test במפורש.
+
+ה־audit **אינו צריך J0 targets של Test**. הוא טוען את Candidate הקפוא ומפעיל אותו ישירות על Original JPEGs של Test, ואז משווה ל־Photographer Edited JPEG.
+
+דוגמה:
+
+```powershell
+python training_lab\jpeg_real_j1_test_audit.py --dataset-manifest "C:\Users\Matann\Desktop\jpeg_real_intake_smoke\dataset_manifest.json" --candidate-dir "<CANDIDATE_DIR>" --output "C:\Users\Matann\Desktop\jpeg_real_j1_test_audit" --unlock-test
+```
+
+בלי `--unlock-test` הסקריפט מסרב לפתוח את Test.
+
+ה־audit בודק גם שה־Candidate נבנה מול אותו dataset manifest קפוא באמצעות SHA-256, ולא משנה את משקלי המודל.
+
+התוצרים:
+
+```text
+test_audit.json
+test_results.csv
+test_contact_sheet.jpg
+predictions/
+mean_recipe/
+```
+
+אחרי Test audit אין לכוון מחדש את אותו Candidate לפי התוצאה. אם התוצאה חושפת בעיה ורוצים לשנות architecture/features/recipe, יוצרים Candidate חדש ובמקרה הצורך Test חדש לפי פרוטוקול ההערכה.
