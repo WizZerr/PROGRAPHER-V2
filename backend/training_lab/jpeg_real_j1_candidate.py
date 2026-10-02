@@ -92,10 +92,7 @@ def _candidate_id(
 
 
 def _decode_rgb(path: str) -> np.ndarray:
-    image = cv2.imread(str(Path(path)), cv2.IMREAD_COLOR)
-    if image is None:
-        raise ValueError(f"Could not decode JPEG: {path}")
-    return cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+    return _read_image(Path(path))
 
 
 def _standardize_train(
