@@ -489,6 +489,16 @@ def run(
             if not edited_path.is_file():
                 raise ValueError("edited_missing")
 
+            if (
+                pair.get("original_fingerprint")
+                and pair.get("edited_fingerprint")
+                and pair["original_fingerprint"] == pair["edited_fingerprint"]
+            ):
+                raise ValueError(
+                    "identical_bytes_not_useful_for_j0: this pair is valid for "
+                    "pairing QA, but contains no edit delta to reconstruct"
+                )
+
             original = _read_image(original_path)
             edited = _read_image(edited_path)
             original, edited, geometry_action = _match_geometry(
@@ -594,6 +604,30 @@ def run(
             output_root / "contact_sheet.jpg",
             contact_sheet,
             quality=jpeg_quality,
+        )
+
+    if not completed:
+        diagnostic = {
+            "experiment": "JPEG Brain J0 — Edit Representation Feasibility",
+            "production_ready": False,
+            "trained_model": False,
+            "quality_claim_allowed": False,
+            "manifest_path": str(manifest_path),
+            "pairs_requested": len(pairs),
+            "pairs_completed": 0,
+            "pairs_skipped": len(skipped),
+            "skipped": [asdict(row) for row in skipped],
+            "error": (
+                "No usable edited JPEG pairs were available for J0. "
+                "J0 requires decodable Original/Edited JPEG files with a real "
+                "pixel difference between them."
+            ),
+        }
+        _write_json(output_root / "summary.json", diagnostic)
+        raise RuntimeError(
+            "J0 has no usable edited pairs. The current fixture is suitable for "
+            "pairing/manifest QA only, not edit-representation testing. Use real "
+            "Original JPEG + Photographer Edited JPEG pairs."
         )
 
     _write_csv(output_root / "results.csv", completed)
