@@ -74,11 +74,10 @@ def main() -> int:
                 _write_jpeg(edited_path, edited, quality=98)
                 usable_expected += 1
 
-        # Confirm non-JPEG noise is ignored rather than treated as a photo pair.
-        (originals / "notes.txt").write_text(
-            "synthetic intake smoke fixture",
-            encoding="utf-8",
-        )
+        # Confirm another supported rendered format is ignored by the JPEG
+        # pairing path rather than treated as a JPEG pair.
+        preview_png = cv2.cvtColor(original, cv2.COLOR_RGB2BGR)
+        cv2.imwrite(str(originals / "ignored_preview.png"), preview_png)
 
     print("=" * 80)
     print("ProGrapher — JPEG real-intake smoke fixture")
