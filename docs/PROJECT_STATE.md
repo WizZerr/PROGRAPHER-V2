@@ -38,3 +38,19 @@
 - Phase 0 is not DONE.
 - Mac support has not yet been proven.
 - Model quality has not yet been measured by this Phase 0 audit.
+
+
+## Active workstream — PR #1 QA / Merge Gate — 2026-10-02
+- Branch: `cursor/testing-ready-77c3`.
+- Base: `ui-v2-overhaul`.
+- PR #1 is still Draft and remains the active integration branch.
+- Production PR1 scope: safe RAW/XMP testing loop + separate JPEG Original/Edited Dataset path.
+- Automated Windows gate has passed on the product/research head before the latest documentation-only QA update; the final documentation head must also be green before merge.
+- Manual evidence already exists for source-safe XMP export, photographer-owned XMP overwrite refusal, ProGrapher-owned XMP update, draft/restart persistence, RAW preview fixes, event catalog-only deletion, training-results UI, and JPEG dataset creation.
+- Remaining merge work is a focused final Windows manual smoke/regression pass, especially startup, full-screen navigation, RAW↔JPEG persistence, external-drive behavior, and practical large-event performance.
+
+### JPEG research readiness while photographer material is pending
+- `backend/training_lab/` now contains isolated J0/J1 research tools only; production behavior and product claims are unchanged.
+- Synthetic J0/J1 and the real-folder smoke protocol were exercised through whole-event Train/Validation/locked-Test separation.
+- A frozen synthetic smoke candidate generalized to held-out synthetic events, but this is engineering plumbing evidence only.
+- No claim is made about real photographer style, editing quality, time savings, or production JPEG intelligence until representative photographer events are available.
