@@ -140,6 +140,86 @@ def test_shared_filename_is_not_trained_as_one_edit(
     assert any("אותו XMP" in warning for warning in body["warnings"])
 
 
+def test_review_uses_separate_profile_xmp_root_and_keeps_prographer_suggestion(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    monkeypatch.setenv("PROGRAPHER_DATA_DIR", str(tmp_path / "data"))
+    raw_root = tmp_path / "raw"
+    xmp_root = tmp_path / "xmp"
+    raw_root.mkdir()
+    xmp_root.mkdir()
+
+    _raw(raw_root / "IMG_0001.ARW", b"raw-separate-xmp" * 400)
+    _xmp(
+        xmp_root / "IMG_0001.xmp",
+        exposure="+0.20",
+        temperature="5000",
+        tint="+4",
+        raw_name="IMG_0001.ARW",
+    )
+
+    with TestClient(create_app()) as client:
+        opened = client.post(
+            "/api/events/open-folder",
+            headers=HEADERS,
+            json={"path": str(raw_root)},
+        )
+        assert opened.status_code == 200
+        event_id = opened.json()["event"]["id"]
+
+        profile = client.post(
+            "/api/testing/profile",
+            headers=HEADERS,
+            json={
+                "raw_root": str(raw_root),
+                "edits_root": str(xmp_root),
+                "learning_source": "raw",
+            },
+        )
+        assert profile.status_code == 200
+
+        sheet = client.get(
+            f"/api/testing/events/{event_id}/review?learning_source=raw",
+            headers=HEADERS,
+        )
+        assert sheet.status_code == 200
+        file = sheet.json()["files"][0]
+        assert file["photographer"]["exposure"] == 0.2
+        assert file["photographer"]["temperature"] == 5000
+        assert file["photographer"]["tint"] == 4
+        assert file["suggested"]["exposure"] == 0.2
+        assert file["suggested"]["temperature"] == 5000
+        assert file["suggested"]["tint"] == 4
+
+        saved = client.post(
+            "/api/testing/review",
+            headers=HEADERS,
+            json={
+                "event_id": event_id,
+                "item": {
+                    "fingerprint": file["fingerprint"],
+                    "exposure": 0.55,
+                    "temperature": 5100,
+                    "tint": 6,
+                    "decision": "corrected",
+                },
+            },
+        )
+        assert saved.status_code == 200
+
+        refreshed = client.get(
+            f"/api/testing/events/{event_id}/review?learning_source=raw",
+            headers=HEADERS,
+        )
+        assert refreshed.status_code == 200
+        refreshed_file = refreshed.json()["files"][0]
+        assert refreshed_file["saved_review"]["exposure"] == 0.55
+        assert refreshed_file["suggested"]["exposure"] == 0.2
+        assert refreshed_file["suggested"]["temperature"] == 5000
+        assert refreshed_file["suggested"]["tint"] == 4
+
+
 def test_review_and_export_leave_raw_unchanged(
     tmp_path: Path,
     monkeypatch,
@@ -218,7 +298,10 @@ def test_review_and_export_leave_raw_unchanged(
             headers=HEADERS,
         )
         assert refreshed.status_code == 200
-        assert refreshed.json()["files"][0]["saved_review"]["temperature"] == 5300
+        refreshed_file = refreshed.json()["files"][0]
+        assert refreshed_file["saved_review"]["temperature"] == 5300
+        assert refreshed_file["suggested"]["temperature"] == 5600
+        assert refreshed_file["suggested"]["exposure"] == 0.5
 
         exported = client.post(
             "/api/testing/export",
