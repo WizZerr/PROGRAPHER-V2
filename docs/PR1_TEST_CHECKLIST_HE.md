@@ -4,19 +4,19 @@
 
 ## 0. לפני שמתחילים
 
-- [ ] לעבוד על branch `cursor/testing-ready-77c3`.
-- [ ] לוודא שהאפליקציה עולה במהירות הרגילה של גרסת `ui-v2-overhaul`.
-- [ ] לוודא שה-Engine מגיע ל-Ready בלי המתנה חריגה.
+- [x] לעבוד על branch `cursor/testing-ready-77c3`.
+- [x] לוודא שהאפליקציה עולה במהירות הרגילה של גרסת `ui-v2-overhaul`.
+- [x] לוודא שה-Engine מגיע ל-Ready בלי המתנה חריגה.
 - [ ] לא לבדוק על חומר שאין לו גיבוי.
 
 ## 1. Smoke Test כללי
 
-- [ ] Dashboard נפתח.
-- [ ] Events נפתח.
-- [ ] Gallery נפתח.
-- [ ] Darkroom נפתח.
-- [ ] Training / מעבדת בדיקה נפתחת.
-- [ ] מעבר בין המסכים לא זורק שגיאות.
+- [x] Dashboard נפתח.
+- [x] Events נפתח.
+- [x] Gallery נפתח.
+- [x] Darkroom נפתח.
+- [x] Training / מעבדת בדיקה נפתחת.
+- [x] מעבר בין המסכים לא זורק שגיאות.
 - [ ] סגירה ופתיחה מחדש שומרות את המידע המקומי.
 
 ## 1A. Gallery UX + large events
