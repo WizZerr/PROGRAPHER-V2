@@ -33,7 +33,7 @@
 - [x] תצוגה צפופה מציגה בערך פי שניים תמונות בכל שורה.
 - [x] תצוגת רשימה עובדת.
 - [x] לחיצה על תמונה מגלריה שכבר נטענה פותחת Darkroom מה-cache ללא בנייה מחדש של האירוע.
-- [ ] אם Darkroom כן צריך לטעון מידע, מופיע `טוען את התמונה…`.
+- [x] אם Darkroom כן צריך לטעון מידע, מופיע `טוען את התמונה…`.
 - [x] מונה התמונה בחדר העריכה מוצג LTR, לדוגמה `12 / 125`, ולא מתהפך בגלל RTL.
 - [x] במסלול JPEG מוצג במפורש שזה מצב צפייה של PR1 ויש כפתור חזרה לגלריה.
 
@@ -204,3 +204,4 @@ GitHub Actions צריך לעבור:
 - [x] Gallery filter dropdown renders above the photo grid.
 - [x] Events delete confirmation renders as a centered viewport modal/overlay rather than inline below the event list.
 - [x] בחירה חוזרת באותו Event פעיל אינה מרוקנת את הגלריה ואינה מבצעת טעינה מחדש מיותרת.
+- [x] ב-cache miss של Darkroom נצפה בקצרה מצב `טוען את התמונה…` לפני טעינת ה-JPEG.
