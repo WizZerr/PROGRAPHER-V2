@@ -246,6 +246,15 @@ export default function TrainingScreen() {
               </strong>
             </div>
 
+            {profile.learning_source === "raw" && (
+              <div className={styles.metric}>
+                <span>קובצי XMP</span>
+                <strong>
+                  <bdi>{profile.xmp_files.toLocaleString("he-IL")}</bdi>
+                </strong>
+              </div>
+            )}
+
             <div className={styles.metric}>
               <span>זוגות שנמצאו</span>
               <strong>
