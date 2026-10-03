@@ -339,6 +339,11 @@ export default function GalleryScreen() {
 
   function selectEvent(value: string) {
     setEventMenuOpen(false);
+
+    if (value === galleryEventId) {
+      return;
+    }
+
     setGalleryEventId(value);
     setSheet(null);
     setRenderLimit(240);
