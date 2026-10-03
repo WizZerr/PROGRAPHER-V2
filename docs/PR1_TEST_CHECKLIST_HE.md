@@ -203,3 +203,4 @@ GitHub Actions צריך לעבור:
 - [x] Gallery event dropdown renders above the photo grid with an active event.
 - [x] Gallery filter dropdown renders above the photo grid.
 - [x] Events delete confirmation renders as a centered viewport modal/overlay rather than inline below the event list.
+- [x] בחירה חוזרת באותו Event פעיל אינה מרוקנת את הגלריה ואינה מבצעת טעינה מחדש מיותרת.
