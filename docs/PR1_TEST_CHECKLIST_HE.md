@@ -45,7 +45,7 @@
 - [x] לבחור תיקיית XMP תואמת.
 - [x] לבנות בסיס RAW.
 - [x] מספר RAW נכון.
-- [ ] מספר XMP נכון.
+- [x] מספר XMP נכון.
 - [x] מספר זוגות תואמים הגיוני.
 - [x] Exposure / Temperature / Tint מוצגים רק כאשר באמת קיימים.
 - [ ] ערך חסר נשאר חסר ואינו הופך ל-0.
@@ -205,3 +205,4 @@ GitHub Actions צריך לעבור:
 - [x] Events delete confirmation renders as a centered viewport modal/overlay rather than inline below the event list.
 - [x] בחירה חוזרת באותו Event פעיל אינה מרוקנת את הגלריה ואינה מבצעת טעינה מחדש מיותרת.
 - [x] ב-cache miss של Darkroom נצפה בקצרה מצב `טוען את התמונה…` לפני טעינת ה-JPEG.
+- [x] מדגם `fivek_pr1_fixture` מציג 50 קובצי XMP, תואם לברירת המחדל של fixture היוצרת 50 זוגות RAW+XMP.
