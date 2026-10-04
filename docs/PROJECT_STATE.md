@@ -133,3 +133,12 @@ Do not start Auth/Cloud implementation or a new production Brain merely because 
 - Hard/excluded groups remain explicit.
 - Evidence: `docs/PG_03_07_COVERAGE_REPORT.md`, backend regression run `37173058568`.
 - Next pre-photographer Part: **PG-03.08 — Candidate/target provenance identity**.
+
+## Immutable experiment provenance
+
+- **PG-03.08 — V:** J0 targets and J1 candidates now have deterministic, version-bound artifact identities.
+- Exact Git commit, dependency lock, color/feature/recipe/renderer contracts and material config are part of provenance.
+- Candidate files are sealed by SHA-256 manifest and verified before locked Test.
+- Existing immutable artifacts are not overwritten; non-promoted/rejected candidates remain preserved.
+- Evidence: `docs/PG_03_08_ARTIFACT_PROVENANCE_REPORT.md`, backend + compile success in run `37174158871`.
+- Next pre-photographer Part: **PG-03.09 — consolidated corruption/leakage/Test-guard regression**.
