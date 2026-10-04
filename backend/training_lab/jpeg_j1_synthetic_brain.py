@@ -6,17 +6,22 @@ import hashlib
 import json
 import math
 import shutil
+import sys
 from dataclasses import asdict, dataclass
 from pathlib import Path
 
 import cv2
 import numpy as np
 
-from jpeg_j0_feasibility import (
-    FEATURE_NAMES as RECIPE_FEATURE_NAMES,
-    _apply_recipe_uint8,
-    _write_jpeg,
+BACKEND_ROOT = Path(__file__).resolve().parents[1]
+if str(BACKEND_ROOT) not in sys.path:
+    sys.path.insert(0, str(BACKEND_ROOT))
+
+from app.rendering.jpeg_renderer import (
+    POLYNOMIAL_FEATURE_NAMES as RECIPE_FEATURE_NAMES,
+    render_coefficients_uint8 as _apply_recipe_uint8,
 )
+from jpeg_j0_feasibility import _write_jpeg
 
 
 EXPERIMENT = "JPEG Brain J1 — Synthetic Recipe Prediction"
