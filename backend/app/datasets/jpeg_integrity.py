@@ -1,0 +1,607 @@
+from __future__ import annotations
+
+from dataclasses import dataclass
+from hashlib import sha256
+from io import BytesIO
+import json
+import math
+from pathlib import Path
+from typing import Iterable
+
+import cv2
+import numpy as np
+from PIL import Image, ImageCms, ImageOps
+
+
+WORKING_COLOR_SPACE = "srgb-iec61966-2.1-v1"
+JPEG_INTEGRITY_SCHEMA = "prographer.jpeg-integrity.v1"
+DATASET_SNAPSHOT_SCHEMA = "prographer.dataset-snapshot.v1"
+
+
+class JpegIntegrityError(ValueError):
+    pass
+
+
+class DatasetSnapshotChangedError(ValueError):
+    pass
+
+
+@dataclass(frozen=True)
+class JpegDecodeEvidence:
+    path: str
+    stored_width: int
+    stored_height: int
+    display_width: int
+    display_height: int
+    exif_orientation: int
+    source_mode: str
+    bit_depth: int
+    icc_present: bool
+    icc_sha256: str | None
+    icc_profile_name: str | None
+    color_action: str
+    working_color_space: str = WORKING_COLOR_SPACE
+
+
+@dataclass(frozen=True)
+class GeometryEvidence:
+    action: str
+    usable: bool
+    original_width: int
+    original_height: int
+    edited_width: int
+    edited_height: int
+    aspect_ratio_relative_error: float
+    feature_matches: int
+    inliers: int
+    inlier_ratio: float
+    coverage_ratio: float | None
+    rotation_degrees: float | None
+    mirrored: bool | None
+    note: str
+
+
+def sha256_file(path: str | Path) -> str:
+    source = Path(path)
+    digest = sha256()
+    with source.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def _profile_name(profile: ImageCms.ImageCmsProfile) -> str | None:
+    try:
+        name = ImageCms.getProfileName(profile).strip()
+    except Exception:
+        return None
+    return name or None
+
+
+def read_jpeg_working_rgb(
+    path: str | Path,
+) -> tuple[np.ndarray, JpegDecodeEvidence]:
+    """
+    Decode one JPEG into the single Release-1 research working space.
+
+    - Embedded ICC -> converted to sRGB.
+    - RGB/L without ICC -> explicit sRGB assumption.
+    - non-RGB without ICC -> rejected rather than silently guessed.
+    - EXIF orientation -> normalized into displayed pixel orientation.
+    """
+    source = Path(path).expanduser().resolve(strict=True)
+
+    try:
+        with Image.open(source) as opened:
+            if opened.format != "JPEG":
+                raise JpegIntegrityError(
+                    f"unsupported_media: expected JPEG: {source}"
+                )
+
+            stored_width, stored_height = opened.size
+            source_mode = opened.mode
+
+            exif = opened.getexif()
+            raw_orientation = exif.get(274, 1)
+            try:
+                orientation = int(raw_orientation or 1)
+            except (TypeError, ValueError):
+                orientation = 1
+            if orientation not in range(1, 9):
+                orientation = 1
+
+            icc_payload = opened.info.get("icc_profile")
+            icc_sha = (
+                sha256(icc_payload).hexdigest()
+                if isinstance(icc_payload, (bytes, bytearray)) and icc_payload
+                else None
+            )
+            profile_name: str | None = None
+
+            working = opened.copy()
+            if icc_sha is not None:
+                try:
+                    source_profile = ImageCms.ImageCmsProfile(
+                        BytesIO(icc_payload)
+                    )
+                    destination_profile = ImageCms.createProfile("sRGB")
+                    profile_name = _profile_name(source_profile)
+                    working = ImageCms.profileToProfile(
+                        working,
+                        source_profile,
+                        destination_profile,
+                        outputMode="RGB",
+                    )
+                    color_action = "icc_to_srgb"
+                except Exception as exc:
+                    raise JpegIntegrityError(
+                        f"icc_conversion_failed: {source.name}"
+                    ) from exc
+            else:
+                if source_mode not in {"RGB", "L"}:
+                    raise JpegIntegrityError(
+                        "missing_icc_for_non_rgb: "
+                        f"{source.name} mode={source_mode}"
+                    )
+                working = working.convert("RGB")
+                color_action = "assume_srgb_no_icc"
+
+            working = ImageOps.exif_transpose(working).convert("RGB")
+            rgb = np.asarray(working, dtype=np.uint8).copy()
+            display_height, display_width = rgb.shape[:2]
+
+            return rgb, JpegDecodeEvidence(
+                path=str(source),
+                stored_width=int(stored_width),
+                stored_height=int(stored_height),
+                display_width=int(display_width),
+                display_height=int(display_height),
+                exif_orientation=orientation,
+                source_mode=source_mode,
+                bit_depth=8,
+                icc_present=icc_sha is not None,
+                icc_sha256=icc_sha,
+                icc_profile_name=profile_name,
+                color_action=color_action,
+            )
+    except JpegIntegrityError:
+        raise
+    except (OSError, ValueError) as exc:
+        raise JpegIntegrityError(
+            f"jpeg_decode_failed: {source.name}"
+        ) from exc
+
+
+def _resize_for_geometry(
+    image: np.ndarray,
+    max_edge: int = 1200,
+) -> np.ndarray:
+    height, width = image.shape[:2]
+    largest = max(height, width)
+    if largest <= max_edge:
+        return image
+
+    scale = max_edge / float(largest)
+    target = (
+        max(1, round(width * scale)),
+        max(1, round(height * scale)),
+    )
+    return cv2.resize(image, target, interpolation=cv2.INTER_AREA)
+
+
+def _normalized_gray(image: np.ndarray) -> np.ndarray:
+    resized = _resize_for_geometry(image)
+    gray = cv2.cvtColor(resized, cv2.COLOR_RGB2GRAY)
+    return cv2.equalizeHist(gray)
+
+
+def _normalize_angle(degrees: float) -> float:
+    value = (degrees + 180.0) % 360.0 - 180.0
+    if math.isclose(value, -180.0, abs_tol=1e-9):
+        return 180.0
+    return value
+
+
+def _estimate_homography(
+    original_gray: np.ndarray,
+    edited_gray: np.ndarray,
+) -> tuple[np.ndarray | None, int, int, float]:
+    detector = cv2.ORB_create(
+        nfeatures=2400,
+        fastThreshold=7,
+    )
+    original_keypoints, original_descriptors = detector.detectAndCompute(
+        original_gray,
+        None,
+    )
+    edited_keypoints, edited_descriptors = detector.detectAndCompute(
+        edited_gray,
+        None,
+    )
+
+    if (
+        original_descriptors is None
+        or edited_descriptors is None
+        or len(original_keypoints) < 12
+        or len(edited_keypoints) < 12
+    ):
+        return None, 0, 0, 0.0
+
+    matcher = cv2.BFMatcher(cv2.NORM_HAMMING)
+    raw_matches = matcher.knnMatch(
+        edited_descriptors,
+        original_descriptors,
+        k=2,
+    )
+    good = [
+        first
+        for pair in raw_matches
+        if len(pair) == 2
+        for first, second in [pair]
+        if first.distance < 0.75 * second.distance
+    ]
+    if len(good) < 12:
+        return None, len(good), 0, 0.0
+
+    edited_points = np.float32(
+        [edited_keypoints[item.queryIdx].pt for item in good]
+    ).reshape(-1, 1, 2)
+    original_points = np.float32(
+        [original_keypoints[item.trainIdx].pt for item in good]
+    ).reshape(-1, 1, 2)
+
+    homography, mask = cv2.findHomography(
+        edited_points,
+        original_points,
+        cv2.RANSAC,
+        4.0,
+    )
+    if homography is None or mask is None:
+        return None, len(good), 0, 0.0
+
+    inliers = int(mask.ravel().sum())
+    inlier_ratio = inliers / float(len(good))
+    if inliers < 8 or inlier_ratio < 0.35:
+        return None, len(good), inliers, inlier_ratio
+
+    return homography, len(good), inliers, inlier_ratio
+
+
+def _blocked_geometry(
+    *,
+    action: str,
+    original_width: int,
+    original_height: int,
+    edited_width: int,
+    edited_height: int,
+    aspect_error: float,
+    feature_matches: int,
+    inliers: int,
+    inlier_ratio: float,
+    note: str,
+    mirrored: bool | None = None,
+) -> GeometryEvidence:
+    return GeometryEvidence(
+        action=action,
+        usable=False,
+        original_width=original_width,
+        original_height=original_height,
+        edited_width=edited_width,
+        edited_height=edited_height,
+        aspect_ratio_relative_error=aspect_error,
+        feature_matches=feature_matches,
+        inliers=inliers,
+        inlier_ratio=inlier_ratio,
+        coverage_ratio=None,
+        rotation_degrees=None,
+        mirrored=mirrored,
+        note=note,
+    )
+
+
+def analyze_pair_geometry(
+    original_rgb: np.ndarray,
+    edited_rgb: np.ndarray,
+    *,
+    aspect_tolerance: float = 0.01,
+) -> GeometryEvidence:
+    """
+    Verify that Original/Edited are the same scene geometry.
+
+    The check is deliberately conservative: uncertain pairs are excluded
+    instead of being stretched/resized into an apparently valid target.
+    """
+    oh, ow = original_rgb.shape[:2]
+    eh, ew = edited_rgb.shape[:2]
+
+    original_ratio = ow / float(oh)
+    edited_ratio = ew / float(eh)
+    aspect_error = abs(original_ratio - edited_ratio) / max(
+        abs(edited_ratio),
+        1e-9,
+    )
+
+    original_gray = _normalized_gray(original_rgb)
+    edited_gray = _normalized_gray(edited_rgb)
+
+    homography, matches, inliers, inlier_ratio = _estimate_homography(
+        original_gray,
+        edited_gray,
+    )
+
+    if homography is None:
+        # ORB descriptors are not reflection invariant. A second explicit
+        # attempt lets us identify a common horizontal/vertical mirror case
+        # instead of collapsing it into generic "wrong copy".
+        for flip_code in (1, 0):
+            flipped = cv2.flip(edited_gray, flip_code)
+            mirrored_h, mirrored_matches, mirrored_inliers, mirrored_ratio = (
+                _estimate_homography(original_gray, flipped)
+            )
+            if mirrored_h is not None:
+                return _blocked_geometry(
+                    action="mirror_mismatch",
+                    original_width=ow,
+                    original_height=oh,
+                    edited_width=ew,
+                    edited_height=eh,
+                    aspect_error=aspect_error,
+                    feature_matches=mirrored_matches,
+                    inliers=mirrored_inliers,
+                    inlier_ratio=mirrored_ratio,
+                    mirrored=True,
+                    note=(
+                        "mirror/flip geometry detected; exclude until "
+                        "mirror-aware recipe support exists"
+                    ),
+                )
+
+        return _blocked_geometry(
+            action="wrong_copy_or_unverified",
+            original_width=ow,
+            original_height=oh,
+            edited_width=ew,
+            edited_height=eh,
+            aspect_error=aspect_error,
+            feature_matches=matches,
+            inliers=inliers,
+            inlier_ratio=inlier_ratio,
+            note=(
+                "same-photo geometry could not be verified; "
+                "pair is blocked rather than guessed"
+            ),
+        )
+
+    oh2, ow2 = original_gray.shape[:2]
+    eh2, ew2 = edited_gray.shape[:2]
+    corners = np.float32(
+        [
+            [0, 0],
+            [ew2 - 1, 0],
+            [ew2 - 1, eh2 - 1],
+            [0, eh2 - 1],
+        ]
+    ).reshape(-1, 1, 2)
+    mapped = cv2.perspectiveTransform(
+        corners,
+        homography,
+    ).reshape(-1, 2)
+
+    mapped_area = abs(
+        float(cv2.contourArea(mapped.astype(np.float32)))
+    )
+    original_area = max(
+        1.0,
+        float((ow2 - 1) * (oh2 - 1)),
+    )
+    coverage_ratio = mapped_area / original_area
+
+    top = mapped[1] - mapped[0]
+    left = mapped[3] - mapped[0]
+    cross = float(
+        top[0] * left[1] - top[1] * left[0]
+    )
+    mirrored = cross < 0.0
+    rotation = _normalize_angle(
+        math.degrees(
+            math.atan2(
+                float(top[1]),
+                float(top[0]),
+            )
+        )
+    )
+
+    if mirrored:
+        action = "mirror_mismatch"
+        usable = False
+        note = "mirror/flip geometry detected"
+    elif abs(rotation) > 12.0:
+        action = "rotation_mismatch"
+        usable = False
+        note = (
+            "residual rotation detected after EXIF normalization "
+            f"({rotation:.1f}°)"
+        )
+    elif coverage_ratio < 0.90 or coverage_ratio > 1.10:
+        action = (
+            "crop_same_ratio"
+            if aspect_error <= aspect_tolerance
+            else "crop_or_geometry_mismatch"
+        )
+        usable = False
+        note = (
+            "content alignment indicates a crop/geometry change; "
+            "exclude until crop-aware recipe support exists"
+        )
+    elif aspect_error > aspect_tolerance:
+        action = "crop_or_geometry_mismatch"
+        usable = False
+        note = "display aspect ratio differs beyond tolerance"
+    elif (ow, oh) == (ew, eh):
+        action = "same_dimensions"
+        usable = True
+        note = ""
+    else:
+        action = "resize_only"
+        usable = True
+        note = (
+            "same aligned content with compatible aspect ratio; "
+            "resize is allowed"
+        )
+
+    return GeometryEvidence(
+        action=action,
+        usable=usable,
+        original_width=ow,
+        original_height=oh,
+        edited_width=ew,
+        edited_height=eh,
+        aspect_ratio_relative_error=aspect_error,
+        feature_matches=matches,
+        inliers=inliers,
+        inlier_ratio=inlier_ratio,
+        coverage_ratio=coverage_ratio,
+        rotation_degrees=rotation,
+        mirrored=mirrored,
+        note=note,
+    )
+
+
+def inspect_jpeg_pair(
+    original: str | Path,
+    edited: str | Path,
+    *,
+    aspect_tolerance: float = 0.01,
+) -> tuple[
+    JpegDecodeEvidence,
+    JpegDecodeEvidence,
+    GeometryEvidence,
+]:
+    original_rgb, original_evidence = read_jpeg_working_rgb(
+        original
+    )
+    edited_rgb, edited_evidence = read_jpeg_working_rgb(
+        edited
+    )
+    geometry = analyze_pair_geometry(
+        original_rgb,
+        edited_rgb,
+        aspect_tolerance=aspect_tolerance,
+    )
+    return original_evidence, edited_evidence, geometry
+
+
+def freeze_dataset_snapshot(
+    entries: Iterable[dict],
+) -> dict:
+    """
+    Freeze hashes already calculated during intake without re-reading every
+    large source file a second time.
+    """
+    files: list[dict] = []
+    for raw in entries:
+        item = {
+            "role": str(raw["role"]),
+            "pair_id": str(raw["pair_id"]),
+            "path": str(
+                Path(raw["path"])
+                .expanduser()
+                .resolve(strict=True)
+            ),
+            "size_bytes": int(raw["size_bytes"]),
+            "modified_ns": int(raw["modified_ns"]),
+            "sha256": str(raw["sha256"]),
+        }
+        if not item["sha256"]:
+            raise ValueError("snapshot entry is missing sha256")
+        files.append(item)
+
+    files.sort(
+        key=lambda item: (
+            item["pair_id"],
+            item["role"],
+            item["path"].casefold(),
+        )
+    )
+
+    # Paths deliberately do not participate in snapshot identity. A verified
+    # relocation may update locators without changing the dataset bytes.
+    identity = [
+        {
+            "role": item["role"],
+            "pair_id": item["pair_id"],
+            "size_bytes": item["size_bytes"],
+            "sha256": item["sha256"],
+        }
+        for item in files
+    ]
+    snapshot_id = sha256(
+        json.dumps(
+            identity,
+            sort_keys=True,
+            separators=(",", ":"),
+        ).encode("utf-8")
+    ).hexdigest()
+
+    return {
+        "schema": DATASET_SNAPSHOT_SCHEMA,
+        "snapshot_id": snapshot_id,
+        "files": files,
+    }
+
+
+def validate_dataset_snapshot(
+    snapshot: dict,
+    *,
+    expected_snapshot_id: str | None = None,
+) -> None:
+    if snapshot.get("schema") != DATASET_SNAPSHOT_SCHEMA:
+        raise DatasetSnapshotChangedError(
+            "unsupported_dataset_snapshot_schema"
+        )
+
+    if (
+        expected_snapshot_id is not None
+        and snapshot.get("snapshot_id") != expected_snapshot_id
+    ):
+        raise DatasetSnapshotChangedError(
+            "dataset_snapshot_id_mismatch"
+        )
+
+    for item in snapshot.get("files") or []:
+        path = Path(item["path"])
+        if not path.is_file():
+            raise DatasetSnapshotChangedError(
+                "source_missing: "
+                f"{item['role']}:{item['pair_id']}:{path}"
+            )
+
+        stat = path.stat()
+        if int(stat.st_size) != int(item["size_bytes"]):
+            raise DatasetSnapshotChangedError(
+                "source_changed_size: "
+                f"{item['role']}:{item['pair_id']}:{path}"
+            )
+
+        current_sha = sha256_file(path)
+        if current_sha != item["sha256"]:
+            raise DatasetSnapshotChangedError(
+                "source_changed_hash: "
+                f"{item['role']}:{item['pair_id']}:{path}"
+            )
+
+
+def load_and_validate_dataset_snapshot(
+    path: str | Path,
+    *,
+    expected_snapshot_id: str | None = None,
+) -> dict:
+    snapshot_path = Path(path).expanduser().resolve(strict=True)
+    snapshot = json.loads(
+        snapshot_path.read_text(encoding="utf-8")
+    )
+    validate_dataset_snapshot(
+        snapshot,
+        expected_snapshot_id=expected_snapshot_id,
+    )
+    return snapshot
