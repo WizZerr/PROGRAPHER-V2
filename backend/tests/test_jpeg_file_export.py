@@ -315,3 +315,45 @@ def test_write_api_reports_success_and_existing_conflict(
     assert written.json()["source_unchanged"] is True
     assert Path(written.json()["destination_path"]).is_file()
     assert conflict.status_code == 409
+
+
+
+def test_source_change_after_publish_discards_output(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    monkeypatch.setenv("PROGRAPHER_DATA_DIR", str(tmp_path / "data"))
+    event_dir = tmp_path / "event"
+    source = event_dir / "IMG_0007.jpg"
+    _source_jpeg(source)
+
+    with TestClient(create_app()) as client:
+        event_id, files = _open_event(client, event_dir)
+
+    fingerprint = files["IMG_0007.jpg"]
+    recipe = _make_current(event_id, fingerprint)
+    output = tmp_path / "exports"
+    real_publish = jpeg_file_export._atomic_publish
+
+    def publish_then_mutate(destination, payload):
+        output_sha = real_publish(destination, payload)
+        source.write_bytes(source.read_bytes() + b"changed")
+        return output_sha
+
+    monkeypatch.setattr(
+        jpeg_file_export,
+        "_atomic_publish",
+        publish_then_mutate,
+    )
+
+    with pytest.raises(jpeg_file_export.JpegExportSourceChanged):
+        export_jpeg_file(
+            event_id=event_id,
+            fingerprint=fingerprint,
+            recipe=recipe,
+            revision=1,
+            options=JpegExportOptions(),
+            output_dir=output,
+        )
+
+    assert not (output / "IMG_0007.jpg").exists()

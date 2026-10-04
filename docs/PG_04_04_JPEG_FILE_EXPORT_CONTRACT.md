@@ -52,7 +52,7 @@ ProGrapher serializes concurrent exports targeting the same logical path.
 
 - ENOSPC / Windows disk-full are classified explicitly as insufficient-storage failures.
 - A failed temporary write, fsync or promotion does not return success.
-- A failed export cleans its temporary artifact.
+- A failed export cleans its temporary artifact; if post-promotion verification fails, the unverified final artifact is removed as well.
 - If source bytes change during export, the newly created output is discarded and the operation fails.
 
 ## Source integrity

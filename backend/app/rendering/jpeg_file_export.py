@@ -192,6 +192,7 @@ def _fsync_directory(path: Path) -> None:
 def _atomic_publish(destination: Path, payload: bytes) -> str:
     expected_sha = sha256(payload).hexdigest()
     temp_path: Path | None = None
+    promoted = False
 
     try:
         destination.parent.mkdir(parents=True, exist_ok=True)
@@ -222,6 +223,7 @@ def _atomic_publish(destination: Path, payload: bytes) -> str:
 
         os.replace(temp_path, destination)
         temp_path = None
+        promoted = True
         _fsync_directory(destination.parent)
 
         if sha256_file(destination) != expected_sha:
@@ -233,6 +235,11 @@ def _atomic_publish(destination: Path, payload: bytes) -> str:
     except JpegFileExportError:
         raise
     except OSError as exc:
+        if promoted:
+            try:
+                destination.unlink(missing_ok=True)
+            except OSError:
+                pass
         if _disk_full(exc):
             raise JpegExportDiskFull(
                 "not enough free space to complete JPEG export"
