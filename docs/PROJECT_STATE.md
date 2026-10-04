@@ -20,10 +20,11 @@ Historical plans and superseded planning notes live under `docs/archive/` and ar
 ## Current execution position
 
 - Active phase: **Phase 00 — קיבוע נקודת ההתחלה והחלפת התוכנית**
-- Latest completed Part: **PG-00.03 — V**
+- Latest completed Parts: **PG-00.03 — V**, **PG-00.06 — V**
 - Open merge gate Part: **PG-00.02 — ◐**
 - **PG-00.04 is blocked** until PG-00.02 is closed.
-- Work that does not depend on merge may continue with **PG-00.05 / PG-00.06**.
+- Primary development Part: **PG-00.05 — ACTIVE**.
+- Execution/governance Part: **PG-00.06 — V**.
 
 ## PG-00.02 — residual QA status
 
@@ -58,9 +59,13 @@ Outstanding evidence includes:
 
 ## Next executable work
 
-1. **PG-00.05** — prepare/verify fixtures and restore checks where data is available.
-2. **PG-00.06** — create the execution board, blockers and risk map.
-3. Return to **PG-00.02** later for the remaining hardware/manual QA and final CI.
-4. Only then execute **PG-00.04** merge/tag/baseline.
+1. **PG-00.05 — ACTIVE** — prepare/verify fixtures and restore checks where data is available.
+2. Return to **PG-00.02** later for the remaining hardware/manual QA and final CI.
+3. Only then execute **PG-00.04** merge/tag/baseline.
+4. After G0, continue with Phase 01 according to Workflow v3.0.
 
 Do not start Auth/Cloud implementation or a new production Brain merely because documentation migration is complete.
+
+## Execution board
+
+- `docs/EXECUTION_BOARD.md` — active lane, blockers, risk map and bug/research/product classification.
