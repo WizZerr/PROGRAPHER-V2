@@ -19,6 +19,10 @@ from app.datasets.jpeg_integrity import (
     JPEG_COLOR_CONTRACT_VERSION,
     load_and_validate_dataset_snapshot,
 )
+from app.rendering.jpeg_renderer import (
+    JPEG_EDIT_RECIPE_VERSION as RECIPE_VERSION,
+    validate_jpeg_edit_recipe,
+)
 from app.evaluation.artifact_provenance import (
     J0_TARGET_FEATURE_CONTRACT_VERSION,
     RENDERER_CONTRACT_VERSION,
@@ -30,7 +34,7 @@ from app.evaluation.artifact_provenance import (
     target_bundle_provenance,
     write_immutable_json,
 )
-from jpeg_j0_feasibility import RECIPE_VERSION, run as run_j0
+from jpeg_j0_feasibility import run as run_j0
 
 
 SCHEMA_VERSION = 1
@@ -111,10 +115,10 @@ def _canonical(path: str) -> str:
 
 def _load_recipe(path: str) -> dict:
     payload = _read_json(Path(path))
-    transform = payload.get("transform") or {}
-    coefficients = transform.get("coefficients")
-    if not isinstance(coefficients, list):
-        raise ValueError(f"recipe missing coefficients: {path}")
+    try:
+        validate_jpeg_edit_recipe(payload)
+    except ValueError as exc:
+        raise ValueError(f"invalid JPEG EditRecipe {path}: {exc}") from exc
     return payload
 
 
