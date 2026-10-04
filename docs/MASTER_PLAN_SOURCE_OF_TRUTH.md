@@ -198,9 +198,9 @@
 | Part | מצב | פעולה ותוצר | בדיקת סיום |
 |---|---|---|---|
 | PG-03.01 | V | לשמר את בסיס pairing הקיים: ambiguity, case, אותו קובץ פיזי ו־manifest [E01, E05] | המימוש קיים; ה־V אינו מכסה geometry/ICC או כל חומר אפשרי |
-| PG-03.02 | ☐ | להוסיף חוזה orientation ויישור: crop באותו יחס, crop+resize, rotation, mirror ועותק שגוי | fixtures שמכשילים בדיקת ממדים בלבד נחסמים/מסומנים; לא מעוותים מקור כדי להסתיר אי־התאמה |
-| PG-03.03 | ☐ | להגדיר ICC→מרחב עבודה, gamma, bit depth, EXIF orientation ומקרה ICC חסר | אותה תמונה עם encoding/profile תקינים שונים מגיעה להשוואה בתנאים שקולים; שגיאה ידועה נחשפת |
-| PG-03.04 | ☐ | לאמת bytes/hash לפני J0, לפני feature extraction ולפני Test; לנעול snapshot | שינוי קובץ אחרי Intake עוצר שימוש ומייצר dataset version חדשה, לא תוצאה שקטה |
+| PG-03.02 | V | `jpeg_integrity.py` + real JPEG intake מבצעים EXIF normalization, ORB/RANSAC alignment, consensus/edge guards וחוסמים crop באותו יחס, rotation, mirror ו-wrong-copy; resize מאומת נשאר תקף | `test_jpeg_integrity.py` עבר ב-Windows backend regression run 37171832248; זוג לא ודאי נחסם במקום להימתח/להינחש |
+| PG-03.03 | V | decoder משותף מבצע EXIF normalization ו-ICC→sRGB working space; RGB/L ללא ICC מתועד כהנחת sRGB, non-RGB ללא ICC נדחה; evidence כולל ICC hash/action | בדיקות ICC/EXIF/color equivalence ו-CMYK rejection עברו ב-run 37171832248; J0/J1 real משתמשים באותו decode contract |
+| PG-03.04 | V | Intake יוצר `dataset_snapshot.json` עם SHA-256 מלא; snapshot מאומת לפני J0, J1 feature/training ולפני locked Test | mutation אחרי Intake נחסם; Intake חדש יוצר snapshot ID חדש; regression עבר ב-run 37171832248 |
 | PG-03.05 | ☐ | להפוך unchanged-final מאושר למקרה identity תקף; להפרידו מקובץ שהצלם לא בדק | אימון והערכה כוללים 'אין שינוי'; שכפול מקור אקראי לא הופך לתווית אנושית |
 | PG-03.06 | ◐ | לשמר whole-event split ולהוסיף קבוצות מקור/עותקים/near-duplicates עם בדיקה אנושית לחשודים | נגזרות של אותו צילום אינן חוצות חלוקות; אירוע חדש לא מזיז Test קיים |
 | PG-03.07 | ☐ | להוסיף דוח כיסוי: צלם, אירוע, מצלמה, תאורה, שינוי מקומי/גלובלי, פסילות וסיבות | מספר זוגות תקפים וכיסוי מוצגים בנפרד מספירת קבצים; אין הסתרת קבוצה קשה |
