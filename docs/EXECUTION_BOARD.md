@@ -21,11 +21,11 @@ Status vocabulary:
 
 | Lane | Part | Status | Exact next output |
 |---|---|---|---|
-| Primary development | **PG-00.05** | ACTIVE | Fixture/restore matrix; identify what can be proven now and what requires real user backup/licensed source material |
-| PR1 QA | **PG-00.02** | PAUSED | Later: External Drive/Relink manual evidence + final-head CI; do not mark PASS until both are resolved |
-| Integration | **PG-00.04** | BLOCKED | Review/merge/tag only after PG-00.02 closes |
-| Planning/governance | **PG-00.06** | DONE | This board + blockers + risk map + work classification |
-| Next product phase | **PG-01.01** | BLOCKED BY G0 | Release 1 product contract becomes executable only after G0 |
+| Primary development | **PG-04.02** | ACTIVE / ◐ | Verify product JPEG preview/full-resolution render path, revision cache and stale-revision guard |
+| Photographer intake | **PG-06.02** | BLOCKED | Authorized photographer material |
+| Residual PR1 QA | **PG-00.02** | PAUSED | Only resume when product owner returns to the remaining hardware/manual QA |
+| Cloud/Auth | **PG-12+** | BLOCKED / NOT STARTED | Do not start before workflow gate permits |
+| Brain | **PG-07/08+** | BLOCKED / NOT STARTED | No new production Brain before required data/gates |
 
 ## Blockers
 
@@ -122,9 +122,11 @@ A Part can be marked DONE/V only when:
 
 ## Next action
 
-**PG-00.05 is the only ACTIVE primary-development Part.**
+**PG-04.02 is the only ACTIVE primary-development Part.**
 
-PG-00.02 stays PAUSED until the owner returns to the remaining PR1 hardware/manual QA. PG-00.04 stays BLOCKED. No Auth/Cloud implementation and no new production Brain begins from Phase 00.
+Implementation is on `main`. The exact remaining step before V is manual/local verification of the new product-render tests plus backend regression/compile checks. Hosted Actions should not be triggered merely for convenience while the monthly hosted-runner quota is exhausted.
+
+PG-06.02 stays BLOCKED on authorized photographer files. Residual PG-00.02 QA stays PAUSED. No Auth/Cloud implementation and no new production Brain begins here.
 
 ## Current bug batch
 
@@ -160,4 +162,4 @@ PG-00.02 stays PAUSED until the owner returns to the remaining PR1 hardware/manu
 - **PG-04.01 — V:** shared versioned JPEG EditRecipe + renderer implemented and used by J0/J1/Locked Test.
 - **PG-06.01 — V:** photographer request package ready to send.
 - **PG-06.02 — BLOCKED:** waits for real authorized photographer files.
-- **PG-04.02 — READY:** shared-recipe preview/full-resolution rendering, revision/cache and stale-preview protection.
+- **PG-04.02 — ACTIVE / ◐:** product preview/full-resolution render API, revision cache and stale/replaced-revision protection implemented; verification pending.

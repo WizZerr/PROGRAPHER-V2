@@ -8,36 +8,25 @@ Updated: 2026-10-04
 
 Historical plans and superseded planning notes live under `docs/archive/` and are not execution instructions.
 
-## Repository / PR
+## Repository / mainline
 
 - Repository: `WizZerr/PROGRAPHER-V2`
-- Working branch: `cursor/testing-ready-77c3`
-- PR: #1 — Draft, state `open`
-- Base: `ui-v2-overhaul`
-- PR head observed immediately before PG-00.03 adoption: `953b0f1f05da7197c14141ff42f6f288d1c61420`
-- `main` is not the active development baseline until PG-00.04 is completed.
+- **Single development Source of Truth: `main`.**
+- Verified pre-PG-04.02 main HEAD: `86b67d2e65a8cd2876a29eb10f85b88703b34f17`.
+- Repository branch inventory at verification: **`main` only**.
+- PR #1 is closed and is not the active development path.
+- New work is committed directly to `main` unless a strong engineering reason requires a temporary branch.
 
 ## Current execution position
 
-- Active phase: **Phase 00 — קיבוע נקודת ההתחלה והחלפת התוכנית**
-- Latest completed Parts: **PG-00.03 — V**, **PG-00.06 — V**
-- Open merge gate Part: **PG-00.02 — ◐**
-- **PG-00.04 is blocked** until PG-00.02 is closed.
-- Primary development Part: **PG-00.05 — ACTIVE / ◐**.
-- Execution/governance Part: **PG-00.06 — V**.
-
-## PG-00.02 — residual QA status
-
-Windows PR1 QA has broad manual evidence recorded in `docs/PR1_TEST_CHECKLIST_HE.md`, including RAW/JPEG Gallery and Darkroom behavior, cache behavior, RAW previews, XMP safety, event deletion, startup and focused performance checks.
-
-The product owner chose on 2026-10-04 to stop additional manual QA for now and batch remaining bugs later. This is **not** recorded as PASS.
-
-Outstanding evidence includes:
-
-- External-drive open/disconnect/reconnect flow.
-- Relink to the correct folder, refusal of an unrelated folder, and Gallery/Darkroom recovery after relink.
-- Final-head CI after the latest QA/test/documentation commits.
-- JPEG edge-case checks added to automated coverage must be confirmed by CI.
+- Active phase: **Phase 04 — JPEG engine, preview truth and technical export**.
+- **PG-03.02–PG-03.09 — V**: pre-photographer JPEG/data-safety package complete.
+- **PG-06.01 — V**: photographer data-request package ready.
+- **PG-06.02 — BLOCKED** until authorized photographer material arrives.
+- **PG-04.01 — V**: shared JPEG EditRecipe/renderer contract verified in run `37176350329`.
+- **PG-04.02 — ACTIVE / ◐**: product preview/full-resolution rendering, revision cache and stale-revision protection implemented; regression verification pending.
+- Residual PR1 manual QA remains paused by product-owner decision and is not restarted here.
+- Do not start Auth/Supabase/Cloud or a new production Brain.
 
 ## Release 1 architecture locked by Workflow v3.0
 
@@ -66,12 +55,12 @@ Outstanding evidence includes:
 
 ## Next executable work
 
-1. **PG-00.05 — ACTIVE** — prepare/verify fixtures and restore checks where data is available.
-2. Return to **PG-00.02** later for the remaining hardware/manual QA and final CI.
-3. Only then execute **PG-00.04** merge/tag/baseline.
-4. After G0, continue with Phase 01 according to Workflow v3.0.
+1. **PG-04.02 — ACTIVE / ◐** — verify `test_jpeg_product_render.py` plus backend regression/compile without spending hosted Actions minutes unnecessarily.
+2. If verification passes, mark **PG-04.02 — V**.
+3. Then continue to **PG-04.03 — JPEG export contract**.
+4. **PG-06.02** remains blocked until real authorized photographer material arrives.
 
-Do not start Auth/Cloud implementation or a new production Brain merely because documentation migration is complete.
+Do not start Auth/Cloud implementation or a new production Brain.
 
 ## Execution board
 
@@ -82,7 +71,7 @@ Do not start Auth/Cloud implementation or a new production Brain merely because 
 - **PG-01.01 — ◐ DRAFT PREPARED:** `docs/RELEASE_1_PRODUCT_CONTRACT.md`.
 - Draft locks the intended Release 1 shape for review: independent JPEG, assisted RAW, Windows x64 + Apple Silicon, local editing with narrow cloud control plane.
 - It cannot become V before G0 and explicit product-owner ratification.
-- Primary active development Part remains PG-00.05 while G0 is open.
+- This prepared Phase-01 contract is not the active development lane; current work follows Phase 04 as recorded above.
 
 ## PG-01.02 preparation
 

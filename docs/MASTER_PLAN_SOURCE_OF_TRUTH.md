@@ -218,7 +218,7 @@
 | Part | מצב | פעולה ותוצר | בדיקת סיום |
 |---|---|---|---|
 | PG-04.01 | V | `app/rendering/jpeg_renderer.py` הוא מקור האמת המשותף ל-JPEG EditRecipe ול-renderer ממוספר; J0/J1/Locked Test ו-provenance משתמשים באותה משמעות | `test_jpeg_renderer.py` וכן backend regression/compile עברו ב-run 37176350329; PG-04.02–04.04 יחברו preview/export מוצריים לאותו contract |
-| PG-04.02 | ☐ | להפיק preview מהיר ותוצאה ברזולוציה מלאה מאותו מקור ומתכון; cache לפי revision | preview ישן לא מחליף חדש; אין אישור על מתכון שכבר הוחלף |
+| PG-04.02 | ◐ | Product render API מפיק preview מהיר ותוצאה ברזולוציה מלאה מאותו מקור ו-JPEG EditRecipe משותף; cache קשיח לפי revision + recipe/source provenance | implementation + regression tests נכתבו; stale/replaced revision נחסם ו-approval guard קיים. נשאר להריץ manual/local CI לפני V |
 | PG-04.03 | ☐ | להגדיר יצוא JPEG: איכות, גודל, ICC, orientation, metadata ו־GPS לבחירת המשתמש | הפלט המקודד נפתח ונמדד מחדש; אין encoding חוזר של עותק ערוך במקום מקור |
 | PG-04.04 | ☐ | לייצא לתיקייה נפרדת עם טיפול בשמות כפולים, קובץ קיים, דיסק מלא וכתיבה אטומית | המקור אינו משתנה; פלט חלקי אינו מסומן כתקין; hash המקור לפני/אחרי זהה |
 | PG-04.05 | ☐ | להכין reference renders ו־golden cases ל־identity, חשיפה/צבע, clipping ותמונה גדולה | השוואה אחרי encoding; סטיית preview לעומת downsample של export נמדדת ומוגבלת |
