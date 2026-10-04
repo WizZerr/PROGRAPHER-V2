@@ -1,34 +1,48 @@
 # PG-04.07 — RAW/XMP Safety Report
 
 Date: 2026-10-04  
-Status: **◐ IMPLEMENTED / VERIFICATION PENDING**
+Status: **V**
 
-## Existing evidence retained
+## Existing round-trip evidence retained
 
 The repository already contains:
 
-- `test_lightroom_roundtrip.py`
-- `test_lightroom_roundtrip_missing_values.py`
+- `test_lightroom_roundtrip.py`,
+- `test_lightroom_roundtrip_missing_values.py`,
 - XMP mapping tests,
 - testing-loop coverage proving RAW bytes stay unchanged,
-- coverage that foreign/unmarked XMP is not replaced.
+- testing-loop coverage that foreign/unmarked XMP is not replaced.
 
-## Hardening added
+## Hardening verified
 
-`backend/app/testing/sidecar.py` now protects a previous good ProGrapher sidecar across mid-export source changes.
+`backend/app/testing/sidecar.py` now protects a previous good ProGrapher XMP across mid-export source changes.
 
-New regression file:
+Focused manual harness PASS:
 
-`backend/tests/test_pg_04_07_raw_xmp_safety.py`
+- normal marked XMP write,
+- foreign/unmarked XMP remains byte-identical,
+- RAW change before promotion leaves previous ProGrapher XMP untouched,
+- RAW change after promotion restores the previous ProGrapher XMP,
+- first-time export is removed if RAW changes after promotion,
+- temporary and rollback files are cleaned.
 
-Cases:
+## UI truth verification
 
-- foreign XMP never replaced,
-- RAW change before promotion preserves previous sidecar,
-- RAW change after promotion restores previous sidecar,
-- first-time export is removed when RAW changes after promotion,
-- temp/rollback artifacts are cleaned.
+Committed Darkroom source confirms:
 
-## Remaining before V
+- RAW preview is labeled `תצוגה משוערת בלבד · התוצאה הסופית נקבעת ב-Lightroom.`,
+- RAW action remains `ייצוא XMP`,
+- JPEG preview is separately labeled as a real shared-renderer preview,
+- JPEG and RAW control semantics are not presented as equivalent.
 
-Run the focused RAW/XMP safety harness and verify the committed Darkroom still labels RAW preview as approximate/Lightroom-owned and exports XMP rather than claiming a final standalone RAW render.
+## Boundary
+
+This closes the ProGrapher-side RAW/XMP safety/truth requirement only.
+
+Real Lightroom Classic ingestion/render evidence and real macOS Lightroom evidence remain later hardware/reference gates and are not claimed here.
+
+## Result
+
+PG-04.07 is **V**.
+
+**Phase 04 is complete.**

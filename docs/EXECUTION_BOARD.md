@@ -21,7 +21,7 @@ Status vocabulary:
 
 | Lane | Part | Status | Exact next output |
 |---|---|---|---|
-| Primary development | **PG-04.07** | ACTIVE / ◐ | Verify hardened sidecar rollback/source protection plus RAW approximate-preview/Lightroom truth labeling |
+| Primary development | **Phase 05** | READY | Select the next executable durable local-data/job Part from the Master Plan |
 | Photographer intake | **PG-06.02** | BLOCKED | Authorized photographer material |
 | Residual PR1 QA | **PG-00.02** | PAUSED | Only resume when product owner returns to the remaining hardware/manual QA |
 | Cloud/Auth | **PG-12+** | BLOCKED / NOT STARTED | Do not start before workflow gate permits |
@@ -122,9 +122,9 @@ A Part can be marked DONE/V only when:
 
 ## Next action
 
-**PG-04.07 is the only ACTIVE primary-development Part.**
+**Phase 04 is complete.**
 
-PG-04.06 passed its targeted control/pixel and source-contract verification without consuming hosted Actions minutes. PG-04.07 is the remaining Phase-04 boundary: RAW/XMP safety and truthful approximate-preview labeling.
+PG-04.07 passed the focused RAW/XMP safety harness and committed UI truth-label verification without consuming hosted Actions minutes. The primary-development lane now moves to the next executable Phase-05 Part.
 
 PG-06.02 stays BLOCKED on authorized photographer files. Residual PG-00.02 QA stays PAUSED. No Auth/Cloud implementation and no new production Brain begins here.
 
@@ -167,4 +167,4 @@ PG-06.02 stays BLOCKED on authorized photographer files. Residual PG-00.02 QA st
 - **PG-04.04 — V:** safe atomic filesystem export passed exact-module manual delta/integration verification.
 - **PG-04.05 — V:** renderer semantic goldens, encoded JPEG budgets and large preview-vs-export budgets passed.
 - **PG-04.06 — V:** normalized JPEG controls are wired to the real renderer; stale async responses cannot replace newer state; RAW-only semantics remain separate.
-- **PG-04.07 — ACTIVE / ◐:** RAW/XMP boundary is the remaining Phase-04 Part.
+- **PG-04.07 — V:** RAW/XMP boundary verified; Phase 04 complete.
