@@ -5,12 +5,19 @@ import csv
 import hashlib
 import json
 import math
+import sys
 from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Iterable
 
 import cv2
 import numpy as np
+
+BACKEND_ROOT = Path(__file__).resolve().parents[1]
+if str(BACKEND_ROOT) not in sys.path:
+    sys.path.insert(0, str(BACKEND_ROOT))
+
+from app.datasets.jpeg_integrity import read_jpeg_working_rgb
 
 
 RECIPE_VERSION = "jpeg-recipe-j0-polynomial-v1"
@@ -68,12 +75,8 @@ def _write_json(path: Path, payload: dict) -> None:
 
 
 def _read_image(path: Path) -> np.ndarray:
-    payload = path.read_bytes()
-    encoded = np.frombuffer(payload, dtype=np.uint8)
-    image = cv2.imdecode(encoded, cv2.IMREAD_COLOR)
-    if image is None:
-        raise ValueError(f"Could not decode JPEG: {path}")
-    return cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+    image, _ = read_jpeg_working_rgb(path)
+    return image
 
 
 def _write_jpeg(path: Path, rgb: np.ndarray, quality: int = 95) -> None:
