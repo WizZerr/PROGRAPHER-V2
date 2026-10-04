@@ -164,7 +164,7 @@
 |---|---|---|---|
 | PG-01.01 | ◐ | `docs/RELEASE_1_PRODUCT_CONTRACT.md` נכתב כטיוטת חוזה Release 1: JPEG עצמאי, RAW מסייע, Windows x64 + Apple Silicon, local/cloud boundary, חריגים ומיפוי יכולות→Gates | הטיוטה מוכנה; V מחייב G0 + אישור מפורש של בעל המוצר, ואחריו כל שינוי היקף יהיה החלטה מנוהלת גרסה |
 | PG-01.02 | ◐ | `docs/PG_01_02_DATA_IDENTITY_CONTRACT.md` מגדיר Account, Photographer, Device, Entitlement, Profile/ProfileVersion, Dataset, Event, PhotoAsset, Run, RecipeRevision, Review ו-Export; SQLite מקומי + Supabase Auth/Postgres/Storage כספק ענן ראשון | החוזה מונע זהות=נתיב, מפריד משתמש/צלם/פרופיל ו-RAW/JPEG, וממפה פערי migration; V לאחר G0 ואשרור ליישום |
-| PG-01.03 | ◐ | להגדיר pipeline משותף לאימון ולהפעלה: source→color/preprocess→features→model/profile→recipe→renderer | קונטרקט מנוהל גרסה; inference אינו דורש edited target; NoOp מסומן כלא זמין |
+| PG-01.03 | ◐ | `docs/PG_01_03_PIPELINE_CONTRACT.md` מגדיר spine משותף source→color/preprocess→features→model/profile→recipe→renderer, עם מסלולי JPEG/RAW נפרדים, חוזי גרסה ו-failure semantics | inference אינו קורא edited target; NoOp/baseline אינו יכול להיחשב intelligence; V לאחר G0 ואשרור ליישום |
 | PG-01.04 | ☐ | לקבוע חבילת פרופיל ניידת: weights, normalizer, feature/recipe/render versions, metrics, hashes ותאימות app | טעינה ממיקום חדש על fixture; פרופיל לא תואם נדחה עם הסבר, לא מופעל חלקית |
 | PG-01.05 | ☐ | לקבע בעלות ומחזור חיים לפי סעיף 4: מקורות מקומיים, חומר נבחר לענן, consent, מכסות ומדיניות מחיקה | יש טבלת מקור אמת לכל ישות; סנכרון פרופיל לא מוצג כגיבוי תמונות |
 | PG-01.06 | ◐ | לעדכן את EVALUATION_15A_PROTOCOL לפרוטוקול JPEG, RAW נפרד, time study וספי סעיף 7 במסמך זה | הספים והחרגות קבועים לפני השוואת מועמדים; לכל מדד מכנה והגדרת כשל |
