@@ -118,7 +118,11 @@ def read_jpeg_working_rgb(
             )
             profile_name: str | None = None
 
-            working = opened.copy()
+            # Normalize display orientation before color conversion. Some
+            # color transforms do not preserve EXIF metadata, so reversing this
+            # order can silently lose orientation 2..8.
+            working = ImageOps.exif_transpose(opened.copy())
+
             if icc_sha is not None:
                 try:
                     source_profile = ImageCms.ImageCmsProfile(
@@ -146,7 +150,7 @@ def read_jpeg_working_rgb(
                 working = working.convert("RGB")
                 color_action = "assume_srgb_no_icc"
 
-            working = ImageOps.exif_transpose(working).convert("RGB")
+            working = working.convert("RGB")
             rgb = np.asarray(working, dtype=np.uint8).copy()
             display_height, display_width = rgb.shape[:2]
 
