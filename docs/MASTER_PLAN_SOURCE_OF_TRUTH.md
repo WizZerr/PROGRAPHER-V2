@@ -203,7 +203,7 @@
 | PG-03.04 | V | Intake יוצר `dataset_snapshot.json` עם SHA-256 מלא; snapshot מאומת לפני J0, J1 feature/training ולפני locked Test | mutation אחרי Intake נחסם; Intake חדש יוצר snapshot ID חדש; regression עבר ב-run 37171832248 |
 | PG-03.05 | V | Intake מפריד `unchanged_unverified` מ-`identity_approved` באמצעות approval מפורש ומגובב; approval סותר/ישן חוסם Intake; J0 מקבל identity target מאושר | regression ב-run 37172073037 הוכיח copy לא מאושר בחוץ, identity מאושר עובר J0, ושינוי bytes מבטל approval |
 | PG-03.06 | V | Source Groups משתמשים ב-SHA-256 + pHash shortlist + Geometry verification; suspects דורשים review אנושי; split policy `event-source-group-v2` מאגד Events מחוברים לאותה חלוקה | regression ב-run 37172785201 הוכיח recompression/resize grouping, human review, חסימת split leakage ו-Event חדש שאינו מזיז Test קיים |
-| PG-03.07 | ☐ | להוסיף דוח כיסוי: צלם, אירוע, מצלמה, תאורה, שינוי מקומי/גלובלי, פסילות וסיבות | מספר זוגות תקפים וכיסוי מוצגים בנפרד מספירת קבצים; אין הסתרת קבוצה קשה |
+| PG-03.07 | V | Intake מייצר `coverage_report.json` עם file/matched/usable/excluded counts נפרדים, camera EXIF, lighting buckets, edit-scope coverage, per-event exclusions ו-`hard_groups` | regression ב-run 37173058568 הוכיח camera/lighting evidence, global לעומת local-or-complex suspected, exclusion reasons והפרדה בין file count ל-usable pairs |
 | PG-03.08 | ☐ | לחזק מזהי Candidate/targets עם code commit, dependency lock, feature/color/renderer version וקונפיגורציה | שינוי מהותי יוצר מזהה חדש; artifact קיים לא נדרס; גם מועמד שנדחה נשמר |
 | PG-03.09 | ☐ | לצרף לרגרסיה fixtures שמוכיחים את סיכוני 03.02–03.08 ו־Test guard | train runner אינו קורא Test לצורך התאמה; dataset פגום נדחה לפני חישוב יקר |
 
