@@ -498,10 +498,12 @@ def run(
                 pair.get("original_fingerprint")
                 and pair.get("edited_fingerprint")
                 and pair["original_fingerprint"] == pair["edited_fingerprint"]
+                and not pair.get("identity_target_approved", False)
             ):
                 raise ValueError(
-                    "identical_bytes_not_useful_for_j0: this pair is valid for "
-                    "pairing QA, but contains no edit delta to reconstruct"
+                    "identical_bytes_require_explicit_identity_approval: "
+                    "byte-identical pairs are not learning targets unless the "
+                    "photographer/intake explicitly approved an unchanged final"
                 )
 
             original = _read_image(original_path)
