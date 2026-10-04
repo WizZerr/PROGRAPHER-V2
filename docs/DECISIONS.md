@@ -39,3 +39,18 @@ Do not reconstruct the retired CLIP + ExtraTrees V1 brain. Each new Brain/model 
 Prepared 2026-10-04 under PG-01.01. The working scope is defined in `docs/RELEASE_1_PRODUCT_CONTRACT.md`: independent JPEG editing is the primary Release 1 path; RAW remains an assisted safe RAW/XMP path; Windows x64 and macOS Apple Silicon are mandatory targets; event editing/inference/render/review/export stay local; cloud remains a narrow commercial control plane.
 
 This decision is **not ratified** until G0 is signed and the product owner explicitly accepts the contract. After ratification, scope changes require a new versioned decision.
+
+
+## D-012 — [DRAFT] Supabase is the initial Release 1 cloud provider
+Prepared 2026-10-04 under PG-01.02.
+
+Initial cloud implementation target:
+
+- Supabase Auth for authentication,
+- Supabase PostgreSQL for the commercial control-plane database,
+- Supabase Storage for private profile/model artifacts and explicitly selected learning material,
+- local SQLite remains the operational source of truth for Event/PhotoAsset/Run/RecipeRevision/Review/Export.
+
+Supabase is an implementation provider, not the ProGrapher domain model. Canonical IDs and contracts must remain portable so the provider can be changed later without redefining Account, Photographer, Profile or Event identity.
+
+No Supabase cloud resources are considered production-ready merely because this decision exists. Cloud implementation remains gated by the Master Workflow.
