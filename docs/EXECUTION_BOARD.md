@@ -21,7 +21,7 @@ Status vocabulary:
 
 | Lane | Part | Status | Exact next output |
 |---|---|---|---|
-| Primary development | **Phase 05** | READY | Select the next executable durable local-data/job Part from the Master Plan |
+| Primary development | **PG-01.04** | PREP ACTIVE / ◐ | Prepare portable immutable ProfileVersion package; V remains blocked by G0 |
 | Photographer intake | **PG-06.02** | BLOCKED | Authorized photographer material |
 | Residual PR1 QA | **PG-00.02** | PAUSED | Only resume when product owner returns to the remaining hardware/manual QA |
 | Cloud/Auth | **PG-12+** | BLOCKED / NOT STARTED | Do not start before workflow gate permits |
@@ -51,7 +51,7 @@ Status vocabulary:
 | Crop/geometry mismatch passes weak checks | High | visual ORB/RANSAC + consensus/edge checks; PG-03.02 V | PG-03.09 + real-data review |
 | Research result accidentally presented as product AI | High | J0/J1 isolated; PR1 labels JPEG as viewing/dataset path | PG-06–08 gates |
 | External-drive disappearance/relink regression | High | backend tests exist; manual hardware evidence missing | PG-00.02 later, PG-05 hardening |
-| Crash loses local scan/job progress | High | current scan job is in-memory; risk documented | PG-05 |
+| Crash loses local scan/job progress | High | current scan job is in-memory; risk documented | PG-05 after Phase-05 entry dependencies are ratified |
 | Mac-specific packaging/runtime failure | High | target is mandatory; not yet tested | PG-02 |
 | 2,000-photo event memory/latency regression | Medium/High | progressive gallery/cache evidence exists | PG-05/09/11 |
 | Cloud scope creep before local value is proven | High | D-008 + G4 requirement | PG-12–15 only after G4 |
@@ -124,7 +124,7 @@ A Part can be marked DONE/V only when:
 
 **Phase 04 is complete.**
 
-PG-04.07 passed the focused RAW/XMP safety harness and committed UI truth-label verification without consuming hosted Actions minutes. The primary-development lane now moves to the next executable Phase-05 Part.
+A dependency check found that Phase 05 formally requires PG-01.02/PG-01.04. PG-01.04 preparation is therefore the active engineering lane while G0 remains paused; Phase 05 is not marked ready prematurely.
 
 PG-06.02 stays BLOCKED on authorized photographer files. Residual PG-00.02 QA stays PAUSED. No Auth/Cloud implementation and no new production Brain begins here.
 

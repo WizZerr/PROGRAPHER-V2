@@ -62,9 +62,9 @@ Historical plans and superseded planning notes live under `docs/archive/` and ar
 ## Next executable work
 
 1. **Phase 04 — COMPLETE** — PG-04.01 through PG-04.07 are V within their exact technical scope.
-2. Continue to the next executable pre-photographer infrastructure Part from Phase 05.
-3. **PG-06.02** remains blocked until authorized photographer material arrives.
-4. **PG-06.02** remains blocked until real authorized photographer material arrives.
+2. **PG-01.04 — PREP ACTIVE / ◐** — Phase 05 entry requires PG-01.02/01.04; portable Profile Package implementation is being prepared while G0 remains paused.
+3. **Phase 05 is BLOCKED on its formal entry dependencies** until PG-01.02/01.04 can be ratified after G0.
+4. **PG-06.02** remains blocked until authorized photographer material arrives.
 
 Do not start Auth/Cloud implementation or a new production Brain.
 
@@ -165,3 +165,12 @@ Do not start Auth/Cloud implementation or a new production Brain.
 - **PG-04.06 — V:** JPEG Darkroom controls now drive the real renderer with stale-response protection and explicit normalized semantics.
 - **PG-04.07 — V:** RAW/XMP safety and truth boundary closed.
 - Phase 04 is complete; next executable work comes from **Phase 05**.
+
+
+## PG-01.04 portable profile package preparation
+
+- **PG-01.04 — ◐ PREPARED / G0 BLOCKED.**
+- Added a local portable `.pgprofile` package contract and implementation with immutable UUID identity, weights/normalizer roles, version contracts, metrics, hashes and compatibility gates.
+- Import is fail-closed and atomic; incompatible/tampered packages do not create a final ProfileVersion directory.
+- This does not start Supabase/Auth/Cloud.
+- Phase 05 must not be started as complete-entry work until PG-01.02 and PG-01.04 are ratified after G0.
