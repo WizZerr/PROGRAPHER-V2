@@ -136,3 +136,9 @@ PG-00.02 stays PAUSED until the owner returns to the remaining PR1 hardware/manu
 - **R-IDENTITY-002 — Singleton photographer state:** current local setup does not represent Account → Photographer → Profile as separate identities.
 - **R-IDENTITY-003 — Mixed persistence:** Reviews/testing profiles/jobs/exports are not yet represented by durable versioned domain entities.
 - **R-CLOUD-001 — Provider coupling:** Supabase is the initial provider, but provider URLs/table IDs must not become canonical product identities.
+
+## Pipeline contract risks
+
+- **R-PIPELINE-001 — RAW-centric BrainInput:** existing Brain V2 input contracts encode RAW-specific fields and must evolve without breaking candidate provenance.
+- **R-PIPELINE-002 — Multiple manifest generations:** current dataset manifests use more than one historical schema; future training must consume one declared contract/version.
+- **R-PIPELINE-003 — Renderer gap:** current Darkroom visual illustration is not a versioned JPEG renderer and cannot serve as product-quality evidence.
