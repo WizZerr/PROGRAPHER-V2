@@ -18,20 +18,13 @@ if str(BACKEND_ROOT) not in sys.path:
     sys.path.insert(0, str(BACKEND_ROOT))
 
 from app.datasets.jpeg_integrity import read_jpeg_working_rgb
-
-
-RECIPE_VERSION = "jpeg-recipe-j0-polynomial-v1"
-FEATURE_NAMES = (
-    "bias",
-    "r",
-    "g",
-    "b",
-    "r2",
-    "g2",
-    "b2",
-    "rg",
-    "rb",
-    "gb",
+from app.rendering.jpeg_renderer import (
+    JPEG_EDIT_RECIPE_VERSION as RECIPE_VERSION,
+    POLYNOMIAL_FEATURE_NAMES as FEATURE_NAMES,
+    build_polynomial_recipe,
+    polynomial_features as shared_polynomial_features,
+    render_coefficients_float,
+    render_coefficients_uint8,
 )
 
 
@@ -139,24 +132,9 @@ def _float_rgb(image: np.ndarray) -> np.ndarray:
 
 
 def _polynomial_features(rgb: np.ndarray) -> np.ndarray:
-    values = rgb.reshape(-1, 3).astype(np.float64)
-    r = values[:, 0]
-    g = values[:, 1]
-    b = values[:, 2]
-    return np.column_stack(
-        (
-            np.ones_like(r),
-            r,
-            g,
-            b,
-            r * r,
-            g * g,
-            b * b,
-            r * g,
-            r * b,
-            g * b,
-        )
-    )
+    # Backward-compatible research wrapper. Rendering semantics live in
+    # app.rendering.jpeg_renderer.
+    return shared_polynomial_features(rgb)
 
 
 def _sample_indices(
@@ -225,24 +203,20 @@ def _apply_recipe_float(
     *,
     chunk_pixels: int = 1_000_000,
 ) -> np.ndarray:
-    flat = rgb_float.reshape(-1, 3)
-    output = np.empty_like(flat, dtype=np.float32)
-
-    for start in range(0, len(flat), chunk_pixels):
-        end = min(start + chunk_pixels, len(flat))
-        features = _polynomial_features(flat[start:end])
-        predicted = features @ coefficients
-        output[start:end] = np.clip(predicted, 0.0, 1.0).astype(np.float32)
-
-    return output.reshape(rgb_float.shape)
+    # Compatibility wrapper for existing research imports.
+    return render_coefficients_float(
+        rgb_float,
+        coefficients,
+        chunk_pixels=chunk_pixels,
+    )
 
 
 def _apply_recipe_uint8(
     image: np.ndarray,
     coefficients: np.ndarray,
 ) -> np.ndarray:
-    result = _apply_recipe_float(_float_rgb(image), coefficients)
-    return np.clip(np.rint(result * 255.0), 0, 255).astype(np.uint8)
+    # Compatibility wrapper for existing research imports.
+    return render_coefficients_uint8(image, coefficients)
 
 
 def _psnr_from_rmse(rmse_255: float) -> float:
@@ -313,33 +287,27 @@ def _recipe_payload(
     sample_pixels: int,
     ridge_lambda: float,
 ) -> dict:
-    return {
-        "schema_version": 1,
-        "recipe_version": RECIPE_VERSION,
-        "purpose": "jpeg_edit_representation_feasibility",
-        "production_ready": False,
-        "trained_model": False,
-        "color_space": "sRGB_encoded_0_1",
-        "transform": {
-            "type": "quadratic_rgb_polynomial",
-            "feature_order": list(FEATURE_NAMES),
-            "output_order": ["r", "g", "b"],
-            "coefficients": coefficients.tolist(),
-            "clip_output_0_1": True,
-        },
-        "fit": {
-            "source_path": str(source_path),
-            "target_path": str(target_path),
-            "geometry_action": geometry_action,
-            "sample_pixels_requested": sample_pixels,
-            "ridge_lambda": ridge_lambda,
-            "note": (
-                "J0 fits a global per-pixel color/tone transform directly to one "
-                "known original/edited pair. It does not test prediction on unseen "
-                "photos and is not a quality claim."
-            ),
-        },
-    }
+    payload = build_polynomial_recipe(coefficients)
+    payload.update(
+        {
+            "purpose": "jpeg_edit_representation_feasibility",
+            "production_ready": False,
+            "trained_model": False,
+            "fit": {
+                "source_path": str(source_path),
+                "target_path": str(target_path),
+                "geometry_action": geometry_action,
+                "sample_pixels_requested": sample_pixels,
+                "ridge_lambda": ridge_lambda,
+                "note": (
+                    "J0 fits a global per-pixel color/tone transform directly to one "
+                    "known original/edited pair. It does not test prediction on unseen "
+                    "photos and is not a quality claim."
+                ),
+            },
+        }
+    )
+    return payload
 
 
 def _fit_tile(image: np.ndarray, width: int, height: int) -> np.ndarray:
