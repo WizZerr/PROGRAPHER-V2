@@ -4,12 +4,18 @@ import argparse
 import csv
 import json
 import math
+import sys
 from dataclasses import asdict
 from datetime import datetime, timezone
 from pathlib import Path
 
 import numpy as np
 
+BACKEND_ROOT = Path(__file__).resolve().parents[1]
+if str(BACKEND_ROOT) not in sys.path:
+    sys.path.insert(0, str(BACKEND_ROOT))
+
+from app.datasets.jpeg_integrity import load_and_validate_dataset_snapshot
 from jpeg_j0_feasibility import run as run_j0
 
 
@@ -115,6 +121,17 @@ def run_batch(
         raise ValueError(
             "Expected dataset_manifest.json created by jpeg_real_dataset_intake.py"
         )
+
+    snapshot_path = dataset.get("dataset_snapshot_path")
+    snapshot_id = dataset.get("dataset_snapshot_id")
+    if not snapshot_path or not snapshot_id:
+        raise ValueError(
+            "Dataset predates the frozen snapshot contract; re-run intake before J0."
+        )
+    load_and_validate_dataset_snapshot(
+        snapshot_path,
+        expected_snapshot_id=snapshot_id,
+    )
 
     requested = _requested_splits(split_mode, unlock_test)
     output_root.mkdir(parents=True, exist_ok=True)
