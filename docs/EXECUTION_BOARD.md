@@ -21,7 +21,7 @@ Status vocabulary:
 
 | Lane | Part | Status | Exact next output |
 |---|---|---|---|
-| Primary development | **PG-04.05** | ACTIVE / ◐ | Verify frozen renderer goldens, encoded JPEG budgets and large preview-vs-export agreement |
+| Primary development | **PG-04.06** | ACTIVE | Map JPEG UI controls to real renderer semantics with explicit units/ranges and pixel-effect tests |
 | Photographer intake | **PG-06.02** | BLOCKED | Authorized photographer material |
 | Residual PR1 QA | **PG-00.02** | PAUSED | Only resume when product owner returns to the remaining hardware/manual QA |
 | Cloud/Auth | **PG-12+** | BLOCKED / NOT STARTED | Do not start before workflow gate permits |
@@ -122,9 +122,9 @@ A Part can be marked DONE/V only when:
 
 ## Next action
 
-**PG-04.05 is the only ACTIVE primary-development Part.**
+**PG-04.06 is the only ACTIVE primary-development Part.**
 
-PG-04.04 passed manual delta/integration verification on the exact committed module without consuming hosted Actions minutes. PG-04.05 now owns golden/reference render evidence; export semantics remain frozen in PG-04.03–04.04.
+PG-04.05 passed its manual golden harness without consuming hosted Actions minutes. PG-04.06 now owns the product mapping from supported JPEG controls to the shared renderer recipe; no RAW-only control may be mislabeled as an equivalent JPEG semantic.
 
 PG-06.02 stays BLOCKED on authorized photographer files. Residual PG-00.02 QA stays PAUSED. No Auth/Cloud implementation and no new production Brain begins here.
 
@@ -165,4 +165,5 @@ PG-06.02 stays BLOCKED on authorized photographer files. Residual PG-00.02 QA st
 - **PG-04.02 — V:** product preview/full-resolution render API, revision cache, stale/replaced-revision protection and current-approval guard verified by manual delta checks.
 - **PG-04.03 — V:** encoded JPEG export quality/resize/ICC/orientation/metadata/GPS contract and reopen verification passed manual delta checks.
 - **PG-04.04 — V:** safe atomic filesystem export passed exact-module manual delta/integration verification.
-- **PG-04.05 — ACTIVE / ◐:** versioned reference/golden cases and budgets are implemented; manual delta verification is next.
+- **PG-04.05 — V:** renderer semantic goldens, encoded JPEG budgets and large preview-vs-export budgets passed.
+- **PG-04.06 — ACTIVE:** JPEG UI-control mapping is next.
