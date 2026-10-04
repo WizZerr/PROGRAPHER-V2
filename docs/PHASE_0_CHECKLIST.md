@@ -1,17 +1,28 @@
-# Phase 0 — Freeze + Safety Checklist (New Scope)
+# Phase 00 — Active Pointer
 
-Legend: DONE / PARTIAL / NOT TESTED / BLOCKED
+The legacy P00 checklist was archived by **PG-00.03**.
 
-| ID | Task | Status | Evidence / next action |
-|---|---|---|---|
-| P00-01 | Freeze archives, SHA-256, create `prographer-v2`, document deps/OS/data locations | PARTIAL | SHA-256 frozen. Git branch and real-machine environment capture still required. |
-| P00-02 | Backup current DB/profiles and prove restore on a copy | NOT TESTED | Supplied ZIPs contain no runtime DB/profile state. Must run against user's real working data copy. |
-| P00-03 | Clean install/build/runtime/import/event/export | PARTIAL | Python compile PASS. Runtime DB absent; frontend deps not bundled. Must run clean builds on target machines. |
-| P00-04 | Create 30–50 technical fixture files with license/reference | NOT STARTED | Needs test RAW set and reference outputs when available. |
-| P00-05 | Project state / changelog / decisions / regression records | DONE (initial) | New-scope Phase 0 pack created. Must keep updated during evidence collection. |
-| P00-06 | Define Phase 15A measurement protocol | DONE (draft) | See `EVALUATION_15A_PROTOCOL.md`. Numeric promotion thresholds remain to be locked before model selection. |
-| P00-07 | Lock target matrix and check Python/rawpy/PyTorch/model components per target | PARTIAL | Matrix locked by master plan. Compatibility evidence still required on Windows + Apple Silicon; Intel Mac feasibility open. |
-| P00-08 | Define real Mac + Windows test/build environments and versions | PARTIAL | Required evidence sheet created. Actual machines/versions must be filled and tested. |
+## Active execution authority
 
-## Phase 0 completion gate
-Phase 0 may be marked DONE only when all mandatory engineering evidence in the master plan has been run and recorded. A known failure may be documented, but it may not be represented as a passed test.
+Use only:
+
+- `docs/MASTER_PLAN_SOURCE_OF_TRUTH.md` — ProGrapher V2 Master Workflow v3.0.
+- `docs/PROJECT_STATE.md` — current Part, blockers and evidence status.
+- `docs/PR1_TEST_CHECKLIST_HE.md` — PR1 QA evidence only; it is not the master plan.
+
+Historical copy:
+
+- `docs/archive/PHASE_0_CHECKLIST_2026-09-20.md`
+
+## Current Phase 00 status — 2026-10-04
+
+| Part | Status | Note |
+|---|---|---|
+| PG-00.01 | V | Repository/PR baseline snapshot exists in Workflow v3.0. |
+| PG-00.02 | ◐ | Extensive Windows QA recorded. Product owner paused further manual QA; External Drive/Relink and final-head CI remain unresolved. |
+| PG-00.03 | V | v3.0 adopted; legacy plan/checklist archived; active docs point to one source of truth. |
+| PG-00.04 | ⏸ | Merge/tag/base is blocked until PG-00.02 is closed. |
+| PG-00.05 | ☐ | Fixtures + restore checks. May proceed where evidence/data exists. |
+| PG-00.06 | ☐ | Execution board, blockers and risk map. |
+
+Do not execute old `P00-*` items directly. Their history is preserved only for traceability.
