@@ -126,6 +126,72 @@ ICC/Color encoding אינו ניתן לנרמול בבטחה ל־working space.
 ---
 
 
+
+## Source Groups ו־Near-Duplicate Leakage
+
+ה־Intake אינו מסתפק יותר ב־filename או SHA-256.
+
+לכל Original JPEG נשמר גם perceptual hash לאחר EXIF/ICC normalization.
+
+הזרימה:
+
+```text
+SHA-256 exact duplicate
+        או
+pHash candidate
+        ↓
+Geometry verification
+        ↓
+Source Group
+```
+
+Events שמכילים נגזרות של אותו Source Group נשמרים באותו Train / Validation / Test split.
+
+דוגמאות לנגזרות שהמערכת יכולה לזהות ולאחד:
+
+- recompression,
+- resize,
+- crop,
+- rotation,
+- mirror.
+
+אם pHash מצביע על חשד אבל Geometry אינו מצליח להוכיח שזה אותו צילום, הזוג נכתב ל־:
+
+`near_duplicate_suspects.json`
+
+ולא מאפשר Evaluation Ready עד שיש החלטה אנושית.
+
+דוגמת review:
+
+```json
+{
+  "schema": "prographer.near-duplicate-reviews.v1",
+  "photographer_id": "photographer-01",
+  "reviews": [
+    {
+      "review_id": "COPY_FROM_near_duplicate_suspects.json",
+      "decision": "distinct_source",
+      "reviewed_by": "photographer-01",
+      "reviewed_at": "2026-10-04T00:00:00Z",
+      "note": "בדיקה ידנית: אלו שני צילומים שונים"
+    }
+  ]
+}
+```
+
+אפשרויות decision:
+
+- `same_source`
+- `distinct_source`
+
+הרצה:
+
+```powershell
+python training_lab\jpeg_real_dataset_intake.py --root "C:\REAL_JPEG_DATASET" --output "C:\jpeg_real_intake" --photographer-id "photographer-01" --near-duplicate-reviews "C:\near_duplicate_reviews.json"
+```
+
+Split Lock קיים אינו מזיז Test קיים בשקט. Event חדש נשאר `unassigned` עד rebuild מכוון.
+
 ## תמונה שהצלם בכוונה לא שינה — Identity Target
 
 קובץ `Edited` שהוא byte-identical ל־`Original` **לא נכנס אוטומטית ללמידה**.
