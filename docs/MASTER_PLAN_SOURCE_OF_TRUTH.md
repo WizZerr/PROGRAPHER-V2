@@ -162,7 +162,7 @@
 
 | Part | מצב | פעולה ותוצר | בדיקת סיום |
 |---|---|---|---|
-| PG-01.01 | ☐ | להכניס את היקף סעיף 3 להחלטת מוצר: JPEG עצמאי, RAW מסייע, שני יעדי OS וחריגים | רשימת יכולות הנמכרות תואמת ל־Gates; כל שינוי בהמשך הוא שינוי גרסה של ההיקף |
+| PG-01.01 | ◐ | `docs/RELEASE_1_PRODUCT_CONTRACT.md` נכתב כטיוטת חוזה Release 1: JPEG עצמאי, RAW מסייע, Windows x64 + Apple Silicon, local/cloud boundary, חריגים ומיפוי יכולות→Gates | הטיוטה מוכנה; V מחייב G0 + אישור מפורש של בעל המוצר, ואחריו כל שינוי היקף יהיה החלטה מנוהלת גרסה |
 | PG-01.02 | ◐ | להגדיר חוזים נפרדים ל־Account, Photographer, Profile, Dataset, Event, PhotoAsset, Run, RecipeRevision, Review ו־Export | זהות אינה נתיב; משתמש/צלם/פרופיל אינם אותה ישות; RAW/JPEG לא מתערבבים |
 | PG-01.03 | ◐ | להגדיר pipeline משותף לאימון ולהפעלה: source→color/preprocess→features→model/profile→recipe→renderer | קונטרקט מנוהל גרסה; inference אינו דורש edited target; NoOp מסומן כלא זמין |
 | PG-01.04 | ☐ | לקבוע חבילת פרופיל ניידת: weights, normalizer, feature/recipe/render versions, metrics, hashes ותאימות app | טעינה ממיקום חדש על fixture; פרופיל לא תואם נדחה עם הסבר, לא מופעל חלקית |
