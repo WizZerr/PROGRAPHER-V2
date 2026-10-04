@@ -1,0 +1,56 @@
+{
+  "schema": "prographer.photographer-submission.v1",
+  "photographer_id": "REPLACE_ME",
+  "submission_label": "REPLACE_ME",
+  "editing_workflow": {
+    "primary_software": "Lightroom Classic",
+    "software_version": null,
+    "base_preset_used": null,
+    "notes": null
+  },
+  "jpeg_export": {
+    "color_space": "sRGB",
+    "quality": null,
+    "resize_enabled": false,
+    "resize_notes": null,
+    "output_sharpening": null,
+    "metadata_policy": null
+  },
+  "events": [
+    {
+      "event_id": "wedding_001",
+      "event_description": null,
+      "camera_models": [],
+      "lighting_conditions": [
+        "daylight",
+        "indoor_low_light",
+        "flash"
+      ],
+      "known_local_editing": false,
+      "known_crop_or_geometry_edits": false,
+      "notes": null
+    }
+  ],
+  "approved_no_edit": [
+    {
+      "event_id": "wedding_001",
+      "original_relative_path": "IMG_0001.jpg",
+      "approved": true,
+      "note": "Photographer confirmed this final intentionally needs no edit."
+    }
+  ],
+  "known_exceptions": [
+    {
+      "event_id": "wedding_001",
+      "original_relative_path": "IMG_0100.jpg",
+      "kind": "crop_or_local_retouch",
+      "note": "Example only — remove if not applicable."
+    }
+  ],
+  "raw_xmp_available_separately": false,
+  "permission": {
+    "photographer_confirms_right_to_share_for_prographer_evaluation": false,
+    "allowed_scope": "private_prographer_evaluation_and_profile_research",
+    "notes": null
+  }
+}
