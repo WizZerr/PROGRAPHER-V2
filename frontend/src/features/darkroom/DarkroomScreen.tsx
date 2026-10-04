@@ -4,6 +4,11 @@ import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties }
 import { open } from "@tauri-apps/plugin-dialog";
 import WorkspaceBar from "@/components/layout/WorkspaceBar";
 import CameraPreview from "@/features/review/CameraPreview";
+import JpegRenderedPreview from "@/features/darkroom/JpegRenderedPreview";
+import {
+  JPEG_NEUTRAL_CONTROLS,
+  type JpegGlobalControls,
+} from "@/features/darkroom/jpegControls.api";
 import {
   exportRecipes,
   getReviewSheet,
@@ -91,6 +96,10 @@ export default function DarkroomScreen() {
   const [exposure, setExposure] = useState(0);
   const [temperature, setTemperature] = useState(5500);
   const [tint, setTint] = useState(0);
+  const [jpegControls, setJpegControls] = useState<JpegGlobalControls>(
+    JPEG_NEUTRAL_CONTROLS,
+  );
+  const jpegDrafts = useRef<Record<string, JpegGlobalControls>>({});
   const [ready, setReady] = useState(false);
   const [compare, setCompare] = useState(62);
   const [showIllustration, setShowIllustration] = useState(false);
@@ -110,6 +119,39 @@ export default function DarkroomScreen() {
     () => ({ exposure, temperature, tint }),
     [exposure, temperature, tint],
   );
+
+  const jpegDraftKey =
+    selection && file
+      ? `${selection.eventId}:${file.fingerprint}`
+      : "";
+
+  useEffect(() => {
+    if (learningSource !== "jpeg" || !jpegDraftKey) return;
+    setJpegControls(
+      jpegDrafts.current[jpegDraftKey] ?? JPEG_NEUTRAL_CONTROLS,
+    );
+  }, [learningSource, jpegDraftKey]);
+
+  const updateJpegControl = useCallback(
+    (name: keyof JpegGlobalControls, value: number) => {
+      setJpegControls((currentControls) => {
+        const next = { ...currentControls, [name]: value };
+        if (jpegDraftKey) {
+          jpegDrafts.current[jpegDraftKey] = next;
+        }
+        return next;
+      });
+    },
+    [jpegDraftKey],
+  );
+
+  const resetJpegControls = useCallback(() => {
+    const next = { ...JPEG_NEUTRAL_CONTROLS };
+    if (jpegDraftKey) {
+      jpegDrafts.current[jpegDraftKey] = next;
+    }
+    setJpegControls(next);
+  }, [jpegDraftKey]);
 
   const updateFilmstripWindow = useCallback(() => {
     const strip = filmstripRef.current;
@@ -625,8 +667,13 @@ export default function DarkroomScreen() {
     );
   }
 
-  const split = holdOriginal ? 100 : showIllustration ? compare : 0;
-  const previewStyle = illustrationStyle(current, showIllustration && !holdOriginal);
+  const hasComparison =
+    learningSource === "jpeg" || showIllustration;
+  const split = holdOriginal ? 100 : hasComparison ? compare : 0;
+  const previewStyle = illustrationStyle(
+    current,
+    showIllustration && !holdOriginal,
+  );
 
   return (
     <div className={styles.room}>
@@ -645,7 +692,7 @@ export default function DarkroomScreen() {
           ref={frameRef}
           className={styles.frame}
           onPointerDown={(event) => {
-            if (!showIllustration) return;
+            if (!hasComparison) return;
             updateCompare(event.clientX);
           }}
         >
@@ -655,7 +702,18 @@ export default function DarkroomScreen() {
             alt={`מקור ${file.filename}`}
             className={styles.photo}
           />
-          {showIllustration && (
+          {learningSource === "jpeg" ? (
+            <JpegRenderedPreview
+              eventId={selection.eventId}
+              fingerprint={file.fingerprint}
+              controls={jpegControls}
+              alt={`עריכת JPEG ${file.filename}`}
+              className={styles.photoAfter}
+              style={{
+                clipPath: `inset(0 0 0 ${split}%)`,
+              }}
+            />
+          ) : showIllustration ? (
             <>
               <CameraPreview
                 eventId={selection.eventId}
@@ -678,12 +736,14 @@ export default function DarkroomScreen() {
                 />
               )}
             </>
-          )}
+          ) : null}
           <span className={`${styles.badge} ${styles.beforeBadge}`}>מקור</span>
-          {showIllustration && (
-            <span className={`${styles.badge} ${styles.afterBadge}`}>המחשה</span>
+          {hasComparison && (
+            <span className={`${styles.badge} ${styles.afterBadge}`}>
+              {learningSource === "jpeg" ? "עריכה" : "המחשה"}
+            </span>
           )}
-          {showIllustration && (
+          {hasComparison && (
             <button
               type="button"
               className={styles.handle}
@@ -703,8 +763,12 @@ export default function DarkroomScreen() {
               <span className={styles.handleGrip}>↔</span>
             </button>
           )}
-          {showIllustration && (
-            <p className={styles.truth}>תצוגה משוערת בלבד · התוצאה הסופית נקבעת ב-Lightroom.</p>
+          {hasComparison && (
+            <p className={styles.truth}>
+              {learningSource === "jpeg"
+                ? "תצוגת JPEG אמיתית · מופקת על ידי מנוע ה-render המשותף."
+                : "תצוגה משוערת בלבד · התוצאה הסופית נקבעת ב-Lightroom."}
+            </p>
           )}
         </div>
 
@@ -801,11 +865,152 @@ export default function DarkroomScreen() {
       <aside className={styles.panel}>
         {learningSource === "jpeg" ? (
           <div className={styles.panelBody}>
-            <h2 className={styles.panelTitle}>JPEG · מצב צפייה ב-PR1</h2>
-            <p className={styles.keys}>{sheetNote}</p>
+            <div className={styles.panelHeading}>
+              <h2 className={styles.panelTitle}>עריכת JPEG</h2>
+              <button
+                type="button"
+                className={styles.sliderReset}
+                onClick={resetJpegControls}
+                disabled={
+                  jpegControls.brightness === 0 &&
+                  jpegControls.contrast === 0 &&
+                  jpegControls.warmth === 0 &&
+                  jpegControls.tint === 0
+                }
+              >
+                איפוס
+              </button>
+            </div>
+
             <p className={styles.keys}>
-              התמונה והניווט פעילים לצורך בדיקת ה-Pipeline. עריכת JPEG חכמה,
-              סליידרים וייצוא תוצאה יתווספו רק אחרי שמודל ה-JPEG ייבנה ויימדד.
+              {sheetNote}
+            </p>
+
+            <details className={styles.group} open>
+              <summary>אור</summary>
+              <div className={styles.groupBody}>
+                <div className={styles.slider}>
+                  <div className={styles.sliderHeader}>
+                    <span>בהירות</span>
+                    <bdi className={styles.sliderValue}>
+                      {jpegControls.brightness >= 0 ? "+" : ""}
+                      {jpegControls.brightness}
+                    </bdi>
+                  </div>
+                  <input
+                    className={`${styles.range} ${styles.exposureRange}`}
+                    type="range"
+                    min={-100}
+                    max={100}
+                    step={1}
+                    value={jpegControls.brightness}
+                    aria-label="בהירות JPEG"
+                    onChange={(event) =>
+                      updateJpegControl(
+                        "brightness",
+                        Number(event.target.value),
+                      )
+                    }
+                  />
+                  <div className={styles.rangeHint} aria-hidden="true">
+                    <span>כהה</span><span>ניטרלי</span><span>בהיר</span>
+                  </div>
+                </div>
+
+                <div className={styles.slider}>
+                  <div className={styles.sliderHeader}>
+                    <span>ניגודיות</span>
+                    <bdi className={styles.sliderValue}>
+                      {jpegControls.contrast >= 0 ? "+" : ""}
+                      {jpegControls.contrast}
+                    </bdi>
+                  </div>
+                  <input
+                    className={styles.range}
+                    type="range"
+                    min={-100}
+                    max={100}
+                    step={1}
+                    value={jpegControls.contrast}
+                    aria-label="ניגודיות JPEG"
+                    onChange={(event) =>
+                      updateJpegControl(
+                        "contrast",
+                        Number(event.target.value),
+                      )
+                    }
+                  />
+                  <div className={styles.rangeHint} aria-hidden="true">
+                    <span>רך</span><span>ניטרלי</span><span>חזק</span>
+                  </div>
+                </div>
+              </div>
+            </details>
+
+            <details className={styles.group} open>
+              <summary>צבע</summary>
+              <div className={styles.groupBody}>
+                <div className={styles.slider}>
+                  <div className={styles.sliderHeader}>
+                    <span>חום צבע</span>
+                    <bdi className={styles.sliderValue}>
+                      {jpegControls.warmth >= 0 ? "+" : ""}
+                      {jpegControls.warmth}
+                    </bdi>
+                  </div>
+                  <input
+                    className={`${styles.range} ${styles.temperatureRange}`}
+                    type="range"
+                    min={-100}
+                    max={100}
+                    step={1}
+                    value={jpegControls.warmth}
+                    aria-label="חום צבע JPEG"
+                    onChange={(event) =>
+                      updateJpegControl(
+                        "warmth",
+                        Number(event.target.value),
+                      )
+                    }
+                  />
+                  <div className={styles.rangeHint} aria-hidden="true">
+                    <span>קר</span><span>ניטרלי</span><span>חם</span>
+                  </div>
+                </div>
+
+                <div className={styles.slider}>
+                  <div className={styles.sliderHeader}>
+                    <span>ירוק ↔ מג׳נטה</span>
+                    <bdi className={styles.sliderValue}>
+                      {jpegControls.tint >= 0 ? "+" : ""}
+                      {jpegControls.tint}
+                    </bdi>
+                  </div>
+                  <input
+                    className={`${styles.range} ${styles.tintRange}`}
+                    type="range"
+                    min={-100}
+                    max={100}
+                    step={1}
+                    value={jpegControls.tint}
+                    aria-label="Green Magenta JPEG"
+                    onChange={(event) =>
+                      updateJpegControl(
+                        "tint",
+                        Number(event.target.value),
+                      )
+                    }
+                  />
+                  <div className={styles.rangeHint} aria-hidden="true">
+                    <span>ירוק</span><span>ניטרלי</span><span>מג׳נטה</span>
+                  </div>
+                </div>
+              </div>
+            </details>
+
+            <p className={styles.keys}>
+              ערכי JPEG הם יחידות נורמליות ‎-100…+100. חום צבע אינו Kelvin,
+              והגוון אינו ערך Lightroom/Camera Raw. B מציג את המקור.
             </p>
           </div>
         ) : (
