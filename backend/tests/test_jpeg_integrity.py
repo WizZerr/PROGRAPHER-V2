@@ -19,6 +19,7 @@ from app.datasets.jpeg_integrity import (
     DatasetSnapshotChangedError,
     JpegIntegrityError,
     WORKING_COLOR_SPACE,
+    analyze_edit_scope,
     analyze_pair_geometry,
     load_and_validate_dataset_snapshot,
     read_jpeg_working_rgb,
@@ -84,14 +85,29 @@ def _save_jpeg(
     *,
     orientation: int | None = None,
     embed_srgb_icc: bool = False,
+    camera_make: str | None = None,
+    camera_model: str | None = None,
+    iso: int | None = None,
 ) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     image = Image.fromarray(rgb, mode="RGB")
 
     kwargs: dict = {"format": "JPEG", "quality": 98}
-    if orientation is not None:
+    if (
+        orientation is not None
+        or camera_make is not None
+        or camera_model is not None
+        or iso is not None
+    ):
         exif = image.getexif()
-        exif[274] = orientation
+        if orientation is not None:
+            exif[274] = orientation
+        if camera_make is not None:
+            exif[271] = camera_make
+        if camera_model is not None:
+            exif[272] = camera_model
+        if iso is not None:
+            exif[34855] = int(iso)
         kwargs["exif"] = exif
 
     if embed_srgb_icc:
@@ -140,6 +156,62 @@ def test_jpeg_decoder_records_explicit_missing_icc_assumption(
     assert evidence.icc_present is False
     assert evidence.color_action == "assume_srgb_no_icc"
     assert evidence.working_color_space == WORKING_COLOR_SPACE
+
+
+def test_decoder_records_camera_and_lighting_metadata(
+    tmp_path: Path,
+) -> None:
+    dark = np.clip(
+        _scene(14).astype(np.float32) * 0.18,
+        0,
+        255,
+    ).astype(np.uint8)
+    path = tmp_path / "camera-dark.jpg"
+    _save_jpeg(
+        path,
+        dark,
+        camera_make="Sony",
+        camera_model="ILCE-7M4",
+        iso=3200,
+    )
+
+    _, evidence = read_jpeg_working_rgb(path)
+
+    assert evidence.camera_make == "Sony"
+    assert evidence.camera_model == "ILCE-7M4"
+    assert evidence.iso == 3200
+    assert evidence.lighting_bucket == "low_key"
+    assert evidence.mean_luma < 0.28
+    assert evidence.perceptual_hash64
+
+
+def test_edit_scope_distinguishes_global_from_local_or_complex() -> None:
+    original = _scene(15)
+
+    global_edit = np.clip(
+        original.astype(np.float32) * 1.08 + 6.0,
+        0,
+        255,
+    ).astype(np.uint8)
+    global_evidence = analyze_edit_scope(
+        original,
+        global_edit,
+    )
+    assert global_evidence.scope == "global_like"
+    assert global_evidence.affine_residual_p90_255 <= 8.0
+
+    local_edit = original.copy()
+    local_edit[80:240, 120:360] = np.clip(
+        local_edit[80:240, 120:360].astype(np.float32) * 0.55 + 60.0,
+        0,
+        255,
+    ).astype(np.uint8)
+    local_evidence = analyze_edit_scope(
+        original,
+        local_edit,
+    )
+    assert local_evidence.scope == "local_or_complex_suspected"
+    assert local_evidence.affine_residual_p90_255 > 8.0
 
 
 def test_srgb_icc_and_missing_icc_reach_same_working_space(
@@ -237,6 +309,82 @@ def test_geometry_contract_blocks_rotation_mirror_crop_and_wrong_copy() -> None:
     )
     assert wrong.usable is False
     assert wrong.action == "wrong_copy_or_unverified"
+
+
+def test_intake_coverage_separates_file_counts_from_usable_pairs(
+    tmp_path: Path,
+) -> None:
+    root = tmp_path / "coverage-dataset"
+    output = tmp_path / "coverage-output"
+
+    for index, seed in enumerate((501, 777, 999), start=1):
+        event_id = f"event_{index}"
+        original = _scene(seed)
+        original_path = root / event_id / "ORIGINALS" / "IMG_0001.jpg"
+        edited_path = root / event_id / "EDITS" / "IMG_0001.jpg"
+        _save_jpeg(
+            original_path,
+            original,
+            camera_make="Canon" if index < 3 else "Sony",
+            camera_model="R6" if index < 3 else "ILCE-7M4",
+            iso=800 * index,
+        )
+
+        if index == 2:
+            edited = np.clip(
+                original.astype(np.float32) * 1.05 + 5.0,
+                0,
+                255,
+            ).astype(np.uint8)
+            edited = edited[40:-40, 70:-70]
+        elif index == 3:
+            edited = original.copy()
+            edited[70:250, 110:370] = np.clip(
+                edited[70:250, 110:370].astype(np.float32) * 0.60 + 50.0,
+                0,
+                255,
+            ).astype(np.uint8)
+        else:
+            edited = np.clip(
+                original.astype(np.float32) * 1.06 + 4.0,
+                0,
+                255,
+            ).astype(np.uint8)
+
+        _save_jpeg(edited_path, edited)
+
+    payload = _intake(
+        root=root,
+        output=output,
+        photographer_id="coverage-photographer",
+        aspect_tolerance=0.01,
+        validation_events=[],
+        test_events=[],
+        rebuild_split_lock=False,
+    )
+
+    coverage_path = Path(payload["coverage_report_path"])
+    coverage = json.loads(coverage_path.read_text(encoding="utf-8"))
+
+    assert coverage["counts"]["original_files"] == 3
+    assert coverage["counts"]["edited_files"] == 3
+    assert coverage["counts"]["matched_pairs"] == 3
+    assert coverage["counts"]["usable_pairs"] == 2
+    assert coverage["counts"]["excluded_pairs"] == 1
+
+    assert coverage["coverage"]["camera_models"]["Canon|R6"] == 1
+    assert coverage["coverage"]["camera_models"]["Sony|ILCE-7M4"] == 1
+    assert coverage["coverage"]["edit_scopes"]["global_like"] >= 1
+    assert (
+        coverage["coverage"]["edit_scopes"]["local_or_complex_suspected"]
+        >= 1
+    )
+    assert any(
+        reason in coverage["coverage"]["exclusion_reasons"]
+        for reason in {"crop_same_ratio", "crop_or_geometry_mismatch"}
+    )
+    assert coverage["hard_groups"]
+    assert payload["readiness"]["coverage_report_generated"] is True
 
 
 def test_identity_target_requires_explicit_approval_and_reaches_j0(
