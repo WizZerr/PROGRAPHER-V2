@@ -116,3 +116,12 @@ Do not start Auth/Cloud implementation or a new production Brain merely because 
 - Approved identity targets pass into J0 as real No-Edit targets.
 - Evidence: `docs/PG_03_05_IDENTITY_TARGETS_REPORT.md`, backend regression run `37172073037`.
 - Next pre-photographer data Part: **PG-03.06**.
+
+## Source-group leakage protection
+
+- **PG-03.06 — V:** exact/near-duplicate source derivatives are grouped before Train/Validation/Test assignment.
+- Source-group connected Events cannot cross splits.
+- Unverified near-duplicates require explicit human review.
+- New Events do not silently move locked Test Events.
+- Evidence: `docs/PG_03_06_SOURCE_GROUPS_REPORT.md`, backend regression run `37172785201`.
+- Next pre-photographer Part: **PG-03.07 — Coverage Report**.
