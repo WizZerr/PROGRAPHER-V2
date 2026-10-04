@@ -411,8 +411,49 @@ def test_jpeg_profile_counts_unique_pairs_and_has_no_baseline(
         pair["original_path"] != pair["edited_path"]
         for pair in stored_manifest["pairs"]
     )
+    assert all(
+        pair["original_path"]
+        and pair["edited_path"]
+        and pair["original_fingerprint"]
+        and pair["edited_fingerprint"]
+        for pair in stored_manifest["pairs"]
+    )
     assert any("אינם JPEG" in warning for warning in body["warnings"])
     assert "Lightroom" in body["note"]
+
+
+def test_jpeg_profile_accepts_distinct_byte_identical_files(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    monkeypatch.setenv("PROGRAPHER_DATA_DIR", str(tmp_path / "data"))
+    originals = tmp_path / "jpeg-originals"
+    edits = tmp_path / "jpeg-edits"
+    payload = b"intentionally-unchanged-jpeg" * 200
+    _jpeg(originals / "IMG_0001.jpg", payload)
+    _jpeg(edits / "IMG_0001.jpg", payload)
+
+    with TestClient(create_app()) as client:
+        response = client.post(
+            "/api/testing/profile",
+            headers=HEADERS,
+            json={
+                "raw_root": str(originals),
+                "edits_root": str(edits),
+                "learning_source": "jpeg",
+            },
+        )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["matched_pairs"] == 1
+    assert body["usable_pairs"] == 1
+
+    manifest = Path(body["dataset_manifest_path"])
+    stored_manifest = __import__("json").loads(manifest.read_text(encoding="utf-8"))
+    pair = stored_manifest["pairs"][0]
+    assert pair["original_path"] != pair["edited_path"]
+    assert pair["original_fingerprint"] == pair["edited_fingerprint"]
 
 
 def test_jpeg_profile_does_not_merge_shared_filenames(
