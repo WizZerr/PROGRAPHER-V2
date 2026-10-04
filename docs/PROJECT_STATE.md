@@ -108,3 +108,11 @@ Do not start Auth/Cloud implementation or a new production Brain merely because 
 - Evidence: `docs/PG_03_02_04_JPEG_INTEGRITY_REPORT.md`; Windows backend regression passed in Actions run `37171832248`.
 - These are engineering/data-integrity results, not photographer-quality claims.
 - Next pre-photographer data Part: **PG-03.05**.
+
+## Approved unchanged-final targets
+
+- **PG-03.05 — V:** byte-identical JPEG finals are learning targets only with explicit approval provenance.
+- Unverified identical copies remain excluded.
+- Approved identity targets pass into J0 as real No-Edit targets.
+- Evidence: `docs/PG_03_05_IDENTITY_TARGETS_REPORT.md`, backend regression run `37172073037`.
+- Next pre-photographer data Part: **PG-03.06**.
