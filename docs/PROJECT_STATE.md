@@ -125,3 +125,11 @@ Do not start Auth/Cloud implementation or a new production Brain merely because 
 - New Events do not silently move locked Test Events.
 - Evidence: `docs/PG_03_06_SOURCE_GROUPS_REPORT.md`, backend regression run `37172785201`.
 - Next pre-photographer Part: **PG-03.07 — Coverage Report**.
+
+## Dataset coverage reporting
+
+- **PG-03.07 — V:** Intake produces a truthful coverage report that separates files, matched pairs, usable pairs and exclusions.
+- Camera/lighting/edit-scope coverage is visible per Event and globally.
+- Hard/excluded groups remain explicit.
+- Evidence: `docs/PG_03_07_COVERAGE_REPORT.md`, backend regression run `37173058568`.
+- Next pre-photographer Part: **PG-03.08 — Candidate/target provenance identity**.
