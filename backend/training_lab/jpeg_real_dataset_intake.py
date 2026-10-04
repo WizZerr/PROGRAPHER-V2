@@ -28,6 +28,7 @@ from app.testing.jpeg_pairs import scan_jpeg_pairs
 SCHEMA_VERSION = 1
 SPLIT_POLICY_VERSION = "event-hash-v1"
 JPEG_EXTENSIONS = {".jpg", ".jpeg"}
+IDENTITY_APPROVAL_SCHEMA = "prographer.identity-approvals.v1"
 
 
 @dataclass(frozen=True)
@@ -51,6 +52,10 @@ class PairRecord:
     edited_modified_ns: int | None
     identical_bytes: bool
     same_physical_file: bool
+    identity_target_approved: bool
+    identity_approval_by: str | None
+    identity_approval_at: str | None
+    identity_approval_note: str | None
     original_width: int | None
     original_height: int | None
     edited_width: int | None
@@ -88,6 +93,8 @@ class EventRecord:
     matched_pairs: int
     usable_pairs: int
     unchanged_pairs: int
+    approved_identity_pairs: int
+    unverified_identity_pairs: int
     geometry_excluded_pairs: int
     geometry_unverified_pairs: int
     color_excluded_pairs: int
@@ -341,6 +348,72 @@ def _load_or_create_split_lock(
     return lock, []
 
 
+def _identity_key(event_id: str, relative_path: str) -> tuple[str, str]:
+    normalized = str(relative_path).replace("\\", "/").strip().casefold()
+    return event_id.strip().casefold(), normalized
+
+
+def _load_identity_approvals(
+    path: Path | None,
+    *,
+    photographer_id: str,
+) -> tuple[dict[tuple[str, str], dict], str | None]:
+    if path is None:
+        return {}, None
+
+    approval_path = path.expanduser().resolve(strict=True)
+    payload = _read_json(approval_path)
+
+    if payload.get("schema") != IDENTITY_APPROVAL_SCHEMA:
+        raise ValueError(
+            "Unsupported identity approval schema. Expected "
+            f"{IDENTITY_APPROVAL_SCHEMA!r}."
+        )
+    if str(payload.get("photographer_id") or "").strip() != photographer_id:
+        raise ValueError(
+            "identity approvals photographer_id does not match Intake photographer_id"
+        )
+
+    approvals: dict[tuple[str, str], dict] = {}
+    for index, raw in enumerate(payload.get("approvals") or [], start=1):
+        event_id = str(raw.get("event_id") or "").strip()
+        relative_path = str(raw.get("original_relative_path") or "").strip()
+        decision = str(raw.get("decision") or "").strip()
+        approved_by = str(raw.get("approved_by") or "").strip()
+        approved_at = str(raw.get("approved_at") or "").strip()
+
+        if not event_id or not relative_path:
+            raise ValueError(
+                f"identity approval #{index} is missing event_id/original_relative_path"
+            )
+        if decision != "approved_unchanged_final":
+            raise ValueError(
+                f"identity approval #{index} has unsupported decision {decision!r}"
+            )
+        if not approved_by or not approved_at:
+            raise ValueError(
+                f"identity approval #{index} requires approved_by and approved_at"
+            )
+
+        key = _identity_key(event_id, relative_path)
+        if key in approvals:
+            raise ValueError(
+                "duplicate identity approval for "
+                f"{event_id}/{relative_path}"
+            )
+
+        approvals[key] = {
+            "event_id": event_id,
+            "original_relative_path": relative_path,
+            "decision": decision,
+            "approved_by": approved_by,
+            "approved_at": approved_at,
+            "note": str(raw.get("note") or "").strip() or None,
+        }
+
+    return approvals, sha256_file(approval_path)
+
+
 def _pair_id(event_id: str, relative_path: str, original_sha: str, edited_sha: str) -> str:
     payload = "|".join(
         (
@@ -389,6 +462,12 @@ def _event_j0_manifest(
                     # Full SHA-256 is intentional for the research dataset.
                     "original_fingerprint": pair.original_sha256,
                     "edited_fingerprint": pair.edited_sha256,
+                    "identity_target_approved": pair.identity_target_approved,
+                    "target_kind": (
+                        "identity"
+                        if pair.identity_target_approved
+                        else "edited"
+                    ),
                 }
                 for pair in usable
             ],
@@ -434,7 +513,14 @@ def _intake(
     validation_events: list[str],
     test_events: list[str],
     rebuild_split_lock: bool,
+    identity_approvals_path: Path | None = None,
 ) -> dict:
+    identity_approvals, identity_approvals_sha256 = _load_identity_approvals(
+        identity_approvals_path,
+        photographer_id=photographer_id,
+    )
+    matched_identity_approvals: set[tuple[str, str]] = set()
+
     discovered = _discover_events(root)
     if not discovered:
         raise ValueError(
@@ -450,6 +536,11 @@ def _intake(
         for pair in scan.pairs:
             original = Path(pair.original_path)
             edited = Path(pair.edited_path)
+            approval_key = _identity_key(
+                event_id,
+                pair.original_relative_path,
+            )
+            identity_approval = identity_approvals.get(approval_key)
 
             try:
                 same_physical = _same_physical_file(original, edited)
@@ -483,6 +574,7 @@ def _intake(
                         "original_color": None,
                         "edited_color": None,
                         "geometry": None,
+                        "identity_approval": identity_approval,
                         "error": message,
                     }
                 )
@@ -502,6 +594,7 @@ def _intake(
                         "original_color": None,
                         "edited_color": None,
                         "geometry": None,
+                        "identity_approval": identity_approval,
                         "error": str(exc),
                     }
                 )
@@ -512,10 +605,18 @@ def _intake(
             if same_physical:
                 status = "same_physical_file"
                 usable = False
+            elif identical_bytes and identity_approval is not None:
+                status = "identity_approved"
+                usable = True
+                matched_identity_approvals.add(approval_key)
             elif identical_bytes:
-                # Identity edits are preserved but PG-03.05 owns promotion of
-                # explicitly photographer-approved unchanged finals.
-                status = "unchanged_final"
+                status = "unchanged_unverified"
+                usable = False
+            elif identity_approval is not None:
+                # The human approval says "unchanged final", but the current
+                # Original/Edited bytes no longer agree. Treat this as stale
+                # provenance and block the whole Intake below.
+                status = "identity_approval_conflict"
                 usable = False
             elif not geometry.usable:
                 status = geometry.action
@@ -538,6 +639,7 @@ def _intake(
                     "original_color": original_color,
                     "edited_color": edited_color,
                     "geometry": geometry,
+                    "identity_approval": identity_approval,
                     "error": "",
                 }
             )
@@ -550,6 +652,19 @@ def _intake(
             "pairs": pair_rows,
             "usable_pairs": sum(1 for row in pair_rows if row["usable"]),
         }
+
+    unmatched_approvals = sorted(
+        set(identity_approvals) - matched_identity_approvals
+    )
+    if unmatched_approvals:
+        formatted = ", ".join(
+            f"{event_id}/{relative_path}"
+            for event_id, relative_path in unmatched_approvals
+        )
+        raise ValueError(
+            "Identity approval is stale, mistyped, unpaired, or no longer byte-identical: "
+            + formatted
+        )
 
     eligible_event_ids = sorted(
         event_id
@@ -588,10 +703,18 @@ def _intake(
                 note_parts.append(geometry.note)
             if row.get("error"):
                 note_parts.append(row["error"])
-            if row["status"] == "unchanged_final":
+            if row["status"] == "identity_approved":
                 note_parts.append(
-                    "original and final JPEG bytes are identical; preserved separately "
-                    "but excluded until PG-03.05 verifies an intentional identity edit"
+                    "photographer/intake approval confirms an intentional unchanged final"
+                )
+            if row["status"] == "unchanged_unverified":
+                note_parts.append(
+                    "original and final JPEG bytes are identical but no explicit "
+                    "unchanged-final approval exists; excluded from learning"
+                )
+            if row["status"] == "identity_approval_conflict":
+                note_parts.append(
+                    "unchanged-final approval conflicts with current non-identical bytes"
                 )
             if row["status"] == "same_physical_file":
                 note_parts.append(
@@ -627,6 +750,22 @@ def _intake(
                 edited_modified_ns=(int(edited_stat.st_mtime_ns) if edited_stat else None),
                 identical_bytes=bool(row["identical_bytes"]),
                 same_physical_file=bool(row["same_physical"]),
+                identity_target_approved=(row["status"] == "identity_approved"),
+                identity_approval_by=(
+                    row["identity_approval"]["approved_by"]
+                    if row.get("identity_approval")
+                    else None
+                ),
+                identity_approval_at=(
+                    row["identity_approval"]["approved_at"]
+                    if row.get("identity_approval")
+                    else None
+                ),
+                identity_approval_note=(
+                    row["identity_approval"]["note"]
+                    if row.get("identity_approval")
+                    else None
+                ),
                 original_width=(geometry.original_width if geometry else None),
                 original_height=(geometry.original_height if geometry else None),
                 edited_width=(geometry.edited_width if geometry else None),
@@ -703,7 +842,18 @@ def _intake(
             edited_files=scan.edited_files,
             matched_pairs=scan.matched_pairs,
             usable_pairs=sum(pair.usable_for_recipe_fit for pair in pair_records),
-            unchanged_pairs=sum(pair.status == "unchanged_final" for pair in pair_records),
+            unchanged_pairs=sum(
+                pair.identical_bytes and not pair.same_physical_file
+                for pair in pair_records
+            ),
+            approved_identity_pairs=sum(
+                pair.status == "identity_approved"
+                for pair in pair_records
+            ),
+            unverified_identity_pairs=sum(
+                pair.status == "unchanged_unverified"
+                for pair in pair_records
+            ),
             geometry_excluded_pairs=sum(
                 pair.status in {
                     "crop_same_ratio",
@@ -828,10 +978,10 @@ def _intake(
         warnings.append(
             "At least one JPEG pair failed the ICC/color contract and was excluded."
         )
-    if any(event.unchanged_pairs for event in events):
+    if any(event.unverified_identity_pairs for event in events):
         warnings.append(
-            "Byte-identical Original/Edited finals were preserved as unchanged-final cases "
-            "and excluded from first-pass J0 recipe fitting."
+            "Byte-identical Original/Edited pairs without explicit unchanged-final "
+            "approval were preserved but excluded from learning."
         )
 
     evaluation_ready = bool(
@@ -859,6 +1009,12 @@ def _intake(
         "dataset_snapshot_id": dataset_snapshot["snapshot_id"],
         "working_color_space": WORKING_COLOR_SPACE,
         "aspect_tolerance": aspect_tolerance,
+        "identity_approvals_path": (
+            str(identity_approvals_path.expanduser().resolve())
+            if identity_approvals_path is not None
+            else None
+        ),
+        "identity_approvals_sha256": identity_approvals_sha256,
         "event_counts": split_counts,
         "usable_pair_counts": pair_split_counts,
         "totals": {
@@ -869,7 +1025,16 @@ def _intake(
                 pair.usable_for_recipe_fit for pair in all_pairs
             ),
             "unchanged_final_pairs": sum(
-                pair.status == "unchanged_final" for pair in all_pairs
+                pair.identical_bytes and not pair.same_physical_file
+                for pair in all_pairs
+            ),
+            "approved_identity_pairs": sum(
+                pair.status == "identity_approved"
+                for pair in all_pairs
+            ),
+            "unverified_identity_pairs": sum(
+                pair.status == "unchanged_unverified"
+                for pair in all_pairs
             ),
             "geometry_excluded_pairs": sum(
                 pair.status in {
@@ -895,6 +1060,7 @@ def _intake(
             "pairing_data_present": any(event.matched_pairs > 0 for event in events),
             "dataset_snapshot_frozen": bool(dataset_snapshot["files"]),
             "color_contract_recorded": True,
+            "identity_targets_require_explicit_approval": True,
             "j0_representation_test_ready": any(
                 pair.usable_for_recipe_fit for pair in all_pairs
             ),
@@ -907,8 +1073,9 @@ def _intake(
         "warnings": warnings,
         "interpretation": (
             "This intake validates pairing, color/ICC, display orientation, visual "
-            "geometry and full-file SHA-256, then freezes a dataset snapshot for real "
-            "Original JPEG + Photographer Edited JPEG material. It does not train a "
+            "geometry, explicit identity-target approval and full-file SHA-256, then "
+            "freezes a dataset snapshot for real Original JPEG + Photographer Edited "
+            "JPEG material. It does not train a "
             "model and does not permit a photographer-quality claim. Whole events are "
             "the unit of split."
         ),
@@ -992,6 +1159,13 @@ def main() -> int:
         action="store_true",
         help="Intentionally replace an existing split lock",
     )
+    parser.add_argument(
+        "--identity-approvals",
+        help=(
+            "Optional JSON file with explicit photographer/intake approvals for "
+            "byte-identical unchanged-final JPEG pairs"
+        ),
+    )
     args = parser.parse_args()
 
     root = Path(args.root).expanduser().resolve(strict=True)
@@ -1008,6 +1182,11 @@ def main() -> int:
         validation_events=list(args.validation_event),
         test_events=list(args.test_event),
         rebuild_split_lock=bool(args.rebuild_split_lock),
+        identity_approvals_path=(
+            Path(args.identity_approvals)
+            if args.identity_approvals
+            else None
+        ),
     )
 
     print("=" * 80)
@@ -1019,6 +1198,8 @@ def main() -> int:
     print(f"Matched pairs:                   {payload['totals']['matched_pairs']}")
     print(f"Usable J0 recipe pairs:          {payload['totals']['usable_recipe_pairs']}")
     print(f"Unchanged final pairs:           {payload['totals']['unchanged_final_pairs']}")
+    print(f"Approved identity targets:       {payload['totals']['approved_identity_pairs']}")
+    print(f"Unverified identity pairs:       {payload['totals']['unverified_identity_pairs']}")
     print(f"Geometry exclusions:             {payload['totals']['geometry_excluded_pairs']}")
     print(f"Cross-split duplicate groups:    {payload['totals']['cross_split_duplicate_groups']}")
     print()
