@@ -20,6 +20,10 @@ from app.datasets.jpeg_integrity import (
     JPEG_COLOR_CONTRACT_VERSION,
     load_and_validate_dataset_snapshot,
 )
+from app.rendering.jpeg_renderer import (
+    JPEG_EDIT_RECIPE_VERSION as RECIPE_VERSION,
+    render_coefficients_uint8 as _apply_recipe_uint8,
+)
 from app.evaluation.artifact_provenance import (
     FEATURE_CONTRACT_VERSION,
     RENDERER_CONTRACT_VERSION,
@@ -33,8 +37,6 @@ from app.evaluation.artifact_provenance import (
     write_immutable_json,
 )
 from jpeg_j0_feasibility import (
-    RECIPE_VERSION,
-    _apply_recipe_uint8,
     _match_geometry,
     _read_image,
     _write_jpeg,
