@@ -51,6 +51,7 @@ def _scene(seed: int, width: int = 320, height: int = 220) -> np.ndarray:
     image[:, :, 0] = 35 + 150 * x + 35 * (1 - y)
     image[:, :, 1] = 25 + 125 * y + 30 * x
     image[:, :, 2] = 45 + 110 * (1 - x) + 55 * y
+    image = np.clip(image, 0, 255).astype(np.uint8)
 
     for index in range(28):
         center = (
@@ -74,7 +75,7 @@ def _scene(seed: int, width: int = 320, height: int = 220) -> np.ndarray:
         2,
         cv2.LINE_AA,
     )
-    return np.clip(image, 0, 255).astype(np.uint8)
+    return image
 
 
 def _save_jpeg(path: Path, rgb: np.ndarray, quality: int = 96) -> None:
