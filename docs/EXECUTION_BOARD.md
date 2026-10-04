@@ -45,10 +45,10 @@ Status vocabulary:
 | Risk | Severity | Current control | Next mitigation Part |
 |---|---|---|---|
 | Source RAW/JPEG mutation or unsafe overwrite | Critical | PR1 source-safety/XMP evidence; export separation | PG-00.05 restore fixtures, later PG-04/05 hardening |
-| Wrong JPEG pair because of duplicate names/path ambiguity | High | pairing ambiguity rules + PR1 tests | PG-03 data contract / G1 |
+| Wrong JPEG pair because of duplicate names/path ambiguity | High | pairing ambiguity + visual geometry/wrong-copy guards; PG-03.02 V | PG-03.05–03.09 / G1 |
 | Source changes after intake but before training | High | fingerprints exist; full revalidation gap documented in v3 | PG-03 |
-| ICC/color mismatch makes J0/J1 targets invalid | High | identified explicitly in v3 | PG-03 → PG-04 |
-| Crop/geometry mismatch passes weak checks | High | identified explicitly in v3 | PG-03 |
+| ICC/color mismatch makes J0/J1 targets invalid | High | ICC/EXIF→sRGB contract + explicit rejection; PG-03.03 V | PG-03.09 regression + real-data G1 |
+| Crop/geometry mismatch passes weak checks | High | visual ORB/RANSAC + consensus/edge checks; PG-03.02 V | PG-03.09 + real-data review |
 | Research result accidentally presented as product AI | High | J0/J1 isolated; PR1 labels JPEG as viewing/dataset path | PG-06–08 gates |
 | External-drive disappearance/relink regression | High | backend tests exist; manual hardware evidence missing | PG-00.02 later, PG-05 hardening |
 | Crash loses local scan/job progress | High | current scan job is in-memory; risk documented | PG-05 |
@@ -142,3 +142,10 @@ PG-00.02 stays PAUSED until the owner returns to the remaining PR1 hardware/manu
 - **R-PIPELINE-001 — RAW-centric BrainInput:** existing Brain V2 input contracts encode RAW-specific fields and must evolve without breaking candidate provenance.
 - **R-PIPELINE-002 — Multiple manifest generations:** current dataset manifests use more than one historical schema; future training must consume one declared contract/version.
 - **R-PIPELINE-003 — Renderer gap:** current Darkroom visual illustration is not a versioned JPEG renderer and cannot serve as product-quality evidence.
+
+## Current pre-photographer engineering lane
+
+- **PG-03.02 — V**
+- **PG-03.03 — V**
+- **PG-03.04 — V**
+- **PG-03.05 — ACTIVE PRE-PHOTOGRAPHER:** make photographer-approved unchanged-final/identity edits first-class without treating arbitrary copied originals as labels.
