@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import shutil
 from pathlib import Path
 
 from fastapi.testclient import TestClient
@@ -53,6 +54,106 @@ def _xmp(
 def _raw(path: Path, payload: bytes) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_bytes(payload)
+
+
+
+def test_pg00_backup_copy_restores_event_raw_profile_and_review(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    source_data = tmp_path / "source-data"
+    restored_data = tmp_path / "restored-data"
+
+    event = tmp_path / "event"
+    event.mkdir()
+    event_raw = event / "IMG_9001.ARW"
+    _raw(event_raw, b"event-source-unchanged" * 500)
+    source_bytes = event_raw.read_bytes()
+
+    reference = tmp_path / "reference"
+    reference.mkdir()
+    _raw(reference / "IMG_0001.ARW", b"reference-raw" * 400)
+    _xmp(
+        reference / "IMG_0001.xmp",
+        exposure="+0.20",
+        temperature="5100",
+        tint="+3",
+        raw_name="IMG_0001.ARW",
+    )
+
+    monkeypatch.setenv("PROGRAPHER_DATA_DIR", str(source_data))
+
+    with TestClient(create_app()) as client:
+        opened = client.post(
+            "/api/events/open-folder",
+            headers=HEADERS,
+            json={"path": str(event)},
+        )
+        assert opened.status_code == 200
+        event_id = opened.json()["event"]["id"]
+
+        profile = client.post(
+            "/api/testing/profile",
+            headers=HEADERS,
+            json={
+                "raw_root": str(reference),
+                "edits_root": str(reference),
+                "learning_source": "raw",
+            },
+        )
+        assert profile.status_code == 200
+
+        sheet = client.get(
+            f"/api/testing/events/{event_id}/review?learning_source=raw",
+            headers=HEADERS,
+        )
+        assert sheet.status_code == 200
+        item = sheet.json()["files"][0]
+
+        saved = client.post(
+            "/api/testing/review",
+            headers=HEADERS,
+            json={
+                "event_id": event_id,
+                "item": {
+                    "fingerprint": item["fingerprint"],
+                    "exposure": 0.45,
+                    "temperature": 5250,
+                    "tint": 7,
+                    "decision": "corrected",
+                },
+            },
+        )
+        assert saved.status_code == 200
+
+    shutil.copytree(source_data, restored_data)
+    shutil.rmtree(source_data)
+
+    monkeypatch.setenv("PROGRAPHER_DATA_DIR", str(restored_data))
+
+    with TestClient(create_app()) as restored_client:
+        events = restored_client.get("/api/events", headers=HEADERS)
+        assert events.status_code == 200
+        assert [event["id"] for event in events.json()["events"]] == [event_id]
+
+        profile = restored_client.get(
+            "/api/testing/profile?learning_source=raw",
+            headers=HEADERS,
+        )
+        assert profile.status_code == 200
+        assert profile.json()["learning_source"] == "raw"
+
+        sheet = restored_client.get(
+            f"/api/testing/events/{event_id}/review?learning_source=raw",
+            headers=HEADERS,
+        )
+        assert sheet.status_code == 200
+        restored_item = sheet.json()["files"][0]
+        assert restored_item["saved_review"]["exposure"] == 0.45
+        assert restored_item["saved_review"]["temperature"] == 5250
+        assert restored_item["saved_review"]["tint"] == 7
+
+    assert event_raw.read_bytes() == source_bytes
 
 
 def test_profile_uses_median_and_keeps_missing_targets_out(
