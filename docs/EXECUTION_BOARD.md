@@ -148,4 +148,5 @@ PG-00.02 stays PAUSED until the owner returns to the remaining PR1 hardware/manu
 - **PG-03.02 — V**
 - **PG-03.03 — V**
 - **PG-03.04 — V**
-- **PG-03.05 — ACTIVE PRE-PHOTOGRAPHER:** make photographer-approved unchanged-final/identity edits first-class without treating arbitrary copied originals as labels.
+- **PG-03.05 — V:** explicit approved unchanged-final identity targets are first-class; arbitrary copies remain excluded.
+- **PG-03.06 — ACTIVE PRE-PHOTOGRAPHER:** harden whole-event split against source groups, copies and near-duplicates.
