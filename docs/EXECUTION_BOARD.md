@@ -129,3 +129,10 @@ PG-00.02 stays PAUSED until the owner returns to the remaining PR1 hardware/manu
 ## Current bug batch
 
 - **BUG-PG00-001** — JPEG manifest backup path is absolute and may not survive restore to a different app-data location. High backup/restore risk; batch-fix later before PG-00.05 can close.
+
+## Phase 01 contract risks
+
+- **R-IDENTITY-001 — Path-derived Event identity:** current Event ID derives from root path; target contract requires stable UUID independent of Relink.
+- **R-IDENTITY-002 — Singleton photographer state:** current local setup does not represent Account → Photographer → Profile as separate identities.
+- **R-IDENTITY-003 — Mixed persistence:** Reviews/testing profiles/jobs/exports are not yet represented by durable versioned domain entities.
+- **R-CLOUD-001 — Provider coupling:** Supabase is the initial provider, but provider URLs/table IDs must not become canonical product identities.
