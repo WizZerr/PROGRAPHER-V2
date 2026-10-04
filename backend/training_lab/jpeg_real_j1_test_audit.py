@@ -16,8 +16,18 @@ BACKEND_ROOT = Path(__file__).resolve().parents[1]
 if str(BACKEND_ROOT) not in sys.path:
     sys.path.insert(0, str(BACKEND_ROOT))
 
-from app.datasets.jpeg_integrity import load_and_validate_dataset_snapshot
+from app.datasets.jpeg_integrity import (
+    JPEG_COLOR_CONTRACT_VERSION,
+    load_and_validate_dataset_snapshot,
+)
+from app.evaluation.artifact_provenance import (
+    FEATURE_CONTRACT_VERSION,
+    RENDERER_CONTRACT_VERSION,
+    verify_candidate_provenance,
+    verify_file_manifest,
+)
 from jpeg_j0_feasibility import (
+    RECIPE_VERSION,
     _apply_recipe_uint8,
     _match_geometry,
     _read_image,
@@ -215,6 +225,12 @@ def main() -> int:
     dataset = _read_json(dataset_manifest_path)
     contract = _read_json(candidate_dir / "model" / "model_contract.json")
     candidate_summary = _read_json(candidate_dir / "summary.json")
+    candidate_provenance = _read_json(
+        candidate_dir / "candidate_provenance.json"
+    )
+    artifact_manifest = _read_json(
+        candidate_dir / "artifact_manifest.json"
+    )
 
     if dataset.get("kind") != "jpeg_real_event_dataset":
         raise ValueError("Unexpected dataset manifest kind.")
@@ -230,14 +246,43 @@ def main() -> int:
         expected_snapshot_id=snapshot_id,
     )
 
+    verified_provenance = verify_candidate_provenance(
+        candidate_provenance
+    )
+    candidate_id = verified_provenance["artifact_id"]
+    verify_file_manifest(
+        candidate_dir,
+        artifact_manifest,
+        expected_candidate_id=candidate_id,
+    )
+
+    identity = verified_provenance["identity"]
+    if identity.get("dataset_snapshot_id") != snapshot_id:
+        raise ValueError(
+            "Candidate provenance belongs to a different dataset snapshot."
+        )
+    if identity.get("color_contract_version") != str(
+        dataset.get("color_contract_version")
+        or JPEG_COLOR_CONTRACT_VERSION
+    ):
+        raise ValueError("Candidate color contract is incompatible.")
+    if identity.get("feature_contract_version") != FEATURE_CONTRACT_VERSION:
+        raise ValueError("Candidate feature contract version is incompatible.")
+    if identity.get("recipe_contract_version") != RECIPE_VERSION:
+        raise ValueError("Candidate recipe contract version is incompatible.")
+    if identity.get("renderer_contract_version") != RENDERER_CONTRACT_VERSION:
+        raise ValueError("Candidate renderer contract version is incompatible.")
+
+    if contract.get("candidate_id") != candidate_id:
+        raise ValueError("Candidate model contract/provenance mismatch.")
     if contract.get("photographer_id") != dataset.get("photographer_id"):
         raise ValueError("Candidate and dataset photographer IDs do not match.")
     if contract.get("dataset_manifest_sha256") != _sha256_file(dataset_manifest_path):
         raise ValueError(
             "Frozen candidate was trained against a different dataset manifest."
         )
-    if candidate_summary.get("candidate_id") != contract.get("candidate_id"):
-        raise ValueError("Candidate summary/model contract mismatch.")
+    if candidate_summary.get("candidate_id") != candidate_id:
+        raise ValueError("Candidate summary/provenance mismatch.")
     if contract.get("feature_names") != list(FEATURE_NAMES):
         raise ValueError("Candidate feature contract is incompatible with this audit code.")
     if dataset.get("cross_split_duplicates"):
