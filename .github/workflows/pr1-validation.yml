@@ -34,6 +34,11 @@ jobs:
         run: |
           python -m pytest tests/test_testing_loop.py tests/test_camera_preview.py tests/test_jpeg_integrity.py tests/test_artifact_provenance.py -q
 
+      - name: Compile backend training tools
+        working-directory: backend
+        shell: pwsh
+        run: python -m compileall -q app training_lab
+
       - name: Node 24
         uses: actions/setup-node@v4
         with:
