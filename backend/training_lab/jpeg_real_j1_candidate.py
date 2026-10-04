@@ -380,6 +380,93 @@ def _evaluate_validation(
     return results, contact_sheet
 
 
+def _candidate_preflight(
+    dataset_manifest_path: Path,
+    recipe_targets_path: Path,
+) -> tuple[dict, dict, str, dict]:
+    """
+    Validate immutable data/provenance/leakage contracts before any feature
+    decoding or model fitting begins.
+    """
+    dataset = _read_json(dataset_manifest_path)
+    targets = _read_json(recipe_targets_path)
+
+    if dataset.get("kind") != "jpeg_real_event_dataset":
+        raise ValueError("Unexpected dataset manifest kind.")
+
+    snapshot_path = dataset.get("dataset_snapshot_path")
+    snapshot_id = dataset.get("dataset_snapshot_id")
+    if not snapshot_path or not snapshot_id:
+        raise ValueError(
+            "Dataset predates the frozen snapshot contract; re-run intake before J1."
+        )
+    load_and_validate_dataset_snapshot(
+        snapshot_path,
+        expected_snapshot_id=snapshot_id,
+    )
+
+    if targets.get("kind") != "jpeg_j0_recipe_targets":
+        raise ValueError("Unexpected recipe target kind.")
+    if dataset.get("photographer_id") != targets.get("photographer_id"):
+        raise ValueError("Photographer id mismatch between dataset and J0 targets.")
+    if dataset.get("cross_split_duplicates"):
+        raise ValueError(
+            "Cross-split duplicate leakage exists; candidate training is blocked."
+        )
+    if dataset.get("cross_split_source_groups"):
+        raise ValueError(
+            "Source-group split leakage exists; candidate training is blocked."
+        )
+    if dataset.get("unresolved_near_duplicate_suspects"):
+        raise ValueError(
+            "Unresolved near-duplicate suspects exist; candidate training is blocked."
+        )
+    if not dataset.get("readiness", {}).get(
+        "whole_event_train_validation_test_ready"
+    ):
+        raise ValueError(
+            "Dataset is not ready for whole-event Train/Validation/Test evaluation."
+        )
+
+    dataset_manifest_sha256 = sha256_file(dataset_manifest_path)
+    target_provenance = verify_target_bundle_for_candidate(
+        target_payload=targets,
+        dataset_snapshot_id=str(snapshot_id),
+        dataset_manifest_sha256=dataset_manifest_sha256,
+    )
+    return dataset, targets, dataset_manifest_sha256, target_provenance
+
+
+def _prepare_candidate_training(
+    dataset_manifest_path: Path,
+    recipe_targets_path: Path,
+) -> tuple[dict, dict, str, dict, list[dict]]:
+    """
+    Candidate-training boundary.
+
+    Preflight must complete before _build_training_rows decodes any JPEG.
+    Test pairs may exist in the dataset manifest, but only Train/Validation
+    targets are legal inputs to row construction.
+    """
+    (
+        dataset,
+        targets,
+        dataset_manifest_sha256,
+        target_provenance,
+    ) = _candidate_preflight(
+        dataset_manifest_path,
+        recipe_targets_path,
+    )
+    rows = _build_training_rows(dataset, targets)
+    return (
+        dataset,
+        targets,
+        dataset_manifest_sha256,
+        target_provenance,
+        rows,
+    )
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(
         description=(
@@ -406,50 +493,17 @@ def main() -> int:
     output_root = Path(args.output).expanduser().resolve()
     output_root.mkdir(parents=True, exist_ok=True)
 
-    dataset = _read_json(dataset_manifest_path)
-    targets = _read_json(recipe_targets_path)
-
-    if dataset.get("kind") != "jpeg_real_event_dataset":
-        raise ValueError("Unexpected dataset manifest kind.")
-
-    snapshot_path = dataset.get("dataset_snapshot_path")
-    snapshot_id = dataset.get("dataset_snapshot_id")
-    if not snapshot_path or not snapshot_id:
-        raise ValueError(
-            "Dataset predates the frozen snapshot contract; re-run intake before J1."
-        )
-    load_and_validate_dataset_snapshot(
-        snapshot_path,
-        expected_snapshot_id=snapshot_id,
+    (
+        dataset,
+        targets,
+        dataset_manifest_sha256,
+        target_provenance,
+        rows,
+    ) = _prepare_candidate_training(
+        dataset_manifest_path,
+        recipe_targets_path,
     )
-
-    if targets.get("kind") != "jpeg_j0_recipe_targets":
-        raise ValueError("Unexpected recipe target kind.")
-    if dataset.get("photographer_id") != targets.get("photographer_id"):
-        raise ValueError("Photographer id mismatch between dataset and J0 targets.")
-    if dataset.get("cross_split_duplicates"):
-        raise ValueError("Cross-split duplicate leakage exists; candidate training is blocked.")
-    if dataset.get("cross_split_source_groups"):
-        raise ValueError("Source-group split leakage exists; candidate training is blocked.")
-    if dataset.get("unresolved_near_duplicate_suspects"):
-        raise ValueError(
-            "Unresolved near-duplicate suspects exist; candidate training is blocked."
-        )
-    if not dataset.get("readiness", {}).get(
-        "whole_event_train_validation_test_ready"
-    ):
-        raise ValueError(
-            "Dataset is not ready for whole-event Train/Validation/Test evaluation."
-        )
-
-    dataset_manifest_sha256 = sha256_file(dataset_manifest_path)
-    target_provenance = verify_target_bundle_for_candidate(
-        target_payload=targets,
-        dataset_snapshot_id=str(snapshot_id),
-        dataset_manifest_sha256=dataset_manifest_sha256,
-    )
-
-    rows = _build_training_rows(dataset, targets)
+    snapshot_id = dataset["dataset_snapshot_id"]
     train_rows = [row for row in rows if row["split"] == "train"]
     validation_rows = [row for row in rows if row["split"] == "validation"]
     if not train_rows:
