@@ -21,7 +21,7 @@ Status vocabulary:
 
 | Lane | Part | Status | Exact next output |
 |---|---|---|---|
-| Primary development | **PG-04.07** | ACTIVE / ◐ | Finish RAW/XMP source protection, round-trip evidence and truthful approximate-preview labeling |
+| Primary development | **PG-04.07** | ACTIVE / ◐ | Verify hardened sidecar rollback/source protection plus RAW approximate-preview/Lightroom truth labeling |
 | Photographer intake | **PG-06.02** | BLOCKED | Authorized photographer material |
 | Residual PR1 QA | **PG-00.02** | PAUSED | Only resume when product owner returns to the remaining hardware/manual QA |
 | Cloud/Auth | **PG-12+** | BLOCKED / NOT STARTED | Do not start before workflow gate permits |

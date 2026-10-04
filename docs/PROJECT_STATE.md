@@ -59,7 +59,7 @@ Historical plans and superseded planning notes live under `docs/archive/` and ar
 
 ## Next executable work
 
-1. **PG-04.07 — ACTIVE / ◐** — finish the RAW/XMP safety boundary: prove sidecar round-trip/source protection and ensure RAW remains explicitly approximate/Lightroom-owned in the UI.
+1. **PG-04.07 — ACTIVE / ◐** — sidecar rollback hardening and focused regressions implemented; run RAW/XMP safety harness and committed UI truth-label verification.
 2. Close Phase 04 only if RAW source/sidecar safety and truth-labeling evidence pass.
 3. Then advance to the next executable pre-photographer Part.
 4. **PG-06.02** remains blocked until real authorized photographer material arrives.

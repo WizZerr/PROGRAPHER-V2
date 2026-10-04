@@ -40,6 +40,22 @@ def _marker_present(path: Path) -> bool:
     return False
 
 
+def _restore_previous_sidecar(
+    destination: Path,
+    previous_payload: bytes | None,
+) -> None:
+    if previous_payload is None:
+        destination.unlink(missing_ok=True)
+        return
+
+    rollback = destination.with_suffix(destination.suffix + ".rollback.tmp")
+    try:
+        rollback.write_bytes(previous_payload)
+        os.replace(rollback, destination)
+    finally:
+        rollback.unlink(missing_ok=True)
+
+
 def write_testing_sidecar(
     *,
     raw_path: str | Path,
@@ -70,10 +86,18 @@ def write_testing_sidecar(
     if destination.resolve() == raw.resolve():
         raise SidecarExportError("ייצוא לא יכול להחליף את קובץ ה-RAW.")
 
-    if destination.exists() and not _marker_present(destination):
-        raise SidecarExportError(
-            "כבר קיים XMP שלא נוצר על ידי ProGrapher, והוא לא הוחלף."
-        )
+    previous_payload: bytes | None = None
+    if destination.exists():
+        if not _marker_present(destination):
+            raise SidecarExportError(
+                "כבר קיים XMP שלא נוצר על ידי ProGrapher, והוא לא הוחלף."
+            )
+        try:
+            previous_payload = destination.read_bytes()
+        except OSError as exc:
+            raise SidecarExportError(
+                "לא ניתן לקרוא את XMP הקודם לפני עדכון בטוח."
+            ) from exc
 
     destination.parent.mkdir(parents=True, exist_ok=True)
     before = _sha256(raw)
@@ -90,16 +114,39 @@ def write_testing_sidecar(
     description.set(f"{{{CRS_NS}}}HasSettings", "True")
 
     temporary = destination.with_suffix(destination.suffix + ".tmp")
-    ET.ElementTree(xmpmeta).write(
-        temporary,
-        encoding="utf-8",
-        xml_declaration=True,
-    )
-    os.replace(temporary, destination)
+    try:
+        ET.ElementTree(xmpmeta).write(
+            temporary,
+            encoding="utf-8",
+            xml_declaration=True,
+        )
 
-    after = _sha256(raw)
-    if before != after:
-        destination.unlink(missing_ok=True)
-        raise SidecarExportError("קובץ ה-RAW השתנה במהלך הייצוא והפעולה בוטלה.")
+        before_promotion = _sha256(raw)
+        if before != before_promotion:
+            raise SidecarExportError(
+                "קובץ ה-RAW השתנה במהלך הייצוא והפעולה בוטלה."
+            )
+
+        os.replace(temporary, destination)
+
+        after = _sha256(raw)
+        if before != after:
+            try:
+                _restore_previous_sidecar(destination, previous_payload)
+            except OSError as rollback_exc:
+                raise SidecarExportError(
+                    "קובץ ה-RAW השתנה וגם שחזור ה-XMP הקודם נכשל."
+                ) from rollback_exc
+            raise SidecarExportError(
+                "קובץ ה-RAW השתנה במהלך הייצוא; ה-XMP הקודם שוחזר."
+            )
+    except SidecarExportError:
+        raise
+    except OSError as exc:
+        raise SidecarExportError(
+            f"כתיבת XMP נכשלה: {exc}"
+        ) from exc
+    finally:
+        temporary.unlink(missing_ok=True)
 
     return destination
