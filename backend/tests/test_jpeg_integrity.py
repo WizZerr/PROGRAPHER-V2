@@ -292,3 +292,16 @@ def test_real_jpeg_intake_freezes_snapshot_and_detects_mutation(
             snapshot_path,
             expected_snapshot_id=payload["dataset_snapshot_id"],
         )
+
+    # An intentional new Intake after source mutation creates a new immutable
+    # dataset snapshot identity instead of silently continuing the old dataset.
+    payload_v2 = _intake(
+        root=root,
+        output=tmp_path / "intake-output-v2",
+        photographer_id="fixture-photographer",
+        aspect_tolerance=0.01,
+        validation_events=[],
+        test_events=[],
+        rebuild_split_lock=False,
+    )
+    assert payload_v2["dataset_snapshot_id"] != payload["dataset_snapshot_id"]
