@@ -585,3 +585,30 @@ mean_recipe/
 ```
 
 אחרי Test audit אין לכוון מחדש את אותו Candidate לפי התוצאה. אם התוצאה חושפת בעיה ורוצים לשנות architecture/features/recipe, יוצרים Candidate חדש ובמקרה הצורך Test חדש לפי פרוטוקול ההערכה.
+
+## Final Data Safety Gate
+
+לפני J1 יש עכשיו Preflight מפורש. הסדר הוא:
+
+```text
+Snapshot integrity
+→ Dataset/Photographer contract
+→ Exact + Source Group leakage
+→ Near-duplicate review
+→ Dataset readiness
+→ Target provenance
+→ ורק אז Feature Decode
+→ ורק אחר כך Model Fit
+```
+
+בנוסף J1 סורק את **כל** ה־target splits לפני קריאת JPEG ראשון. אם target אחד שייך ל־Test, האימון נעצר מיד.
+
+ה־CI מריץ את `test_pg_03_09_data_safety_gate.py`, שמוכיח בין היתר:
+
+- Dataset שהשתנה אחרי Intake נעצר לפני Feature Decode.
+- Source Group leakage נעצר לפני Feature Decode.
+- near-duplicate חשוד שלא הוכרע נעצר לפני Feature Decode.
+- Target Bundle ששונה אחרי J0 נעצר לפני Feature Decode.
+- Test target בתוך Target Bundle נעצר לפני כל Decode.
+- Dataset תקין יכול להכיל Test זוגות נעולים, אבל J1 Candidate preparation קורא רק Train/Validation ולא Test pixels.
+
