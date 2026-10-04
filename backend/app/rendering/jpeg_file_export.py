@@ -299,7 +299,7 @@ def export_jpeg_file(
 
         return JpegFileExportResult(
             destination_path=str(destination),
-            relative_path=str(destination.relative_to(output_root)),
+            relative_path=destination.relative_to(output_root).as_posix(),
             output_sha256=output_sha,
             source_sha256=source_after,
             bytes_written=len(encoded.payload),

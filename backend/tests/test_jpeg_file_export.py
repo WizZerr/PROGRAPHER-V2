@@ -62,7 +62,7 @@ def _open_event(client: TestClient, event_dir: Path):
     )
     assert listed.status_code == 200
     files = {
-        item["relative_path"]: item["fingerprint"]
+        Path(item["relative_path"]).as_posix(): item["fingerprint"]
         for item in listed.json()["files"]
     }
     return event_id, files
