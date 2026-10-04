@@ -253,6 +253,76 @@ def verify_target_bundle_for_candidate(
     return provenance
 
 
+def verify_candidate_provenance(provenance: dict[str, Any]) -> dict[str, Any]:
+    if provenance.get("schema") != PROVENANCE_SCHEMA:
+        raise ValueError("unsupported candidate provenance schema")
+    identity = provenance.get("identity") or {}
+    if identity.get("kind") != "jpeg_model_candidate":
+        raise ValueError("unexpected candidate provenance kind")
+    expected_id = _artifact_id("candidate", identity)
+    if provenance.get("artifact_id") != expected_id:
+        raise ValueError("candidate artifact id does not match provenance identity")
+    return provenance
+
+
+def build_file_manifest(
+    root: str | Path,
+    relative_paths: list[str],
+    *,
+    candidate_id: str,
+) -> dict[str, Any]:
+    base = Path(root).expanduser().resolve(strict=True)
+    files: dict[str, dict[str, Any]] = {}
+    for raw in sorted(set(relative_paths)):
+        relative = Path(raw)
+        if relative.is_absolute() or ".." in relative.parts:
+            raise ValueError(f"artifact manifest path must be relative: {raw}")
+        absolute = (base / relative).resolve(strict=True)
+        try:
+            absolute.relative_to(base)
+        except ValueError as exc:
+            raise ValueError(f"artifact file escapes candidate root: {raw}") from exc
+        if not absolute.is_file():
+            raise ValueError(f"artifact manifest entry is not a file: {raw}")
+        files[relative.as_posix()] = {
+            "sha256": sha256_file(absolute),
+            "size_bytes": absolute.stat().st_size,
+        }
+
+    return {
+        "schema": "prographer.candidate-files.v1",
+        "candidate_id": candidate_id,
+        "files": files,
+    }
+
+
+def verify_file_manifest(
+    root: str | Path,
+    manifest: dict[str, Any],
+    *,
+    expected_candidate_id: str,
+) -> None:
+    if manifest.get("schema") != "prographer.candidate-files.v1":
+        raise ValueError("unsupported candidate file-manifest schema")
+    if manifest.get("candidate_id") != expected_candidate_id:
+        raise ValueError("candidate file manifest belongs to another candidate")
+
+    base = Path(root).expanduser().resolve(strict=True)
+    for raw, evidence in (manifest.get("files") or {}).items():
+        relative = Path(raw)
+        if relative.is_absolute() or ".." in relative.parts:
+            raise ValueError(f"unsafe candidate artifact path: {raw}")
+        absolute = (base / relative).resolve(strict=True)
+        try:
+            absolute.relative_to(base)
+        except ValueError as exc:
+            raise ValueError(f"candidate artifact escapes root: {raw}") from exc
+        if absolute.stat().st_size != int(evidence["size_bytes"]):
+            raise ValueError(f"candidate artifact size changed: {raw}")
+        if sha256_file(absolute) != evidence["sha256"]:
+            raise ValueError(f"candidate artifact hash changed: {raw}")
+
+
 def ensure_immutable_artifact_dir(
     root: str | Path,
     artifact_id: str,
