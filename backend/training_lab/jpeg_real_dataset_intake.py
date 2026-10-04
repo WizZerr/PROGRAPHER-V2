@@ -72,6 +72,7 @@ class PairRecord:
     geometry_coverage_ratio: float | None
     geometry_rotation_degrees: float | None
     geometry_mirrored: bool | None
+    geometry_edge_similarity: float | None
     note: str
 
 
@@ -676,6 +677,9 @@ def _intake(
                 ),
                 geometry_mirrored=(
                     geometry.mirrored if geometry else None
+                ),
+                geometry_edge_similarity=(
+                    geometry.edge_similarity if geometry else None
                 ),
                 note="; ".join(note_parts),
             )
