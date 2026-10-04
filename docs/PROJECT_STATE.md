@@ -26,6 +26,7 @@ Historical plans and superseded planning notes live under `docs/archive/` and ar
 - **PG-04.01 — V**: shared JPEG EditRecipe/renderer contract verified in run `37176350329`.
 - **PG-04.02 — V**: product preview/full-resolution rendering, revision cache and stale-revision protection verified by manual delta checks; parent backend regression/compile remains green in run `37176350329`.
 - **PG-04.03 — V**: encoded JPEG quality/size/ICC/orientation/metadata/GPS contract verified by manual delta checks with reopen validation.
+- **PG-04.04 — V**: safe separate-folder atomic export verified for collisions, disk/write failures, cleanup and source hash preservation.
 - Residual PR1 manual QA remains paused by product-owner decision and is not restarted here.
 - Do not start Auth/Supabase/Cloud or a new production Brain.
 
@@ -56,9 +57,9 @@ Historical plans and superseded planning notes live under `docs/archive/` and ar
 
 ## Next executable work
 
-1. **PG-04.04 — ACTIVE / ◐** — safe filesystem export implemented; verify collisions, separate-root guard, disk-full/promotion cleanup, atomic publication and source byte identity.
-2. Prove partial/failed output is never reported as valid and source bytes remain unchanged.
-3. Then continue to **PG-04.05 — reference/golden renders**.
+1. **PG-04.05 — ACTIVE** — freeze reference/golden JPEG cases for identity, tone/color, clipping and large-image behavior.
+2. Measure encoded export against the expected reference and bound preview-vs-export downsample deviation.
+3. Then continue to **PG-04.06 — UI controls -> renderer mapping**.
 4. **PG-06.02** remains blocked until real authorized photographer material arrives.
 
 Do not start Auth/Cloud implementation or a new production Brain.
@@ -155,4 +156,5 @@ Do not start Auth/Cloud implementation or a new production Brain.
 - **PG-06.02 remains blocked until real authorized photographer material arrives.**
 - **PG-04.02 — V:** product preview/full-resolution rendering is verified with revision/cache and stale-approval protection.
 - **PG-04.03 — V:** encoded JPEG output is verified from original source + shared recipe with explicit metadata/color policy.
-- Next executable JPEG-engine Part without photographer material: **PG-04.04**.
+- **PG-04.04 — V:** safe filesystem export is verified; failed/partial writes are not returned as valid and source bytes remain protected.
+- Next executable JPEG-engine Part without photographer material: **PG-04.05**.

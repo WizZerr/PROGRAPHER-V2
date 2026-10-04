@@ -21,7 +21,7 @@ Status vocabulary:
 
 | Lane | Part | Status | Exact next output |
 |---|---|---|---|
-| Primary development | **PG-04.04** | ACTIVE / ◐ | Verify safe separate-folder export, collision handling, disk-full/write cleanup, atomic promotion and source hashes |
+| Primary development | **PG-04.05** | ACTIVE | Freeze reference/golden renders and measure encoded export plus preview-vs-export agreement |
 | Photographer intake | **PG-06.02** | BLOCKED | Authorized photographer material |
 | Residual PR1 QA | **PG-00.02** | PAUSED | Only resume when product owner returns to the remaining hardware/manual QA |
 | Cloud/Auth | **PG-12+** | BLOCKED / NOT STARTED | Do not start before workflow gate permits |
@@ -122,9 +122,9 @@ A Part can be marked DONE/V only when:
 
 ## Next action
 
-**PG-04.04 is the only ACTIVE primary-development Part.**
+**PG-04.05 is the only ACTIVE primary-development Part.**
 
-PG-04.03 passed manual delta verification on `main` without consuming hosted Actions minutes. PG-04.04 now owns destination/filesystem safety; encoded JPEG semantics remain frozen in PG-04.03.
+PG-04.04 passed manual delta/integration verification on the exact committed module without consuming hosted Actions minutes. PG-04.05 now owns golden/reference render evidence; export semantics remain frozen in PG-04.03–04.04.
 
 PG-06.02 stays BLOCKED on authorized photographer files. Residual PG-00.02 QA stays PAUSED. No Auth/Cloud implementation and no new production Brain begins here.
 
@@ -164,4 +164,5 @@ PG-06.02 stays BLOCKED on authorized photographer files. Residual PG-00.02 QA st
 - **PG-06.02 — BLOCKED:** waits for real authorized photographer files.
 - **PG-04.02 — V:** product preview/full-resolution render API, revision cache, stale/replaced-revision protection and current-approval guard verified by manual delta checks.
 - **PG-04.03 — V:** encoded JPEG export quality/resize/ICC/orientation/metadata/GPS contract and reopen verification passed manual delta checks.
-- **PG-04.04 — ACTIVE / ◐:** safe atomic filesystem export is implemented; targeted manual delta verification is next.
+- **PG-04.04 — V:** safe atomic filesystem export passed exact-module manual delta/integration verification.
+- **PG-04.05 — ACTIVE:** reference/golden render cases are next.
