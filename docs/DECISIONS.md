@@ -33,3 +33,9 @@ On 2026-10-04 the product owner stopped additional manual PR1 QA for now and cho
 
 ## D-010 — Legacy V1 brain stays retired; candidate history must be preserved
 Do not reconstruct the retired CLIP + ExtraTrees V1 brain. Each new Brain/model version that replaces or changes the active candidate is preserved for comparison against prior candidates and a simple baseline.
+
+
+## D-011 — [DRAFT] Release 1 product scope contract
+Prepared 2026-10-04 under PG-01.01. The working scope is defined in `docs/RELEASE_1_PRODUCT_CONTRACT.md`: independent JPEG editing is the primary Release 1 path; RAW remains an assisted safe RAW/XMP path; Windows x64 and macOS Apple Silicon are mandatory targets; event editing/inference/render/review/export stay local; cloud remains a narrow commercial control plane.
+
+This decision is **not ratified** until G0 is signed and the product owner explicitly accepts the contract. After ratification, scope changes require a new versioned decision.
