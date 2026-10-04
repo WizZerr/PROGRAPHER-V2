@@ -37,6 +37,8 @@ Status vocabulary:
 | B-004 | PG-00.05 full completion | No verified copy of the user's historical DB/profile backup has been restored in this workflow | Restore on a copy; profile/events/reviews readable; source files unchanged |
 | B-005 | G1/G2/G3 quality work | Representative photographer dataset is not yet available | Authorized events split by whole event/source group with provenance |
 | B-006 | Commercial claims | No real photographer quality/time-savings measurement | Gate-specific evaluation on unseen photographer events |
+| B-007 | PG-00.05 | JPEG profile stores an absolute dataset manifest path, so backup copied to a new app-data location may reference the old path | Define portable manifest reference/migration and prove restore |
+| B-008 | PG-00.05 | No small real-camera fixture set with explicit product-safe provenance/license is recorded | Add licensed/provenanced camera fixtures without committing restricted photographer material |
 
 ## Risk map
 
@@ -123,3 +125,7 @@ A Part can be marked DONE/V only when:
 **PG-00.05 is the only ACTIVE primary-development Part.**
 
 PG-00.02 stays PAUSED until the owner returns to the remaining PR1 hardware/manual QA. PG-00.04 stays BLOCKED. No Auth/Cloud implementation and no new production Brain begins from Phase 00.
+
+## Current bug batch
+
+- **BUG-PG00-001** — JPEG manifest backup path is absolute and may not survive restore to a different app-data location. High backup/restore risk; batch-fix later before PG-00.05 can close.
