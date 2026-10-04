@@ -9,6 +9,12 @@ import numpy as np
 from PIL import Image, ImageCms
 import pytest
 
+from app.datasets.source_groups import (
+    SourceAsset,
+    build_source_groups,
+    load_near_duplicate_reviews,
+    source_asset_id,
+)
 from app.datasets.jpeg_integrity import (
     DatasetSnapshotChangedError,
     JpegIntegrityError,
@@ -347,6 +353,270 @@ def test_identity_target_requires_explicit_approval_and_reaches_j0(
             test_events=[],
             rebuild_split_lock=False,
             identity_approvals_path=approvals_path,
+        )
+
+
+def test_source_groups_link_recompressed_resize_but_not_unrelated(
+    tmp_path: Path,
+) -> None:
+    source_a = tmp_path / "source-a.jpg"
+    source_b = tmp_path / "source-b-resized.jpg"
+    source_c = tmp_path / "source-c.jpg"
+
+    scene = _scene(60)
+    _save_jpeg(source_a, scene)
+
+    resized = cv2.resize(
+        scene,
+        (360, 240),
+        interpolation=cv2.INTER_AREA,
+    )
+    Image.fromarray(resized, mode="RGB").save(
+        source_b,
+        format="JPEG",
+        quality=84,
+    )
+    _save_jpeg(source_c, _scene(880))
+
+    assets: list[SourceAsset] = []
+    for event_id, path in (
+        ("event_a", source_a),
+        ("event_b", source_b),
+        ("event_c", source_c),
+    ):
+        _, evidence = read_jpeg_working_rgb(path)
+        digest = __import__("hashlib").sha256(path.read_bytes()).hexdigest()
+        relative = path.name
+        assets.append(
+            SourceAsset(
+                source_id=source_asset_id(event_id, relative, digest),
+                event_id=event_id,
+                relative_path=relative,
+                path=str(path),
+                sha256=digest,
+                perceptual_hash64=evidence.perceptual_hash64,
+            )
+        )
+
+    analysis = build_source_groups(assets)
+
+    grouped_events = [
+        set(group["event_ids"])
+        for group in analysis["groups"]
+    ]
+    assert {"event_a", "event_b"} in grouped_events
+    assert {"event_c"} in grouped_events
+    assert any(
+        relation["relation"] == "verified_near_duplicate"
+        for relation in analysis["relations"]
+    )
+    assert analysis["unresolved_suspects"] == []
+
+
+def test_near_duplicate_suspect_requires_explicit_human_review(
+    tmp_path: Path,
+) -> None:
+    left_path = tmp_path / "left.jpg"
+    right_path = tmp_path / "right.jpg"
+    _save_jpeg(left_path, _scene(61))
+    _save_jpeg(right_path, _scene(999))
+
+    left_sha = __import__("hashlib").sha256(left_path.read_bytes()).hexdigest()
+    right_sha = __import__("hashlib").sha256(right_path.read_bytes()).hexdigest()
+
+    # Force both assets into the perceptual shortlist. Geometry must still
+    # refuse to silently group unrelated photos.
+    shared_candidate_hash = "0f0f0f0f0f0f0f0f"
+    assets = [
+        SourceAsset(
+            source_id=source_asset_id("event_left", "left.jpg", left_sha),
+            event_id="event_left",
+            relative_path="left.jpg",
+            path=str(left_path),
+            sha256=left_sha,
+            perceptual_hash64=shared_candidate_hash,
+        ),
+        SourceAsset(
+            source_id=source_asset_id("event_right", "right.jpg", right_sha),
+            event_id="event_right",
+            relative_path="right.jpg",
+            path=str(right_path),
+            sha256=right_sha,
+            perceptual_hash64=shared_candidate_hash,
+        ),
+    ]
+
+    unresolved = build_source_groups(assets)
+    assert len(unresolved["unresolved_suspects"]) == 1
+    review_id = unresolved["unresolved_suspects"][0]["review_id"]
+
+    reviews_path = tmp_path / "near-duplicate-reviews.json"
+    reviews_path.write_text(
+        json.dumps(
+            {
+                "schema": "prographer.near-duplicate-reviews.v1",
+                "photographer_id": "fixture-photographer",
+                "reviews": [
+                    {
+                        "review_id": review_id,
+                        "decision": "distinct_source",
+                        "reviewed_by": "fixture-photographer",
+                        "reviewed_at": "2026-10-04T00:00:00Z",
+                    }
+                ],
+            },
+            indent=2,
+        ),
+        encoding="utf-8",
+    )
+    reviews, review_sha = load_near_duplicate_reviews(
+        reviews_path,
+        photographer_id="fixture-photographer",
+    )
+    resolved = build_source_groups(assets, reviews=reviews)
+
+    assert review_sha
+    assert resolved["unresolved_suspects"] == []
+    assert len(resolved["groups"]) == 2
+    assert any(
+        relation["relation"] == "human_review"
+        and relation["review_decision"] == "distinct_source"
+        for relation in resolved["relations"]
+    )
+
+
+def test_intake_keeps_near_duplicate_events_in_one_split_and_new_event_unassigned(
+    tmp_path: Path,
+) -> None:
+    root = tmp_path / "grouped-dataset"
+    output = tmp_path / "grouped-intake"
+
+    originals_by_event: dict[str, np.ndarray] = {
+        "event_1": _scene(70),
+        "event_3": _scene(170),
+        "event_4": _scene(270),
+    }
+    originals_by_event["event_2"] = cv2.resize(
+        originals_by_event["event_1"],
+        (360, 240),
+        interpolation=cv2.INTER_AREA,
+    )
+
+    for event_id, original in originals_by_event.items():
+        originals = root / event_id / "ORIGINALS"
+        edits = root / event_id / "EDITS"
+        _save_jpeg(originals / "IMG_0001.jpg", original)
+        edited = np.clip(
+            original.astype(np.float32) * 1.03 + 5.0,
+            0,
+            255,
+        ).astype(np.uint8)
+        _save_jpeg(edits / "IMG_0001.jpg", edited)
+
+    first = _intake(
+        root=root,
+        output=output,
+        photographer_id="fixture-photographer",
+        aspect_tolerance=0.01,
+        validation_events=[],
+        test_events=[],
+        rebuild_split_lock=False,
+    )
+
+    splits = {
+        event["event_id"]: event["split"]
+        for event in first["events"]
+    }
+    assert splits["event_1"] == splits["event_2"]
+    assert first["totals"]["cross_event_source_groups"] >= 1
+    assert first["totals"]["verified_near_duplicate_relations"] >= 1
+    assert first["totals"]["cross_split_source_group_leaks"] == 0
+    assert first["readiness"]["source_group_split_leakage_clear"] is True
+    assert first["readiness"]["whole_event_train_validation_test_ready"] is True
+
+    locked_test_events = {
+        event_id
+        for event_id, split in splits.items()
+        if split == "test"
+    }
+    assert locked_test_events
+
+    event_5_original = _scene(370)
+    _save_jpeg(
+        root / "event_5" / "ORIGINALS" / "IMG_0001.jpg",
+        event_5_original,
+    )
+    _save_jpeg(
+        root / "event_5" / "EDITS" / "IMG_0001.jpg",
+        np.clip(
+            event_5_original.astype(np.float32) * 1.04 + 3.0,
+            0,
+            255,
+        ).astype(np.uint8),
+    )
+
+    second = _intake(
+        root=root,
+        output=output,
+        photographer_id="fixture-photographer",
+        aspect_tolerance=0.01,
+        validation_events=[],
+        test_events=[],
+        rebuild_split_lock=False,
+    )
+    second_splits = {
+        event["event_id"]: event["split"]
+        for event in second["events"]
+    }
+
+    assert second_splits["event_5"] == "unassigned"
+    for event_id in locked_test_events:
+        assert second_splits[event_id] == "test"
+
+
+def test_explicit_split_refuses_to_separate_one_source_group(
+    tmp_path: Path,
+) -> None:
+    root = tmp_path / "explicit-group-dataset"
+    base = _scene(71)
+
+    for event_id, original in (
+        ("event_1", base),
+        (
+            "event_2",
+            cv2.resize(
+                base,
+                (360, 240),
+                interpolation=cv2.INTER_AREA,
+            ),
+        ),
+        ("event_3", _scene(371)),
+    ):
+        _save_jpeg(
+            root / event_id / "ORIGINALS" / "IMG_0001.jpg",
+            original,
+        )
+        _save_jpeg(
+            root / event_id / "EDITS" / "IMG_0001.jpg",
+            np.clip(
+                original.astype(np.float32) * 1.03 + 4.0,
+                0,
+                255,
+            ).astype(np.uint8),
+        )
+
+    with pytest.raises(
+        ValueError,
+        match="divide one source group",
+    ):
+        _intake(
+            root=root,
+            output=tmp_path / "explicit-group-intake",
+            photographer_id="fixture-photographer",
+            aspect_tolerance=0.01,
+            validation_events=["event_1"],
+            test_events=["event_2"],
+            rebuild_split_lock=True,
         )
 
 
