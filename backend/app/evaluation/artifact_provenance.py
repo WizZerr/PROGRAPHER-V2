@@ -108,11 +108,40 @@ def _artifact_id(prefix: str, identity_payload: dict[str, Any]) -> str:
     return f"{prefix}-{digest[:24]}"
 
 
+def target_semantics_payload(target_payload: dict[str, Any]) -> dict[str, Any]:
+    targets = []
+    for raw in target_payload.get("targets") or []:
+        targets.append(
+            {
+                "pair_id": raw.get("pair_id"),
+                "event_id": raw.get("event_id"),
+                "split": raw.get("split"),
+                "original_sha256": raw.get("original_sha256"),
+                "edited_sha256": raw.get("edited_sha256"),
+                "recipe_version": raw.get("recipe_version"),
+                "recipe_transform": raw.get("recipe_transform"),
+            }
+        )
+    targets.sort(key=lambda item: str(item.get("pair_id") or ""))
+    return {
+        "kind": target_payload.get("kind"),
+        "dataset_snapshot_id": target_payload.get("dataset_snapshot_id"),
+        "photographer_id": target_payload.get("photographer_id"),
+        "split_mode": target_payload.get("split_mode"),
+        "test_unlocked": bool(target_payload.get("test_unlocked", False)),
+        "targets": targets,
+    }
+
+
+def target_semantics_sha256(target_payload: dict[str, Any]) -> str:
+    return canonical_json_sha256(target_semantics_payload(target_payload))
+
+
 def target_bundle_provenance(
     *,
     dataset_snapshot_id: str,
     dataset_manifest_sha256: str,
-    targets_payload_sha256: str,
+    target_semantics_sha256_value: str,
     code_revision: str,
     dependency_lock_sha256: str,
     color_contract_version: str,
@@ -127,7 +156,7 @@ def target_bundle_provenance(
         "target_contract_version": TARGET_CONTRACT_VERSION,
         "dataset_snapshot_id": dataset_snapshot_id,
         "dataset_manifest_sha256": dataset_manifest_sha256,
-        "targets_payload_sha256": targets_payload_sha256,
+        "target_semantics_sha256": target_semantics_sha256_value,
         "code_revision": _normalize_revision(code_revision),
         "dependency_lock_sha256": dependency_lock_sha256,
         "color_contract_version": color_contract_version,
@@ -151,6 +180,7 @@ def candidate_provenance(
     dataset_snapshot_id: str,
     dataset_manifest_sha256: str,
     target_artifact_id: str,
+    target_semantics_sha256_value: str,
     target_artifact_sha256: str,
     code_revision: str,
     dependency_lock_sha256: str,
@@ -169,7 +199,7 @@ def candidate_provenance(
         "dataset_snapshot_id": dataset_snapshot_id,
         "dataset_manifest_sha256": dataset_manifest_sha256,
         "target_artifact_id": target_artifact_id,
-        "target_artifact_sha256": target_artifact_sha256,
+        "target_semantics_sha256": target_semantics_sha256_value,
         "code_revision": _normalize_revision(code_revision),
         "dependency_lock_sha256": dependency_lock_sha256,
         "color_contract_version": color_contract_version,
@@ -184,6 +214,9 @@ def candidate_provenance(
         "artifact_id": _artifact_id("candidate", identity),
         "identity": identity,
         "feature_names": feature_names,
+        "evidence": {
+            "target_artifact_sha256": target_artifact_sha256,
+        },
     }
 
 
@@ -209,11 +242,9 @@ def verify_target_bundle_for_candidate(
     if identity.get("dataset_manifest_sha256") != dataset_manifest_sha256:
         raise ValueError("target bundle belongs to a different dataset manifest")
 
-    payload_without_provenance = dict(target_payload)
-    payload_without_provenance.pop("provenance", None)
-    actual_payload_sha = canonical_json_sha256(payload_without_provenance)
-    if identity.get("targets_payload_sha256") != actual_payload_sha:
-        raise ValueError("target bundle content hash does not match provenance")
+    actual_semantics_sha = target_semantics_sha256(target_payload)
+    if identity.get("target_semantics_sha256") != actual_semantics_sha:
+        raise ValueError("target bundle semantic content hash does not match provenance")
 
     expected_id = _artifact_id("targets", identity)
     if provenance.get("artifact_id") != expected_id:
