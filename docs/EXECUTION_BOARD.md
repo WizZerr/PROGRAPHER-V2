@@ -152,4 +152,5 @@ PG-00.02 stays PAUSED until the owner returns to the remaining PR1 hardware/manu
 - **PG-03.06 — V:** source groups + exact/near-duplicate leakage guard verified.
 - **PG-03.07 — V:** truthful coverage/exclusion reporting verified.
 - **PG-03.08 — V:** immutable target/candidate provenance + file integrity verified.
-- **PG-03.09 — ACTIVE PRE-PHOTOGRAPHER:** consolidate corruption, leakage and locked-Test guards into one regression gate.
+- **PG-03.09 — V:** consolidated corruption/leakage/provenance/Locked-Test gate verified.
+- **PG-03.02–PG-03.09 — PRE-PHOTOGRAPHER PACKAGE COMPLETE.** Real-photographer G1 evidence waits for representative material.
