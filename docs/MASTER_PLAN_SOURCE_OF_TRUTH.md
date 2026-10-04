@@ -148,7 +148,7 @@
 | PG-00.02 | ◐ | להשלים את checklist של PR1 על Windows: startup, מסך מלא, RAW↔JPEG, restart, XMP, מחיקת אירוע וניתוק כונן; לשמור תמונות/לוגי ראיה | כל תרחיש חובה PASS או תקלה מתועדת; CI על ה־head הסופי ירוק |
 | PG-00.03 | V | תוכנית 20.09 וסטטוס Cloud Revision 1.1 נשמרו תחת `docs/archive/`; Workflow v3.0 אומץ כ־`docs/MASTER_PLAN_SOURCE_OF_TRUTH.md`; PROJECT_STATE/DECISIONS/README מפנים אליו כמקור אמת יחיד | מסמכי P00 הישנים מסומנים כארכיון/היסטוריה; מיפוי ישן→חדש נשמר בסעיף 9; PG-00.02 נשאר פתוח ואינו מוצג כ-PASS |
 | PG-00.04 | ☐ | לבחור ענף אינטגרציה אחד שמכיל את כל PR1. לסיים review ולמזג רק אחרי 00.02; ליצור tag לבסיס החדש וגיבוי נתוני פיתוח | commit בסיס ניתן לבנייה ושחזור; אין התחלת פיתוח מ־main הישן ואין מחיקת ענפי checkpoint |
-| PG-00.05 | ☐ | להכין fixtures של מסד/פרופיל ישן, RAW/XMP ו־JPEG מזווגים עם רישיון; שחזור גיבוי על עותק | profile/events/reviews נפתחים בעותק והמקורות לא השתנו |
+| PG-00.05 | ◐ | `docs/PG_00_05_FIXTURE_RESTORE_MATRIX.md` ממפה synthetic RAW/XMP + JPEG, restore-copy test ל-Event/RAW profile/Review, ודרישות provenance; נמצא BUG-PG00-001 ב-portability של JPEG manifest | restore plumbing ל-RAW מתועד אך ממתין ל-CI; חסרים restore של גיבוי היסטורי אמיתי, fixture מצלמה עם provenance מפורש ופתרון manifest path |
 | PG-00.06 | V | `docs/EXECUTION_BOARD.md` מגדיר Lane פעיל אחד, blockers, risk map והפרדה בין BUG / RESEARCH / PRODUCT CAPABILITY / GATE; PG-00.05 הוא ה-Part הפעיל ו-PG-00.02 נשאר PAUSED | PROJECT_STATE והלוח מצביעים ל-PG-00.05; PG-00.04 נשאר BLOCKED; לכל blocker יש ראיית פתרון נדרשת |
 
 **יציאה:** G0. תוצר: בסיס מתויג, מסמכי מצב אחידים ורגרסיית PR1 מתועדת.  
