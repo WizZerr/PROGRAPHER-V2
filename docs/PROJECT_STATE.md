@@ -99,3 +99,12 @@ Do not start Auth/Cloud implementation or a new production Brain merely because 
 - JPEG and RAW remain separate; inference cannot read edited targets.
 - Existing Brain V2 contracts are retained as foundations but require media-neutral/generalized evolution.
 - Ratification/implementation remains gated by G0.
+
+## Pre-photographer JPEG integrity
+
+- **PG-03.02 — V:** visual geometry/orientation contract now blocks crop/rotation/mirror/wrong-copy and permits verified resize.
+- **PG-03.03 — V:** JPEG ICC/EXIF is normalized into the declared sRGB working contract; unsafe unknown color cases fail explicitly.
+- **PG-03.04 — V:** full-SHA dataset snapshot is frozen at Intake and revalidated before J0/J1/locked Test.
+- Evidence: `docs/PG_03_02_04_JPEG_INTEGRITY_REPORT.md`; Windows backend regression passed in Actions run `37171832248`.
+- These are engineering/data-integrity results, not photographer-quality claims.
+- Next pre-photographer data Part: **PG-03.05**.
