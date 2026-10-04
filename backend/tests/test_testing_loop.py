@@ -126,8 +126,10 @@ def test_pg00_backup_copy_restores_event_raw_profile_and_review(
         )
         assert saved.status_code == 200
 
+    # Keep the source copy in place. On Windows, the test server may release
+    # SQLite file handles slightly after lifespan shutdown. The restore proof is
+    # that the next app instance is explicitly pointed at the copied data dir.
     shutil.copytree(source_data, restored_data)
-    shutil.rmtree(source_data)
 
     monkeypatch.setenv("PROGRAPHER_DATA_DIR", str(restored_data))
 
