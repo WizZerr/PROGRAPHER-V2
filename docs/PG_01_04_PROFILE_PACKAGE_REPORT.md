@@ -24,7 +24,10 @@ Status: **◐ PREPARED / G0 BLOCKED**
 - symlink/unexpected-member rejection,
 - atomic import,
 - immutable local ProfileVersion directory,
-- fail-closed compatibility.
+- fail-closed compatibility,
+- optional whole-archive SHA verification against future ProfileVersion registry metadata,
+- streaming artifact package/import for large weights,
+- source-artifact mutation detection during package creation.
 
 ## Regression fixtures authored
 

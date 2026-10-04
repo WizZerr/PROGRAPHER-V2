@@ -76,12 +76,46 @@ def _sha256_bytes(payload: bytes) -> str:
     return sha256(payload).hexdigest()
 
 
-def _sha256_file(path: str | Path) -> str:
+def _file_evidence(path: str | Path) -> tuple[str, int]:
     digest = sha256()
+    size = 0
     with Path(path).open("rb") as handle:
         for chunk in iter(lambda: handle.read(1024 * 1024), b""):
             digest.update(chunk)
-    return digest.hexdigest()
+            size += len(chunk)
+    return digest.hexdigest(), size
+
+
+def _sha256_file(path: str | Path) -> str:
+    return _file_evidence(path)[0]
+
+
+def _positive_int(value: Any, field: str) -> int:
+    if isinstance(value, bool):
+        raise ProfilePackageError(f"{field} must be a positive integer")
+    try:
+        number = int(value)
+    except (TypeError, ValueError) as exc:
+        raise ProfilePackageError(
+            f"{field} must be a positive integer"
+        ) from exc
+    if number < 1 or number != value:
+        raise ProfilePackageError(
+            f"{field} must be a positive integer"
+        )
+    return number
+
+
+def _sha256_value(value: Any, field: str) -> str:
+    if (
+        not isinstance(value, str)
+        or len(value) != 64
+        or any(ch not in "0123456789abcdef" for ch in value)
+    ):
+        raise ProfilePackageIntegrityError(
+            f"{field} must be a lowercase SHA-256 hex digest"
+        )
+    return value
 
 
 def _uuid(value: str, field: str) -> str:
@@ -157,8 +191,12 @@ def build_profile_package(
 ) -> BuiltProfilePackage:
     if learning_source not in {"jpeg", "raw"}:
         raise ProfilePackageError("learning_source must be jpeg or raw")
-    if isinstance(version_number, bool) or version_number < 1:
-        raise ProfilePackageError("version_number must be >= 1")
+    version_number = _positive_int(
+        version_number,
+        "version_number",
+    )
+    if not isinstance(metrics, dict):
+        raise ProfilePackageError("metrics must be an object")
 
     profile_id = _uuid(profile_id, "profile_id")
     profile_version_id = _uuid(
@@ -206,8 +244,7 @@ def build_profile_package(
             / source.name
         ).as_posix()
         _safe_archive_path(archive_path)
-        payload_sha = _sha256_file(source)
-        size = source.stat().st_size
+        payload_sha, size = _file_evidence(source)
         file_entries.append(
             {
                 "role": role,
@@ -223,7 +260,7 @@ def build_profile_package(
         "profile_id": profile_id,
         "profile_version_id": profile_version_id,
         "photographer_id": photographer_id,
-        "version_number": int(version_number),
+        "version_number": version_number,
         "learning_source": learning_source,
         "contracts": {
             "model": model_contract_version,
@@ -261,11 +298,29 @@ def build_profile_package(
                 _zip_info(PROFILE_PACKAGE_MANIFEST),
                 manifest_bytes,
             )
-            for archive_path, source in source_files:
-                archive.writestr(
-                    _zip_info(archive_path),
-                    source.read_bytes(),
-                )
+            for index, (archive_path, source) in enumerate(source_files):
+                expected = file_entries[index]
+                digest = sha256()
+                size = 0
+                with source.open("rb") as source_handle:
+                    with archive.open(
+                        _zip_info(archive_path),
+                        mode="w",
+                    ) as target_handle:
+                        for chunk in iter(
+                            lambda: source_handle.read(1024 * 1024),
+                            b"",
+                        ):
+                            target_handle.write(chunk)
+                            digest.update(chunk)
+                            size += len(chunk)
+                if (
+                    digest.hexdigest() != expected["sha256"]
+                    or size != expected["size_bytes"]
+                ):
+                    raise ProfilePackageIntegrityError(
+                        f"artifact changed while packaging: {archive_path}"
+                    )
         os.replace(temporary, destination)
     except OSError as exc:
         raise ProfilePackageError(
@@ -354,6 +409,16 @@ def _validate_archive_members(
             )
         roles.add(role)
         _safe_archive_path(path)
+        _sha256_value(item.get("sha256"), f"{path} sha256")
+        size_bytes = item.get("size_bytes")
+        if (
+            isinstance(size_bytes, bool)
+            or not isinstance(size_bytes, int)
+            or size_bytes < 0
+        ):
+            raise ProfilePackageIntegrityError(
+                f"profile artifact size is invalid: {path}"
+            )
         expected.add(path)
 
     missing_roles = PROFILE_PACKAGE_REQUIRED_ROLES - roles
@@ -395,6 +460,15 @@ def _check_compatibility(
                 f"profile {key} contract is incompatible"
             )
 
+    version_number = manifest.get("version_number")
+    _positive_int(version_number, "version_number")
+
+    metrics = manifest.get("metrics")
+    if not isinstance(metrics, dict):
+        raise ProfilePackageIntegrityError(
+            "profile package metrics must be an object"
+        )
+
     compatibility = manifest.get("engine_compatibility")
     if not isinstance(compatibility, dict):
         raise ProfilePackageIntegrityError(
@@ -409,6 +483,10 @@ def _check_compatibility(
         str(compatibility.get("maximum_exclusive") or ""),
         "maximum_engine_version_exclusive",
     )
+    if minimum >= maximum:
+        raise ProfilePackageIntegrityError(
+            "profile engine compatibility range is invalid"
+        )
     if not minimum <= engine < maximum:
         raise ProfilePackageCompatibilityError(
             "profile package is incompatible with this engine version"
@@ -420,12 +498,23 @@ def load_profile_package(
     package_path: str | Path,
     destination_root: str | Path,
     runtime: ProfileRuntimeRequirements,
+    expected_archive_sha256: str | None = None,
 ) -> LoadedProfilePackage:
     package = Path(package_path).expanduser().resolve(strict=True)
     if not package.is_file():
         raise ProfilePackageError("profile package is not a file")
 
     archive_sha = _sha256_file(package)
+    if expected_archive_sha256 is not None:
+        expected_archive_sha256 = _sha256_value(
+            expected_archive_sha256,
+            "expected_archive_sha256",
+        )
+        if archive_sha != expected_archive_sha256:
+            raise ProfilePackageIntegrityError(
+                "profile package archive SHA-256 does not match registry"
+            )
+
     destination_base = Path(destination_root).expanduser().resolve()
     destination_base.mkdir(parents=True, exist_ok=True)
 
@@ -466,20 +555,30 @@ def load_profile_package(
             for item in manifest["files"]:
                 archive_path = item["path"]
                 info = members[archive_path]
-                payload = archive.read(info)
-                if len(payload) != int(item.get("size_bytes") or -1):
-                    raise ProfilePackageIntegrityError(
-                        f"profile artifact size mismatch: {archive_path}"
-                    )
-                if _sha256_bytes(payload) != item.get("sha256"):
-                    raise ProfilePackageIntegrityError(
-                        f"profile artifact hash mismatch: {archive_path}"
-                    )
-
                 relative = _safe_archive_path(archive_path)
                 destination = temporary_root.joinpath(*relative.parts)
                 destination.parent.mkdir(parents=True, exist_ok=True)
-                destination.write_bytes(payload)
+
+                digest = sha256()
+                size = 0
+                with archive.open(info, mode="r") as source_handle:
+                    with destination.open("wb") as target_handle:
+                        for chunk in iter(
+                            lambda: source_handle.read(1024 * 1024),
+                            b"",
+                        ):
+                            target_handle.write(chunk)
+                            digest.update(chunk)
+                            size += len(chunk)
+
+                if size != item["size_bytes"]:
+                    raise ProfilePackageIntegrityError(
+                        f"profile artifact size mismatch: {archive_path}"
+                    )
+                if digest.hexdigest() != item["sha256"]:
+                    raise ProfilePackageIntegrityError(
+                        f"profile artifact hash mismatch: {archive_path}"
+                    )
 
             normalized_manifest = _canonical_json_bytes(manifest)
             if normalized_manifest != manifest_bytes:

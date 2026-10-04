@@ -99,6 +99,8 @@ The builder:
 
 The final archive SHA-256 is returned to the caller for the ProfileVersion registry.
 
+Weights/artifacts are streamed during package creation and import; large profile files are not loaded wholesale into memory. A source artifact that changes during packaging aborts the package.
+
 ## Boundary
 
 This is a local package/compatibility primitive.

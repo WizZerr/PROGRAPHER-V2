@@ -199,3 +199,46 @@ def test_existing_profile_version_is_immutable(tmp_path: Path) -> None:
             destination_root=cache,
             runtime=_runtime(),
         )
+
+
+
+def test_registry_archive_hash_mismatch_is_rejected_before_install(
+    tmp_path: Path,
+) -> None:
+    built, version_id = _build(tmp_path)
+    cache = tmp_path / "cache"
+
+    with pytest.raises(
+        ProfilePackageIntegrityError,
+        match="registry",
+    ):
+        load_profile_package(
+            package_path=built.path,
+            destination_root=cache,
+            runtime=_runtime(),
+            expected_archive_sha256="0" * 64,
+        )
+
+    assert not (cache / version_id).exists()
+
+
+def test_non_integer_version_number_is_rejected(tmp_path: Path) -> None:
+    profile_id, version_id, photographer_id = _ids()
+
+    with pytest.raises(ProfilePackageError, match="positive integer"):
+        build_profile_package(
+            output_path=tmp_path / "bad-version.pgprofile",
+            profile_id=profile_id,
+            profile_version_id=version_id,
+            photographer_id=photographer_id,
+            learning_source="jpeg",
+            version_number=1.5,
+            artifacts=_artifacts(tmp_path),
+            model_contract_version="model-v1",
+            feature_contract_version="features-v1",
+            recipe_contract_version="recipe-v1",
+            renderer_contract_version="renderer-v1",
+            minimum_engine_version="0.1.0",
+            maximum_engine_version_exclusive="0.2.0",
+            metrics={},
+        )
