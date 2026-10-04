@@ -57,7 +57,7 @@ Historical plans and superseded planning notes live under `docs/archive/` and ar
 
 ## Next executable work
 
-1. **PG-04.05 — ACTIVE** — freeze reference/golden JPEG cases for identity, tone/color, clipping and large-image behavior.
+1. **PG-04.05 — ACTIVE / ◐** — versioned reference/golden cases implemented; verify frozen renderer semantics, reopened JPEG error budgets and large preview-vs-export deviation.
 2. Measure encoded export against the expected reference and bound preview-vs-export downsample deviation.
 3. Then continue to **PG-04.06 — UI controls -> renderer mapping**.
 4. **PG-06.02** remains blocked until real authorized photographer material arrives.

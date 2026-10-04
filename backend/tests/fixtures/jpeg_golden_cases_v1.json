@@ -1,0 +1,305 @@
+{
+  "schema": "prographer.jpeg-golden-cases.v1",
+  "source_generator": {
+    "id": "modular-rgb-v1",
+    "renderer_width": 64,
+    "renderer_height": 48,
+    "formula": {
+      "r": "(x*7 + y*3) % 256",
+      "g": "(x*5 + y*11 + 17) % 256",
+      "b": "(x*13 + y*2 + 31) % 256"
+    }
+  },
+  "probes": [
+    [
+      0,
+      0
+    ],
+    [
+      7,
+      13
+    ],
+    [
+      23,
+      31
+    ],
+    [
+      47,
+      63
+    ]
+  ],
+  "cases": [
+    {
+      "id": "identity",
+      "coefficients": [
+        [
+          0,
+          0,
+          0
+        ],
+        [
+          1,
+          0,
+          0
+        ],
+        [
+          0,
+          1,
+          0
+        ],
+        [
+          0,
+          0,
+          1
+        ],
+        [
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0
+        ]
+      ],
+      "expected_rgb_sha256": "9fc1a8893eac1d1398ac386fa52eef9a9031abe1a8456014a0b1c665e8569a61",
+      "expected_mean_rgb": [
+        131.41666666666666,
+        127,
+        125.66666666666667
+      ],
+      "expected_clip_fraction": 0.003689236111111111,
+      "expected_probes": {
+        "0,0": [
+          0,
+          17,
+          31
+        ],
+        "7,13": [
+          112,
+          159,
+          214
+        ],
+        "23,31": [
+          30,
+          169,
+          224
+        ],
+        "47,63": [
+          70,
+          81,
+          176
+        ]
+      }
+    },
+    {
+      "id": "tone_color",
+      "coefficients": [
+        [
+          0.025,
+          -0.01,
+          0.015
+        ],
+        [
+          1.07,
+          0,
+          0
+        ],
+        [
+          0,
+          1.02,
+          0
+        ],
+        [
+          0,
+          0,
+          0.94
+        ],
+        [
+          0.05,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0.04
+        ],
+        [
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0
+        ]
+      ],
+      "expected_rgb_sha256": "11fb2745e60b0a202149d55fdb60e3016b90d5145782212b15d3421d47ab682e",
+      "expected_mean_rgb": [
+        149.22005208333334,
+        126.98990885416667,
+        125.19205729166667
+      ],
+      "expected_clip_fraction": 0.04405381944444445,
+      "expected_probes": {
+        "0,0": [
+          6,
+          15,
+          33
+        ],
+        "7,13": [
+          129,
+          160,
+          212
+        ],
+        "23,31": [
+          39,
+          170,
+          222
+        ],
+        "47,63": [
+          82,
+          80,
+          174
+        ]
+      }
+    },
+    {
+      "id": "clipping",
+      "coefficients": [
+        [
+          0.08,
+          0.03,
+          0.07
+        ],
+        [
+          1.35,
+          0,
+          0
+        ],
+        [
+          0,
+          1.28,
+          0
+        ],
+        [
+          0,
+          0,
+          1.4
+        ],
+        [
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0
+        ]
+      ],
+      "expected_rgb_sha256": "a0b10e46c8eed15e8962c138f9ca064a9da99a8112fda81567940c63e29076c0",
+      "expected_mean_rgb": [
+        180.58040364583334,
+        160.580078125,
+        175.021484375
+      ],
+      "expected_clip_fraction": 0.2951388888888889,
+      "expected_probes": {
+        "0,0": [
+          20,
+          29,
+          61
+        ],
+        "7,13": [
+          172,
+          211,
+          255
+        ],
+        "23,31": [
+          61,
+          224,
+          255
+        ],
+        "47,63": [
+          115,
+          111,
+          255
+        ]
+      }
+    }
+  ],
+  "encoded_export_budget": {
+    "source_width": 640,
+    "source_height": 480,
+    "source_jpeg_quality": 98,
+    "export_jpeg_quality": 95,
+    "mean_abs_error_max": 3,
+    "p95_abs_error_max": 10,
+    "max_abs_error_max": 30
+  },
+  "large_preview_budget": {
+    "source_width": 2400,
+    "source_height": 1600,
+    "source_jpeg_quality": 98,
+    "export_jpeg_quality": 95,
+    "recipe_case": "tone_color",
+    "preview_max_edge": 1600,
+    "mean_abs_error_max": 2,
+    "p95_abs_error_max": 6,
+    "max_abs_error_max": 40
+  }
+}

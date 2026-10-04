@@ -21,7 +21,7 @@ Status vocabulary:
 
 | Lane | Part | Status | Exact next output |
 |---|---|---|---|
-| Primary development | **PG-04.05** | ACTIVE | Freeze reference/golden renders and measure encoded export plus preview-vs-export agreement |
+| Primary development | **PG-04.05** | ACTIVE / ◐ | Verify frozen renderer goldens, encoded JPEG budgets and large preview-vs-export agreement |
 | Photographer intake | **PG-06.02** | BLOCKED | Authorized photographer material |
 | Residual PR1 QA | **PG-00.02** | PAUSED | Only resume when product owner returns to the remaining hardware/manual QA |
 | Cloud/Auth | **PG-12+** | BLOCKED / NOT STARTED | Do not start before workflow gate permits |
@@ -165,4 +165,4 @@ PG-06.02 stays BLOCKED on authorized photographer files. Residual PG-00.02 QA st
 - **PG-04.02 — V:** product preview/full-resolution render API, revision cache, stale/replaced-revision protection and current-approval guard verified by manual delta checks.
 - **PG-04.03 — V:** encoded JPEG export quality/resize/ICC/orientation/metadata/GPS contract and reopen verification passed manual delta checks.
 - **PG-04.04 — V:** safe atomic filesystem export passed exact-module manual delta/integration verification.
-- **PG-04.05 — ACTIVE:** reference/golden render cases are next.
+- **PG-04.05 — ACTIVE / ◐:** versioned reference/golden cases and budgets are implemented; manual delta verification is next.
