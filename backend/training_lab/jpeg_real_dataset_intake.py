@@ -16,10 +16,13 @@ if str(BACKEND_ROOT) not in sys.path:
     sys.path.insert(0, str(BACKEND_ROOT))
 
 from app.datasets.jpeg_integrity import (
+    EditScopeEvidence,
     JpegIntegrityError,
     WORKING_COLOR_SPACE,
+    analyze_edit_scope,
     freeze_dataset_snapshot,
     inspect_jpeg_pair,
+    read_jpeg_working_rgb,
     sha256_file,
 )
 from app.datasets.source_groups import (
@@ -81,6 +84,18 @@ class PairRecord:
     edited_color_action: str | None
     original_perceptual_hash64: str | None
     edited_perceptual_hash64: str | None
+    camera_make: str | None
+    camera_model: str | None
+    lens_model: str | None
+    iso: int | None
+    exposure_time_seconds: float | None
+    f_number: float | None
+    focal_length_mm: float | None
+    lighting_bucket: str | None
+    mean_luma: float | None
+    edit_scope: str | None
+    edit_scope_affine_residual_p90_255: float | None
+    edit_scope_changed_pixel_fraction: float | None
     working_color_space: str
     aspect_ratio_relative_error: float | None
     geometry_action: str
@@ -753,6 +768,7 @@ def _intake(
                         "edited_color": None,
                         "geometry": None,
                         "identity_approval": identity_approval,
+                        "edit_scope": None,
                         "error": message,
                     }
                 )
@@ -773,6 +789,7 @@ def _intake(
                         "edited_color": None,
                         "geometry": None,
                         "identity_approval": identity_approval,
+                        "edit_scope": None,
                         "error": str(exc),
                     }
                 )
@@ -803,6 +820,23 @@ def _intake(
                 status = "usable"
                 usable = True
 
+            edit_scope: EditScopeEvidence | None = None
+            if usable:
+                if identical_bytes:
+                    edit_scope = EditScopeEvidence(
+                        scope="identity_like",
+                        affine_residual_p90_255=0.0,
+                        changed_pixel_fraction=0.0,
+                        mean_absolute_delta_255=0.0,
+                    )
+                else:
+                    original_pixels, _ = read_jpeg_working_rgb(original)
+                    edited_pixels, _ = read_jpeg_working_rgb(edited)
+                    edit_scope = analyze_edit_scope(
+                        original_pixels,
+                        edited_pixels,
+                    )
+
             pair_rows.append(
                 {
                     "pair": pair,
@@ -818,6 +852,7 @@ def _intake(
                     "edited_color": edited_color,
                     "geometry": geometry,
                     "identity_approval": identity_approval,
+                    "edit_scope": edit_scope,
                     "error": "",
                 }
             )
@@ -1044,6 +1079,36 @@ def _intake(
                 ),
                 edited_perceptual_hash64=(
                     edited_color.perceptual_hash64 if edited_color else None
+                ),
+                camera_make=(original_color.camera_make if original_color else None),
+                camera_model=(original_color.camera_model if original_color else None),
+                lens_model=(original_color.lens_model if original_color else None),
+                iso=(original_color.iso if original_color else None),
+                exposure_time_seconds=(
+                    original_color.exposure_time_seconds if original_color else None
+                ),
+                f_number=(original_color.f_number if original_color else None),
+                focal_length_mm=(
+                    original_color.focal_length_mm if original_color else None
+                ),
+                lighting_bucket=(
+                    original_color.lighting_bucket if original_color else None
+                ),
+                mean_luma=(original_color.mean_luma if original_color else None),
+                edit_scope=(
+                    row["edit_scope"].scope
+                    if row.get("edit_scope") is not None
+                    else None
+                ),
+                edit_scope_affine_residual_p90_255=(
+                    row["edit_scope"].affine_residual_p90_255
+                    if row.get("edit_scope") is not None
+                    else None
+                ),
+                edit_scope_changed_pixel_fraction=(
+                    row["edit_scope"].changed_pixel_fraction
+                    if row.get("edit_scope") is not None
+                    else None
                 ),
                 working_color_space=WORKING_COLOR_SPACE,
                 aspect_ratio_relative_error=(
@@ -1279,6 +1344,141 @@ def _intake(
         and not source_group_analysis["unresolved_suspects"]
     )
 
+    def _count_values(values: Iterable[str]) -> dict[str, int]:
+        counts: dict[str, int] = {}
+        for value in values:
+            counts[value] = counts.get(value, 0) + 1
+        return dict(sorted(counts.items()))
+
+    usable_pairs = [pair for pair in all_pairs if pair.usable_for_recipe_fit]
+    excluded_pairs = [pair for pair in all_pairs if not pair.usable_for_recipe_fit]
+
+    event_coverage: list[dict] = []
+    for event in events:
+        event_pairs = [
+            pair for pair in all_pairs if pair.event_id == event.event_id
+        ]
+        event_usable = [
+            pair for pair in event_pairs if pair.usable_for_recipe_fit
+        ]
+        event_excluded = [
+            pair for pair in event_pairs if not pair.usable_for_recipe_fit
+        ]
+        event_coverage.append(
+            {
+                "event_id": event.event_id,
+                "split": event.split,
+                "original_files": event.original_files,
+                "edited_files": event.edited_files,
+                "matched_pairs": event.matched_pairs,
+                "usable_pairs": len(event_usable),
+                "excluded_pairs": len(event_excluded),
+                "usable_fraction_of_matched": (
+                    len(event_usable) / event.matched_pairs
+                    if event.matched_pairs
+                    else 0.0
+                ),
+                "camera_models": _count_values(
+                    (
+                        f"{pair.camera_make or 'UNKNOWN'}|{pair.camera_model or 'UNKNOWN'}"
+                        for pair in event_usable
+                    )
+                ),
+                "lighting_buckets": _count_values(
+                    pair.lighting_bucket or "unknown"
+                    for pair in event_usable
+                ),
+                "edit_scopes": _count_values(
+                    pair.edit_scope or "unknown"
+                    for pair in event_usable
+                ),
+                "exclusion_reasons": _count_values(
+                    pair.status for pair in event_excluded
+                ),
+                "source_groups": sorted(
+                    {
+                        pair.source_group_id
+                        for pair in event_usable
+                        if pair.source_group_id
+                    }
+                ),
+            }
+        )
+
+    hard_groups = sorted(
+        (
+            {
+                "event_id": row["event_id"],
+                "split": row["split"],
+                "usable_pairs": row["usable_pairs"],
+                "excluded_pairs": row["excluded_pairs"],
+                "local_or_complex_suspected": row["edit_scopes"].get(
+                    "local_or_complex_suspected",
+                    0,
+                ),
+                "exclusion_reasons": row["exclusion_reasons"],
+            }
+            for row in event_coverage
+            if row["excluded_pairs"] > 0
+            or row["edit_scopes"].get("local_or_complex_suspected", 0) > 0
+        ),
+        key=lambda row: (
+            -row["excluded_pairs"],
+            -row["local_or_complex_suspected"],
+            row["event_id"],
+        ),
+    )
+
+    coverage_report = {
+        "schema": "prographer.jpeg-coverage.v1",
+        "created_at": _utc_now(),
+        "photographer_id": photographer_id,
+        "dataset_snapshot_id": dataset_snapshot["snapshot_id"],
+        "counts": {
+            "events": len(events),
+            "original_files": sum(event.original_files for event in events),
+            "edited_files": sum(event.edited_files for event in events),
+            "matched_pairs": sum(event.matched_pairs for event in events),
+            "usable_pairs": len(usable_pairs),
+            "excluded_pairs": len(excluded_pairs),
+            "unmatched_originals": sum(
+                event.unmatched_originals for event in events
+            ),
+            "ambiguous_files": sum(event.ambiguous_files for event in events),
+        },
+        "coverage": {
+            "camera_models": _count_values(
+                (
+                    f"{pair.camera_make or 'UNKNOWN'}|{pair.camera_model or 'UNKNOWN'}"
+                    for pair in usable_pairs
+                )
+            ),
+            "lighting_buckets": _count_values(
+                pair.lighting_bucket or "unknown"
+                for pair in usable_pairs
+            ),
+            "edit_scopes": _count_values(
+                pair.edit_scope or "unknown"
+                for pair in usable_pairs
+            ),
+            "splits": _count_values(pair.split for pair in usable_pairs),
+            "exclusion_reasons": _count_values(
+                pair.status for pair in excluded_pairs
+            ),
+        },
+        "events": event_coverage,
+        "hard_groups": hard_groups,
+        "interpretation": (
+            "File counts, matched pairs and usable learning pairs are intentionally "
+            "reported separately. lighting_bucket is a coarse image-luminance bucket, "
+            "not semantic scene understanding. local_or_complex_suspected means a "
+            "simple global affine RGB transform could not explain the edit; it may "
+            "represent local editing or a more complex global transform."
+        ),
+    }
+    coverage_report_path = output / "coverage_report.json"
+    _write_json(coverage_report_path, coverage_report)
+
     payload = {
         "schema_version": SCHEMA_VERSION,
         "kind": "jpeg_real_event_dataset",
@@ -1301,6 +1501,7 @@ def _intake(
         "event_components": event_components,
         "dataset_snapshot_path": str(snapshot_path),
         "dataset_snapshot_id": dataset_snapshot["snapshot_id"],
+        "coverage_report_path": str(coverage_report_path),
         "working_color_space": WORKING_COLOR_SPACE,
         "aspect_tolerance": aspect_tolerance,
         "identity_approvals_path": (
@@ -1378,6 +1579,7 @@ def _intake(
                 source_group_analysis["unresolved_suspects"]
             ),
             "source_group_split_leakage_clear": not bool(source_group_leaks),
+            "coverage_report_generated": True,
             "j0_representation_test_ready": any(
                 pair.usable_for_recipe_fit for pair in all_pairs
             ),
@@ -1393,6 +1595,8 @@ def _intake(
         "unresolved_near_duplicate_suspects": (
             source_group_analysis["unresolved_suspects"]
         ),
+        "coverage": coverage_report["coverage"],
+        "hard_groups": hard_groups,
         "warnings": warnings,
         "interpretation": (
             "This intake validates pairing, color/ICC, display orientation, visual "
@@ -1543,6 +1747,7 @@ def main() -> int:
     print(f"Cross-event source groups:       {payload['totals']['cross_event_source_groups']}")
     print(f"Verified near-duplicate links:   {payload['totals']['verified_near_duplicate_relations']}")
     print(f"Near-duplicate suspects:         {payload['totals']['unresolved_near_duplicate_suspects']}")
+    print(f"Coverage report:                 {payload['coverage_report_path']}")
     print()
     print(
         "Event split counts:               "
