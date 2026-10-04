@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import json
+import shutil
 from pathlib import Path
 
 import cv2
@@ -15,6 +17,7 @@ from app.datasets.jpeg_integrity import (
     load_and_validate_dataset_snapshot,
     read_jpeg_working_rgb,
 )
+from training_lab.jpeg_j0_feasibility import run as run_j0
 from training_lab.jpeg_real_dataset_intake import _intake
 
 
@@ -228,6 +231,123 @@ def test_geometry_contract_blocks_rotation_mirror_crop_and_wrong_copy() -> None:
     )
     assert wrong.usable is False
     assert wrong.action == "wrong_copy_or_unverified"
+
+
+def test_identity_target_requires_explicit_approval_and_reaches_j0(
+    tmp_path: Path,
+) -> None:
+    root = tmp_path / "identity-dataset"
+    originals = root / "event_identity" / "ORIGINALS"
+    edits = root / "event_identity" / "EDITS"
+
+    original_path = originals / "IMG_0001.jpg"
+    edited_path = edits / "IMG_0001.jpg"
+    _save_jpeg(original_path, _scene(40))
+    edited_path.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copyfile(original_path, edited_path)
+
+    unapproved = _intake(
+        root=root,
+        output=tmp_path / "identity-unapproved",
+        photographer_id="fixture-photographer",
+        aspect_tolerance=0.01,
+        validation_events=[],
+        test_events=[],
+        rebuild_split_lock=False,
+    )
+
+    unapproved_pair = unapproved["pairs"][0]
+    assert unapproved_pair["status"] == "unchanged_unverified"
+    assert unapproved_pair["usable_for_recipe_fit"] is False
+    assert unapproved_pair["identity_target_approved"] is False
+    assert unapproved["totals"]["approved_identity_pairs"] == 0
+    assert unapproved["totals"]["unverified_identity_pairs"] == 1
+
+    approvals_path = tmp_path / "identity-approvals.json"
+    approvals_path.write_text(
+        json.dumps(
+            {
+                "schema": "prographer.identity-approvals.v1",
+                "photographer_id": "fixture-photographer",
+                "approvals": [
+                    {
+                        "event_id": "event_identity",
+                        "original_relative_path": "IMG_0001.jpg",
+                        "decision": "approved_unchanged_final",
+                        "approved_by": "fixture-photographer",
+                        "approved_at": "2026-10-04T00:00:00Z",
+                        "note": "Photographer confirmed final needs no edit.",
+                    }
+                ],
+            },
+            indent=2,
+        ),
+        encoding="utf-8",
+    )
+
+    approved = _intake(
+        root=root,
+        output=tmp_path / "identity-approved",
+        photographer_id="fixture-photographer",
+        aspect_tolerance=0.01,
+        validation_events=[],
+        test_events=[],
+        rebuild_split_lock=False,
+        identity_approvals_path=approvals_path,
+    )
+
+    approved_pair = approved["pairs"][0]
+    assert approved_pair["status"] == "identity_approved"
+    assert approved_pair["usable_for_recipe_fit"] is True
+    assert approved_pair["identity_target_approved"] is True
+    assert approved_pair["identity_approval_by"] == "fixture-photographer"
+    assert approved["totals"]["approved_identity_pairs"] == 1
+    assert approved["totals"]["unverified_identity_pairs"] == 0
+    assert approved["identity_approvals_sha256"]
+
+    j0_manifest = Path(approved["events"][0]["j0_manifest_path"])
+    manifest_payload = json.loads(
+        j0_manifest.read_text(encoding="utf-8")
+    )
+    assert manifest_payload["pairs"][0]["identity_target_approved"] is True
+    assert manifest_payload["pairs"][0]["target_kind"] == "identity"
+
+    j0 = run_j0(
+        manifest_path=j0_manifest,
+        output_root=tmp_path / "identity-j0",
+        max_edge=360,
+        preview_edge=360,
+        sample_pixels=3000,
+        ridge_lambda=1e-6,
+        aspect_tolerance=0.01,
+        jpeg_quality=95,
+        limit=None,
+    )
+    assert j0["pairs_completed"] == 1
+    assert j0["pairs_skipped"] == 0
+
+    # The same approval is no longer valid if the edited bytes later diverge.
+    changed = np.clip(
+        _scene(40).astype(np.float32) * 0.92,
+        0,
+        255,
+    ).astype(np.uint8)
+    _save_jpeg(edited_path, changed)
+
+    with pytest.raises(
+        ValueError,
+        match="Identity approval is stale",
+    ):
+        _intake(
+            root=root,
+            output=tmp_path / "identity-stale",
+            photographer_id="fixture-photographer",
+            aspect_tolerance=0.01,
+            validation_events=[],
+            test_events=[],
+            rebuild_split_lock=False,
+            identity_approvals_path=approvals_path,
+        )
 
 
 def test_real_jpeg_intake_freezes_snapshot_and_detects_mutation(
