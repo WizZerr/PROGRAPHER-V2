@@ -5,12 +5,18 @@ import csv
 import hashlib
 import json
 import math
+import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
 import cv2
 import numpy as np
 
+BACKEND_ROOT = Path(__file__).resolve().parents[1]
+if str(BACKEND_ROOT) not in sys.path:
+    sys.path.insert(0, str(BACKEND_ROOT))
+
+from app.datasets.jpeg_integrity import load_and_validate_dataset_snapshot
 from jpeg_j0_feasibility import (
     _apply_recipe_uint8,
     _match_geometry,
@@ -212,6 +218,18 @@ def main() -> int:
 
     if dataset.get("kind") != "jpeg_real_event_dataset":
         raise ValueError("Unexpected dataset manifest kind.")
+
+    snapshot_path = dataset.get("dataset_snapshot_path")
+    snapshot_id = dataset.get("dataset_snapshot_id")
+    if not snapshot_path or not snapshot_id:
+        raise ValueError(
+            "Dataset predates the frozen snapshot contract; locked Test is blocked."
+        )
+    load_and_validate_dataset_snapshot(
+        snapshot_path,
+        expected_snapshot_id=snapshot_id,
+    )
+
     if contract.get("photographer_id") != dataset.get("photographer_id"):
         raise ValueError("Candidate and dataset photographer IDs do not match.")
     if contract.get("dataset_manifest_sha256") != _sha256_file(dataset_manifest_path):
