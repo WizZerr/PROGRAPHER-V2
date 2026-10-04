@@ -86,7 +86,7 @@ def _canonical_recipe(recipe: dict[str, Any]) -> tuple[dict[str, Any], str]:
     return canonical, sha256(encoded).hexdigest()
 
 
-def _resolve_source(event_id: str, fingerprint: str) -> Path:
+def resolve_jpeg_product_source(event_id: str, fingerprint: str) -> Path:
     store = EventStore()
     try:
         event = store.get_event(event_id)
@@ -349,7 +349,7 @@ def render_jpeg_product(
         raise JpegProductRenderError("mode must be 'preview' or 'full'")
 
     canonical_recipe, recipe_sha256 = _canonical_recipe(recipe)
-    source_path = _resolve_source(event_id, fingerprint)
+    source_path = resolve_jpeg_product_source(event_id, fingerprint)
     source_sha256 = sha256_file(source_path)
 
     lock = _render_lock(event_id, fingerprint)
@@ -438,7 +438,7 @@ def assert_current_jpeg_revision(
 ) -> str:
     revision = _validate_revision(revision)
     _, recipe_sha256 = _canonical_recipe(recipe)
-    source_path = _resolve_source(event_id, fingerprint)
+    source_path = resolve_jpeg_product_source(event_id, fingerprint)
     source_sha256 = sha256_file(source_path)
 
     lock = _render_lock(event_id, fingerprint)

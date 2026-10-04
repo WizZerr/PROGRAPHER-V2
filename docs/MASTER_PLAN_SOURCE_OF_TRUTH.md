@@ -219,7 +219,7 @@
 |---|---|---|---|
 | PG-04.01 | V | `app/rendering/jpeg_renderer.py` הוא מקור האמת המשותף ל-JPEG EditRecipe ול-renderer ממוספר; J0/J1/Locked Test ו-provenance משתמשים באותה משמעות | `test_jpeg_renderer.py` וכן backend regression/compile עברו ב-run 37176350329; PG-04.02–04.04 יחברו preview/export מוצריים לאותו contract |
 | PG-04.02 | V | Product render API מפיק preview מהיר ותוצאה ברזולוציה מלאה מאותו מקור ו-JPEG EditRecipe משותף; cache קשיח לפי revision + recipe/source provenance | manual delta verification על main עבר: shared-render equivalence, preview/cache, revision conflict, stale protection, approval guard ו-API 409; parent regression/compile ירוק ב-run 37176350329 |
-| PG-04.03 | ☐ | להגדיר יצוא JPEG: איכות, גודל, ICC, orientation, metadata ו־GPS לבחירת המשתמש | הפלט המקודד נפתח ונמדד מחדש; אין encoding חוזר של עותק ערוך במקום מקור |
+| PG-04.03 | ◐ | encoded JPEG export contract מממש quality/max-edge, sRGB ICC embed/omit, orientation normalized, metadata preserve/strip ו-GPS opt-in; export נבנה מחדש מה-source + shared recipe | המימוש וה-regression tests נכתבו; כל output נפתח ונמדד מחדש לפני החזרה. manual delta verification נדרש לפני V |
 | PG-04.04 | ☐ | לייצא לתיקייה נפרדת עם טיפול בשמות כפולים, קובץ קיים, דיסק מלא וכתיבה אטומית | המקור אינו משתנה; פלט חלקי אינו מסומן כתקין; hash המקור לפני/אחרי זהה |
 | PG-04.05 | ☐ | להכין reference renders ו־golden cases ל־identity, חשיפה/צבע, clipping ותמונה גדולה | השוואה אחרי encoding; סטיית preview לעומת downsample של export נמדדת ומוגבלת |
 | PG-04.06 | ☐ | למפות UI controls לעריכות נתמכות במנוע; יחידות וטווחים עקביים | כל פקד משפיע על הפלט בפועל; אין Kelvin של RAW שמוצג כאילו הוא יעד JPEG מקביל |

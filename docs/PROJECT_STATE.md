@@ -55,7 +55,7 @@ Historical plans and superseded planning notes live under `docs/archive/` and ar
 
 ## Next executable work
 
-1. **PG-04.03 — ACTIVE** — define and implement the encoded JPEG export contract: quality, resize, ICC, orientation and metadata/GPS policy.
+1. **PG-04.03 — ACTIVE / ◐** — encoded JPEG export contract implemented; verify quality/resize/ICC/orientation/metadata/GPS and reopen checks.
 2. Verify encoded output by reopening/measuring it; never re-encode an already edited copy instead of the source.
 3. Then continue to **PG-04.04 — safe atomic filesystem export**.
 4. **PG-06.02** remains blocked until real authorized photographer material arrives.

@@ -21,7 +21,7 @@ Status vocabulary:
 
 | Lane | Part | Status | Exact next output |
 |---|---|---|---|
-| Primary development | **PG-04.03** | ACTIVE | Define encoded JPEG export quality/resize/ICC/orientation/metadata/GPS contract and verification |
+| Primary development | **PG-04.03** | ACTIVE / ◐ | Verify encoded JPEG quality/resize/ICC/orientation/metadata/GPS contract and reopen checks |
 | Photographer intake | **PG-06.02** | BLOCKED | Authorized photographer material |
 | Residual PR1 QA | **PG-00.02** | PAUSED | Only resume when product owner returns to the remaining hardware/manual QA |
 | Cloud/Auth | **PG-12+** | BLOCKED / NOT STARTED | Do not start before workflow gate permits |
@@ -163,4 +163,4 @@ PG-06.02 stays BLOCKED on authorized photographer files. Residual PG-00.02 QA st
 - **PG-06.01 — V:** photographer request package ready to send.
 - **PG-06.02 — BLOCKED:** waits for real authorized photographer files.
 - **PG-04.02 — V:** product preview/full-resolution render API, revision cache, stale/replaced-revision protection and current-approval guard verified by manual delta checks.
-- **PG-04.03 — ACTIVE:** encoded JPEG export contract is next.
+- **PG-04.03 — ACTIVE / ◐:** encoded JPEG export is implemented; manual delta verification is next.
