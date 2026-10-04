@@ -142,3 +142,13 @@ Do not start Auth/Cloud implementation or a new production Brain merely because 
 - Existing immutable artifacts are not overwritten; non-promoted/rejected candidates remain preserved.
 - Evidence: `docs/PG_03_08_ARTIFACT_PROVENANCE_REPORT.md`, backend + compile success in run `37174158871`.
 - Next pre-photographer Part: **PG-03.09 — consolidated corruption/leakage/Test-guard regression**.
+
+## Pre-photographer data safety gate complete
+
+- **PG-03.09 — V:** consolidated fail-closed regression gate now covers PG-03.02–PG-03.08 plus locked-Test contamination.
+- J1 performs immutable-data/provenance/leakage preflight before feature decoding or fitting.
+- Candidate preparation with valid Train/Validation targets does not decode locked Test pixels.
+- Corrupted snapshot, source-group leakage, unresolved near-duplicate and target tampering all block before feature decode.
+- Evidence: `docs/PG_03_09_DATA_SAFETY_GATE_REPORT.md`; Windows backend + training-tool compile passed in run `37174673037`.
+- **PG-03.02–PG-03.09 pre-photographer engineering package is complete.**
+- Real-photographer G1 evidence remains pending until representative material arrives.
