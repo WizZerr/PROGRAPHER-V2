@@ -595,6 +595,8 @@ def _event_j0_manifest(
                 {
                     "pair_id": pair.pair_id,
                     "event_id": pair.event_id,
+                    "source_id": pair.source_id,
+                    "source_group_id": pair.source_group_id,
                     "split": pair.split,
                     "original_path": pair.original_path,
                     "edited_path": pair.edited_path,
@@ -646,6 +648,33 @@ def _cross_split_duplicates(pairs: list[PairRecord]) -> list[dict]:
     return leaks
 
 
+def _cross_split_source_groups(
+    groups: list[dict],
+    assignments: dict[str, str],
+) -> list[dict]:
+    leaks: list[dict] = []
+    for group in groups:
+        event_ids = sorted(set(group.get("event_ids") or []))
+        split_map = {
+            event_id: assignments[event_id]
+            for event_id in event_ids
+            if event_id in assignments
+            and assignments[event_id] in {"train", "validation", "test"}
+        }
+        splits = sorted(set(split_map.values()))
+        if len(splits) <= 1:
+            continue
+        leaks.append(
+            {
+                "source_group_id": group["source_group_id"],
+                "event_ids": event_ids,
+                "splits": splits,
+                "assignments": split_map,
+            }
+        )
+    return leaks
+
+
 def _intake(
     *,
     root: Path,
@@ -656,12 +685,19 @@ def _intake(
     test_events: list[str],
     rebuild_split_lock: bool,
     identity_approvals_path: Path | None = None,
+    near_duplicate_reviews_path: Path | None = None,
 ) -> dict:
     identity_approvals, identity_approvals_sha256 = _load_identity_approvals(
         identity_approvals_path,
         photographer_id=photographer_id,
     )
     matched_identity_approvals: set[tuple[str, str]] = set()
+    near_duplicate_reviews, near_duplicate_reviews_sha256 = (
+        load_near_duplicate_reviews(
+            near_duplicate_reviews_path,
+            photographer_id=photographer_id,
+        )
+    )
 
     discovered = _discover_events(root)
     if not discovered:
@@ -808,10 +844,70 @@ def _intake(
             + formatted
         )
 
+    source_assets: list[SourceAsset] = []
+    for event_id, data in preliminary.items():
+        for row in data["pairs"]:
+            if (
+                not row["usable"]
+                or not row["original_sha"]
+                or row["original_color"] is None
+            ):
+                row["source_id"] = None
+                continue
+
+            pair = row["pair"]
+            source_id = source_asset_id(
+                event_id,
+                pair.original_relative_path,
+                row["original_sha"],
+            )
+            row["source_id"] = source_id
+            source_assets.append(
+                SourceAsset(
+                    source_id=source_id,
+                    event_id=event_id,
+                    relative_path=pair.original_relative_path,
+                    path=pair.original_path,
+                    sha256=row["original_sha"],
+                    perceptual_hash64=row["original_color"].perceptual_hash64,
+                )
+            )
+
+    source_group_analysis = build_source_groups(
+        source_assets,
+        reviews=near_duplicate_reviews,
+        phash_distance=DEFAULT_PHASH_DISTANCE,
+    )
+    source_groups_path = output / "source_groups.json"
+    _write_json(source_groups_path, source_group_analysis)
+
+    near_duplicate_suspects_path = output / "near_duplicate_suspects.json"
+    _write_json(
+        near_duplicate_suspects_path,
+        {
+            "schema": "prographer.near-duplicate-suspects.v1",
+            "policy_version": SOURCE_GROUP_POLICY_VERSION,
+            "photographer_id": photographer_id,
+            "created_at": _utc_now(),
+            "suspects": source_group_analysis["unresolved_suspects"],
+        },
+    )
+
+    source_to_group = dict(source_group_analysis["source_to_group"])
+    cross_event_group_ids = {
+        group["source_group_id"]
+        for group in source_group_analysis["groups"]
+        if len(group.get("event_ids") or []) > 1
+    }
+
     eligible_event_ids = sorted(
         event_id
         for event_id, data in preliminary.items()
         if data["usable_pairs"] > 0
+    )
+    event_components = event_components_from_source_groups(
+        eligible_event_ids,
+        source_group_analysis["groups"],
     )
 
     split_lock_path = output / "split_lock.json"
@@ -822,6 +918,7 @@ def _intake(
         validation_events=validation_events,
         test_events=test_events,
         rebuild=rebuild_split_lock,
+        event_components=event_components,
     )
     assignments = dict(split_lock.get("assignments") or {})
 
@@ -875,6 +972,12 @@ def _intake(
                     edited_sha or pair.edited_fingerprint,
                 ),
                 event_id=event_id,
+                source_id=row.get("source_id"),
+                source_group_id=(
+                    source_to_group.get(row["source_id"])
+                    if row.get("source_id")
+                    else None
+                ),
                 split=split,
                 status=row["status"],
                 usable_for_recipe_fit=bool(row["usable"]),
@@ -936,6 +1039,12 @@ def _intake(
                 edited_color_action=(
                     edited_color.color_action if edited_color else None
                 ),
+                original_perceptual_hash64=(
+                    original_color.perceptual_hash64 if original_color else None
+                ),
+                edited_perceptual_hash64=(
+                    edited_color.perceptual_hash64 if edited_color else None
+                ),
                 working_color_space=WORKING_COLOR_SPACE,
                 aspect_ratio_relative_error=(
                     geometry.aspect_ratio_relative_error if geometry else None
@@ -995,6 +1104,20 @@ def _intake(
             unverified_identity_pairs=sum(
                 pair.status == "unchanged_unverified"
                 for pair in pair_records
+            ),
+            source_group_count=len(
+                {
+                    pair.source_group_id
+                    for pair in pair_records
+                    if pair.source_group_id
+                }
+            ),
+            cross_event_source_groups=len(
+                {
+                    pair.source_group_id
+                    for pair in pair_records
+                    if pair.source_group_id in cross_event_group_ids
+                }
             ),
             geometry_excluded_pairs=sum(
                 pair.status in {
@@ -1073,6 +1196,10 @@ def _intake(
     _write_json(snapshot_path, dataset_snapshot)
 
     leaks = _cross_split_duplicates(all_pairs)
+    source_group_leaks = _cross_split_source_groups(
+        source_group_analysis["groups"],
+        assignments,
+    )
 
     split_counts = {
         split: sum(1 for event in events if event.split == split and event.usable_pairs > 0)
@@ -1087,10 +1214,10 @@ def _intake(
     }
 
     warnings: list[str] = []
-    if len(eligible_event_ids) < 3:
+    if len(event_components) < 3:
         warnings.append(
-            "Fewer than 3 usable events: a whole-event Train/Validation/Test evaluation "
-            "cannot be formed yet."
+            "Fewer than 3 independent source-group event components: a leakage-safe "
+            "Train/Validation/Test evaluation cannot be formed yet."
         )
     if newly_unassigned:
         warnings.append(
@@ -1106,6 +1233,19 @@ def _intake(
         warnings.append(
             "The same original JPEG bytes occur across more than one locked split. "
             "This is cross-split leakage and blocks evaluation."
+        )
+    if source_group_leaks:
+        warnings.append(
+            "A source group spans more than one locked split. Exact/near-duplicate "
+            "derivatives must stay together."
+        )
+    if source_group_analysis["unresolved_suspects"]:
+        warnings.append(
+            "Near-duplicate suspects require explicit human review before evaluation: "
+            + ", ".join(
+                item["review_id"]
+                for item in source_group_analysis["unresolved_suspects"]
+            )
         )
     if any(event.ambiguous_files for event in events):
         warnings.append(
@@ -1135,6 +1275,8 @@ def _intake(
         and pair_split_counts["test"] >= 1
         and split_counts["unassigned"] == 0
         and not leaks
+        and not source_group_leaks
+        and not source_group_analysis["unresolved_suspects"]
     )
 
     payload = {
@@ -1147,6 +1289,16 @@ def _intake(
         "source_files_modified": False,
         "split_lock_path": str(split_lock_path),
         "split_policy_version": SPLIT_POLICY_VERSION,
+        "source_group_policy_version": SOURCE_GROUP_POLICY_VERSION,
+        "source_groups_path": str(source_groups_path),
+        "near_duplicate_suspects_path": str(near_duplicate_suspects_path),
+        "near_duplicate_reviews_path": (
+            str(near_duplicate_reviews_path.expanduser().resolve())
+            if near_duplicate_reviews_path is not None
+            else None
+        ),
+        "near_duplicate_reviews_sha256": near_duplicate_reviews_sha256,
+        "event_components": event_components,
         "dataset_snapshot_path": str(snapshot_path),
         "dataset_snapshot_id": dataset_snapshot["snapshot_id"],
         "working_color_space": WORKING_COLOR_SPACE,
@@ -1197,12 +1349,35 @@ def _intake(
                 for pair in all_pairs
             ),
             "cross_split_duplicate_groups": len(leaks),
+            "source_groups": len(source_group_analysis["groups"]),
+            "cross_event_source_groups": len(cross_event_group_ids),
+            "exact_duplicate_relations": sum(
+                relation["relation"] == "exact_sha256"
+                for relation in source_group_analysis["relations"]
+            ),
+            "verified_near_duplicate_relations": sum(
+                relation["relation"] == "verified_near_duplicate"
+                for relation in source_group_analysis["relations"]
+            ),
+            "human_review_relations": sum(
+                relation["relation"] == "human_review"
+                for relation in source_group_analysis["relations"]
+            ),
+            "unresolved_near_duplicate_suspects": len(
+                source_group_analysis["unresolved_suspects"]
+            ),
+            "cross_split_source_group_leaks": len(source_group_leaks),
         },
         "readiness": {
             "pairing_data_present": any(event.matched_pairs > 0 for event in events),
             "dataset_snapshot_frozen": bool(dataset_snapshot["files"]),
             "color_contract_recorded": True,
             "identity_targets_require_explicit_approval": True,
+            "source_groups_frozen": True,
+            "near_duplicate_review_clear": not bool(
+                source_group_analysis["unresolved_suspects"]
+            ),
+            "source_group_split_leakage_clear": not bool(source_group_leaks),
             "j0_representation_test_ready": any(
                 pair.usable_for_recipe_fit for pair in all_pairs
             ),
@@ -1212,11 +1387,18 @@ def _intake(
         "events": [asdict(event) for event in events],
         "pairs": [asdict(pair) for pair in all_pairs],
         "cross_split_duplicates": leaks,
+        "cross_split_source_groups": source_group_leaks,
+        "source_groups": source_group_analysis["groups"],
+        "near_duplicate_relations": source_group_analysis["relations"],
+        "unresolved_near_duplicate_suspects": (
+            source_group_analysis["unresolved_suspects"]
+        ),
         "warnings": warnings,
         "interpretation": (
             "This intake validates pairing, color/ICC, display orientation, visual "
-            "geometry, explicit identity-target approval and full-file SHA-256, then "
-            "freezes a dataset snapshot for real Original JPEG + Photographer Edited "
+            "geometry, source groups/near-duplicate leakage, explicit identity-target "
+            "approval and full-file SHA-256, then freezes a dataset snapshot for real "
+            "Original JPEG + Photographer Edited "
             "JPEG material. It does not train a "
             "model and does not permit a photographer-quality claim. Whole events are "
             "the unit of split."
@@ -1246,7 +1428,8 @@ def _intake(
                 "Fit/train candidates only on Train events.",
                 "Choose model/representation changes on Validation events.",
                 "Keep Test events locked for final audit; do not tune against them.",
-                "Do not move copies of the same source across splits.",
+                "Do not move exact or near-duplicate derivatives of the same source across splits.",
+                "Unresolved near-duplicate suspects require human same_source/distinct_source review.",
                 "Run J0 per-pair reconstruction only as representation feasibility, not prediction.",
                 "A real quality claim requires representative professional material and human review.",
             ],
@@ -1308,6 +1491,13 @@ def main() -> int:
             "byte-identical unchanged-final JPEG pairs"
         ),
     )
+    parser.add_argument(
+        "--near-duplicate-reviews",
+        help=(
+            "Optional JSON file resolving near-duplicate suspects as same_source "
+            "or distinct_source"
+        ),
+    )
     args = parser.parse_args()
 
     root = Path(args.root).expanduser().resolve(strict=True)
@@ -1329,6 +1519,11 @@ def main() -> int:
             if args.identity_approvals
             else None
         ),
+        near_duplicate_reviews_path=(
+            Path(args.near_duplicate_reviews)
+            if args.near_duplicate_reviews
+            else None
+        ),
     )
 
     print("=" * 80)
@@ -1344,6 +1539,10 @@ def main() -> int:
     print(f"Unverified identity pairs:       {payload['totals']['unverified_identity_pairs']}")
     print(f"Geometry exclusions:             {payload['totals']['geometry_excluded_pairs']}")
     print(f"Cross-split duplicate groups:    {payload['totals']['cross_split_duplicate_groups']}")
+    print(f"Source groups:                   {payload['totals']['source_groups']}")
+    print(f"Cross-event source groups:       {payload['totals']['cross_event_source_groups']}")
+    print(f"Verified near-duplicate links:   {payload['totals']['verified_near_duplicate_relations']}")
+    print(f"Near-duplicate suspects:         {payload['totals']['unresolved_near_duplicate_suspects']}")
     print()
     print(
         "Event split counts:               "
