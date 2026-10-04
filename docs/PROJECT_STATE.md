@@ -56,7 +56,7 @@ Historical plans and superseded planning notes live under `docs/archive/` and ar
 
 ## Next executable work
 
-1. **PG-04.04 — ACTIVE** — implement safe filesystem export to a separate destination with collision/existing-file policy, disk-full handling and atomic final writes.
+1. **PG-04.04 — ACTIVE / ◐** — safe filesystem export implemented; verify collisions, separate-root guard, disk-full/promotion cleanup, atomic publication and source byte identity.
 2. Prove partial/failed output is never reported as valid and source bytes remain unchanged.
 3. Then continue to **PG-04.05 — reference/golden renders**.
 4. **PG-06.02** remains blocked until real authorized photographer material arrives.

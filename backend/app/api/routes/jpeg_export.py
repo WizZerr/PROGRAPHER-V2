@@ -10,6 +10,14 @@ from app.rendering.jpeg_export import (
     JpegExportOptions,
     encode_jpeg_export,
 )
+from app.rendering.jpeg_file_export import (
+    JpegExportDestinationExists,
+    JpegExportDiskFull,
+    JpegExportSourceChanged,
+    JpegExportUnsafeDestination,
+    JpegExportWriteFailed,
+    export_jpeg_file,
+)
 from app.rendering.jpeg_product_render import (
     JpegRenderRevisionConflict,
     JpegRenderSourceUnavailable,
@@ -35,6 +43,11 @@ class JpegExportEncodeRequest(BaseModel):
     options: JpegExportOptionsRequest = Field(
         default_factory=JpegExportOptionsRequest
     )
+
+
+class JpegExportWriteRequest(JpegExportEncodeRequest):
+    output_dir: str = Field(min_length=1)
+    collision_policy: Literal["fail", "unique"] = "fail"
 
 
 @router.post("/{event_id}/files/{fingerprint}/jpeg-export/encode")
@@ -91,3 +104,76 @@ def encode_export(
             ).lower(),
         },
     )
+
+
+@router.post("/{event_id}/files/{fingerprint}/jpeg-export/write")
+def write_export(
+    event_id: str,
+    fingerprint: str,
+    payload: JpegExportWriteRequest,
+) -> dict[str, Any]:
+    try:
+        result = export_jpeg_file(
+            event_id=event_id,
+            fingerprint=fingerprint,
+            recipe=payload.recipe,
+            revision=payload.revision,
+            options=JpegExportOptions(**payload.options.model_dump()),
+            output_dir=payload.output_dir,
+            collision_policy=payload.collision_policy,
+        )
+    except (
+        JpegRenderStaleRevision,
+        JpegRenderRevisionConflict,
+        JpegExportSourceChanged,
+        JpegExportDestinationExists,
+    ) as exc:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=str(exc),
+        ) from exc
+    except JpegRenderSourceUnavailable as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(exc),
+        ) from exc
+    except JpegExportDiskFull as exc:
+        raise HTTPException(
+            status_code=507,
+            detail=str(exc),
+        ) from exc
+    except JpegExportUnsafeDestination as exc:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            detail=str(exc),
+        ) from exc
+    except JpegExportWriteFailed as exc:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=str(exc),
+        ) from exc
+    except (
+        JpegExportError,
+        JpegRecipeValidationError,
+    ) as exc:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            detail=str(exc),
+        ) from exc
+
+    return {
+        "status": "written",
+        "contract_version": "jpeg-file-export-v1",
+        "destination_path": result.destination_path,
+        "relative_path": result.relative_path,
+        "output_sha256": result.output_sha256,
+        "source_sha256": result.source_sha256,
+        "bytes_written": result.bytes_written,
+        "source_unchanged": result.source_unchanged,
+        "collision_policy": result.collision_policy,
+        "renamed_for_collision": result.renamed_for_collision,
+        "revision": result.encoded.revision,
+        "recipe_sha256": result.encoded.recipe_sha256,
+        "width": result.encoded.width,
+        "height": result.encoded.height,
+    }
