@@ -58,6 +58,7 @@ class GeometryEvidence:
     coverage_ratio: float | None
     rotation_degrees: float | None
     mirrored: bool | None
+    edge_similarity: float | None
     note: str
 
 
@@ -299,8 +300,68 @@ def _blocked_geometry(
         coverage_ratio=None,
         rotation_degrees=None,
         mirrored=mirrored,
+        edge_similarity=None,
         note=note,
     )
+
+
+def _edge_alignment_similarity(
+    original_gray: np.ndarray,
+    edited_gray: np.ndarray,
+    homography: np.ndarray,
+) -> float:
+    """
+    Measure whether the homography aligns actual scene edges, not merely a
+    handful of descriptor matches. This separates real crop/resize edits from
+    a visually unrelated photo that happened to produce a spurious homography.
+    """
+    height, width = original_gray.shape[:2]
+    warped = cv2.warpPerspective(
+        edited_gray,
+        homography,
+        (width, height),
+    )
+    valid = cv2.warpPerspective(
+        np.full(edited_gray.shape, 255, dtype=np.uint8),
+        homography,
+        (width, height),
+        flags=cv2.INTER_NEAREST,
+    ) > 0
+
+    original_edges = cv2.Canny(
+        original_gray,
+        60,
+        140,
+    ) > 0
+    edited_edges = cv2.Canny(
+        warped,
+        60,
+        140,
+    ) > 0
+
+    kernel = np.ones((3, 3), dtype=np.uint8)
+    original_dilated = cv2.dilate(
+        original_edges.astype(np.uint8),
+        kernel,
+    ) > 0
+    edited_dilated = cv2.dilate(
+        edited_edges.astype(np.uint8),
+        kernel,
+    ) > 0
+
+    edited_valid = edited_edges & valid
+    original_valid = original_edges & valid
+
+    precision = float(
+        (edited_valid & original_dilated).sum()
+    ) / max(1.0, float(edited_valid.sum()))
+    recall = float(
+        (original_valid & edited_dilated).sum()
+    ) / max(1.0, float(original_valid.sum()))
+
+    if precision + recall <= 1e-12:
+        return 0.0
+    return 2.0 * precision * recall / (precision + recall)
 
 
 def analyze_pair_geometry(
@@ -415,6 +476,33 @@ def analyze_pair_geometry(
         )
     )
 
+    edge_similarity = _edge_alignment_similarity(
+        original_gray,
+        edited_gray,
+        homography,
+    )
+    if edge_similarity < 0.40:
+        return GeometryEvidence(
+            action="wrong_copy_or_unverified",
+            usable=False,
+            original_width=ow,
+            original_height=oh,
+            edited_width=ew,
+            edited_height=eh,
+            aspect_ratio_relative_error=aspect_error,
+            feature_matches=matches,
+            inliers=inliers,
+            inlier_ratio=inlier_ratio,
+            coverage_ratio=coverage_ratio,
+            rotation_degrees=rotation,
+            mirrored=mirrored,
+            edge_similarity=edge_similarity,
+            note=(
+                "homography exists but aligned scene edges do not match strongly "
+                "enough; block as wrong-copy/unverified"
+            ),
+        )
+
     if mirrored:
         action = "mirror_mismatch"
         usable = False
@@ -467,6 +555,7 @@ def analyze_pair_geometry(
         coverage_ratio=coverage_ratio,
         rotation_degrees=rotation,
         mirrored=mirrored,
+        edge_similarity=edge_similarity,
         note=note,
     )
 
