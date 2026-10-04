@@ -23,6 +23,7 @@ from app.datasets.jpeg_integrity import (
 from app.evaluation.artifact_provenance import (
     FEATURE_CONTRACT_VERSION,
     RENDERER_CONTRACT_VERSION,
+    build_file_manifest,
     candidate_provenance,
     dependency_lock_fingerprint,
     ensure_immutable_artifact_dir,
@@ -668,6 +669,27 @@ def main() -> int:
     }
     _write_json(candidate_dir / "summary.json", summary)
     _write_csv(candidate_dir / "validation_results.csv", validation_results)
+
+    manifest_files = [
+        "candidate_provenance.json",
+        "model/model.npz",
+        "model/model_contract.json",
+        "summary.json",
+        "validation_results.csv",
+    ]
+    if (candidate_dir / "validation_contact_sheet.jpg").is_file():
+        manifest_files.append("validation_contact_sheet.jpg")
+
+    artifact_manifest = build_file_manifest(
+        candidate_dir,
+        manifest_files,
+        candidate_id=candidate_id,
+    )
+    write_immutable_json(
+        candidate_dir / "artifact_manifest.json",
+        artifact_manifest,
+    )
+
     _write_json(
         output_root / "latest_candidate.json",
         {
@@ -677,6 +699,10 @@ def main() -> int:
             "code_revision": resolved_revision,
             "dataset_snapshot_id": snapshot_id,
             "target_artifact_id": target_provenance["artifact_id"],
+            "artifact_manifest_path": str(candidate_dir / "artifact_manifest.json"),
+            "artifact_manifest_sha256": sha256_file(
+                candidate_dir / "artifact_manifest.json"
+            ),
             "note": "Mutable pointer only. Candidate artifacts themselves are immutable.",
         },
     )
