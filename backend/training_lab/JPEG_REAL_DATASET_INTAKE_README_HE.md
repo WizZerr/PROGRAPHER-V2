@@ -13,8 +13,11 @@ JPEG מקור ישר מהמצלמה
 - מזווג חד־משמעית.
 - ניתן לפענוח.
 - אינו מערבב אירועים.
-- אינו מכניס crop/rotation לא נתמכים בלי שנדע.
+- אינו מכניס crop/rotation/mirror/wrong-copy לא נתמכים בלי שנדע.
+- מנרמל EXIF Orientation.
+- ממיר ICC תקין ל־sRGB working space, ומתעד הנחת sRGB כש־ICC חסר ב־RGB.
 - שומר provenance ו־SHA-256 מלא.
+- מקפיא dataset snapshot שנבדק שוב לפני J0, J1 ולפני פתיחת Test.
 - מחולק לפי **אירועים שלמים** ל־Train / Validation / Test.
 - נועל את ה־Test כך שלא נתחיל לכוון את המודל מולו.
 
@@ -71,9 +74,15 @@ python training_lab\jpeg_real_dataset_intake.py --root "C:\Users\Matann\Desktop\
 - האם זה אותו קובץ פיזי.
 - האם ה־bytes זהים לחלוטין.
 - האם שני ה־JPEGים ניתנים לפענוח.
-- רוחב/גובה.
+- רוחב/גובה אחרי EXIF Orientation.
+- ICC profile / ICC SHA-256 / פעולת Color normalization.
+- working color space קבוע: sRGB.
 - שינוי aspect ratio.
-- orientation mismatch של 90°.
+- alignment חזותי באמצעות features + homography.
+- crop גם אם יחס הממדים נשאר זהה.
+- rotation של 90°/180° ושאר residual rotation.
+- mirror/flip.
+- wrong-copy או זוג שלא ניתן לאמת בביטחון.
 - האם הזוג מתאים ל־J0 first-pass recipe fitting.
 
 ### סטטוסים אפשריים
@@ -86,13 +95,25 @@ python training_lab\jpeg_real_dataset_intake.py --root "C:\Users\Matann\Desktop\
 
 ה־Original וה־Edited זהים byte-for-byte. המקרה נשמר כי הוא יכול להיות משמעותי בהמשך, אבל אינו משמש כרגע להפקת Recipe target ב־J0.
 
-`crop_or_geometry_mismatch`
+`crop_same_ratio` / `crop_or_geometry_mismatch`
 
-יחס התמונה השתנה מעבר לסבילות. נשמר בדוח אבל אינו נכנס אוטומטית ל־J0.
+ה־alignment מצביע על crop/geometry edit. זה כולל גם crop ששומר על אותו aspect ratio.
 
 `rotation_mismatch`
 
-נראה כמו שינוי orientation של 90°.
+נמצאה rotation שנותרה אחרי נרמול EXIF Orientation.
+
+`mirror_mismatch`
+
+נמצא mirror/flip בין Original ל־Edited.
+
+`wrong_copy_or_unverified`
+
+לא ניתן להוכיח שזה אותו צילום באותה גאומטריה. הזוג נחסם במקום לנחש.
+
+`color_contract_failed`
+
+ICC/Color encoding אינו ניתן לנרמול בבטחה ל־working space.
 
 `decode_error` / `read_error`
 
@@ -149,6 +170,7 @@ python training_lab\jpeg_real_dataset_intake.py --root "C:\Users\Matann\Desktop\
 ```text
 jpeg_real_intake/
 ├── dataset_manifest.json
+├── dataset_snapshot.json
 ├── split_lock.json
 ├── evaluation_plan.json
 ├── event_report.csv
@@ -170,10 +192,36 @@ jpeg_real_intake/
 - split לכל אירוע.
 - כל הזוגות.
 - full SHA-256.
-- geometry.
+- ICC/EXIF/working-color evidence.
+- visual geometry/alignment evidence.
+- snapshot id/path.
 - סיבת exclusion.
 - leakage checks.
 - readiness.
+
+
+### dataset_snapshot.json
+
+זהו snapshot קפוא של bytes שנקלטו ב־Intake.
+
+לכל Original/Edited הוא שומר:
+
+- role.
+- pair id.
+- locator נוכחי.
+- size.
+- mtime.
+- SHA-256 מלא.
+
+ה־snapshot id נגזר מה־content identity ולא מהנתיב. לכן Relocation מאומת יכול בעתיד לשנות locator בלי להחליף זהות Dataset.
+
+לפני:
+
+- J0,
+- feature extraction / J1,
+- Locked Test,
+
+המערכת קוראת מחדש את הקבצים ומשווה SHA-256. אם קובץ השתנה, חסר או הוחלף — ההרצה נעצרת. צריך לבצע Intake חדש ולקבל snapshot חדש; אין המשך שקט על Dataset שהשתנה.
 
 ### evaluation_plan.json
 
@@ -194,6 +242,8 @@ jpeg_real_intake/
 ```powershell
 python training_lab\jpeg_real_j0_batch.py --dataset-manifest "C:\Users\Matann\Desktop\jpeg_real_intake\dataset_manifest.json" --output "C:\Users\Matann\Desktop\jpeg_real_j0"
 ```
+
+לפני כל J0 ה־dataset snapshot נבדק מחדש מול SHA-256. שינוי בקובץ אחרי Intake חוסם את ההרצה.
 
 ברירת המחדל היא:
 
@@ -337,6 +387,8 @@ python training_lab\jpeg_real_j1_candidate.py --dataset-manifest "C:\Users\Matan
 
 ה־Candidate:
 
+- מאמת מחדש את dataset snapshot לפני feature extraction.
+- קורא JPEG דרך אותו color-managed decoder של J0.
 - מתאים משקלים רק על זוגות `Train`.
 - משתמש ב־Validation להערכה בלבד.
 - אינו פותח את Test.
@@ -378,7 +430,7 @@ python training_lab\jpeg_real_j1_test_audit.py --dataset-manifest "C:\Users\Mata
 
 בלי `--unlock-test` הסקריפט מסרב לפתוח את Test.
 
-ה־audit בודק גם שה־Candidate נבנה מול אותו dataset manifest קפוא באמצעות SHA-256, ולא משנה את משקלי המודל.
+ה־audit בודק גם שה־Candidate נבנה מול אותו dataset manifest קפוא באמצעות SHA-256, מאמת מחדש את dataset snapshot לפני קריאת Test, ולא משנה את משקלי המודל.
 
 התוצרים:
 
