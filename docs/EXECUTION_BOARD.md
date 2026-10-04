@@ -151,4 +151,5 @@ PG-00.02 stays PAUSED until the owner returns to the remaining PR1 hardware/manu
 - **PG-03.05 — V:** explicit approved unchanged-final identity targets are first-class; arbitrary copies remain excluded.
 - **PG-03.06 — V:** source groups + exact/near-duplicate leakage guard verified.
 - **PG-03.07 — V:** truthful coverage/exclusion reporting verified.
-- **PG-03.08 — ACTIVE PRE-PHOTOGRAPHER:** bind Candidate/targets to code commit, dependency lock, feature/color/renderer versions and config.
+- **PG-03.08 — V:** immutable target/candidate provenance + file integrity verified.
+- **PG-03.09 — ACTIVE PRE-PHOTOGRAPHER:** consolidate corruption, leakage and locked-Test guards into one regression gate.
