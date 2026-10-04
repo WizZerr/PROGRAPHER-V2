@@ -91,3 +91,11 @@ Do not start Auth/Cloud implementation or a new production Brain merely because 
 - Local operational source of truth remains **SQLite** for Event/PhotoAsset/Run/RecipeRevision/Review/Export.
 - Current migration gaps are explicit: path-derived Event identity, singleton photographer setup, non-durable jobs/exports/reviews and BUG-PG00-001.
 - No Supabase production resources are provisioned by this documentation Part; actual cloud implementation remains gated later in the workflow.
+
+## PG-01.03 preparation
+
+- **PG-01.03 — ◐ CONTRACT PREPARED:** `docs/PG_01_03_PIPELINE_CONTRACT.md`.
+- One versioned training/inference spine is defined.
+- JPEG and RAW remain separate; inference cannot read edited targets.
+- Existing Brain V2 contracts are retained as foundations but require media-neutral/generalized evolution.
+- Ratification/implementation remains gated by G0.
