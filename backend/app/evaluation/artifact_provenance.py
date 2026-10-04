@@ -11,6 +11,7 @@ from typing import Any
 
 PROVENANCE_SCHEMA = "prographer.artifact-provenance.v1"
 TARGET_CONTRACT_VERSION = "jpeg-j0-target-bundle-v1"
+J0_TARGET_FEATURE_CONTRACT_VERSION = "jpeg-j0-polynomial-pixel-features-v1"
 FEATURE_CONTRACT_VERSION = "jpeg-measured-features-v1"
 RENDERER_CONTRACT_VERSION = "jpeg-polynomial-rgb-renderer-v1"
 
@@ -115,6 +116,7 @@ def target_bundle_provenance(
     code_revision: str,
     dependency_lock_sha256: str,
     color_contract_version: str,
+    feature_contract_version: str,
     recipe_contract_version: str,
     renderer_contract_version: str,
     config: dict[str, Any],
@@ -129,6 +131,7 @@ def target_bundle_provenance(
         "code_revision": _normalize_revision(code_revision),
         "dependency_lock_sha256": dependency_lock_sha256,
         "color_contract_version": color_contract_version,
+        "feature_contract_version": feature_contract_version,
         "recipe_contract_version": recipe_contract_version,
         "renderer_contract_version": renderer_contract_version,
         "split_mode": split_mode,
