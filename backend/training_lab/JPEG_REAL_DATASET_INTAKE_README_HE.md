@@ -125,6 +125,53 @@ ICC/Color encoding אינו ניתן לנרמול בבטחה ל־working space.
 
 ---
 
+
+## תמונה שהצלם בכוונה לא שינה — Identity Target
+
+קובץ `Edited` שהוא byte-identical ל־`Original` **לא נכנס אוטומטית ללמידה**.
+
+הסיבה: העתקה מקרית של Original לתיקיית EDITS אינה הוכחה שהצלם בדק את התמונה והחליט שאין צורך בעריכה.
+
+לכן ברירת המחדל היא:
+
+`unchanged_unverified` → נשמר בדוח, לא משמש ללמידה.
+
+רק אחרי אישור מפורש אפשר להפוך אותו ל:
+
+`identity_approved` → target חוקי שמשמעותו **No Edit**.
+
+דוגמת קובץ `identity_approvals.json`:
+
+```json
+{
+  "schema": "prographer.identity-approvals.v1",
+  "photographer_id": "photographer-01",
+  "approvals": [
+    {
+      "event_id": "wedding_001",
+      "original_relative_path": "IMG_0001.jpg",
+      "decision": "approved_unchanged_final",
+      "approved_by": "photographer-01",
+      "approved_at": "2026-10-04T00:00:00Z",
+      "note": "הצלם אישר שזו התוצאה הסופית בכוונה ללא שינוי"
+    }
+  ]
+}
+```
+
+הרצת Intake:
+
+```powershell
+python training_lab\jpeg_real_dataset_intake.py --root "C:\REAL_JPEG_DATASET" --output "C:\jpeg_real_intake" --photographer-id "photographer-01" --identity-approvals "C:\identity_approvals.json"
+```
+
+הגנות:
+
+- אותו קובץ פיזי כמקור וכערוך עדיין נפסל.
+- approval שאינו מתאים לזוג byte-identical קיים עוצר את ה־Intake.
+- SHA-256 של קובץ ה־approvals נרשם ב־dataset manifest.
+- J0 מקבל identity target רק כשה־manifest מסמן `identity_target_approved=true`.
+
 ## Split Lock
 
 החלוקה נעשית לפי **אירועים שלמים** בלבד.
