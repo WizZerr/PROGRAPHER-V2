@@ -15,8 +15,22 @@ BACKEND_ROOT = Path(__file__).resolve().parents[1]
 if str(BACKEND_ROOT) not in sys.path:
     sys.path.insert(0, str(BACKEND_ROOT))
 
-from app.datasets.jpeg_integrity import load_and_validate_dataset_snapshot
-from jpeg_j0_feasibility import run as run_j0
+from app.datasets.jpeg_integrity import (
+    WORKING_COLOR_SPACE,
+    load_and_validate_dataset_snapshot,
+)
+from app.evaluation.artifact_provenance import (
+    J0_TARGET_FEATURE_CONTRACT_VERSION,
+    RENDERER_CONTRACT_VERSION,
+    canonical_json_sha256,
+    dependency_lock_fingerprint,
+    ensure_immutable_artifact_dir,
+    resolve_code_revision,
+    sha256_file,
+    target_bundle_provenance,
+    write_immutable_json,
+)
+from jpeg_j0_feasibility import RECIPE_VERSION, run as run_j0
 
 
 SCHEMA_VERSION = 1
@@ -115,6 +129,7 @@ def run_batch(
     sample_pixels: int,
     ridge_lambda: float,
     jpeg_quality: int,
+    code_revision: str | None = None,
 ) -> dict:
     dataset = _read_json(dataset_manifest_path)
     if dataset.get("kind") != "jpeg_real_event_dataset":
@@ -272,23 +287,67 @@ def run_batch(
         ),
     }
 
+    target_payload = {
+        "schema_version": SCHEMA_VERSION,
+        "kind": "jpeg_j0_recipe_targets",
+        "created_at": _utc_now(),
+        "dataset_manifest_path": str(dataset_manifest_path),
+        "dataset_snapshot_id": dataset.get("dataset_snapshot_id"),
+        "photographer_id": dataset.get("photographer_id"),
+        "split_mode": split_mode,
+        "test_unlocked": bool(unlock_test and "test" in requested),
+        "targets": recipe_targets,
+        "note": (
+            "Per-image inverse-fit J0 targets. Candidate prediction models may train "
+            "only on Train targets and select changes on Validation. Locked Test "
+            "targets must not be used for tuning."
+        ),
+    }
+
+    resolved_revision = resolve_code_revision(code_revision)
+    dependency = dependency_lock_fingerprint()
+    target_config = {
+        "max_edge": int(max_edge),
+        "preview_edge": int(preview_edge),
+        "sample_pixels": int(sample_pixels),
+        "ridge_lambda": float(ridge_lambda),
+        "jpeg_quality": int(jpeg_quality),
+        "aspect_tolerance": float(dataset.get("aspect_tolerance", 0.01)),
+    }
+    provenance = target_bundle_provenance(
+        dataset_snapshot_id=str(dataset.get("dataset_snapshot_id") or ""),
+        dataset_manifest_sha256=sha256_file(dataset_manifest_path),
+        targets_payload_sha256=canonical_json_sha256(target_payload),
+        code_revision=resolved_revision,
+        dependency_lock_sha256=dependency["dependency_lock_sha256"],
+        color_contract_version=str(
+            dataset.get("working_color_space") or WORKING_COLOR_SPACE
+        ),
+        feature_contract_version=J0_TARGET_FEATURE_CONTRACT_VERSION,
+        recipe_contract_version=RECIPE_VERSION,
+        renderer_contract_version=RENDERER_CONTRACT_VERSION,
+        config=target_config,
+        split_mode=split_mode,
+    )
+    target_payload["provenance"] = provenance
+
+    target_bundle_dir = ensure_immutable_artifact_dir(
+        output_root / "target_bundles",
+        provenance["artifact_id"],
+    )
+    target_bundle_path = target_bundle_dir / "recipe_targets.json"
+    write_immutable_json(target_bundle_path, target_payload)
+
+    summary["target_artifact_id"] = provenance["artifact_id"]
+    summary["target_bundle_path"] = str(target_bundle_path)
+    summary["target_provenance"] = provenance
     _write_json(output_root / "summary.json", summary)
     _write_json(
-        output_root / "recipe_targets.json",
+        output_root / "latest_target_bundle.json",
         {
-            "schema_version": SCHEMA_VERSION,
-            "kind": "jpeg_j0_recipe_targets",
-            "created_at": _utc_now(),
-            "dataset_manifest_path": str(dataset_manifest_path),
-            "photographer_id": dataset.get("photographer_id"),
-            "split_mode": split_mode,
-            "test_unlocked": bool(unlock_test and "test" in requested),
-            "targets": recipe_targets,
-            "note": (
-                "Per-image inverse-fit J0 targets. Candidate prediction models may train "
-                "only on Train targets and select changes on Validation. Locked Test "
-                "targets must not be used for tuning."
-            ),
+            "artifact_id": provenance["artifact_id"],
+            "recipe_targets_path": str(target_bundle_path),
+            "artifact_sha256": sha256_file(target_bundle_path),
         },
     )
     _write_csv(output_root / "pair_results.csv", flat_results)
@@ -326,6 +385,13 @@ def main() -> int:
     parser.add_argument("--sample-pixels", type=int, default=120000)
     parser.add_argument("--ridge-lambda", type=float, default=1e-4)
     parser.add_argument("--jpeg-quality", type=int, default=95)
+    parser.add_argument(
+        "--code-revision",
+        help=(
+            "Exact 40-character Git commit SHA. Defaults to git rev-parse HEAD "
+            "or PROGRAPHER_CODE_REVISION."
+        ),
+    )
     args = parser.parse_args()
 
     dataset_manifest_path = Path(args.dataset_manifest).expanduser().resolve(strict=True)
@@ -341,6 +407,7 @@ def main() -> int:
         sample_pixels=max(1000, int(args.sample_pixels)),
         ridge_lambda=max(0.0, float(args.ridge_lambda)),
         jpeg_quality=min(100, max(50, int(args.jpeg_quality))),
+        code_revision=args.code_revision,
     )
 
     print()
@@ -362,6 +429,8 @@ def main() -> int:
         f"{(summary['aggregate']['median_mae_improvement_fraction'] or 0.0) * 100.0:.1f}%"
     )
     print(f"Split mode:                      {summary['split_mode']}")
+    print(f"Target artifact:                 {summary['target_artifact_id']}")
+    print(f"Target bundle:                   {summary['target_bundle_path']}")
     print(f"Output:                          {output_root}")
     print()
     print("Representation-only result. No unseen-photo prediction model was trained.")
