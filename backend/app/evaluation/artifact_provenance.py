@@ -8,12 +8,14 @@ import re
 import subprocess
 from typing import Any
 
+from app.rendering.jpeg_renderer import JPEG_RENDERER_CONTRACT_VERSION
+
 
 PROVENANCE_SCHEMA = "prographer.artifact-provenance.v1"
 TARGET_CONTRACT_VERSION = "jpeg-j0-target-bundle-v1"
 J0_TARGET_FEATURE_CONTRACT_VERSION = "jpeg-j0-polynomial-pixel-features-v1"
 FEATURE_CONTRACT_VERSION = "jpeg-measured-features-v1"
-RENDERER_CONTRACT_VERSION = "jpeg-polynomial-rgb-renderer-v1"
+RENDERER_CONTRACT_VERSION = JPEG_RENDERER_CONTRACT_VERSION
 
 
 def canonical_json_bytes(payload: Any) -> bytes:
