@@ -24,7 +24,7 @@ Historical plans and superseded planning notes live under `docs/archive/` and ar
 - **PG-06.01 — V**: photographer data-request package ready.
 - **PG-06.02 — BLOCKED** until authorized photographer material arrives.
 - **PG-04.01 — V**: shared JPEG EditRecipe/renderer contract verified in run `37176350329`.
-- **PG-04.02 — ACTIVE / ◐**: product preview/full-resolution rendering, revision cache and stale-revision protection implemented; regression verification pending.
+- **PG-04.02 — V**: product preview/full-resolution rendering, revision cache and stale-revision protection verified by manual delta checks; parent backend regression/compile remains green in run `37176350329`.
 - Residual PR1 manual QA remains paused by product-owner decision and is not restarted here.
 - Do not start Auth/Supabase/Cloud or a new production Brain.
 
@@ -55,9 +55,9 @@ Historical plans and superseded planning notes live under `docs/archive/` and ar
 
 ## Next executable work
 
-1. **PG-04.02 — ACTIVE / ◐** — verify `test_jpeg_product_render.py` plus backend regression/compile without spending hosted Actions minutes unnecessarily.
-2. If verification passes, mark **PG-04.02 — V**.
-3. Then continue to **PG-04.03 — JPEG export contract**.
+1. **PG-04.03 — ACTIVE** — define and implement the encoded JPEG export contract: quality, resize, ICC, orientation and metadata/GPS policy.
+2. Verify encoded output by reopening/measuring it; never re-encode an already edited copy instead of the source.
+3. Then continue to **PG-04.04 — safe atomic filesystem export**.
 4. **PG-06.02** remains blocked until real authorized photographer material arrives.
 
 Do not start Auth/Cloud implementation or a new production Brain.
@@ -152,4 +152,5 @@ Do not start Auth/Cloud implementation or a new production Brain.
 - Request artifacts: `docs/PHOTOGRAPHER_DATA_REQUEST_HE.md`, `docs/PHOTOGRAPHER_SUBMISSION_CHECKLIST_HE.md`, and `docs/templates/photographer_submission_manifest.template.json`.
 - Evidence: `docs/PG_06_01_PHOTOGRAPHER_REQUEST_REPORT.md`.
 - **PG-06.02 remains blocked until real authorized photographer material arrives.**
-- Next executable JPEG-engine Part without photographer material: **PG-04.02**.
+- **PG-04.02 — V:** product preview/full-resolution rendering is verified with revision/cache and stale-approval protection.
+- Next executable JPEG-engine Part without photographer material: **PG-04.03**.

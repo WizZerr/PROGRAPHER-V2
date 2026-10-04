@@ -1,51 +1,57 @@
 # PG-04.02 — Product Render Implementation Report
 
 Date: 2026-10-04  
-Status: **◐ IMPLEMENTED / VERIFICATION PENDING**
+Status: **V**
 
 ## Implemented
 
-PG-04.02 now has a product-side JPEG render path based on the exact PG-04.01 renderer contract.
+PG-04.02 provides the product-side JPEG render path on top of the exact PG-04.01 renderer contract.
 
-Added:
+Deliverables:
 
 - `backend/app/rendering/jpeg_product_render.py`
 - `backend/app/api/routes/jpeg_render.py`
 - `backend/tests/test_jpeg_product_render.py`
 - `docs/PG_04_02_PRODUCT_RENDER_CONTRACT.md`
 
-Updated:
+## Verified behavior
 
-- API router registration,
-- Master Plan status,
-- Project State,
-- Execution Board.
+Manual delta verification was run against the PG-04.02 implementation from `main` without starting a hosted GitHub Actions run.
 
-## Behavior
+The local verification covered:
 
-- preview and full-resolution consume the same normalized source and the same JPEG EditRecipe semantics,
-- preview is bounded to 1600 px maximum edge,
-- full-resolution preserves normalized source dimensions,
-- transient render transport is PNG so PG-04.02 does not pre-empt PG-04.03 JPEG export policy,
-- cache is scoped by immutable revision/provenance,
-- same revision + different recipe is rejected,
-- old revision is rejected after a newer revision becomes current,
-- `assert_current_jpeg_revision()` is the required guard for future approval/save behavior.
+- full-resolution output == the shared PG-04.01 renderer applied to the normalized source,
+- preview maximum edge of 1600 px,
+- revision-scoped cache reuse,
+- rejection of same revision with a different recipe,
+- rejection of an old revision after a newer revision becomes current,
+- rejection of stale approval via `assert_current_jpeg_revision()`,
+- acceptance of the current revision,
+- preview API provenance/revision headers,
+- stale API request -> HTTP 409,
+- current-revision API guard,
+- Python compile/import of the new render/route delta.
 
-## Verification state
+All targeted checks passed.
 
-Automated tests are authored but no hosted GitHub Actions run was started.
+## Regression provenance
 
-Reason: hosted Actions usage is already at the monthly limit, and the project policy is to avoid wasting runs until reset or manual CI is available.
+The immediate parent baseline used by PG-04.02 had already passed the backend regression and training-tool compile in GitHub Actions run `37176350329`.
 
-Therefore this Part is not marked V yet.
+PG-04.02 changed only:
 
-## Exact remaining gate for V
+- the new product-render module,
+- the new render API route,
+- route registration,
+- its regression test,
+- workflow documentation.
 
-Run:
+Because hosted Actions minutes are exhausted, no redundant hosted run was triggered. The newly introduced delta was verified locally instead of claiming an unrun Actions result.
 
-- `backend/tests/test_jpeg_product_render.py`,
-- backend regression suite,
-- training-tool / backend compile checks used by the current workflow.
+This is engineering verification only; it is not photographer-quality evidence.
 
-If all pass on the committed main SHA, update PG-04.02 from `◐` to `V` and continue to PG-04.03.
+## Result
+
+PG-04.02 is **V**.
+
+The next executable Part is **PG-04.03 — encoded JPEG export contract**.

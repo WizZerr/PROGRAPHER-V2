@@ -21,7 +21,7 @@ Status vocabulary:
 
 | Lane | Part | Status | Exact next output |
 |---|---|---|---|
-| Primary development | **PG-04.02** | ACTIVE / ◐ | Verify product JPEG preview/full-resolution render path, revision cache and stale-revision guard |
+| Primary development | **PG-04.03** | ACTIVE | Define encoded JPEG export quality/resize/ICC/orientation/metadata/GPS contract and verification |
 | Photographer intake | **PG-06.02** | BLOCKED | Authorized photographer material |
 | Residual PR1 QA | **PG-00.02** | PAUSED | Only resume when product owner returns to the remaining hardware/manual QA |
 | Cloud/Auth | **PG-12+** | BLOCKED / NOT STARTED | Do not start before workflow gate permits |
@@ -122,9 +122,9 @@ A Part can be marked DONE/V only when:
 
 ## Next action
 
-**PG-04.02 is the only ACTIVE primary-development Part.**
+**PG-04.03 is the only ACTIVE primary-development Part.**
 
-Implementation is on `main`. The exact remaining step before V is manual/local verification of the new product-render tests plus backend regression/compile checks. Hosted Actions should not be triggered merely for convenience while the monthly hosted-runner quota is exhausted.
+PG-04.02 passed manual delta verification on `main` without consuming hosted Actions minutes. PG-04.03 now owns encoded JPEG export semantics; PG-04.04 will own destination/filesystem safety.
 
 PG-06.02 stays BLOCKED on authorized photographer files. Residual PG-00.02 QA stays PAUSED. No Auth/Cloud implementation and no new production Brain begins here.
 
@@ -162,4 +162,5 @@ PG-06.02 stays BLOCKED on authorized photographer files. Residual PG-00.02 QA st
 - **PG-04.01 — V:** shared versioned JPEG EditRecipe + renderer implemented and used by J0/J1/Locked Test.
 - **PG-06.01 — V:** photographer request package ready to send.
 - **PG-06.02 — BLOCKED:** waits for real authorized photographer files.
-- **PG-04.02 — ACTIVE / ◐:** product preview/full-resolution render API, revision cache and stale/replaced-revision protection implemented; verification pending.
+- **PG-04.02 — V:** product preview/full-resolution render API, revision cache, stale/replaced-revision protection and current-approval guard verified by manual delta checks.
+- **PG-04.03 — ACTIVE:** encoded JPEG export contract is next.
