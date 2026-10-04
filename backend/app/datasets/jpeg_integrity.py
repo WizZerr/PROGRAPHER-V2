@@ -17,6 +17,7 @@ WORKING_COLOR_SPACE = "srgb-iec61966-2.1-v1"
 JPEG_INTEGRITY_SCHEMA = "prographer.jpeg-integrity.v1"
 DATASET_SNAPSHOT_SCHEMA = "prographer.dataset-snapshot.v1"
 MIN_CONFIDENT_INLIER_RATIO = 0.55
+PERCEPTUAL_HASH_VERSION = "phash-dct64-v1"
 
 
 class JpegIntegrityError(ValueError):
@@ -41,6 +42,8 @@ class JpegDecodeEvidence:
     icc_sha256: str | None
     icc_profile_name: str | None
     color_action: str
+    perceptual_hash64: str
+    perceptual_hash_version: str = PERCEPTUAL_HASH_VERSION
     working_color_space: str = WORKING_COLOR_SPACE
 
 
@@ -78,6 +81,28 @@ def _profile_name(profile: ImageCms.ImageCmsProfile) -> str | None:
     except Exception:
         return None
     return name or None
+
+
+def perceptual_hash64(rgb: np.ndarray) -> str:
+    """Return a 64-bit DCT perceptual hash from normalized working-space RGB."""
+    if rgb.ndim != 3 or rgb.shape[2] != 3:
+        raise ValueError("perceptual_hash64 expects HxWx3 RGB")
+    gray = cv2.cvtColor(rgb, cv2.COLOR_RGB2GRAY)
+    small = cv2.resize(gray, (32, 32), interpolation=cv2.INTER_AREA)
+    dct = cv2.dct(small.astype(np.float32))
+    block = dct[:8, :8].reshape(-1)
+    median = float(np.median(block[1:]))
+    bits = block > median
+    value = 0
+    for bit in bits:
+        value = (value << 1) | int(bool(bit))
+    return f"{value:016x}"
+
+
+def perceptual_hamming_distance(left: str, right: str) -> int:
+    if len(left) != 16 or len(right) != 16:
+        raise ValueError("expected 64-bit perceptual hashes encoded as 16 hex chars")
+    return (int(left, 16) ^ int(right, 16)).bit_count()
 
 
 def read_jpeg_working_rgb(
@@ -155,6 +180,7 @@ def read_jpeg_working_rgb(
             working = working.convert("RGB")
             rgb = np.asarray(working, dtype=np.uint8).copy()
             display_height, display_width = rgb.shape[:2]
+            phash = perceptual_hash64(rgb)
 
             return rgb, JpegDecodeEvidence(
                 path=str(source),
@@ -169,6 +195,7 @@ def read_jpeg_working_rgb(
                 icc_sha256=icc_sha,
                 icc_profile_name=profile_name,
                 color_action=color_action,
+                perceptual_hash64=phash,
             )
     except JpegIntegrityError:
         raise
