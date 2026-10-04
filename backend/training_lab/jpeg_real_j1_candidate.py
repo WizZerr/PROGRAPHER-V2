@@ -227,6 +227,28 @@ def _aggregate(rows: list[dict]) -> dict:
 
 
 def _build_training_rows(dataset: dict, targets: dict) -> list[dict]:
+    raw_targets = list(targets.get("targets", []))
+
+    # Fail closed before decoding a single image. A contaminated target bundle
+    # must not spend compute or touch Test pixels before the guard fires.
+    target_splits = [target.get("split") for target in raw_targets]
+    if any(split == "test" for split in target_splits):
+        raise ValueError(
+            "recipe_targets.json contains locked Test targets. J1 Candidate training "
+            "accepts Train/Validation targets only."
+        )
+    unsupported = sorted(
+        {
+            str(split)
+            for split in target_splits
+            if split not in {"train", "validation"}
+        }
+    )
+    if unsupported:
+        raise ValueError(
+            "Unsupported target split(s): " + ", ".join(unsupported)
+        )
+
     dataset_pairs = {
         pair["pair_id"]: pair
         for pair in dataset.get("pairs", [])
@@ -243,13 +265,6 @@ def _build_training_rows(dataset: dict, targets: dict) -> list[dict]:
             )
 
         split = target.get("split")
-        if split == "test":
-            raise ValueError(
-                "recipe_targets.json contains locked Test targets. J1 Candidate training "
-                "accepts Train/Validation targets only."
-            )
-        if split not in {"train", "validation"}:
-            raise ValueError(f"Unsupported target split: {split!r}")
         if pair.get("split") != split:
             raise ValueError(
                 f"Split mismatch for pair {pair_id}: dataset={pair.get('split')} target={split}"
