@@ -127,6 +127,35 @@ ICC/Color encoding אינו ניתן לנרמול בבטחה ל־working space.
 
 
 
+
+## Coverage Report
+
+כל Intake יוצר גם:
+
+`coverage_report.json`
+
+הדוח מפריד במפורש בין:
+
+- מספר קובצי Original,
+- מספר קובצי Edited,
+- matched pairs,
+- usable learning pairs,
+- excluded pairs,
+- unmatched/ambiguous material.
+
+בנוסף הוא מציג coverage לפי:
+
+- Camera make/model מתוך EXIF,
+- Lighting bucket גס: `low_key / mid_tone / high_key / mixed_contrast`,
+- Edit scope: `identity_like / global_like / local_or_complex_suspected`,
+- Event,
+- Split,
+- exclusion reason.
+
+`local_or_complex_suspected` אינו טענה שזוהה retouch מקומי. המשמעות היא שמודל global affine פשוט אינו מסביר היטב את ההבדל, ולכן הקבוצה חייבת להישאר גלויה במחקר.
+
+Events עם exclusions או edits מורכבים מופיעים גם ב־`hard_groups` ולא נעלמים בתוך ממוצע כללי.
+
 ## Source Groups ו־Near-Duplicate Leakage
 
 ה־Intake אינו מסתפק יותר ב־filename או SHA-256.
