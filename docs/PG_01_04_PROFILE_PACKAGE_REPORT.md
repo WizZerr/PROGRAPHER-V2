@@ -1,7 +1,7 @@
 # PG-01.04 — Portable Profile Package Preparation Report
 
 Date: 2026-10-04  
-Status: **◐ PREPARED / G0 BLOCKED**
+Status: **◐ ENGINEERING-VERIFIED / G0 RATIFICATION BLOCKED**
 
 ## Added
 
@@ -45,3 +45,28 @@ This implementation is intentionally **not V**.
 Phase 01 requires G0. PG-00.02 remains paused by product-owner decision, so PG-01.04 may be prepared and tested but cannot be ratified/completed yet.
 
 No Auth, Supabase or Cloud implementation was started.
+
+
+## Manual engineering verification
+
+A targeted local harness was executed against the exact committed `backend/app/profiles/package.py` from `main`.
+
+PASS:
+
+- package copied/renamed to a new path loads successfully,
+- artifact bytes survive portable import,
+- renderer-contract incompatibility rejects before final install,
+- engine-version incompatibility rejects before final install,
+- whole-archive registry SHA mismatch rejects before final install,
+- tampered artifact bytes reject before final install,
+- missing required normalizer role rejects package creation,
+- an installed immutable ProfileVersion cannot be replaced,
+- non-integer version numbers are rejected rather than truncated.
+
+The latest implementation also streams artifact bytes during package creation/import rather than loading large weights wholesale into memory.
+
+## Completion status
+
+Engineering verification is green, but PG-01.04 remains **◐**, not V.
+
+Reason: Phase 01 entry requires G0 and explicit ratification. PG-00.02/G0 remains paused by product-owner decision. No Cloud/Auth work is required or started here.

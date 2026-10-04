@@ -169,8 +169,8 @@ Do not start Auth/Cloud implementation or a new production Brain.
 
 ## PG-01.04 portable profile package preparation
 
-- **PG-01.04 — ◐ PREPARED / G0 BLOCKED.**
-- Added a local portable `.pgprofile` package contract and implementation with immutable UUID identity, weights/normalizer roles, version contracts, metrics, hashes and compatibility gates.
+- **PG-01.04 — ◐ ENGINEERING-VERIFIED / G0 BLOCKED.**
+- Added a local portable `.pgprofile` package contract and implementation with immutable UUID identity, weights/normalizer roles, version contracts, metrics, hashes and compatibility gates; targeted local verification is green.
 - Import is fail-closed and atomic; incompatible/tampered packages do not create a final ProfileVersion directory.
 - This does not start Supabase/Auth/Cloud.
 - Phase 05 must not be started as complete-entry work until PG-01.02 and PG-01.04 are ratified after G0.

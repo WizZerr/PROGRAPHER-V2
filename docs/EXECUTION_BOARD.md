@@ -21,7 +21,7 @@ Status vocabulary:
 
 | Lane | Part | Status | Exact next output |
 |---|---|---|---|
-| Primary development | **PG-01.04** | PREP ACTIVE / ◐ | Prepare portable immutable ProfileVersion package; V remains blocked by G0 |
+| Primary development | **PG-01.04** | PREP VERIFIED / ◐ | Portable immutable ProfileVersion package is engineering-verified; V remains blocked solely by G0 ratification |
 | Photographer intake | **PG-06.02** | BLOCKED | Authorized photographer material |
 | Residual PR1 QA | **PG-00.02** | PAUSED | Only resume when product owner returns to the remaining hardware/manual QA |
 | Cloud/Auth | **PG-12+** | BLOCKED / NOT STARTED | Do not start before workflow gate permits |
