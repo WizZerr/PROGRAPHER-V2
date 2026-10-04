@@ -16,8 +16,23 @@ BACKEND_ROOT = Path(__file__).resolve().parents[1]
 if str(BACKEND_ROOT) not in sys.path:
     sys.path.insert(0, str(BACKEND_ROOT))
 
-from app.datasets.jpeg_integrity import load_and_validate_dataset_snapshot
+from app.datasets.jpeg_integrity import (
+    WORKING_COLOR_SPACE,
+    load_and_validate_dataset_snapshot,
+)
+from app.evaluation.artifact_provenance import (
+    FEATURE_CONTRACT_VERSION,
+    RENDERER_CONTRACT_VERSION,
+    candidate_provenance,
+    dependency_lock_fingerprint,
+    ensure_immutable_artifact_dir,
+    resolve_code_revision,
+    sha256_file,
+    verify_target_bundle_for_candidate,
+    write_immutable_json,
+)
 from jpeg_j0_feasibility import (
+    RECIPE_VERSION,
     _apply_recipe_uint8,
     _match_geometry,
     _read_image,
@@ -70,31 +85,6 @@ def _write_csv(path: Path, rows: list[dict]) -> None:
         writer = csv.DictWriter(handle, fieldnames=fields, extrasaction="ignore")
         writer.writeheader()
         writer.writerows(rows)
-
-
-def _sha256_file(path: Path) -> str:
-    digest = hashlib.sha256()
-    with path.open("rb") as handle:
-        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
-            digest.update(chunk)
-    return digest.hexdigest()
-
-
-def _candidate_id(
-    *,
-    dataset_manifest_path: Path,
-    recipe_targets_path: Path,
-    ridge_lambda: float,
-) -> str:
-    digest = hashlib.sha256()
-    digest.update(MODEL_VERSION.encode("utf-8"))
-    digest.update(b"\0")
-    digest.update(_sha256_file(dataset_manifest_path).encode("ascii"))
-    digest.update(b"\0")
-    digest.update(_sha256_file(recipe_targets_path).encode("ascii"))
-    digest.update(b"\0")
-    digest.update(f"{ridge_lambda:.12g}".encode("ascii"))
-    return digest.hexdigest()[:16]
 
 
 def _decode_rgb(path: str) -> np.ndarray:
@@ -401,6 +391,13 @@ def main() -> int:
     parser.add_argument("--output", required=True)
     parser.add_argument("--ridge-lambda", type=float, default=0.02)
     parser.add_argument("--jpeg-quality", type=int, default=95)
+    parser.add_argument(
+        "--code-revision",
+        help=(
+            "Exact 40-character Git commit SHA. Defaults to git rev-parse HEAD "
+            "or PROGRAPHER_CODE_REVISION."
+        ),
+    )
     args = parser.parse_args()
 
     dataset_manifest_path = Path(args.dataset_manifest).expanduser().resolve(strict=True)
@@ -431,12 +428,25 @@ def main() -> int:
         raise ValueError("Photographer id mismatch between dataset and J0 targets.")
     if dataset.get("cross_split_duplicates"):
         raise ValueError("Cross-split duplicate leakage exists; candidate training is blocked.")
+    if dataset.get("cross_split_source_groups"):
+        raise ValueError("Source-group split leakage exists; candidate training is blocked.")
+    if dataset.get("unresolved_near_duplicate_suspects"):
+        raise ValueError(
+            "Unresolved near-duplicate suspects exist; candidate training is blocked."
+        )
     if not dataset.get("readiness", {}).get(
         "whole_event_train_validation_test_ready"
     ):
         raise ValueError(
             "Dataset is not ready for whole-event Train/Validation/Test evaluation."
         )
+
+    dataset_manifest_sha256 = sha256_file(dataset_manifest_path)
+    target_provenance = verify_target_bundle_for_candidate(
+        target_payload=targets,
+        dataset_snapshot_id=str(snapshot_id),
+        dataset_manifest_sha256=dataset_manifest_sha256,
+    )
 
     rows = _build_training_rows(dataset, targets)
     train_rows = [row for row in rows if row["split"] == "train"]
@@ -464,18 +474,42 @@ def main() -> int:
     weights = _ridge_fit(x_train_std, y_train, ridge_lambda)
     mean_recipe_delta = y_train.mean(axis=0)
 
-    candidate_id = _candidate_id(
-        dataset_manifest_path=dataset_manifest_path,
-        recipe_targets_path=recipe_targets_path,
-        ridge_lambda=ridge_lambda,
+    resolved_revision = resolve_code_revision(args.code_revision)
+    dependency = dependency_lock_fingerprint()
+    jpeg_quality = min(100, max(50, int(args.jpeg_quality)))
+    candidate_config = {
+        "ridge_lambda": ridge_lambda,
+        "jpeg_quality": jpeg_quality,
+        "standardization": "train-zscore-except-bias-v1",
+        "estimator": "closed-form-ridge-v1",
+    }
+    provenance = candidate_provenance(
+        candidate_family="measured_features_ridge",
+        model_version=MODEL_VERSION,
+        dataset_snapshot_id=str(snapshot_id),
+        dataset_manifest_sha256=dataset_manifest_sha256,
+        target_artifact_id=target_provenance["artifact_id"],
+        target_artifact_sha256=sha256_file(recipe_targets_path),
+        code_revision=resolved_revision,
+        dependency_lock_sha256=dependency["dependency_lock_sha256"],
+        color_contract_version=str(
+            dataset.get("working_color_space") or WORKING_COLOR_SPACE
+        ),
+        feature_contract_version=FEATURE_CONTRACT_VERSION,
+        feature_names=list(FEATURE_NAMES),
+        recipe_contract_version=RECIPE_VERSION,
+        renderer_contract_version=RENDERER_CONTRACT_VERSION,
+        config=candidate_config,
     )
-    candidate_dir = output_root / "candidates" / candidate_id
-    if candidate_dir.exists():
-        raise FileExistsError(
-            f"Candidate {candidate_id} already exists: {candidate_dir}. "
-            "Candidates are immutable; change configuration or use a new output root."
-        )
-    candidate_dir.mkdir(parents=True, exist_ok=False)
+    candidate_id = provenance["artifact_id"]
+    candidate_dir = ensure_immutable_artifact_dir(
+        output_root / "candidates",
+        candidate_id,
+    )
+    write_immutable_json(
+        candidate_dir / "candidate_provenance.json",
+        provenance,
+    )
 
     model_dir = candidate_dir / "model"
     model_dir.mkdir(parents=True, exist_ok=True)
@@ -505,6 +539,15 @@ def main() -> int:
             "schema_version": SCHEMA_VERSION,
             "candidate_id": candidate_id,
             "model_version": MODEL_VERSION,
+            "provenance": provenance,
+            "code_revision": resolved_revision,
+            "dependency_lock_name": dependency["dependency_lock_name"],
+            "dependency_lock_sha256": dependency["dependency_lock_sha256"],
+            "color_contract_version": provenance["identity"]["color_contract_version"],
+            "feature_contract_version": FEATURE_CONTRACT_VERSION,
+            "recipe_contract_version": RECIPE_VERSION,
+            "renderer_contract_version": RENDERER_CONTRACT_VERSION,
+            "target_artifact_id": target_provenance["artifact_id"],
             "synthetic_predecessor_family": SYNTHETIC_MODEL_FAMILY,
             "created_at": _utc_now(),
             "production_ready": False,
@@ -519,8 +562,9 @@ def main() -> int:
             "locked_test_events": test_event_ids,
             "train_pair_count": len(train_rows),
             "validation_pair_count": len(validation_rows),
-            "dataset_manifest_sha256": _sha256_file(dataset_manifest_path),
-            "recipe_targets_sha256": _sha256_file(recipe_targets_path),
+            "dataset_snapshot_id": snapshot_id,
+            "dataset_manifest_sha256": dataset_manifest_sha256,
+            "recipe_targets_sha256": sha256_file(recipe_targets_path),
             "note": (
                 "This candidate was fit only on Train recipe targets. Validation was "
                 "not used to fit model weights. Locked Test remains untouched."
@@ -536,7 +580,7 @@ def main() -> int:
         mean_recipe_delta=mean_recipe_delta,
         output_dir=candidate_dir,
         aspect_tolerance=float(dataset.get("aspect_tolerance", 0.01)),
-        jpeg_quality=min(100, max(50, int(args.jpeg_quality))),
+        jpeg_quality=jpeg_quality,
     )
     if contact_sheet is not None:
         _write_jpeg(
@@ -575,6 +619,12 @@ def main() -> int:
         "experiment": "JPEG Brain J1 — Real Candidate",
         "candidate_id": candidate_id,
         "model_version": MODEL_VERSION,
+        "provenance": provenance,
+        "candidate_lifecycle": {
+            "state": "evaluated_validation",
+            "promotion_status": "not_promoted",
+            "immutable": True,
+        },
         "created_at": _utc_now(),
         "production_ready": False,
         "quality_claim_allowed": False,
@@ -620,7 +670,10 @@ def main() -> int:
             "candidate_id": candidate_id,
             "candidate_dir": str(candidate_dir),
             "created_at": summary["created_at"],
-            "note": "Pointer only. Candidate artifacts themselves are immutable.",
+            "code_revision": resolved_revision,
+            "dataset_snapshot_id": snapshot_id,
+            "target_artifact_id": target_provenance["artifact_id"],
+            "note": "Mutable pointer only. Candidate artifacts themselves are immutable.",
         },
     )
 
