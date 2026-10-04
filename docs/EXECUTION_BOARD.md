@@ -150,4 +150,5 @@ PG-00.02 stays PAUSED until the owner returns to the remaining PR1 hardware/manu
 - **PG-03.04 — V**
 - **PG-03.05 — V:** explicit approved unchanged-final identity targets are first-class; arbitrary copies remain excluded.
 - **PG-03.06 — V:** source groups + exact/near-duplicate leakage guard verified.
-- **PG-03.07 — ACTIVE PRE-PHOTOGRAPHER:** build truthful coverage/exclusion report before real photographer material arrives.
+- **PG-03.07 — V:** truthful coverage/exclusion reporting verified.
+- **PG-03.08 — ACTIVE PRE-PHOTOGRAPHER:** bind Candidate/targets to code commit, dependency lock, feature/color/renderer versions and config.
