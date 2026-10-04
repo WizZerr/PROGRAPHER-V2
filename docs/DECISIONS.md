@@ -54,3 +54,15 @@ Initial cloud implementation target:
 Supabase is an implementation provider, not the ProGrapher domain model. Canonical IDs and contracts must remain portable so the provider can be changed later without redefining Account, Photographer, Profile or Event identity.
 
 No Supabase cloud resources are considered production-ready merely because this decision exists. Cloud implementation remains gated by the Master Workflow.
+
+
+## D-013 — [DRAFT] One versioned pipeline spine serves training and inference
+Prepared 2026-10-04 under PG-01.03.
+
+Canonical spine:
+
+`source → color/preprocess → features → model/profile → recipe → renderer`
+
+JPEG and RAW remain semantically separate. Product inference may use source-side information only and must never depend on the edited target. NoOp/fixed baselines are wiring/comparison components and cannot be presented as implemented AI capability.
+
+Ratification waits for G0.
