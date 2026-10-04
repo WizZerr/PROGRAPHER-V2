@@ -11,13 +11,17 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Iterable
 
-import cv2
-import numpy as np
-
 BACKEND_ROOT = Path(__file__).resolve().parents[1]
 if str(BACKEND_ROOT) not in sys.path:
     sys.path.insert(0, str(BACKEND_ROOT))
 
+from app.datasets.jpeg_integrity import (
+    JpegIntegrityError,
+    WORKING_COLOR_SPACE,
+    freeze_dataset_snapshot,
+    inspect_jpeg_pair,
+    sha256_file,
+)
 from app.testing.jpeg_pairs import scan_jpeg_pairs
 
 
@@ -41,14 +45,33 @@ class PairRecord:
     edited_scan_fingerprint: str
     original_sha256: str
     edited_sha256: str
+    original_size_bytes: int | None
+    edited_size_bytes: int | None
+    original_modified_ns: int | None
+    edited_modified_ns: int | None
     identical_bytes: bool
     same_physical_file: bool
     original_width: int | None
     original_height: int | None
     edited_width: int | None
     edited_height: int | None
+    original_exif_orientation: int | None
+    edited_exif_orientation: int | None
+    original_icc_present: bool | None
+    edited_icc_present: bool | None
+    original_icc_sha256: str | None
+    edited_icc_sha256: str | None
+    original_color_action: str | None
+    edited_color_action: str | None
+    working_color_space: str
     aspect_ratio_relative_error: float | None
     geometry_action: str
+    geometry_feature_matches: int
+    geometry_inliers: int
+    geometry_inlier_ratio: float
+    geometry_coverage_ratio: float | None
+    geometry_rotation_degrees: float | None
+    geometry_mirrored: bool | None
     note: str
 
 
@@ -65,6 +88,8 @@ class EventRecord:
     usable_pairs: int
     unchanged_pairs: int
     geometry_excluded_pairs: int
+    geometry_unverified_pairs: int
+    color_excluded_pairs: int
     decode_excluded_pairs: int
     physical_same_pairs: int
     unmatched_originals: int
@@ -107,24 +132,6 @@ def _write_csv(path: Path, rows: Iterable[dict]) -> None:
         writer = csv.DictWriter(handle, fieldnames=keys, extrasaction="ignore")
         writer.writeheader()
         writer.writerows(materialized)
-
-
-def _sha256(path: Path) -> str:
-    digest = hashlib.sha256()
-    with path.open("rb") as handle:
-        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
-            digest.update(chunk)
-    return digest.hexdigest()
-
-
-def _decode_dimensions(path: Path) -> tuple[int, int]:
-    payload = path.read_bytes()
-    encoded = np.frombuffer(payload, dtype=np.uint8)
-    image = cv2.imdecode(encoded, cv2.IMREAD_COLOR)
-    if image is None:
-        raise ValueError("jpeg_decode_failed")
-    height, width = image.shape[:2]
-    return int(width), int(height)
 
 
 def _same_physical_file(left: Path, right: Path) -> bool:
@@ -333,94 +340,6 @@ def _load_or_create_split_lock(
     return lock, []
 
 
-def _geometry_status(
-    original: Path,
-    edited: Path,
-    *,
-    aspect_tolerance: float,
-) -> tuple[
-    str,
-    bool,
-    int | None,
-    int | None,
-    int | None,
-    int | None,
-    float | None,
-    str,
-]:
-    try:
-        ow, oh = _decode_dimensions(original)
-        ew, eh = _decode_dimensions(edited)
-    except (OSError, ValueError) as exc:
-        return (
-            "decode_error",
-            False,
-            None,
-            None,
-            None,
-            None,
-            None,
-            str(exc),
-        )
-
-    original_ratio = ow / float(oh)
-    edited_ratio = ew / float(eh)
-    relative_error = abs(original_ratio - edited_ratio) / max(
-        abs(edited_ratio),
-        1e-9,
-    )
-
-    reciprocal_error = abs(original_ratio - (1.0 / edited_ratio)) / max(
-        abs(1.0 / edited_ratio),
-        1e-9,
-    )
-    if relative_error > aspect_tolerance:
-        if reciprocal_error <= aspect_tolerance:
-            return (
-                "rotation_mismatch",
-                False,
-                ow,
-                oh,
-                ew,
-                eh,
-                relative_error,
-                "90-degree orientation mismatch; exclude from first-pass recipe fitting",
-            )
-        return (
-            "crop_or_geometry_mismatch",
-            False,
-            ow,
-            oh,
-            ew,
-            eh,
-            relative_error,
-            "aspect ratio changed beyond tolerance; likely crop/geometry edit",
-        )
-
-    if (ow, oh) == (ew, eh):
-        return (
-            "same_dimensions",
-            True,
-            ow,
-            oh,
-            ew,
-            eh,
-            relative_error,
-            "",
-        )
-
-    return (
-        "resize_only",
-        True,
-        ow,
-        oh,
-        ew,
-        eh,
-        relative_error,
-        "dimensions differ but aspect ratio is compatible; J0 may resize original",
-    )
-
-
 def _pair_id(event_id: str, relative_path: str, original_sha: str, edited_sha: str) -> str:
     payload = "|".join(
         (
@@ -533,8 +452,40 @@ def _intake(
 
             try:
                 same_physical = _same_physical_file(original, edited)
-                original_sha = _sha256(original)
-                edited_sha = _sha256(edited)
+                original_stat = original.stat()
+                edited_stat = edited.stat()
+                original_sha = sha256_file(original)
+                edited_sha = sha256_file(edited)
+                original_color, edited_color, geometry = inspect_jpeg_pair(
+                    original,
+                    edited,
+                    aspect_tolerance=aspect_tolerance,
+                )
+            except JpegIntegrityError as exc:
+                message = str(exc)
+                status = (
+                    "color_contract_failed"
+                    if message.startswith(("icc_", "missing_icc_"))
+                    else "decode_error"
+                )
+                pair_rows.append(
+                    {
+                        "pair": pair,
+                        "status": status,
+                        "usable": False,
+                        "same_physical": False,
+                        "original_sha": "",
+                        "edited_sha": "",
+                        "original_stat": None,
+                        "edited_stat": None,
+                        "identical_bytes": False,
+                        "original_color": None,
+                        "edited_color": None,
+                        "geometry": None,
+                        "error": message,
+                    }
+                )
+                continue
             except OSError as exc:
                 pair_rows.append(
                     {
@@ -544,39 +495,29 @@ def _intake(
                         "same_physical": False,
                         "original_sha": "",
                         "edited_sha": "",
+                        "original_stat": None,
+                        "edited_stat": None,
                         "identical_bytes": False,
-                        "geometry": (
-                            "read_error",
-                            False,
-                            None,
-                            None,
-                            None,
-                            None,
-                            None,
-                            str(exc),
-                        ),
+                        "original_color": None,
+                        "edited_color": None,
+                        "geometry": None,
+                        "error": str(exc),
                     }
                 )
                 continue
 
             identical_bytes = original_sha == edited_sha
-            geometry = _geometry_status(
-                original,
-                edited,
-                aspect_tolerance=aspect_tolerance,
-            )
 
             if same_physical:
                 status = "same_physical_file"
                 usable = False
             elif identical_bytes:
-                # Preserve as a meaningful observation, but separate it from the
-                # first recipe-target fitting pass. Phase 8 requires edited finals
-                # and unedited/identity cases to be distinguishable.
+                # Identity edits are preserved but PG-03.05 owns promotion of
+                # explicitly photographer-approved unchanged finals.
                 status = "unchanged_final"
                 usable = False
-            elif not geometry[1]:
-                status = geometry[0]
+            elif not geometry.usable:
+                status = geometry.action
                 usable = False
             else:
                 status = "usable"
@@ -590,8 +531,13 @@ def _intake(
                     "same_physical": same_physical,
                     "original_sha": original_sha,
                     "edited_sha": edited_sha,
+                    "original_stat": original_stat,
+                    "edited_stat": edited_stat,
                     "identical_bytes": identical_bytes,
+                    "original_color": original_color,
+                    "edited_color": edited_color,
                     "geometry": geometry,
+                    "error": "",
                 }
             )
 
@@ -634,11 +580,17 @@ def _intake(
         for row in data["pairs"]:
             pair = row["pair"]
             geometry = row["geometry"]
-            note_parts = [part for part in (geometry[7],) if part]
+            original_color = row["original_color"]
+            edited_color = row["edited_color"]
+            note_parts = []
+            if geometry is not None and geometry.note:
+                note_parts.append(geometry.note)
+            if row.get("error"):
+                note_parts.append(row["error"])
             if row["status"] == "unchanged_final":
                 note_parts.append(
                     "original and final JPEG bytes are identical; preserved separately "
-                    "but excluded from first-pass J0 recipe target fitting"
+                    "but excluded until PG-03.05 verifies an intentional identity edit"
                 )
             if row["status"] == "same_physical_file":
                 note_parts.append(
@@ -647,6 +599,8 @@ def _intake(
 
             original_sha = row["original_sha"]
             edited_sha = row["edited_sha"]
+            original_stat = row["original_stat"]
+            edited_stat = row["edited_stat"]
             pair_record = PairRecord(
                 pair_id=_pair_id(
                     event_id,
@@ -666,14 +620,63 @@ def _intake(
                 edited_scan_fingerprint=pair.edited_fingerprint,
                 original_sha256=original_sha,
                 edited_sha256=edited_sha,
+                original_size_bytes=(int(original_stat.st_size) if original_stat else None),
+                edited_size_bytes=(int(edited_stat.st_size) if edited_stat else None),
+                original_modified_ns=(int(original_stat.st_mtime_ns) if original_stat else None),
+                edited_modified_ns=(int(edited_stat.st_mtime_ns) if edited_stat else None),
                 identical_bytes=bool(row["identical_bytes"]),
                 same_physical_file=bool(row["same_physical"]),
-                original_width=geometry[2],
-                original_height=geometry[3],
-                edited_width=geometry[4],
-                edited_height=geometry[5],
-                aspect_ratio_relative_error=geometry[6],
-                geometry_action=geometry[0],
+                original_width=(geometry.original_width if geometry else None),
+                original_height=(geometry.original_height if geometry else None),
+                edited_width=(geometry.edited_width if geometry else None),
+                edited_height=(geometry.edited_height if geometry else None),
+                original_exif_orientation=(
+                    original_color.exif_orientation if original_color else None
+                ),
+                edited_exif_orientation=(
+                    edited_color.exif_orientation if edited_color else None
+                ),
+                original_icc_present=(
+                    original_color.icc_present if original_color else None
+                ),
+                edited_icc_present=(
+                    edited_color.icc_present if edited_color else None
+                ),
+                original_icc_sha256=(
+                    original_color.icc_sha256 if original_color else None
+                ),
+                edited_icc_sha256=(
+                    edited_color.icc_sha256 if edited_color else None
+                ),
+                original_color_action=(
+                    original_color.color_action if original_color else None
+                ),
+                edited_color_action=(
+                    edited_color.color_action if edited_color else None
+                ),
+                working_color_space=WORKING_COLOR_SPACE,
+                aspect_ratio_relative_error=(
+                    geometry.aspect_ratio_relative_error if geometry else None
+                ),
+                geometry_action=(
+                    geometry.action if geometry else row["status"]
+                ),
+                geometry_feature_matches=(
+                    geometry.feature_matches if geometry else 0
+                ),
+                geometry_inliers=(geometry.inliers if geometry else 0),
+                geometry_inlier_ratio=(
+                    geometry.inlier_ratio if geometry else 0.0
+                ),
+                geometry_coverage_ratio=(
+                    geometry.coverage_ratio if geometry else None
+                ),
+                geometry_rotation_degrees=(
+                    geometry.rotation_degrees if geometry else None
+                ),
+                geometry_mirrored=(
+                    geometry.mirrored if geometry else None
+                ),
                 note="; ".join(note_parts),
             )
             pair_records.append(pair_record)
@@ -698,7 +701,21 @@ def _intake(
             usable_pairs=sum(pair.usable_for_recipe_fit for pair in pair_records),
             unchanged_pairs=sum(pair.status == "unchanged_final" for pair in pair_records),
             geometry_excluded_pairs=sum(
-                pair.status in {"crop_or_geometry_mismatch", "rotation_mismatch"}
+                pair.status in {
+                    "crop_same_ratio",
+                    "crop_or_geometry_mismatch",
+                    "rotation_mismatch",
+                    "mirror_mismatch",
+                    "wrong_copy_or_unverified",
+                }
+                for pair in pair_records
+            ),
+            geometry_unverified_pairs=sum(
+                pair.status == "wrong_copy_or_unverified"
+                for pair in pair_records
+            ),
+            color_excluded_pairs=sum(
+                pair.status == "color_contract_failed"
                 for pair in pair_records
             ),
             decode_excluded_pairs=sum(
@@ -721,6 +738,43 @@ def _intake(
                 event=event_record,
                 pairs=pair_records,
             )
+
+    snapshot_entries: list[dict] = []
+    for pair in all_pairs:
+        if (
+            pair.original_sha256
+            and pair.original_size_bytes is not None
+            and pair.original_modified_ns is not None
+        ):
+            snapshot_entries.append(
+                {
+                    "role": "original",
+                    "pair_id": pair.pair_id,
+                    "path": pair.original_path,
+                    "size_bytes": pair.original_size_bytes,
+                    "modified_ns": pair.original_modified_ns,
+                    "sha256": pair.original_sha256,
+                }
+            )
+        if (
+            pair.edited_sha256
+            and pair.edited_size_bytes is not None
+            and pair.edited_modified_ns is not None
+        ):
+            snapshot_entries.append(
+                {
+                    "role": "edited",
+                    "pair_id": pair.pair_id,
+                    "path": pair.edited_path,
+                    "size_bytes": pair.edited_size_bytes,
+                    "modified_ns": pair.edited_modified_ns,
+                    "sha256": pair.edited_sha256,
+                }
+            )
+
+    dataset_snapshot = freeze_dataset_snapshot(snapshot_entries)
+    snapshot_path = output / "dataset_snapshot.json"
+    _write_json(snapshot_path, dataset_snapshot)
 
     leaks = _cross_split_duplicates(all_pairs)
 
@@ -763,8 +817,12 @@ def _intake(
         )
     if any(event.geometry_excluded_pairs for event in events):
         warnings.append(
-            "Crop/orientation geometry mismatches were preserved in the report but excluded "
-            "from first-pass recipe fitting."
+            "Crop/rotation/mirror/wrong-copy or unverified geometry pairs were preserved "
+            "in the report but excluded from recipe fitting."
+        )
+    if any(event.color_excluded_pairs for event in events):
+        warnings.append(
+            "At least one JPEG pair failed the ICC/color contract and was excluded."
         )
     if any(event.unchanged_pairs for event in events):
         warnings.append(
@@ -793,6 +851,9 @@ def _intake(
         "source_files_modified": False,
         "split_lock_path": str(split_lock_path),
         "split_policy_version": SPLIT_POLICY_VERSION,
+        "dataset_snapshot_path": str(snapshot_path),
+        "dataset_snapshot_id": dataset_snapshot["snapshot_id"],
+        "working_color_space": WORKING_COLOR_SPACE,
         "aspect_tolerance": aspect_tolerance,
         "event_counts": split_counts,
         "usable_pair_counts": pair_split_counts,
@@ -807,16 +868,29 @@ def _intake(
                 pair.status == "unchanged_final" for pair in all_pairs
             ),
             "geometry_excluded_pairs": sum(
-                pair.status in {"crop_or_geometry_mismatch", "rotation_mismatch"}
+                pair.status in {
+                    "crop_same_ratio",
+                    "crop_or_geometry_mismatch",
+                    "rotation_mismatch",
+                    "mirror_mismatch",
+                    "wrong_copy_or_unverified",
+                }
+                for pair in all_pairs
+            ),
+            "color_excluded_pairs": sum(
+                pair.status == "color_contract_failed"
                 for pair in all_pairs
             ),
             "decode_or_read_excluded_pairs": sum(
-                pair.status in {"decode_error", "read_error"} for pair in all_pairs
+                pair.status in {"decode_error", "read_error"}
+                for pair in all_pairs
             ),
             "cross_split_duplicate_groups": len(leaks),
         },
         "readiness": {
             "pairing_data_present": any(event.matched_pairs > 0 for event in events),
+            "dataset_snapshot_frozen": bool(dataset_snapshot["files"]),
+            "color_contract_recorded": True,
             "j0_representation_test_ready": any(
                 pair.usable_for_recipe_fit for pair in all_pairs
             ),
@@ -828,9 +902,11 @@ def _intake(
         "cross_split_duplicates": leaks,
         "warnings": warnings,
         "interpretation": (
-            "This intake validates and freezes provenance for real Original JPEG + "
-            "Photographer Edited JPEG material. It does not train a model and does not "
-            "permit a photographer-quality claim. Whole events are the unit of split."
+            "This intake validates pairing, color/ICC, display orientation, visual "
+            "geometry and full-file SHA-256, then freezes a dataset snapshot for real "
+            "Original JPEG + Photographer Edited JPEG material. It does not train a "
+            "model and does not permit a photographer-quality claim. Whole events are "
+            "the unit of split."
         ),
     }
 
