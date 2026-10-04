@@ -83,3 +83,11 @@ Do not start Auth/Cloud implementation or a new production Brain merely because 
 - Draft locks the intended Release 1 shape for review: independent JPEG, assisted RAW, Windows x64 + Apple Silicon, local editing with narrow cloud control plane.
 - It cannot become V before G0 and explicit product-owner ratification.
 - Primary active development Part remains PG-00.05 while G0 is open.
+
+## PG-01.02 preparation
+
+- **PG-01.02 — ◐ CONTRACT PREPARED:** `docs/PG_01_02_DATA_IDENTITY_CONTRACT.md`.
+- Initial cloud provider selected: **Supabase Auth + PostgreSQL + private Storage**.
+- Local operational source of truth remains **SQLite** for Event/PhotoAsset/Run/RecipeRevision/Review/Export.
+- Current migration gaps are explicit: path-derived Event identity, singleton photographer setup, non-durable jobs/exports/reviews and BUG-PG00-001.
+- No Supabase production resources are provisioned by this documentation Part; actual cloud implementation remains gated later in the workflow.
