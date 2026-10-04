@@ -16,6 +16,7 @@ from PIL import Image, ImageCms, ImageOps
 WORKING_COLOR_SPACE = "srgb-iec61966-2.1-v1"
 JPEG_INTEGRITY_SCHEMA = "prographer.jpeg-integrity.v1"
 DATASET_SNAPSHOT_SCHEMA = "prographer.dataset-snapshot.v1"
+MIN_CONFIDENT_INLIER_RATIO = 0.55
 
 
 class JpegIntegrityError(ValueError):
@@ -433,6 +434,27 @@ def analyze_pair_geometry(
             inlier_ratio=inlier_ratio,
             note=(
                 "same-photo geometry could not be verified; "
+                "pair is blocked rather than guessed"
+            ),
+        )
+
+    # A mathematically valid homography is not enough. Unrelated photos can
+    # occasionally produce a small accidental correspondence set, especially
+    # when they share generic gradients/edges. Be conservative: a weak RANSAC
+    # consensus is treated as an unverified/wrong-copy pair rather than as crop.
+    if inlier_ratio < MIN_CONFIDENT_INLIER_RATIO:
+        return _blocked_geometry(
+            action="wrong_copy_or_unverified",
+            original_width=ow,
+            original_height=oh,
+            edited_width=ew,
+            edited_height=eh,
+            aspect_error=aspect_error,
+            feature_matches=matches,
+            inliers=inliers,
+            inlier_ratio=inlier_ratio,
+            note=(
+                "homography consensus is too weak to prove same-photo geometry; "
                 "pair is blocked rather than guessed"
             ),
         )
