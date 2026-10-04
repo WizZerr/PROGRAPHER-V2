@@ -42,9 +42,28 @@ class JpegDecodeEvidence:
     icc_sha256: str | None
     icc_profile_name: str | None
     color_action: str
+    camera_make: str | None
+    camera_model: str | None
+    lens_model: str | None
+    iso: int | None
+    exposure_time_seconds: float | None
+    f_number: float | None
+    focal_length_mm: float | None
+    mean_luma: float
+    shadow_fraction: float
+    highlight_fraction: float
+    lighting_bucket: str
     perceptual_hash64: str
     perceptual_hash_version: str = PERCEPTUAL_HASH_VERSION
     working_color_space: str = WORKING_COLOR_SPACE
+
+
+@dataclass(frozen=True)
+class EditScopeEvidence:
+    scope: str
+    affine_residual_p90_255: float
+    changed_pixel_fraction: float
+    mean_absolute_delta_255: float
 
 
 @dataclass(frozen=True)
@@ -105,6 +124,132 @@ def perceptual_hamming_distance(left: str, right: str) -> int:
     return (int(left, 16) ^ int(right, 16)).bit_count()
 
 
+def _exif_text(exif, tag: int) -> str | None:
+    value = exif.get(tag)
+    if value is None:
+        return None
+    text = str(value).strip()
+    return text or None
+
+
+def _exif_float(exif, tag: int) -> float | None:
+    value = exif.get(tag)
+    if value is None:
+        return None
+    try:
+        return float(value)
+    except (TypeError, ValueError, ZeroDivisionError):
+        try:
+            return float(value.numerator) / float(value.denominator)
+        except Exception:
+            return None
+
+
+def _lighting_stats(rgb: np.ndarray) -> tuple[float, float, float, str]:
+    normalized = rgb.astype(np.float32) / 255.0
+    luma = (
+        normalized[:, :, 0] * 0.2126
+        + normalized[:, :, 1] * 0.7152
+        + normalized[:, :, 2] * 0.0722
+    )
+    mean_luma = float(luma.mean())
+    shadow_fraction = float((luma < 0.18).mean())
+    highlight_fraction = float((luma > 0.82).mean())
+
+    if mean_luma < 0.28:
+        bucket = "low_key"
+    elif mean_luma > 0.72:
+        bucket = "high_key"
+    elif shadow_fraction >= 0.18 and highlight_fraction >= 0.08:
+        bucket = "mixed_contrast"
+    else:
+        bucket = "mid_tone"
+
+    return mean_luma, shadow_fraction, highlight_fraction, bucket
+
+
+def analyze_edit_scope(
+    original_rgb: np.ndarray,
+    edited_rgb: np.ndarray,
+) -> EditScopeEvidence:
+    """
+    Coarse coverage label, not a retouch detector.
+
+    Fit a global affine RGB transform. Low residual -> global-like.
+    High residual -> local-or-complex suspected. The latter intentionally
+    combines local retouching with nonlinear/global edits that this simple
+    coverage model cannot explain.
+    """
+    oh, ow = original_rgb.shape[:2]
+    eh, ew = edited_rgb.shape[:2]
+    if (oh, ow) != (eh, ew):
+        edited_rgb = cv2.resize(
+            edited_rgb,
+            (ow, oh),
+            interpolation=cv2.INTER_AREA,
+        )
+
+    max_edge = max(oh, ow)
+    if max_edge > 640:
+        scale = 640.0 / float(max_edge)
+        target = (max(1, round(ow * scale)), max(1, round(oh * scale)))
+        original_rgb = cv2.resize(original_rgb, target, interpolation=cv2.INTER_AREA)
+        edited_rgb = cv2.resize(edited_rgb, target, interpolation=cv2.INTER_AREA)
+
+    original = original_rgb.astype(np.float32)
+    edited = edited_rgb.astype(np.float32)
+    delta = np.abs(edited - original)
+    pixel_delta = delta.max(axis=2)
+    changed_fraction = float((pixel_delta > 3.0).mean())
+    mean_delta = float(delta.mean())
+
+    if changed_fraction <= 0.01 and mean_delta <= 1.0:
+        return EditScopeEvidence(
+            scope="identity_like",
+            affine_residual_p90_255=0.0,
+            changed_pixel_fraction=changed_fraction,
+            mean_absolute_delta_255=mean_delta,
+        )
+
+    x = original.reshape(-1, 3)
+    y = edited.reshape(-1, 3)
+    sample_count = x.shape[0]
+    if sample_count > 50000:
+        indices = np.linspace(0, sample_count - 1, 50000, dtype=np.int64)
+        x_fit = x[indices]
+        y_fit = y[indices]
+    else:
+        x_fit = x
+        y_fit = y
+
+    design = np.concatenate(
+        [x_fit, np.ones((x_fit.shape[0], 1), dtype=np.float32)],
+        axis=1,
+    )
+    coefficients, *_ = np.linalg.lstsq(design, y_fit, rcond=None)
+
+    full_design = np.concatenate(
+        [x, np.ones((x.shape[0], 1), dtype=np.float32)],
+        axis=1,
+    )
+    predicted = np.clip(full_design @ coefficients, 0.0, 255.0)
+    residual = np.abs(predicted - y)
+    per_pixel_residual = residual.max(axis=1)
+    p90 = float(np.percentile(per_pixel_residual, 90))
+
+    scope = (
+        "global_like"
+        if p90 <= 8.0
+        else "local_or_complex_suspected"
+    )
+    return EditScopeEvidence(
+        scope=scope,
+        affine_residual_p90_255=p90,
+        changed_pixel_fraction=changed_fraction,
+        mean_absolute_delta_255=mean_delta,
+    )
+
+
 def read_jpeg_working_rgb(
     path: str | Path,
 ) -> tuple[np.ndarray, JpegDecodeEvidence]:
@@ -136,6 +281,15 @@ def read_jpeg_working_rgb(
                 orientation = 1
             if orientation not in range(1, 9):
                 orientation = 1
+
+            camera_make = _exif_text(exif, 271)
+            camera_model = _exif_text(exif, 272)
+            lens_model = _exif_text(exif, 42036)
+            iso_value = _exif_float(exif, 34855)
+            iso = int(round(iso_value)) if iso_value is not None else None
+            exposure_time = _exif_float(exif, 33434)
+            f_number = _exif_float(exif, 33437)
+            focal_length = _exif_float(exif, 37386)
 
             icc_payload = opened.info.get("icc_profile")
             icc_sha = (
@@ -181,6 +335,12 @@ def read_jpeg_working_rgb(
             rgb = np.asarray(working, dtype=np.uint8).copy()
             display_height, display_width = rgb.shape[:2]
             phash = perceptual_hash64(rgb)
+            (
+                mean_luma,
+                shadow_fraction,
+                highlight_fraction,
+                lighting_bucket,
+            ) = _lighting_stats(rgb)
 
             return rgb, JpegDecodeEvidence(
                 path=str(source),
@@ -195,6 +355,17 @@ def read_jpeg_working_rgb(
                 icc_sha256=icc_sha,
                 icc_profile_name=profile_name,
                 color_action=color_action,
+                camera_make=camera_make,
+                camera_model=camera_model,
+                lens_model=lens_model,
+                iso=iso,
+                exposure_time_seconds=exposure_time,
+                f_number=f_number,
+                focal_length_mm=focal_length,
+                mean_luma=mean_luma,
+                shadow_fraction=shadow_fraction,
+                highlight_fraction=highlight_fraction,
+                lighting_bucket=lighting_bucket,
                 perceptual_hash64=phash,
             )
     except JpegIntegrityError:
