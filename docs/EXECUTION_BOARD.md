@@ -141,7 +141,7 @@ PG-00.02 stays PAUSED until the owner returns to the remaining PR1 hardware/manu
 
 - **R-PIPELINE-001 — RAW-centric BrainInput:** existing Brain V2 input contracts encode RAW-specific fields and must evolve without breaking candidate provenance.
 - **R-PIPELINE-002 — Multiple manifest generations:** current dataset manifests use more than one historical schema; future training must consume one declared contract/version.
-- **R-PIPELINE-003 — Renderer gap:** current Darkroom visual illustration is not a versioned JPEG renderer and cannot serve as product-quality evidence.
+- **R-PIPELINE-003 — Product preview wiring:** shared versioned JPEG renderer is implemented in PG-04.01; current Darkroom illustration still is not product-quality renderer evidence until PG-04.02 wires preview/full-resolution execution.
 
 ## Current pre-photographer engineering lane
 
@@ -154,3 +154,10 @@ PG-00.02 stays PAUSED until the owner returns to the remaining PR1 hardware/manu
 - **PG-03.08 — V:** immutable target/candidate provenance + file integrity verified.
 - **PG-03.09 — V:** consolidated corruption/leakage/provenance/Locked-Test gate verified.
 - **PG-03.02–PG-03.09 — PRE-PHOTOGRAPHER PACKAGE COMPLETE.** Real-photographer G1 evidence waits for representative material.
+
+## JPEG engine / photographer-material readiness
+
+- **PG-04.01 — V:** shared versioned JPEG EditRecipe + renderer implemented and used by J0/J1/Locked Test.
+- **PG-06.01 — V:** photographer request package ready to send.
+- **PG-06.02 — BLOCKED:** waits for real authorized photographer files.
+- **PG-04.02 — READY:** shared-recipe preview/full-resolution rendering, revision/cache and stale-preview protection.
