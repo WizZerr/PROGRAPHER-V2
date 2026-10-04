@@ -17,7 +17,7 @@ if str(BACKEND_ROOT) not in sys.path:
     sys.path.insert(0, str(BACKEND_ROOT))
 
 from app.datasets.jpeg_integrity import (
-    WORKING_COLOR_SPACE,
+    JPEG_COLOR_CONTRACT_VERSION,
     load_and_validate_dataset_snapshot,
 )
 from app.evaluation.artifact_provenance import (
@@ -489,11 +489,15 @@ def main() -> int:
         dataset_snapshot_id=str(snapshot_id),
         dataset_manifest_sha256=dataset_manifest_sha256,
         target_artifact_id=target_provenance["artifact_id"],
+        target_semantics_sha256_value=target_provenance["identity"][
+            "target_semantics_sha256"
+        ],
         target_artifact_sha256=sha256_file(recipe_targets_path),
         code_revision=resolved_revision,
         dependency_lock_sha256=dependency["dependency_lock_sha256"],
         color_contract_version=str(
-            dataset.get("working_color_space") or WORKING_COLOR_SPACE
+            dataset.get("color_contract_version")
+            or JPEG_COLOR_CONTRACT_VERSION
         ),
         feature_contract_version=FEATURE_CONTRACT_VERSION,
         feature_names=list(FEATURE_NAMES),
