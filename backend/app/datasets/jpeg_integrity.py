@@ -14,6 +14,7 @@ from PIL import Image, ImageCms, ImageOps
 
 
 WORKING_COLOR_SPACE = "srgb-iec61966-2.1-v1"
+JPEG_COLOR_CONTRACT_VERSION = "jpeg-color-exif-icc-srgb-v1"
 JPEG_INTEGRITY_SCHEMA = "prographer.jpeg-integrity.v1"
 DATASET_SNAPSHOT_SCHEMA = "prographer.dataset-snapshot.v1"
 MIN_CONFIDENT_INLIER_RATIO = 0.55
