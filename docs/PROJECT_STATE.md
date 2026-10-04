@@ -58,7 +58,7 @@ Historical plans and superseded planning notes live under `docs/archive/` and ar
 
 ## Next executable work
 
-1. **PG-04.06 — ACTIVE** — map supported JPEG UI controls to real renderer recipe semantics with explicit units/ranges.
+1. **PG-04.06 — ACTIVE / ◐** — versioned JPEG control mapping and real-render preview API implemented; wire the Darkroom JPEG panel and verify every control changes actual pixels.
 2. Prove every supported control changes actual rendered pixels and unsupported RAW-only concepts are not exposed as JPEG equivalents.
 3. Then continue to the remaining Phase-04 RAW/XMP boundary work.
 4. **PG-06.02** remains blocked until real authorized photographer material arrives.

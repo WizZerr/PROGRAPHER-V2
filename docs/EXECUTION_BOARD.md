@@ -21,7 +21,7 @@ Status vocabulary:
 
 | Lane | Part | Status | Exact next output |
 |---|---|---|---|
-| Primary development | **PG-04.06** | ACTIVE | Map JPEG UI controls to real renderer semantics with explicit units/ranges and pixel-effect tests |
+| Primary development | **PG-04.06** | ACTIVE / ◐ | Wire Darkroom JPEG controls to the real renderer preview and verify each control changes actual pixels |
 | Photographer intake | **PG-06.02** | BLOCKED | Authorized photographer material |
 | Residual PR1 QA | **PG-00.02** | PAUSED | Only resume when product owner returns to the remaining hardware/manual QA |
 | Cloud/Auth | **PG-12+** | BLOCKED / NOT STARTED | Do not start before workflow gate permits |
@@ -166,4 +166,4 @@ PG-06.02 stays BLOCKED on authorized photographer files. Residual PG-00.02 QA st
 - **PG-04.03 — V:** encoded JPEG export quality/resize/ICC/orientation/metadata/GPS contract and reopen verification passed manual delta checks.
 - **PG-04.04 — V:** safe atomic filesystem export passed exact-module manual delta/integration verification.
 - **PG-04.05 — V:** renderer semantic goldens, encoded JPEG budgets and large preview-vs-export budgets passed.
-- **PG-04.06 — ACTIVE:** JPEG UI-control mapping is next.
+- **PG-04.06 — ACTIVE / ◐:** backend JPEG control contract + real preview API implemented; Darkroom wiring and verification remain.
