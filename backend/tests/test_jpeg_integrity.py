@@ -9,6 +9,7 @@ import pytest
 
 from app.datasets.jpeg_integrity import (
     DatasetSnapshotChangedError,
+    JpegIntegrityError,
     WORKING_COLOR_SPACE,
     analyze_pair_geometry,
     load_and_validate_dataset_snapshot,
@@ -130,6 +131,49 @@ def test_jpeg_decoder_records_explicit_missing_icc_assumption(
     assert evidence.icc_present is False
     assert evidence.color_action == "assume_srgb_no_icc"
     assert evidence.working_color_space == WORKING_COLOR_SPACE
+
+
+def test_srgb_icc_and_missing_icc_reach_same_working_space(
+    tmp_path: Path,
+) -> None:
+    source = _scene(12)
+    without_icc = tmp_path / "without-icc.jpg"
+    with_icc = tmp_path / "with-icc.jpg"
+
+    _save_jpeg(without_icc, source)
+    _save_jpeg(with_icc, source, embed_srgb_icc=True)
+
+    plain_rgb, plain_evidence = read_jpeg_working_rgb(without_icc)
+    tagged_rgb, tagged_evidence = read_jpeg_working_rgb(with_icc)
+
+    assert plain_evidence.working_color_space == WORKING_COLOR_SPACE
+    assert tagged_evidence.working_color_space == WORKING_COLOR_SPACE
+    assert plain_evidence.color_action == "assume_srgb_no_icc"
+    assert tagged_evidence.color_action == "icc_to_srgb"
+
+    mae = float(
+        np.abs(
+            plain_rgb.astype(np.float32)
+            - tagged_rgb.astype(np.float32)
+        ).mean()
+    )
+    assert mae < 3.0
+
+
+def test_missing_icc_non_rgb_is_rejected(tmp_path: Path) -> None:
+    path = tmp_path / "cmyk-without-icc.jpg"
+    rgb = _scene(13)
+    Image.fromarray(rgb, mode="RGB").convert("CMYK").save(
+        path,
+        format="JPEG",
+        quality=95,
+    )
+
+    with pytest.raises(
+        JpegIntegrityError,
+        match="missing_icc_for_non_rgb",
+    ):
+        read_jpeg_working_rgb(path)
 
 
 def test_geometry_contract_blocks_rotation_mirror_crop_and_wrong_copy() -> None:
