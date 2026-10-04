@@ -152,3 +152,15 @@ Do not start Auth/Cloud implementation or a new production Brain merely because 
 - Evidence: `docs/PG_03_09_DATA_SAFETY_GATE_REPORT.md`; Windows backend + training-tool compile passed in run `37174673037`.
 - **PG-03.02–PG-03.09 pre-photographer engineering package is complete.**
 - Real-photographer G1 evidence remains pending until representative material arrives.
+
+## Shared JPEG renderer and photographer request package
+
+- **PG-04.01 — V:** JPEG EditRecipe/renderer semantics moved from J0 into `backend/app/rendering/jpeg_renderer.py`.
+- J0, J1 synthetic, J1 real, locked Test and artifact provenance now share the same recipe/renderer contract.
+- Renderer regression and backend training-tool compile passed in PR1 validation run `37176350329`.
+- Evidence: `docs/PG_04_01_JPEG_RENDERER_CONTRACT.md` and `docs/PG_04_01_JPEG_RENDERER_REPORT.md`.
+- **PG-06.01 — V:** photographer request package is ready before material arrives.
+- Request artifacts: `docs/PHOTOGRAPHER_DATA_REQUEST_HE.md`, `docs/PHOTOGRAPHER_SUBMISSION_CHECKLIST_HE.md`, and `docs/templates/photographer_submission_manifest.template.json`.
+- Evidence: `docs/PG_06_01_PHOTOGRAPHER_REQUEST_REPORT.md`.
+- **PG-06.02 remains blocked until real authorized photographer material arrives.**
+- Next executable JPEG-engine Part without photographer material: **PG-04.02**.
