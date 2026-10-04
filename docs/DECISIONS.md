@@ -1,10 +1,10 @@
 # Decisions
 
-## D-001 — New master plan is the only development source of truth
-The 20 Sep 2026 ProGrapher V2 Master Implementation Plan replaces the prior execution plan.
+## D-001 — [SUPERSEDED] 20 Sep master plan was the development source of truth
+Historical decision. Superseded by D-007 on 2026-10-04. The 20 Sep plan is archived under `docs/archive/`.
 
-## D-002 — Execution order follows the plan, not simple numeric order
-After Phase 0: Phase 4A → Phases 1–3 → Phase 4B → Phases 5–8 → early 15A/22A/23A → Phases 9–15 → etc.
+## D-002 — [SUPERSEDED] Execution order from the 20 Sep plan
+Historical decision. Superseded by the Phase/Part/Gate sequence in Master Workflow v3.0.
 
 ## D-003 — macOS Apple Silicon + Windows x64 are first-release requirements
 A phase that requires both cannot close based on one platform only.
@@ -20,3 +20,16 @@ Known dependency, metadata, range and OS assumptions are recorded first; fixes o
 For JPEG Original/Edited pairs, do not invent Lightroom slider labels from pixels and do not jump directly to an unconstrained image-to-image generator. First validate an explicit JPEG edit representation (J0), then predict that representation from image features (J1), preserving candidate versions and measuring them on whole held-out events.
 
 Synthetic data may validate engineering plumbing but cannot establish photographer style or product quality. Real promotion decisions require representative photographer material with Train/Validation/Test separated by event/source group.
+
+
+## D-007 — Master Workflow v3.0 is the sole active execution source of truth
+Adopted 2026-10-04 under PG-00.03. `docs/MASTER_PLAN_SOURCE_OF_TRUTH.md` is the only active master execution plan. The 20 Sep plan, legacy Phase 0 checklist and prior cloud-revision status are historical material under `docs/archive/`.
+
+## D-008 — Release 1 uses local execution with a narrow cloud control plane
+Event editing, AI inference, rendering, review, export and local jobs run on the photographer's computer. Cloud scope is identity, entitlement, profile/settings backup or sync, selected learning data and managed training. ProGrapher does not automatically upload every event.
+
+## D-009 — PG-00.02 remains open; paused QA is not a passed gate
+On 2026-10-04 the product owner stopped additional manual PR1 QA for now and chose to batch remaining bugs later. Existing PASS evidence remains valid, but External Drive/Relink and final-head CI are still missing. PG-00.04 merge/tag stays blocked until PG-00.02 is explicitly closed.
+
+## D-010 — Legacy V1 brain stays retired; candidate history must be preserved
+Do not reconstruct the retired CLIP + ExtraTrees V1 brain. Each new Brain/model version that replaces or changes the active candidate is preserved for comparison against prior candidates and a simple baseline.
