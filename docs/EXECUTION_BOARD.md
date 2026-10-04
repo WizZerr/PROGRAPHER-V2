@@ -21,7 +21,7 @@ Status vocabulary:
 
 | Lane | Part | Status | Exact next output |
 |---|---|---|---|
-| Primary development | **PG-04.06** | ACTIVE / ◐ | Wire Darkroom JPEG controls to the real renderer preview and verify each control changes actual pixels |
+| Primary development | **PG-04.07** | ACTIVE / ◐ | Finish RAW/XMP source protection, round-trip evidence and truthful approximate-preview labeling |
 | Photographer intake | **PG-06.02** | BLOCKED | Authorized photographer material |
 | Residual PR1 QA | **PG-00.02** | PAUSED | Only resume when product owner returns to the remaining hardware/manual QA |
 | Cloud/Auth | **PG-12+** | BLOCKED / NOT STARTED | Do not start before workflow gate permits |
@@ -122,9 +122,9 @@ A Part can be marked DONE/V only when:
 
 ## Next action
 
-**PG-04.06 is the only ACTIVE primary-development Part.**
+**PG-04.07 is the only ACTIVE primary-development Part.**
 
-PG-04.05 passed its manual golden harness without consuming hosted Actions minutes. PG-04.06 now owns the product mapping from supported JPEG controls to the shared renderer recipe; no RAW-only control may be mislabeled as an equivalent JPEG semantic.
+PG-04.06 passed its targeted control/pixel and source-contract verification without consuming hosted Actions minutes. PG-04.07 is the remaining Phase-04 boundary: RAW/XMP safety and truthful approximate-preview labeling.
 
 PG-06.02 stays BLOCKED on authorized photographer files. Residual PG-00.02 QA stays PAUSED. No Auth/Cloud implementation and no new production Brain begins here.
 
@@ -166,4 +166,5 @@ PG-06.02 stays BLOCKED on authorized photographer files. Residual PG-00.02 QA st
 - **PG-04.03 — V:** encoded JPEG export quality/resize/ICC/orientation/metadata/GPS contract and reopen verification passed manual delta checks.
 - **PG-04.04 — V:** safe atomic filesystem export passed exact-module manual delta/integration verification.
 - **PG-04.05 — V:** renderer semantic goldens, encoded JPEG budgets and large preview-vs-export budgets passed.
-- **PG-04.06 — ACTIVE / ◐:** backend JPEG control contract + real preview API implemented; Darkroom wiring and verification remain.
+- **PG-04.06 — V:** normalized JPEG controls are wired to the real renderer; stale async responses cannot replace newer state; RAW-only semantics remain separate.
+- **PG-04.07 — ACTIVE / ◐:** RAW/XMP boundary is the remaining Phase-04 Part.

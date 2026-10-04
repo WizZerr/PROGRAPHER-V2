@@ -28,6 +28,7 @@ Historical plans and superseded planning notes live under `docs/archive/` and ar
 - **PG-04.03 — V**: encoded JPEG quality/size/ICC/orientation/metadata/GPS contract verified by manual delta checks with reopen validation.
 - **PG-04.04 — V**: safe separate-folder atomic export verified for collisions, disk/write failures, cleanup and source hash preservation.
 - **PG-04.05 — V**: versioned renderer/export goldens verified, including large preview-vs-export deviation budgets.
+- **PG-04.06 — V**: normalized JPEG controls are wired to the real renderer; every supported control changes pixels and RAW-only Kelvin/Tint semantics are not claimed for JPEG.
 - Residual PR1 manual QA remains paused by product-owner decision and is not restarted here.
 - Do not start Auth/Supabase/Cloud or a new production Brain.
 
@@ -58,9 +59,9 @@ Historical plans and superseded planning notes live under `docs/archive/` and ar
 
 ## Next executable work
 
-1. **PG-04.06 — ACTIVE / ◐** — versioned JPEG control mapping and real-render preview API implemented; wire the Darkroom JPEG panel and verify every control changes actual pixels.
-2. Prove every supported control changes actual rendered pixels and unsupported RAW-only concepts are not exposed as JPEG equivalents.
-3. Then continue to the remaining Phase-04 RAW/XMP boundary work.
+1. **PG-04.07 — ACTIVE / ◐** — finish the RAW/XMP safety boundary: prove sidecar round-trip/source protection and ensure RAW remains explicitly approximate/Lightroom-owned in the UI.
+2. Close Phase 04 only if RAW source/sidecar safety and truth-labeling evidence pass.
+3. Then advance to the next executable pre-photographer Part.
 4. **PG-06.02** remains blocked until real authorized photographer material arrives.
 
 Do not start Auth/Cloud implementation or a new production Brain.
@@ -159,4 +160,5 @@ Do not start Auth/Cloud implementation or a new production Brain.
 - **PG-04.03 — V:** encoded JPEG output is verified from original source + shared recipe with explicit metadata/color policy.
 - **PG-04.04 — V:** safe filesystem export is verified; failed/partial writes are not returned as valid and source bytes remain protected.
 - **PG-04.05 — V:** frozen semantic and encoded JPEG goldens now protect renderer/preview/export behavior.
-- Next executable JPEG-engine Part without photographer material: **PG-04.06**.
+- **PG-04.06 — V:** JPEG Darkroom controls now drive the real renderer with stale-response protection and explicit normalized semantics.
+- Next executable Phase-04 Part: **PG-04.07**.

@@ -1,39 +1,65 @@
 # PG-04.06 — JPEG UI Control Mapping Report
 
 Date: 2026-10-04  
-Status: **◐ IMPLEMENTED / VERIFICATION PENDING**
+Status: **V**
 
-## Backend added
+## Implemented
+
+Backend:
 
 - `backend/app/rendering/jpeg_controls.py`
 - `backend/app/api/routes/jpeg_controls.py`
 - `backend/tests/test_jpeg_controls.py`
 
-## Current contract
+Frontend:
 
-JPEG controls are normalized, global controls:
+- `frontend/src/features/darkroom/jpegControls.api.ts`
+- `frontend/src/features/darkroom/JpegRenderedPreview.tsx`
+- JPEG branch of `DarkroomScreen.tsx`
+- POST-capable blob helper in `frontend/src/lib/api.ts`
+
+## Frozen UI semantics
+
+JPEG controls are:
 
 - brightness,
 - contrast,
 - warmth,
-- tint.
+- green↔magenta tint.
 
-All are -100..100.
+All are normalized `-100..100`, neutral `0`.
 
-Temperature in Kelvin and Lightroom Tint equivalence are explicitly false in the contract.
+JPEG warmth is explicitly not Kelvin. JPEG tint is explicitly not Lightroom/Camera Raw Tint.
 
-## Darkroom wiring added
+RAW keeps the existing XMP/Kelvin/Tint contract.
 
-- JPEG is no longer presented as PR1 view-only.
-- The JPEG panel exposes brightness, contrast, warmth and green↔magenta controls.
-- JPEG values are normalized -100..100; Kelvin and Lightroom Tint wording is absent.
-- The stage uses `JpegRenderedPreview`, which POSTs the controls to the real backend renderer.
-- Preview requests are debounced.
-- A monotonically increasing revision is assigned to each request.
-- A request-id guard prevents an older async response from replacing the newest UI state.
-- Holding B shows the original source using the existing comparison behavior.
-- RAW keeps its existing XMP/Kelvin flow unchanged.
+## Verification
 
-## Remaining before V
+Manual control/pixel harness:
 
-Run targeted backend mapping/pixel tests plus frontend static/type verification of the committed Darkroom delta.
+- neutral controls -> exact identity pixels,
+- brightness +25 changes pixels,
+- contrast +25 changes pixels,
+- warmth +25 changes pixels,
+- tint +25 changes pixels.
+
+The committed source contract was also checked for:
+
+- real `JpegRenderedPreview` usage in the JPEG Darkroom,
+- removal of the old JPEG view-only message,
+- no RAW temperature binding or Kelvin-valued control in the JPEG panel,
+- RAW panel still retaining its Kelvin range and value,
+- registered backend JPEG-control route,
+- monotonic render revision,
+- request-id freshness guard,
+- immediate revocation/clearing of the prior preview when controls change.
+
+An older async preview response cannot replace a newer control state.
+
+Hosted Actions was not triggered because the monthly hosted-runner allowance remains exhausted.
+
+## Result
+
+PG-04.06 is **V**.
+
+Next executable Part: **PG-04.07 — RAW/XMP safety and truth boundary**.
