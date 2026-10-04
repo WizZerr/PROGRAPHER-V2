@@ -76,3 +76,10 @@ Do not start Auth/Cloud implementation or a new production Brain merely because 
 ## Execution board
 
 - `docs/EXECUTION_BOARD.md` — active lane, blockers, risk map and bug/research/product classification.
+
+## Phase 01 preparation
+
+- **PG-01.01 — ◐ DRAFT PREPARED:** `docs/RELEASE_1_PRODUCT_CONTRACT.md`.
+- Draft locks the intended Release 1 shape for review: independent JPEG, assisted RAW, Windows x64 + Apple Silicon, local editing with narrow cloud control plane.
+- It cannot become V before G0 and explicit product-owner ratification.
+- Primary active development Part remains PG-00.05 while G0 is open.
