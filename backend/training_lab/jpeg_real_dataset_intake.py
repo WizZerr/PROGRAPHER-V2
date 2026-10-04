@@ -22,11 +22,20 @@ from app.datasets.jpeg_integrity import (
     inspect_jpeg_pair,
     sha256_file,
 )
+from app.datasets.source_groups import (
+    DEFAULT_PHASH_DISTANCE,
+    SOURCE_GROUP_POLICY_VERSION,
+    SourceAsset,
+    build_source_groups,
+    event_components_from_source_groups,
+    load_near_duplicate_reviews,
+    source_asset_id,
+)
 from app.testing.jpeg_pairs import scan_jpeg_pairs
 
 
 SCHEMA_VERSION = 1
-SPLIT_POLICY_VERSION = "event-hash-v1"
+SPLIT_POLICY_VERSION = "event-source-group-v2"
 JPEG_EXTENSIONS = {".jpg", ".jpeg"}
 IDENTITY_APPROVAL_SCHEMA = "prographer.identity-approvals.v1"
 
@@ -35,6 +44,8 @@ IDENTITY_APPROVAL_SCHEMA = "prographer.identity-approvals.v1"
 class PairRecord:
     pair_id: str
     event_id: str
+    source_id: str | None
+    source_group_id: str | None
     split: str
     status: str
     usable_for_recipe_fit: bool
@@ -68,6 +79,8 @@ class PairRecord:
     edited_icc_sha256: str | None
     original_color_action: str | None
     edited_color_action: str | None
+    original_perceptual_hash64: str | None
+    edited_perceptual_hash64: str | None
     working_color_space: str
     aspect_ratio_relative_error: float | None
     geometry_action: str
@@ -95,6 +108,8 @@ class EventRecord:
     unchanged_pairs: int
     approved_identity_pairs: int
     unverified_identity_pairs: int
+    source_group_count: int
+    cross_event_source_groups: int
     geometry_excluded_pairs: int
     geometry_unverified_pairs: int
     color_excluded_pairs: int
@@ -198,11 +213,43 @@ def _discover_events(root: Path) -> list[tuple[str, Path, Path, Path]]:
     return events
 
 
+def _normalized_event_components(
+    eligible_event_ids: list[str],
+    event_components: list[list[str]] | None,
+) -> list[list[str]]:
+    known = set(eligible_event_ids)
+    materialized: list[list[str]] = []
+    covered: set[str] = set()
+
+    for component in event_components or []:
+        values = sorted(set(component) & known)
+        if not values:
+            continue
+        overlap = covered & set(values)
+        if overlap:
+            raise ValueError(
+                "event appears in more than one source-group component: "
+                + ", ".join(sorted(overlap))
+            )
+        covered.update(values)
+        materialized.append(values)
+
+    for event_id in sorted(known - covered):
+        materialized.append([event_id])
+
+    return sorted(materialized, key=lambda values: tuple(values))
+
+
 def _auto_split(
     eligible_event_ids: list[str],
     photographer_id: str,
+    event_components: list[list[str]] | None = None,
 ) -> dict[str, str]:
-    count = len(eligible_event_ids)
+    components = _normalized_event_components(
+        eligible_event_ids,
+        event_components,
+    )
+    count = len(components)
     if count < 3:
         return {}
 
@@ -217,31 +264,47 @@ def _auto_split(
             break
 
     ranked = sorted(
-        eligible_event_ids,
-        key=lambda event_id: hashlib.sha256(
-            f"{SPLIT_POLICY_VERSION}|{photographer_id}|{event_id}".encode("utf-8")
+        components,
+        key=lambda component: hashlib.sha256(
+            (
+                f"{SPLIT_POLICY_VERSION}|{photographer_id}|"
+                + "|".join(component)
+            ).encode("utf-8")
         ).hexdigest(),
     )
 
-    test_ids = set(ranked[:test_count])
-    validation_ids = set(ranked[test_count : test_count + validation_count])
+    test_components = {
+        tuple(component)
+        for component in ranked[:test_count]
+    }
+    validation_components = {
+        tuple(component)
+        for component in ranked[
+            test_count : test_count + validation_count
+        ]
+    }
 
-    return {
-        event_id: (
+    assignments: dict[str, str] = {}
+    for component in components:
+        key = tuple(component)
+        split = (
             "test"
-            if event_id in test_ids
+            if key in test_components
             else "validation"
-            if event_id in validation_ids
+            if key in validation_components
             else "train"
         )
-        for event_id in eligible_event_ids
-    }
+        for event_id in component:
+            assignments[event_id] = split
+
+    return assignments
 
 
 def _explicit_split(
     eligible_event_ids: list[str],
     validation_events: list[str],
     test_events: list[str],
+    event_components: list[list[str]] | None = None,
 ) -> dict[str, str]:
     known = set(eligible_event_ids)
     validation = {_safe_id(value) for value in validation_events}
@@ -260,20 +323,63 @@ def _explicit_split(
             + ", ".join(sorted(unknown))
         )
 
-    train = known - validation - test
-    if not train:
-        raise ValueError("explicit split leaves no train events")
+    components = _normalized_event_components(
+        eligible_event_ids,
+        event_components,
+    )
+    assignments: dict[str, str] = {}
 
-    return {
-        event_id: (
+    for component in components:
+        component_set = set(component)
+        wants_validation = bool(component_set & validation)
+        wants_test = bool(component_set & test)
+        if wants_validation and wants_test:
+            raise ValueError(
+                "explicit split would divide one source group across "
+                "Validation/Test: " + ", ".join(component)
+            )
+        split = (
             "validation"
-            if event_id in validation
+            if wants_validation
             else "test"
-            if event_id in test
+            if wants_test
             else "train"
         )
-        for event_id in eligible_event_ids
-    }
+        for event_id in component:
+            assignments[event_id] = split
+
+    if not any(split == "train" for split in assignments.values()):
+        raise ValueError("explicit split leaves no train events")
+    if not any(split == "validation" for split in assignments.values()):
+        raise ValueError("explicit split leaves no validation events")
+    if not any(split == "test" for split in assignments.values()):
+        raise ValueError("explicit split leaves no test events")
+
+    return assignments
+
+
+def _assignment_component_conflicts(
+    assignments: dict[str, str],
+    event_components: list[list[str]],
+) -> list[dict]:
+    conflicts: list[dict] = []
+    for component in event_components:
+        split_map = {
+            event_id: assignments[event_id]
+            for event_id in component
+            if event_id in assignments
+            and assignments[event_id] in {"train", "validation", "test"}
+        }
+        splits = sorted(set(split_map.values()))
+        if len(splits) > 1:
+            conflicts.append(
+                {
+                    "event_ids": sorted(component),
+                    "splits": splits,
+                    "assignments": split_map,
+                }
+            )
+    return conflicts
 
 
 def _load_or_create_split_lock(
@@ -284,8 +390,13 @@ def _load_or_create_split_lock(
     validation_events: list[str],
     test_events: list[str],
     rebuild: bool,
+    event_components: list[list[str]] | None = None,
 ) -> tuple[dict, list[str]]:
     explicit_requested = bool(validation_events or test_events)
+    components = _normalized_event_components(
+        eligible_event_ids,
+        event_components,
+    )
 
     if path.exists() and not rebuild:
         if explicit_requested:
@@ -300,18 +411,41 @@ def _load_or_create_split_lock(
             )
 
         assignments = dict(lock.get("assignments") or {})
-        if not assignments and len(eligible_event_ids) >= 3:
-            assignments = _auto_split(eligible_event_ids, photographer_id)
+        if assignments and lock.get("split_policy_version") != SPLIT_POLICY_VERSION:
+            raise ValueError(
+                "existing split lock predates source-group-aware splitting; "
+                "use --rebuild-split-lock after reviewing the new source groups"
+            )
+
+        conflicts = _assignment_component_conflicts(
+            assignments,
+            components,
+        )
+        if conflicts:
+            raise ValueError(
+                "existing split lock now divides a source group across splits; "
+                "rebuild is required: "
+                + json.dumps(conflicts, ensure_ascii=False)
+            )
+
+        if not assignments and len(components) >= 3:
+            assignments = _auto_split(
+                eligible_event_ids,
+                photographer_id,
+                components,
+            )
             lock = {
                 "schema_version": SCHEMA_VERSION,
                 "split_policy_version": SPLIT_POLICY_VERSION,
+                "source_group_policy_version": SOURCE_GROUP_POLICY_VERSION,
                 "photographer_id": photographer_id,
                 "created_at": _utc_now(),
                 "mode": "auto",
+                "event_components": components,
                 "assignments": assignments,
                 "note": (
-                    "Whole-event split lock. Existing assignments must not change "
-                    "silently across training/evaluation runs."
+                    "Whole-event + source-group split lock. Existing assignments "
+                    "must not change silently across training/evaluation runs."
                 ),
             }
             _write_json(path, lock)
@@ -325,23 +459,31 @@ def _load_or_create_split_lock(
             eligible_event_ids,
             validation_events,
             test_events,
+            components,
         )
         mode = "explicit"
     else:
-        assignments = _auto_split(eligible_event_ids, photographer_id)
-        mode = "auto" if assignments else "insufficient_events"
+        assignments = _auto_split(
+            eligible_event_ids,
+            photographer_id,
+            components,
+        )
+        mode = "auto" if assignments else "insufficient_components"
 
     lock = {
         "schema_version": SCHEMA_VERSION,
         "split_policy_version": SPLIT_POLICY_VERSION,
+        "source_group_policy_version": SOURCE_GROUP_POLICY_VERSION,
         "photographer_id": photographer_id,
         "created_at": _utc_now(),
         "mode": mode,
+        "event_components": components,
         "assignments": assignments,
         "note": (
-            "Whole-event split lock. Existing assignments must not change silently "
-            "across training/evaluation runs. New events remain unassigned until an "
-            "intentional split-lock rebuild."
+            "Whole-event + source-group split lock. Events connected by exact or "
+            "verified near-duplicate source photos stay in one split. Existing "
+            "assignments do not move silently; new events remain unassigned until "
+            "an intentional split-lock rebuild."
         ),
     }
     _write_json(path, lock)
