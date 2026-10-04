@@ -16,13 +16,13 @@ if str(BACKEND_ROOT) not in sys.path:
     sys.path.insert(0, str(BACKEND_ROOT))
 
 from app.datasets.jpeg_integrity import (
-    WORKING_COLOR_SPACE,
+    JPEG_COLOR_CONTRACT_VERSION,
     load_and_validate_dataset_snapshot,
 )
 from app.evaluation.artifact_provenance import (
     J0_TARGET_FEATURE_CONTRACT_VERSION,
     RENDERER_CONTRACT_VERSION,
-    canonical_json_sha256,
+    target_semantics_sha256,
     dependency_lock_fingerprint,
     ensure_immutable_artifact_dir,
     resolve_code_revision,
@@ -317,11 +317,12 @@ def run_batch(
     provenance = target_bundle_provenance(
         dataset_snapshot_id=str(dataset.get("dataset_snapshot_id") or ""),
         dataset_manifest_sha256=sha256_file(dataset_manifest_path),
-        targets_payload_sha256=canonical_json_sha256(target_payload),
+        target_semantics_sha256_value=target_semantics_sha256(target_payload),
         code_revision=resolved_revision,
         dependency_lock_sha256=dependency["dependency_lock_sha256"],
         color_contract_version=str(
-            dataset.get("working_color_space") or WORKING_COLOR_SPACE
+            dataset.get("color_contract_version")
+            or JPEG_COLOR_CONTRACT_VERSION
         ),
         feature_contract_version=J0_TARGET_FEATURE_CONTRACT_VERSION,
         recipe_contract_version=RECIPE_VERSION,
