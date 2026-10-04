@@ -23,7 +23,7 @@ Historical plans and superseded planning notes live under `docs/archive/` and ar
 - Latest completed Parts: **PG-00.03 — V**, **PG-00.06 — V**
 - Open merge gate Part: **PG-00.02 — ◐**
 - **PG-00.04 is blocked** until PG-00.02 is closed.
-- Primary development Part: **PG-00.05 — ACTIVE**.
+- Primary development Part: **PG-00.05 — ACTIVE / ◐**.
 - Execution/governance Part: **PG-00.06 — V**.
 
 ## PG-00.02 — residual QA status
@@ -48,6 +48,13 @@ Outstanding evidence includes:
 - RAW keeps the safe assisted RAW/XMP path; no claim of independent Adobe-equivalent RAW development.
 - Windows x64 and macOS Apple Silicon are required Release 1 targets.
 - Legacy V1 CLIP + ExtraTrees brain remains retired; new brain candidates are preserved for comparison.
+
+## PG-00.05 progress
+
+- Added automated backup-copy restore coverage for Event + RAW profile + saved Review; source RAW must remain byte-identical.
+- Added `docs/PG_00_05_FIXTURE_RESTORE_MATRIX.md`.
+- **BUG-PG00-001:** JPEG profile stores an absolute manifest path; portable restore is not yet proven.
+- Real historical backup restore and real-camera licensed fixture evidence are still missing.
 
 ## Current blockers / gates
 
