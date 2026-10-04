@@ -27,18 +27,28 @@ export default function JpegRenderedPreview({
   const [url, setUrl] = useState<string | null>(null);
   const [failed, setFailed] = useState(false);
   const requestId = useRef(0);
-  const revisionSequence = useRef(0);
+  const lastRevision = useRef(0);
+  const activeUrl = useRef<string | null>(null);
 
   useEffect(() => {
     const currentRequest = ++requestId.current;
-    revisionSequence.current += 1;
-    const revision =
-      Date.now() * 1000 + (revisionSequence.current % 1000);
+    const candidateRevision = Date.now() * 1000 + currentRequest;
+    const revision = Math.max(
+      lastRevision.current + 1,
+      candidateRevision,
+    );
+    lastRevision.current = revision;
+
+    if (activeUrl.current) {
+      URL.revokeObjectURL(activeUrl.current);
+      activeUrl.current = null;
+    }
+    setUrl(null);
+    setFailed(false);
 
     let cancelled = false;
     let objectUrl = "";
     const timer = window.setTimeout(() => {
-      setFailed(false);
 
       void renderJpegControlPreview({
         eventId,
@@ -53,19 +63,14 @@ export default function JpegRenderedPreview({
             objectUrl = "";
             return;
           }
-          setUrl((previous) => {
-            if (previous) URL.revokeObjectURL(previous);
-            return objectUrl;
-          });
+          activeUrl.current = objectUrl;
+          setUrl(objectUrl);
           objectUrl = "";
         })
         .catch(() => {
           if (!cancelled && currentRequest === requestId.current) {
             setFailed(true);
-            setUrl((previous) => {
-              if (previous) URL.revokeObjectURL(previous);
-              return null;
-            });
+            setUrl(null);
           }
         });
     }, 110);
@@ -86,10 +91,10 @@ export default function JpegRenderedPreview({
 
   useEffect(
     () => () => {
-      setUrl((current) => {
-        if (current) URL.revokeObjectURL(current);
-        return null;
-      });
+      if (activeUrl.current) {
+        URL.revokeObjectURL(activeUrl.current);
+        activeUrl.current = null;
+      }
     },
     [],
   );
