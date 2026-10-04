@@ -17,6 +17,7 @@ if str(BACKEND_ROOT) not in sys.path:
 
 from app.datasets.jpeg_integrity import (
     EditScopeEvidence,
+    JPEG_COLOR_CONTRACT_VERSION,
     JpegIntegrityError,
     WORKING_COLOR_SPACE,
     analyze_edit_scope,
@@ -1503,6 +1504,7 @@ def _intake(
         "dataset_snapshot_id": dataset_snapshot["snapshot_id"],
         "coverage_report_path": str(coverage_report_path),
         "working_color_space": WORKING_COLOR_SPACE,
+        "color_contract_version": JPEG_COLOR_CONTRACT_VERSION,
         "aspect_tolerance": aspect_tolerance,
         "identity_approvals_path": (
             str(identity_approvals_path.expanduser().resolve())
