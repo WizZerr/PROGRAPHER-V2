@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import shutil
+import sys
 from pathlib import Path
 
 import cv2
@@ -26,10 +27,14 @@ from app.evaluation.artifact_provenance import (
     target_bundle_provenance,
     target_semantics_sha256,
 )
-from training_lab.jpeg_j0_feasibility import RECIPE_VERSION
-from training_lab.jpeg_j1_synthetic_brain import IDENTITY_RECIPE
-from training_lab.jpeg_real_dataset_intake import _intake
-import training_lab.jpeg_real_j1_candidate as j1
+TRAINING_LAB = Path(__file__).resolve().parents[1] / "training_lab"
+if str(TRAINING_LAB) not in sys.path:
+    sys.path.insert(0, str(TRAINING_LAB))
+
+from jpeg_j0_feasibility import RECIPE_VERSION
+from jpeg_j1_synthetic_brain import IDENTITY_RECIPE
+from jpeg_real_dataset_intake import _intake
+import jpeg_real_j1_candidate as j1
 
 
 CODE_REVISION = "a" * 40
