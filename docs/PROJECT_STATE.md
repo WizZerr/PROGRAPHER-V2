@@ -164,7 +164,7 @@ Do not start Auth/Cloud implementation or a new production Brain.
 - **PG-04.05 — V:** frozen semantic and encoded JPEG goldens now protect renderer/preview/export behavior.
 - **PG-04.06 — V:** JPEG Darkroom controls now drive the real renderer with stale-response protection and explicit normalized semantics.
 - **PG-04.07 — V:** RAW/XMP safety and truth boundary closed.
-- Phase 04 is complete; next executable work comes from **Phase 05**.
+- Phase 04 is complete. Phase 05 is formally blocked on Phase-01 entry dependencies; the active pre-G0 preparation lane is **PG-01.05**.
 
 
 ## PG-01.04 portable profile package preparation

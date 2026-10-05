@@ -54,3 +54,21 @@ PG-01.05 remains **◐**, not V.
 The contract content is prepared, but Phase 01 entry/completion requires G0 and explicit product-owner ratification.
 
 No Supabase/Auth/Cloud resources were created and no photographer files were uploaded.
+
+
+## Contract consistency verification
+
+The prepared PG-01.05 contract was checked against the existing Release-1 and PG-01.02 identity boundaries.
+
+Verified:
+
+- local Event/PhotoAsset ownership remains local by default,
+- cloud remains a narrow control plane rather than automatic Event storage,
+- Profile/ProfileVersion sync does not imply source-photo sync,
+- managed personal training is explicit-selection + explicit-consent only,
+- broader/global learning is not enabled by this contract,
+- deletion scopes do not grant authority over arbitrary photographer filesystem content,
+- cloud quotas cannot silently destroy canonical local data,
+- no Auth/Supabase/Cloud implementation files were introduced by PG-01.05.
+
+A stale PROJECT_STATE sentence that previously pointed directly to Phase 05 after Phase 04 was corrected so the execution view matches the formal dependency gate.
