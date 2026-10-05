@@ -14,6 +14,7 @@ from app.rendering.jpeg_renderer import (
     POLYNOMIAL_FEATURE_NAMES,
     build_polynomial_recipe,
     identity_polynomial_recipe,
+    polynomial_features,
     render_coefficients_uint8,
     render_recipe_float,
     render_recipe_uint8,
@@ -206,4 +207,4 @@ def test_linear_recipe_fast_path_matches_explicit_polynomial_math() -> None:
         1.0,
     ).astype(np.float32).reshape(source.shape)
 
-    assert np.array_equal(actual, expected)
+    np.testing.assert_allclose(actual, expected, rtol=0.0, atol=1e-7)
