@@ -170,10 +170,32 @@ def render_recipe_float(
     flat = image.reshape(-1, 3)
     output = np.empty_like(flat, dtype=np.float32)
 
+    # The canonical recipe remains a 10-feature quadratic polynomial, but many
+    # product recipes (including the current JPEG controls) use only bias +
+    # linear RGB terms. Avoid materializing seven guaranteed-zero quadratic
+    # features for every preview pixel while preserving identical semantics.
+    linear_only = not np.any(coefficients[4:, :] != 0.0)
+    linear = coefficients[1:4, :]
+    diagonal_linear = False
+    diagonal = np.empty(3, dtype=np.float64)
+    if linear_only:
+        off_diagonal = linear.copy()
+        diagonal[:] = np.diag(linear)
+        np.fill_diagonal(off_diagonal, 0.0)
+        diagonal_linear = not np.any(off_diagonal != 0.0)
+    bias = coefficients[0, :]
+
     for start in range(0, len(flat), chunk_pixels):
         end = min(start + chunk_pixels, len(flat))
-        features = polynomial_features(flat[start:end])
-        predicted = features @ coefficients
+        values = flat[start:end]
+        if linear_only:
+            if diagonal_linear:
+                predicted = values.astype(np.float64) * diagonal + bias
+            else:
+                predicted = values.astype(np.float64) @ linear + bias
+        else:
+            features = polynomial_features(values)
+            predicted = features @ coefficients
         output[start:end] = np.clip(
             predicted,
             0.0,

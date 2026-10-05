@@ -71,3 +71,30 @@ no-ICC policy, source hashing, revision guards and renderer semantics are unchan
 Regression coverage was added both at the working-space decoder level and at the
 product preview API level. This is a compatibility bug fix, not a new rendering
 representation.
+
+
+## Windows interactive-preview performance follow-up — 2026-10-05
+
+Manual Desktop verification showed approximately two seconds of latency after
+changing a JPEG control on a real event image.
+
+The preview path was doing unnecessary repeated work for every recipe revision:
+the same source JPEG was decoded, EXIF/ICC-normalized and downsampled again, and
+the generic polynomial renderer materialized all 10 features even for the
+current affine-only global control recipes.
+
+The implementation now:
+
+- keeps a bounded process-local LRU of the last 8 normalized/downsampled preview
+  sources, keyed by Event, fingerprint and full source SHA-256,
+- continues to calculate the source SHA-256 for each render request, so the
+  existing source-change/revision safety contract is not weakened,
+- leaves full-resolution rendering/export uncached by this preview cache,
+- uses an optimized path inside the same canonical renderer whenever a recipe
+  contains only bias + linear RGB terms,
+- retains the generic 10-feature path for recipes containing quadratic terms.
+
+This is a performance optimization only. Recipe schema, renderer contract,
+working-space semantics, clipping and output interpretation are unchanged.
+Regression coverage proves both source-decode reuse across preview revisions and
+pixel-equivalence of the linear fast path to explicit polynomial evaluation.

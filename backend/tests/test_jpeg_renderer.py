@@ -180,3 +180,30 @@ def test_j0_recipe_payload_is_a_shared_renderer_recipe(tmp_path: Path) -> None:
 
 def test_artifact_provenance_uses_shared_renderer_version() -> None:
     assert RENDERER_CONTRACT_VERSION == JPEG_RENDERER_CONTRACT_VERSION
+
+
+
+def test_linear_recipe_fast_path_matches_explicit_polynomial_math() -> None:
+    rng = np.random.default_rng(406)
+    source = rng.random((37, 53, 3), dtype=np.float32)
+
+    coefficients = np.zeros(
+        (len(POLYNOMIAL_FEATURE_NAMES), 3),
+        dtype=np.float64,
+    )
+    coefficients[0] = [0.01, -0.02, 0.03]
+    coefficients[1] = [1.03, 0.0, 0.0]
+    coefficients[2] = [0.0, 0.97, 0.0]
+    coefficients[3] = [0.0, 0.0, 1.01]
+    recipe = build_polynomial_recipe(coefficients)
+
+    actual = render_recipe_float(source, recipe, chunk_pixels=211)
+
+    flat = source.reshape(-1, 3)
+    expected = np.clip(
+        polynomial_features(flat) @ coefficients,
+        0.0,
+        1.0,
+    ).astype(np.float32).reshape(source.shape)
+
+    assert np.array_equal(actual, expected)

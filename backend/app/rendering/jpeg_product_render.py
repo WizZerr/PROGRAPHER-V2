@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections import OrderedDict
 from dataclasses import dataclass
 from hashlib import sha256
 import json
@@ -29,6 +30,7 @@ from app.services.event_service import EventOpenError, list_event_files
 JPEG_PRODUCT_RENDER_CACHE_SCHEMA = "prographer.jpeg-product-render-cache.v1"
 JPEG_PRODUCT_RENDER_CACHE_VERSION = "v1"
 JPEG_PRODUCT_PREVIEW_MAX_EDGE = 1600
+JPEG_PREVIEW_SOURCE_CACHE_LIMIT = 8
 
 
 class JpegProductRenderError(ValueError):
@@ -62,6 +64,11 @@ class JpegRenderArtifact:
 
 _LOCKS_GUARD = threading.Lock()
 _RENDER_LOCKS: dict[str, threading.Lock] = {}
+_PREVIEW_SOURCE_CACHE_LOCK = threading.Lock()
+_PREVIEW_SOURCE_CACHE: OrderedDict[
+    tuple[str, str, str],
+    np.ndarray,
+] = OrderedDict()
 
 
 def _render_lock(event_id: str, fingerprint: str) -> threading.Lock:
@@ -192,6 +199,52 @@ def _preview_source(rgb: np.ndarray) -> np.ndarray:
         max(1, round(height * scale)),
     )
     return cv2.resize(rgb, target, interpolation=cv2.INTER_AREA)
+
+
+def _decode_working_source(source_path: Path) -> np.ndarray:
+    try:
+        source_rgb, _ = read_jpeg_working_rgb(source_path)
+        return source_rgb
+    except (JpegIntegrityError, OSError) as exc:
+        detail = str(exc).strip() or exc.__class__.__name__
+        raise JpegProductRenderError(
+            "JPEG working-space decode failed: "
+            f"{source_path.name}: {detail}"
+        ) from exc
+
+
+def _cached_preview_source(
+    *,
+    event_id: str,
+    fingerprint: str,
+    source_sha256: str,
+    source_path: Path,
+) -> np.ndarray:
+    key = (event_id, fingerprint, source_sha256)
+
+    with _PREVIEW_SOURCE_CACHE_LOCK:
+        cached = _PREVIEW_SOURCE_CACHE.get(key)
+        if cached is not None:
+            _PREVIEW_SOURCE_CACHE.move_to_end(key)
+            return cached
+
+    preview = np.ascontiguousarray(
+        _preview_source(_decode_working_source(source_path))
+    )
+    preview.setflags(write=False)
+
+    with _PREVIEW_SOURCE_CACHE_LOCK:
+        existing = _PREVIEW_SOURCE_CACHE.get(key)
+        if existing is not None:
+            _PREVIEW_SOURCE_CACHE.move_to_end(key)
+            return existing
+
+        _PREVIEW_SOURCE_CACHE[key] = preview
+        _PREVIEW_SOURCE_CACHE.move_to_end(key)
+        while len(_PREVIEW_SOURCE_CACHE) > JPEG_PREVIEW_SOURCE_CACHE_LIMIT:
+            _PREVIEW_SOURCE_CACHE.popitem(last=False)
+
+    return preview
 
 
 def _validate_revision(revision: int) -> int:
@@ -381,19 +434,15 @@ def render_jpeg_product(
                 )
             return cached
 
-        try:
-            source_rgb, _ = read_jpeg_working_rgb(source_path)
-        except (JpegIntegrityError, OSError) as exc:
-            detail = str(exc).strip() or exc.__class__.__name__
-            raise JpegProductRenderError(
-                "JPEG working-space decode failed: "
-                f"{source_path.name}: {detail}"
-            ) from exc
-
         render_source = (
-            _preview_source(source_rgb)
+            _cached_preview_source(
+                event_id=event_id,
+                fingerprint=fingerprint,
+                source_sha256=source_sha256,
+                source_path=source_path,
+            )
             if mode == "preview"
-            else source_rgb
+            else _decode_working_source(source_path)
         )
         rendered = render_recipe_uint8(render_source, canonical_recipe)
         payload = _encode_png(rendered)

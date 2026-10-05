@@ -13,6 +13,7 @@ os.environ["PROGRAPHER_ENGINE_SECRET"] = "pg-04-02-test-secret"
 
 from app.application import create_app  # noqa: E402
 from app.datasets.jpeg_integrity import read_jpeg_working_rgb  # noqa: E402
+from app.rendering import jpeg_product_render  # noqa: E402
 from app.rendering.jpeg_product_render import (  # noqa: E402
     JPEG_PRODUCT_PREVIEW_MAX_EDGE,
     JpegRenderRevisionConflict,
@@ -353,3 +354,47 @@ def test_product_render_api_exposes_revision_and_rejects_stale_requests(
         )
         assert current.status_code == 200
         assert current.json()["current"] is True
+
+
+
+def test_preview_reuses_normalized_source_across_recipe_revisions(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    monkeypatch.setenv("PROGRAPHER_DATA_DIR", str(tmp_path / "data"))
+    event_dir = tmp_path / "preview-source-cache-event"
+    event_dir.mkdir()
+
+    with TestClient(create_app()) as client:
+        event_id, fingerprint, _ = _open_jpeg_event(client, event_dir)
+
+    real_decode = jpeg_product_render.read_jpeg_working_rgb
+    decode_calls = 0
+
+    def counting_decode(path):
+        nonlocal decode_calls
+        decode_calls += 1
+        return real_decode(path)
+
+    monkeypatch.setattr(
+        jpeg_product_render,
+        "read_jpeg_working_rgb",
+        counting_decode,
+    )
+
+    render_jpeg_product(
+        event_id=event_id,
+        fingerprint=fingerprint,
+        recipe=identity_polynomial_recipe(),
+        revision=101,
+        mode="preview",
+    )
+    render_jpeg_product(
+        event_id=event_id,
+        fingerprint=fingerprint,
+        recipe=_warm_recipe(),
+        revision=102,
+        mode="preview",
+    )
+
+    assert decode_calls == 1
