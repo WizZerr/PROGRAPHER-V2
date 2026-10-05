@@ -25,7 +25,7 @@ export default function JpegRenderedPreview({
   style,
 }: Props) {
   const [url, setUrl] = useState<string | null>(null);
-  const [failed, setFailed] = useState(false);
+  const [failureMessage, setFailureMessage] = useState("");
   const requestId = useRef(0);
   const lastRevision = useRef(0);
   const activeUrl = useRef<string | null>(null);
@@ -39,12 +39,7 @@ export default function JpegRenderedPreview({
     );
     lastRevision.current = revision;
 
-    if (activeUrl.current) {
-      URL.revokeObjectURL(activeUrl.current);
-      activeUrl.current = null;
-    }
-    setUrl(null);
-    setFailed(false);
+    setFailureMessage("");
 
     let cancelled = false;
     let objectUrl = "";
@@ -63,14 +58,22 @@ export default function JpegRenderedPreview({
             objectUrl = "";
             return;
           }
+          const previousUrl = activeUrl.current;
           activeUrl.current = objectUrl;
           setUrl(objectUrl);
+          setFailureMessage("");
           objectUrl = "";
+          if (previousUrl) {
+            URL.revokeObjectURL(previousUrl);
+          }
         })
-        .catch(() => {
+        .catch((cause: unknown) => {
           if (!cancelled && currentRequest === requestId.current) {
-            setFailed(true);
-            setUrl(null);
+            setFailureMessage(
+              cause instanceof Error
+                ? cause.message
+                : "תצוגת JPEG נכשלה מסיבה לא ידועה.",
+            );
           }
         });
     }, 110);
@@ -92,7 +95,7 @@ export default function JpegRenderedPreview({
     [],
   );
 
-  if (failed || !url) {
+  if (!url) {
     const stateClassName = [previewStyles.state, className]
       .filter(Boolean)
       .join(" ");
@@ -103,32 +106,46 @@ export default function JpegRenderedPreview({
         style={style}
         role="img"
         aria-label={
-          failed
-            ? (alt || "תצוגת JPEG נכשלה")
+          failureMessage
+            ? `${alt || "תצוגת JPEG נכשלה"}: ${failureMessage}`
             : (alt || "מעבד תצוגת JPEG")
         }
+        title={failureMessage || undefined}
       >
-        {failed ? (
-          <span className={previewStyles.failedIcon} aria-hidden="true">
-            ×
-          </span>
+        {failureMessage ? (
+          <div className={previewStyles.failureDetails}>
+            <span className={previewStyles.failedIcon} aria-hidden="true">
+              ×
+            </span>
+            <span>{failureMessage}</span>
+          </div>
         ) : (
           <span className={previewStyles.spinner} aria-hidden="true" />
         )}
         <span className={previewStyles.srOnly}>
-          {failed ? "תצוגת JPEG נכשלה" : "מעבד תצוגת JPEG"}
+          {failureMessage ? "תצוגת JPEG נכשלה" : "מעבד תצוגת JPEG"}
         </span>
       </div>
     );
   }
 
+  const previewClassName = [previewStyles.previewWrap, className]
+    .filter(Boolean)
+    .join(" ");
+
   return (
-    <img
-      className={className}
-      style={style}
-      src={url}
-      alt={alt}
-      draggable={false}
-    />
+    <div className={previewClassName} style={style}>
+      <img
+        className={previewStyles.previewImage}
+        src={url}
+        alt={alt}
+        draggable={false}
+      />
+      {failureMessage ? (
+        <div className={previewStyles.failureOverlay} role="status">
+          {failureMessage}
+        </div>
+      ) : null}
+    </div>
   );
 }
