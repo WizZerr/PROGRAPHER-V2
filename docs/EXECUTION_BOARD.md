@@ -21,7 +21,7 @@ Status vocabulary:
 
 | Lane | Part | Status | Exact next output |
 |---|---|---|---|
-| Primary development | **PG-01.04** | PREP VERIFIED / ◐ | Portable immutable ProfileVersion package is engineering-verified; V remains blocked solely by G0 ratification |
+| Primary development | **PG-01.05** | PREP ACTIVE / ◐ | Ratify-ready data ownership/lifecycle/consent contract; V remains blocked by G0 + product-owner approval |
 | Photographer intake | **PG-06.02** | BLOCKED | Authorized photographer material |
 | Residual PR1 QA | **PG-00.02** | PAUSED | Only resume when product owner returns to the remaining hardware/manual QA |
 | Cloud/Auth | **PG-12+** | BLOCKED / NOT STARTED | Do not start before workflow gate permits |
@@ -124,7 +124,7 @@ A Part can be marked DONE/V only when:
 
 **Phase 04 is complete.**
 
-A dependency check found that Phase 05 formally requires PG-01.02/PG-01.04. PG-01.04 preparation is therefore the active engineering lane while G0 remains paused; Phase 05 is not marked ready prematurely.
+A dependency check found that Phase 05 formally requires PG-01.02/PG-01.04. PG-01.04 is engineering-verified. PG-01.05 data ownership/lifecycle preparation is now the active lane while G0 remains paused; Phase 05 is not marked ready prematurely.
 
 PG-06.02 stays BLOCKED on authorized photographer files. Residual PG-00.02 QA stays PAUSED. No Auth/Cloud implementation and no new production Brain begins here.
 

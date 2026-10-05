@@ -62,8 +62,8 @@ Historical plans and superseded planning notes live under `docs/archive/` and ar
 ## Next executable work
 
 1. **Phase 04 — COMPLETE** — PG-04.01 through PG-04.07 are V within their exact technical scope.
-2. **PG-01.04 — PREP ACTIVE / ◐** — Phase 05 entry requires PG-01.02/01.04; portable Profile Package implementation is being prepared while G0 remains paused.
-3. **Phase 05 is BLOCKED on its formal entry dependencies** until PG-01.02/01.04 can be ratified after G0.
+2. **PG-01.05 — PREP ACTIVE / ◐** — data ownership/lifecycle/consent contract is now the active Phase-01 preparation lane while G0 remains paused.
+3. **Phase 05 remains BLOCKED on its formal entry dependencies** until PG-01.02/01.04 can be ratified after G0.
 4. **PG-06.02** remains blocked until authorized photographer material arrives.
 
 Do not start Auth/Cloud implementation or a new production Brain.
@@ -174,3 +174,17 @@ Do not start Auth/Cloud implementation or a new production Brain.
 - Import is fail-closed and atomic; incompatible/tampered packages do not create a final ProfileVersion directory.
 - This does not start Supabase/Auth/Cloud.
 - Phase 05 must not be started as complete-entry work until PG-01.02 and PG-01.04 are ratified after G0.
+
+
+## PG-01.05 data ownership/lifecycle preparation
+
+- **PG-01.05 — ◐ CONTRACT PREPARED / G0 BLOCKED.**
+- Added `docs/PG_01_05_DATA_LIFECYCLE_CONTRACT.md`.
+- Every Release-1 data class now has an explicit source of truth and restore expectation.
+- Source RAW/JPEG remains local by default; Event/PhotoAsset is not automatically mirrored to cloud.
+- Profile sync is explicitly **not** photo backup.
+- Consent is purpose-specific: local processing, profile sync, selected managed personal training, and broader/product-improvement learning are separate scopes.
+- Broader/global-learning ingestion stays disabled until a later explicit policy.
+- Quota behavior cannot silently delete source media or active profile data.
+- Event/Profile/Device/Account deletion semantics are separate.
+- No Supabase/Auth/Cloud implementation was started.
