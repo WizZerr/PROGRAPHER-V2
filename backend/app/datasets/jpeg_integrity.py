@@ -19,6 +19,7 @@ JPEG_INTEGRITY_SCHEMA = "prographer.jpeg-integrity.v1"
 DATASET_SNAPSHOT_SCHEMA = "prographer.dataset-snapshot.v1"
 MIN_CONFIDENT_INLIER_RATIO = 0.55
 PERCEPTUAL_HASH_VERSION = "phash-dct64-v1"
+JPEG_CONTAINER_FORMATS = {"JPEG", "MPO"}
 
 
 class JpegIntegrityError(ValueError):
@@ -266,10 +267,24 @@ def read_jpeg_working_rgb(
 
     try:
         with Image.open(source) as opened:
-            if opened.format != "JPEG":
+            container_format = str(opened.format or "").upper()
+            if container_format not in JPEG_CONTAINER_FORMATS:
+                detected = container_format or "unknown"
                 raise JpegIntegrityError(
-                    f"unsupported_media: expected JPEG: {source}"
+                    "unsupported_media: expected JPEG-compatible JPEG/MPO, "
+                    f"detected {detected}: {source}"
                 )
+
+            # Pillow promotes JPEG files with a valid MPF index to MPO.
+            # Release 1 edits the primary photograph only; auxiliary MPO
+            # frames are not part of the JPEG EditRecipe contract.
+            if container_format == "MPO":
+                try:
+                    opened.seek(0)
+                except EOFError as exc:
+                    raise JpegIntegrityError(
+                        f"mpo_primary_frame_unavailable: {source.name}"
+                    ) from exc
 
             stored_width, stored_height = opened.size
             source_mode = opened.mode

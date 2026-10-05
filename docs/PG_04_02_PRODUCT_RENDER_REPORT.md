@@ -55,3 +55,19 @@ This is engineering verification only; it is not photographer-quality evidence.
 PG-04.02 is **V**.
 
 The next executable Part is **PG-04.03 — encoded JPEG export contract**.
+
+
+## Windows real-file compatibility follow-up — 2026-10-05
+
+Local Desktop verification exposed a real camera `.JPG` that Pillow identified
+as an MPO/MPF container. The old decoder rejected it because it required
+`opened.format == "JPEG"` even though the primary frame was JPEG-compatible.
+
+The source contract now accepts only Pillow `JPEG` and `MPO` containers for
+tracked `.jpg` / `.jpeg` files. MPO processing is explicitly limited to
+primary frame 0; auxiliary frames are ignored. EXIF orientation, ICC conversion,
+no-ICC policy, source hashing, revision guards and renderer semantics are unchanged.
+
+Regression coverage was added both at the working-space decoder level and at the
+product preview API level. This is a compatibility bug fix, not a new rendering
+representation.

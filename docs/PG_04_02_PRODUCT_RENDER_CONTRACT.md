@@ -27,7 +27,12 @@ The render path consumes `backend/app/rendering/jpeg_renderer.py`; it does not d
 
 ## Source contract
 
-Only a tracked JPEG inside the selected Event root is accepted.
+Only a tracked `.jpg` / `.jpeg` source inside the selected Event root is accepted.
+
+Pillow may identify a camera JPEG carrying a valid MPF index as an `MPO`
+container. This is treated as JPEG-compatible input: ProGrapher decodes and edits
+the primary frame (frame 0) only. Auxiliary MPO frames are ignored. Containers
+other than `JPEG` or `MPO` still fail explicitly.
 
 Before rendering, the source is decoded through the PG-03 JPEG working-space contract:
 
@@ -125,6 +130,7 @@ The authored regression suite covers:
 - same-revision recipe conflict,
 - stale revision rejection after a newer revision,
 - current-revision approval guard,
-- API revision/provenance headers and HTTP 409 behavior.
+- API revision/provenance headers and HTTP 409 behavior,
+- real-world JPEG compatibility for MPO/MPF-backed `.JPG` sources, using only the primary frame.
 
 Hosted Actions were intentionally not triggered because the account has exhausted its monthly hosted-runner minutes. PG-04.02 stays `◐` until this suite plus the backend regression/compile checks are executed successfully by local/manual CI or after hosted minutes reset.

@@ -7,6 +7,7 @@ import cv2
 import numpy as np
 import pytest
 from fastapi.testclient import TestClient
+from PIL import Image
 
 os.environ["PROGRAPHER_ENGINE_SECRET"] = "pg-04-02-test-secret"
 
@@ -44,6 +45,32 @@ def _jpeg(path: Path, width: int = 2000, height: int = 1000) -> None:
     )
     assert ok
     path.write_bytes(encoded.tobytes())
+
+
+def _mpo_jpeg(path: Path, width: int = 640, height: int = 480) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    yy, xx = np.mgrid[0:height, 0:width].astype(np.float32)
+    rgb = np.clip(
+        np.stack(
+            (
+                25 + 200 * (xx / max(1, width - 1)),
+                35 + 160 * (yy / max(1, height - 1)),
+                170 - 80 * (xx / max(1, width - 1)),
+            ),
+            axis=2,
+        ),
+        0,
+        255,
+    ).astype(np.uint8)
+    primary = Image.fromarray(rgb, mode="RGB")
+    auxiliary = Image.fromarray(np.flip(rgb, axis=1).copy(), mode="RGB")
+    primary.save(
+        path,
+        format="MPO",
+        save_all=True,
+        append_images=[auxiliary],
+        quality=96,
+    )
 
 
 def _warm_recipe() -> dict:
@@ -119,6 +146,48 @@ def test_full_render_uses_shared_renderer_on_working_space_source(
     assert artifact.width == source_rgb.shape[1]
     assert artifact.height == source_rgb.shape[0]
     assert np.array_equal(actual, expected)
+
+
+def test_product_preview_accepts_mpo_backed_jpg(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    monkeypatch.setenv("PROGRAPHER_DATA_DIR", str(tmp_path / "data"))
+    event_dir = tmp_path / "mpo-event"
+    event_dir.mkdir()
+    source = event_dir / "IMG_MPF.JPG"
+    _mpo_jpeg(source)
+
+    with TestClient(create_app()) as client:
+        opened = client.post(
+            "/api/events/open-folder",
+            headers=HEADERS,
+            json={"path": str(event_dir)},
+        )
+        assert opened.status_code == 200
+        event_id = opened.json()["event"]["id"]
+
+        listed = client.get(
+            f"/api/events/{event_id}/files",
+            headers=HEADERS,
+        )
+        assert listed.status_code == 200
+        fingerprint = listed.json()["files"][0]["fingerprint"]
+
+        response = client.post(
+            f"/api/events/{event_id}/files/{fingerprint}/jpeg-render/preview",
+            headers=HEADERS,
+            json={
+                "revision": 1,
+                "recipe": identity_polynomial_recipe(),
+            },
+        )
+
+    assert response.status_code == 200
+    assert response.headers["content-type"].startswith("image/png")
+    rendered = _decode_png(response.content)
+    assert rendered.shape[0] > 0
+    assert rendered.shape[1] > 0
 
 
 def test_preview_is_bounded_and_revision_cache_is_reused(

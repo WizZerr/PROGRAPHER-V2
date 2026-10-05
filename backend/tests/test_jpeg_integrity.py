@@ -119,6 +119,40 @@ def _save_jpeg(
     image.save(path, **kwargs)
 
 
+def _save_mpo_jpeg(path: Path, rgb: np.ndarray) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    primary = Image.fromarray(rgb, mode="RGB")
+    auxiliary = Image.fromarray(
+        np.flip(rgb, axis=1).copy(),
+        mode="RGB",
+    )
+    primary.save(
+        path,
+        format="MPO",
+        save_all=True,
+        append_images=[auxiliary],
+        quality=98,
+    )
+
+
+def test_jpeg_decoder_accepts_mpo_primary_frame(tmp_path: Path) -> None:
+    source = _scene(9, width=360, height=240)
+    path = tmp_path / "camera-mpf.JPG"
+    _save_mpo_jpeg(path, source)
+
+    with Image.open(path) as opened:
+        assert opened.format == "MPO"
+        assert getattr(opened, "n_frames", 1) >= 2
+
+    decoded, evidence = read_jpeg_working_rgb(path)
+
+    assert decoded.shape == source.shape
+    assert evidence.display_width == source.shape[1]
+    assert evidence.display_height == source.shape[0]
+    assert evidence.color_action == "assume_srgb_no_icc"
+    assert evidence.working_color_space == WORKING_COLOR_SPACE
+
+
 def test_jpeg_decoder_normalizes_exif_and_icc(tmp_path: Path) -> None:
     source = _scene(10, width=420, height=280)
 
