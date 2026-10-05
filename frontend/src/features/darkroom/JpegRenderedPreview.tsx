@@ -96,7 +96,13 @@ export default function JpegRenderedPreview({
   );
 
   if (!url) {
-    const stateClassName = [previewStyles.state, className]
+    const stateClassName = [
+      previewStyles.state,
+      failureMessage
+        ? previewStyles.jpegFailureState
+        : previewStyles.jpegPendingState,
+      className,
+    ]
       .filter(Boolean)
       .join(" ");
 
@@ -120,7 +126,10 @@ export default function JpegRenderedPreview({
             <span>{failureMessage}</span>
           </div>
         ) : (
-          <span className={previewStyles.spinner} aria-hidden="true" />
+          <div className={previewStyles.jpegLoadingDetails} role="status">
+            <span className={previewStyles.spinner} aria-hidden="true" />
+            <span>מעבד תצוגה…</span>
+          </div>
         )}
         <span className={previewStyles.srOnly}>
           {failureMessage ? "תצוגת JPEG נכשלה" : "מעבד תצוגת JPEG"}

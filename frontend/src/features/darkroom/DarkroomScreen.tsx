@@ -885,25 +885,29 @@ export default function DarkroomScreen() {
                     <span />
                   </span>
                 </button>
-                <button
-                  type="button"
-                  className={styles.sliderReset}
-                  onClick={resetJpegControls}
-                  disabled={
-                    jpegControls.brightness === 0 &&
-                    jpegControls.contrast === 0 &&
-                    jpegControls.warmth === 0 &&
-                    jpegControls.tint === 0
-                  }
-                >
-                  איפוס
-                </button>
               </div>
             </div>
 
             <p className={styles.keys}>
               {sheetNote}
             </p>
+
+            <div className={styles.jpegUtilityRow}>
+              <button
+                type="button"
+                className={styles.jpegResetButton}
+                onClick={resetJpegControls}
+                disabled={
+                  jpegControls.brightness === 0 &&
+                  jpegControls.contrast === 0 &&
+                  jpegControls.warmth === 0 &&
+                  jpegControls.tint === 0
+                }
+              >
+                <span className={styles.jpegResetIcon} aria-hidden="true">↺</span>
+                <span>איפוס ערכים</span>
+              </button>
+            </div>
 
             <details className={styles.group} open>
               <summary>אור</summary>

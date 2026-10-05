@@ -5,6 +5,38 @@
   color: var(--pg-text-muted);
 }
 
+.jpegPendingState {
+  background: transparent;
+  pointer-events: none;
+}
+
+.jpegFailureState {
+  background: rgba(5, 6, 8, 0.82);
+}
+
+.jpegLoadingDetails {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  padding: 8px 11px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
+  background: rgba(5, 6, 8, 0.78);
+  color: rgba(244, 247, 251, 0.78);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.22);
+  backdrop-filter: blur(8px);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1;
+  direction: rtl;
+}
+
+.jpegLoadingDetails .spinner {
+  width: 16px;
+  height: 16px;
+  border-width: 2px;
+}
+
 .spinner {
   width: 22px;
   height: 22px;
