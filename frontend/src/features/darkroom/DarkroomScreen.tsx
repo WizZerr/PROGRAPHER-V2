@@ -105,7 +105,7 @@ export default function DarkroomScreen() {
   const [showIllustration, setShowIllustration] = useState(false);
   const [holdOriginal, setHoldOriginal] = useState(false);
   const [history, setHistory] = useState<Recipe[]>([]);
-  const [future, setFuture] = useState<Recipe[]>([]);
+  const [, setFuture] = useState<Recipe[]>([]);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -306,7 +306,7 @@ export default function DarkroomScreen() {
     return () => {
       cancelled = true;
     };
-  }, [selection]);
+  }, [selection, getDraft, getReviewSheetCache, setReviewSheetCache]);
 
   function rememberBeforeDrag() {
     dragOrigin.current = current;

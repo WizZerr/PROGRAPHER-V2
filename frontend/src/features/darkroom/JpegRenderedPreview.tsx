@@ -80,14 +80,7 @@ export default function JpegRenderedPreview({
       window.clearTimeout(timer);
       if (objectUrl) URL.revokeObjectURL(objectUrl);
     };
-  }, [
-    eventId,
-    fingerprint,
-    controls.brightness,
-    controls.contrast,
-    controls.warmth,
-    controls.tint,
-  ]);
+  }, [eventId, fingerprint, controls]);
 
   useEffect(
     () => () => {

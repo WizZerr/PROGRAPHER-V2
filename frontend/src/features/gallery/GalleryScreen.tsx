@@ -245,7 +245,7 @@ export default function GalleryScreen() {
     return () => {
       cancelled = true;
     };
-  }, [eventCatalogRevision, setGalleryEventId]);
+  }, [eventCatalogRevision, galleryEventId, setGalleryEventId]);
 
   useEffect(() => {
     if (!galleryEventId || !selectedSource) {

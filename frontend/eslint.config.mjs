@@ -11,8 +11,37 @@ const eslintConfig = defineConfig([
     ".next/**",
     "out/**",
     "build/**",
+    // Rust/Tauri build output is generated and can contain binary-backed JS assets.
+    "src-tauri/target/**",
     "next-env.d.ts",
   ]),
+  {
+    // These effects intentionally synchronize UI state with navigation,
+    // network requests, and Blob URL lifecycles. Keep this exception scoped
+    // to the existing components rather than disabling the rule globally.
+    files: [
+      "src/features/darkroom/DarkroomScreen.tsx",
+      "src/features/darkroom/JpegRenderedPreview.tsx",
+      "src/features/events/EventsScreen.tsx",
+      "src/features/gallery/GalleryScreen.tsx",
+      "src/features/profile/ProfileScreen.tsx",
+      "src/features/review/CameraPreview.tsx",
+    ],
+    rules: {
+      "react-hooks/set-state-in-effect": "off",
+    },
+  },
+  {
+    // These two components render authenticated Blob/object URLs from the
+    // local engine; Next Image optimization is not applicable to that source.
+    files: [
+      "src/features/darkroom/JpegRenderedPreview.tsx",
+      "src/features/review/CameraPreview.tsx",
+    ],
+    rules: {
+      "@next/next/no-img-element": "off",
+    },
+  },
 ]);
 
 export default eslintConfig;
