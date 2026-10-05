@@ -103,6 +103,7 @@ export default function DarkroomScreen() {
   const [ready, setReady] = useState(false);
   const [compare, setCompare] = useState(62);
   const [showIllustration, setShowIllustration] = useState(false);
+  const [showJpegPreview, setShowJpegPreview] = useState(false);
   const [holdOriginal, setHoldOriginal] = useState(false);
   const [history, setHistory] = useState<Recipe[]>([]);
   const [, setFuture] = useState<Recipe[]>([]);
@@ -668,7 +669,7 @@ export default function DarkroomScreen() {
   }
 
   const hasComparison =
-    learningSource === "jpeg" || showIllustration;
+    learningSource === "jpeg" ? showJpegPreview : showIllustration;
   const split = holdOriginal ? 100 : hasComparison ? compare : 0;
   const previewStyle = illustrationStyle(
     current,
@@ -702,7 +703,7 @@ export default function DarkroomScreen() {
             alt={`מקור ${file.filename}`}
             className={styles.photo}
           />
-          {learningSource === "jpeg" ? (
+          {learningSource === "jpeg" && showJpegPreview ? (
             <JpegRenderedPreview
               eventId={selection.eventId}
               fingerprint={file.fingerprint}
@@ -867,19 +868,37 @@ export default function DarkroomScreen() {
           <div className={styles.panelBody}>
             <div className={styles.panelHeading}>
               <h2 className={styles.panelTitle}>עריכת JPEG</h2>
-              <button
-                type="button"
-                className={styles.sliderReset}
-                onClick={resetJpegControls}
-                disabled={
-                  jpegControls.brightness === 0 &&
-                  jpegControls.contrast === 0 &&
-                  jpegControls.warmth === 0 &&
-                  jpegControls.tint === 0
-                }
-              >
-                איפוס
-              </button>
+              <div className={styles.panelHeadingActions}>
+                <button
+                  type="button"
+                  className={
+                    showJpegPreview
+                      ? `${styles.previewToggle} ${styles.previewToggleOn}`
+                      : styles.previewToggle
+                  }
+                  aria-pressed={showJpegPreview}
+                  title="תצוגת JPEG אמיתית — מופקת על ידי מנוע ה-render המשותף"
+                  onClick={() => setShowJpegPreview((value) => !value)}
+                >
+                  <span className={styles.previewToggleLabel}>תצוגה מקדימה</span>
+                  <span className={styles.previewSwitch} aria-hidden="true">
+                    <span />
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  className={styles.sliderReset}
+                  onClick={resetJpegControls}
+                  disabled={
+                    jpegControls.brightness === 0 &&
+                    jpegControls.contrast === 0 &&
+                    jpegControls.warmth === 0 &&
+                    jpegControls.tint === 0
+                  }
+                >
+                  איפוס
+                </button>
+              </div>
             </div>
 
             <p className={styles.keys}>
