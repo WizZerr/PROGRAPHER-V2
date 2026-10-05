@@ -16,6 +16,25 @@ type Props = {
   style?: CSSProperties;
 };
 
+type RenderedPreview = {
+  url: string;
+  signature: string;
+};
+
+type PreviewFailure = {
+  message: string;
+  signature: string;
+};
+
+function controlsSignature(controls: JpegGlobalControls): string {
+  return [
+    controls.brightness,
+    controls.contrast,
+    controls.warmth,
+    controls.tint,
+  ].join("|");
+}
+
 export default function JpegRenderedPreview({
   eventId,
   fingerprint,
@@ -24,14 +43,16 @@ export default function JpegRenderedPreview({
   className,
   style,
 }: Props) {
-  const [url, setUrl] = useState<string | null>(null);
-  const [failureMessage, setFailureMessage] = useState("");
+  const [rendered, setRendered] = useState<RenderedPreview | null>(null);
+  const [failure, setFailure] = useState<PreviewFailure | null>(null);
   const requestId = useRef(0);
   const lastRevision = useRef(0);
   const activeUrl = useRef<string | null>(null);
+  const signature = controlsSignature(controls);
 
   useEffect(() => {
     const currentRequest = ++requestId.current;
+    const requestSignature = controlsSignature(controls);
     const candidateRevision = Date.now() * 1000 + currentRequest;
     const revision = Math.max(
       lastRevision.current + 1,
@@ -39,12 +60,9 @@ export default function JpegRenderedPreview({
     );
     lastRevision.current = revision;
 
-    setFailureMessage("");
-
     let cancelled = false;
     let objectUrl = "";
     const timer = window.setTimeout(() => {
-
       void renderJpegControlPreview({
         eventId,
         fingerprint,
@@ -58,22 +76,29 @@ export default function JpegRenderedPreview({
             objectUrl = "";
             return;
           }
+
           const previousUrl = activeUrl.current;
           activeUrl.current = objectUrl;
-          setUrl(objectUrl);
-          setFailureMessage("");
+          setRendered({
+            url: objectUrl,
+            signature: requestSignature,
+          });
+          setFailure(null);
           objectUrl = "";
+
           if (previousUrl) {
             URL.revokeObjectURL(previousUrl);
           }
         })
         .catch((cause: unknown) => {
           if (!cancelled && currentRequest === requestId.current) {
-            setFailureMessage(
-              cause instanceof Error
-                ? cause.message
-                : "תצוגת JPEG נכשלה מסיבה לא ידועה.",
-            );
+            setFailure({
+              signature: requestSignature,
+              message:
+                cause instanceof Error
+                  ? cause.message
+                  : "תצוגת JPEG נכשלה מסיבה לא ידועה.",
+            });
           }
         });
     }, 110);
@@ -95,12 +120,13 @@ export default function JpegRenderedPreview({
     [],
   );
 
-  if (!url) {
+  const currentFailure =
+    failure?.signature === signature ? failure.message : "";
+
+  if (currentFailure) {
     const stateClassName = [
       previewStyles.state,
-      failureMessage
-        ? previewStyles.jpegFailureState
-        : previewStyles.jpegPendingState,
+      previewStyles.jpegFailureState,
       className,
     ]
       .filter(Boolean)
@@ -111,31 +137,23 @@ export default function JpegRenderedPreview({
         className={stateClassName}
         style={style}
         role="img"
-        aria-label={
-          failureMessage
-            ? `${alt || "תצוגת JPEG נכשלה"}: ${failureMessage}`
-            : (alt || "מעבד תצוגת JPEG")
-        }
-        title={failureMessage || undefined}
+        aria-label={`${alt || "תצוגת JPEG נכשלה"}: ${currentFailure}`}
+        title={currentFailure}
       >
-        {failureMessage ? (
-          <div className={previewStyles.failureDetails}>
-            <span className={previewStyles.failedIcon} aria-hidden="true">
-              ×
-            </span>
-            <span>{failureMessage}</span>
-          </div>
-        ) : (
-          <div className={previewStyles.jpegLoadingDetails} role="status">
-            <span className={previewStyles.spinner} aria-hidden="true" />
-            <span>מעבד תצוגה…</span>
-          </div>
-        )}
-        <span className={previewStyles.srOnly}>
-          {failureMessage ? "תצוגת JPEG נכשלה" : "מעבד תצוגת JPEG"}
-        </span>
+        <div className={previewStyles.failureDetails}>
+          <span className={previewStyles.failedIcon} aria-hidden="true">
+            ×
+          </span>
+          <span>{currentFailure}</span>
+        </div>
       </div>
     );
+  }
+
+  // While the authoritative render is still catching up, render nothing here.
+  // DarkroomScreen keeps the instant local illustration visible underneath.
+  if (!rendered || rendered.signature !== signature) {
+    return null;
   }
 
   const previewClassName = [previewStyles.previewWrap, className]
@@ -146,15 +164,10 @@ export default function JpegRenderedPreview({
     <div className={previewClassName} style={style}>
       <img
         className={previewStyles.previewImage}
-        src={url}
+        src={rendered.url}
         alt={alt}
         draggable={false}
       />
-      {failureMessage ? (
-        <div className={previewStyles.failureOverlay} role="status">
-          {failureMessage}
-        </div>
-      ) : null}
     </div>
   );
 }

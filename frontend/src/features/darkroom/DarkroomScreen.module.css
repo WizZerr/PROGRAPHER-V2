@@ -185,13 +185,23 @@
 }
 
 .photoAfter {
-  filter: brightness(var(--preview-brightness, 1)) sepia(var(--preview-sepia, 0)) saturate(var(--preview-saturate, 1)) hue-rotate(var(--preview-hue, 0deg));
+  filter: brightness(var(--preview-brightness, 1)) contrast(var(--preview-contrast, 1)) sepia(var(--preview-sepia, 0)) saturate(var(--preview-saturate, 1)) hue-rotate(var(--preview-hue, 0deg));
 }
 
+.warmthOverlay,
 .tintOverlay {
   position: absolute;
   inset: 0;
   pointer-events: none;
+}
+
+.warmthOverlay {
+  background: var(--preview-warmth-color, transparent);
+  opacity: var(--preview-warmth-opacity, 0);
+  mix-blend-mode: soft-light;
+}
+
+.tintOverlay {
   background: var(--preview-tint-color, transparent);
   opacity: var(--preview-tint-opacity, 0);
   mix-blend-mode: color;

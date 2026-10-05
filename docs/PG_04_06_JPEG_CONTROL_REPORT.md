@@ -63,3 +63,27 @@ Hosted Actions was not triggered because the monthly hosted-runner allowance rem
 PG-04.06 is **V**.
 
 Next executable Part: **PG-04.07 — RAW/XMP safety and truth boundary**.
+
+
+## Interactive JPEG preview UX follow-up — 2026-10-05
+
+Manual Windows testing confirmed that the optimized backend path became much
+faster, but RAW still felt perceptually instant because its illustration is
+local to the frontend.
+
+JPEG now uses the same interaction principle without weakening render truth:
+
+- the selected JPEG controls immediately drive a local illustration layer,
+- the exact PG-04.02/PG-04.06 backend render continues in the background,
+- while the backend is catching up, no blocking "processing preview" state is
+  shown; the local illustration remains visible,
+- once the exact render for the current control signature arrives, it replaces
+  the illustration silently,
+- an exact render for older controls is never shown over a newer local state,
+- the comparison badge is `המחשה`, matching RAW and truthfully describing the
+  immediate layer,
+- the footer states that the immediate illustration is local while the precise
+  render updates in the background.
+
+This changes interaction latency only. The canonical recipe, revision guards,
+renderer and export semantics remain unchanged.

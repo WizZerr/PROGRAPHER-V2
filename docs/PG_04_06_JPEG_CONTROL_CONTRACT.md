@@ -64,3 +64,18 @@ PG-04.06 may become V only when:
 - the Darkroom JPEG panel calls the real preview endpoint,
 - JPEG UI does not show Kelvin/RAW Tint semantics,
 - stale preview responses cannot replace a newer UI state.
+
+
+## Interactive preview UX
+
+The JPEG Darkroom uses a dual preview pipeline:
+
+- slider movement updates a local, instantaneous illustration for tactile feedback,
+- the canonical backend renderer continues to produce the authoritative preview
+  after the existing debounce,
+- stale authoritative responses remain blocked by the existing revision/request
+  freshness guards,
+- save/export truth continues to come from the canonical backend renderer.
+
+The local interactive layer is explicitly labeled `המחשה`; it is not presented
+as the authoritative JPEG render.

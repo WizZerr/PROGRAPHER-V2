@@ -47,6 +47,40 @@ function formatRecipe(recipe: Recipe | null | undefined) {
   return `${exposure} / ${recipe.temperature}K / ${tint}`;
 }
 
+function jpegIllustrationStyle(
+  controls: JpegGlobalControls,
+  enabled: boolean,
+): CSSProperties {
+  if (!enabled) return {};
+
+  const brightness = 2 ** (controls.brightness / 100);
+  const contrast = 1 + 0.005 * controls.contrast;
+  const warmthAmount = Math.min(1, Math.abs(controls.warmth) / 100);
+  const tintAmount = Math.min(1, Math.abs(controls.tint) / 100);
+
+  return {
+    ["--preview-brightness" as string]: String(brightness),
+    ["--preview-contrast" as string]: String(contrast),
+    ["--preview-sepia" as string]: "0",
+    ["--preview-saturate" as string]: "1",
+    ["--preview-hue" as string]: "0deg",
+    ["--preview-warmth-color" as string]:
+      controls.warmth < 0
+        ? "rgb(70 145 255)"
+        : controls.warmth > 0
+          ? "rgb(255 148 72)"
+          : "transparent",
+    ["--preview-warmth-opacity" as string]: String(warmthAmount * 0.16),
+    ["--preview-tint-color" as string]:
+      controls.tint < 0
+        ? "rgb(42 201 122)"
+        : controls.tint > 0
+          ? "rgb(218 74 184)"
+          : "transparent",
+    ["--preview-tint-opacity" as string]: String(tintAmount * 0.14),
+  };
+}
+
 function illustrationStyle(recipe: Recipe, enabled: boolean): CSSProperties {
   if (!enabled) return {};
 
@@ -675,6 +709,10 @@ export default function DarkroomScreen() {
     current,
     showIllustration && !holdOriginal,
   );
+  const jpegPreviewStyle = jpegIllustrationStyle(
+    jpegControls,
+    showJpegPreview && !holdOriginal,
+  );
 
   return (
     <div className={styles.room}>
@@ -704,16 +742,48 @@ export default function DarkroomScreen() {
             className={styles.photo}
           />
           {learningSource === "jpeg" && showJpegPreview ? (
-            <JpegRenderedPreview
-              eventId={selection.eventId}
-              fingerprint={file.fingerprint}
-              controls={jpegControls}
-              alt={`עריכת JPEG ${file.filename}`}
-              className={styles.photoAfter}
-              style={{
-                clipPath: `inset(0 0 0 ${split}%)`,
-              }}
-            />
+            <>
+              <CameraPreview
+                eventId={selection.eventId}
+                fingerprint={file.fingerprint}
+                alt={`המחשת JPEG ${file.filename}`}
+                className={styles.photoAfter}
+                style={{
+                  ...jpegPreviewStyle,
+                  clipPath: `inset(0 0 0 ${split}%)`,
+                }}
+              />
+              {!holdOriginal && (
+                <>
+                  <span
+                    className={styles.warmthOverlay}
+                    style={{
+                      ...jpegPreviewStyle,
+                      clipPath: `inset(0 0 0 ${split}%)`,
+                    }}
+                    aria-hidden="true"
+                  />
+                  <span
+                    className={styles.tintOverlay}
+                    style={{
+                      ...jpegPreviewStyle,
+                      clipPath: `inset(0 0 0 ${split}%)`,
+                    }}
+                    aria-hidden="true"
+                  />
+                </>
+              )}
+              <JpegRenderedPreview
+                eventId={selection.eventId}
+                fingerprint={file.fingerprint}
+                controls={jpegControls}
+                alt={`JPEG render ${file.filename}`}
+                className={styles.photoAfter}
+                style={{
+                  clipPath: `inset(0 0 0 ${split}%)`,
+                }}
+              />
+            </>
           ) : showIllustration ? (
             <>
               <CameraPreview
@@ -741,7 +811,7 @@ export default function DarkroomScreen() {
           <span className={`${styles.badge} ${styles.beforeBadge}`}>מקור</span>
           {hasComparison && (
             <span className={`${styles.badge} ${styles.afterBadge}`}>
-              {learningSource === "jpeg" ? "עריכה" : "המחשה"}
+              המחשה
             </span>
           )}
           {hasComparison && (
@@ -767,7 +837,7 @@ export default function DarkroomScreen() {
           {hasComparison && (
             <p className={styles.truth}>
               {learningSource === "jpeg"
-                ? "תצוגת JPEG אמיתית · מופקת על ידי מנוע ה-render המשותף."
+                ? "המחשה מיידית · ה-render המדויק מתעדכן ברקע."
                 : "תצוגה משוערת בלבד · התוצאה הסופית נקבעת ב-Lightroom."}
             </p>
           )}
