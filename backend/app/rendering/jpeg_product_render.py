@@ -384,8 +384,10 @@ def render_jpeg_product(
         try:
             source_rgb, _ = read_jpeg_working_rgb(source_path)
         except (JpegIntegrityError, OSError) as exc:
+            detail = str(exc).strip() or exc.__class__.__name__
             raise JpegProductRenderError(
-                f"JPEG working-space decode failed: {source_path.name}"
+                "JPEG working-space decode failed: "
+                f"{source_path.name}: {detail}"
             ) from exc
 
         render_source = (
