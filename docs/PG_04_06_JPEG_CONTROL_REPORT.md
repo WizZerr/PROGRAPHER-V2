@@ -87,3 +87,19 @@ JPEG now uses the same interaction principle without weakening render truth:
 
 This changes interaction latency only. The canonical recipe, revision guards,
 renderer and export semantics remain unchanged.
+
+
+## Interactive/render handoff correction — 2026-10-05
+
+Windows manual testing exposed a visible one-second "settle": the local JPEG
+illustration appeared immediately, then the authoritative backend PNG replaced
+it with noticeably different brightness/color.
+
+Root cause: the local layer used approximate CSS filters/overlays, while the
+backend used the exact `jpeg-global-controls-v1` affine RGB recipe.
+
+The local JPEG path now mirrors the exact backend formulas as an sRGB SVG
+component-transfer matrix (per-channel slope + shared contrast bias). The
+backend render remains active in the background for safety/provenance but is no
+longer painted over the interactive preview. This removes the visual handoff
+rather than hiding it with a spinner or delay.

@@ -14,6 +14,7 @@ type Props = {
   alt: string;
   className?: string;
   style?: CSSProperties;
+  showRendered?: boolean;
 };
 
 type RenderedPreview = {
@@ -42,6 +43,7 @@ export default function JpegRenderedPreview({
   alt,
   className,
   style,
+  showRendered = true,
 }: Props) {
   const [rendered, setRendered] = useState<RenderedPreview | null>(null);
   const [failure, setFailure] = useState<PreviewFailure | null>(null);
@@ -152,7 +154,11 @@ export default function JpegRenderedPreview({
 
   // While the authoritative render is still catching up, render nothing here.
   // DarkroomScreen keeps the instant local illustration visible underneath.
-  if (!rendered || rendered.signature !== signature) {
+  if (
+    !showRendered ||
+    !rendered ||
+    rendered.signature !== signature
+  ) {
     return null;
   }
 

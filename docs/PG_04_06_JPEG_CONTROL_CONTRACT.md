@@ -79,3 +79,24 @@ The JPEG Darkroom uses a dual preview pipeline:
 
 The local interactive layer is explicitly labeled `המחשה`; it is not presented
 as the authoritative JPEG render.
+
+
+## Exact interactive JPEG matrix
+
+The current `jpeg-global-controls-v1` mapping is a diagonal affine transform in
+encoded sRGB:
+
+`out_channel = slope_channel * in_channel + bias`, clipped to the display range.
+
+The Darkroom interactive layer now mirrors the exact v1 formulas in an SVG
+`feComponentTransfer` filter with `colorInterpolationFilters="sRGB"`.
+This removes the previous approximate CSS brightness/contrast/color overlays.
+
+The canonical backend renderer still runs after debounce for revision validation,
+cache/provenance and export truth, but its PNG no longer replaces the interactive
+image on screen. Therefore an authoritative background render cannot cause a
+visible one-second handoff/jump while the user edits.
+
+If the JPEG control contract stops being diagonal affine in a future version,
+this browser matrix must not silently emulate the new contract; a new compatible
+interactive renderer is required.

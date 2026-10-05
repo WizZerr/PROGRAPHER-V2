@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import { useCallback, useEffect, useId, useMemo, useRef, useState, type CSSProperties } from "react";
 import { open } from "@tauri-apps/plugin-dialog";
 import WorkspaceBar from "@/components/layout/WorkspaceBar";
 import CameraPreview from "@/features/review/CameraPreview";
@@ -47,37 +47,35 @@ function formatRecipe(recipe: Recipe | null | undefined) {
   return `${exposure} / ${recipe.temperature}K / ${tint}`;
 }
 
-function jpegIllustrationStyle(
-  controls: JpegGlobalControls,
-  enabled: boolean,
-): CSSProperties {
-  if (!enabled) return {};
+type JpegPreviewMatrix = {
+  redSlope: number;
+  greenSlope: number;
+  blueSlope: number;
+  bias: number;
+};
 
-  const brightness = 2 ** (controls.brightness / 100);
-  const contrast = 1 + 0.005 * controls.contrast;
-  const warmthAmount = Math.min(1, Math.abs(controls.warmth) / 100);
-  const tintAmount = Math.min(1, Math.abs(controls.tint) / 100);
+function jpegPreviewMatrix(
+  controls: JpegGlobalControls,
+): JpegPreviewMatrix {
+  // Keep this mapping byte-for-byte equivalent in meaning to
+  // backend/app/rendering/jpeg_controls.py::jpeg_controls_to_recipe.
+  // The current JPEG control contract is diagonal affine RGB, so the browser
+  // can represent it directly with an sRGB SVG component-transfer filter.
+  const brightnessGain = 2 ** (controls.brightness / 100);
+  const contrastGain = 1 + 0.005 * controls.contrast;
+  const warmth = controls.warmth / 100;
+  const tint = controls.tint / 100;
+
+  const redGain = 1 + 0.12 * warmth + 0.06 * tint;
+  const greenGain = 1 - 0.08 * tint;
+  const blueGain = 1 - 0.12 * warmth + 0.06 * tint;
+  const bias = 0.5 * (1 - contrastGain);
 
   return {
-    ["--preview-brightness" as string]: String(brightness),
-    ["--preview-contrast" as string]: String(contrast),
-    ["--preview-sepia" as string]: "0",
-    ["--preview-saturate" as string]: "1",
-    ["--preview-hue" as string]: "0deg",
-    ["--preview-warmth-color" as string]:
-      controls.warmth < 0
-        ? "rgb(70 145 255)"
-        : controls.warmth > 0
-          ? "rgb(255 148 72)"
-          : "transparent",
-    ["--preview-warmth-opacity" as string]: String(warmthAmount * 0.16),
-    ["--preview-tint-color" as string]:
-      controls.tint < 0
-        ? "rgb(42 201 122)"
-        : controls.tint > 0
-          ? "rgb(218 74 184)"
-          : "transparent",
-    ["--preview-tint-opacity" as string]: String(tintAmount * 0.14),
+    redSlope: brightnessGain * contrastGain * redGain,
+    greenSlope: brightnessGain * contrastGain * greenGain,
+    blueSlope: brightnessGain * contrastGain * blueGain,
+    bias,
   };
 }
 
@@ -121,6 +119,7 @@ export default function DarkroomScreen() {
     openGallery,
   } = useTestingNav();
   const frameRef = useRef<HTMLDivElement>(null);
+  const jpegFilterId = `jpeg-preview-${useId().replace(/:/g, "")}`;
   const filmstripRef = useRef<HTMLDivElement>(null);
   const activeThumbRef = useRef<HTMLButtonElement>(null);
   const [filmstripWindow, setFilmstripWindow] = useState({ start: 0, end: 24 });
@@ -709,10 +708,11 @@ export default function DarkroomScreen() {
     current,
     showIllustration && !holdOriginal,
   );
-  const jpegPreviewStyle = jpegIllustrationStyle(
-    jpegControls,
-    showJpegPreview && !holdOriginal,
-  );
+  const jpegMatrix = jpegPreviewMatrix(jpegControls);
+  const jpegPreviewStyle: CSSProperties =
+    showJpegPreview && !holdOriginal
+      ? { filter: `url(#${jpegFilterId})` }
+      : {};
 
   return (
     <div className={styles.room}>
@@ -743,6 +743,41 @@ export default function DarkroomScreen() {
           />
           {learningSource === "jpeg" && showJpegPreview ? (
             <>
+              <svg
+                className={styles.jpegFilterDefs}
+                width="0"
+                height="0"
+                aria-hidden="true"
+                focusable="false"
+              >
+                <filter
+                  id={jpegFilterId}
+                  x="0"
+                  y="0"
+                  width="100%"
+                  height="100%"
+                  colorInterpolationFilters="sRGB"
+                >
+                  <feComponentTransfer>
+                    <feFuncR
+                      type="linear"
+                      slope={jpegMatrix.redSlope}
+                      intercept={jpegMatrix.bias}
+                    />
+                    <feFuncG
+                      type="linear"
+                      slope={jpegMatrix.greenSlope}
+                      intercept={jpegMatrix.bias}
+                    />
+                    <feFuncB
+                      type="linear"
+                      slope={jpegMatrix.blueSlope}
+                      intercept={jpegMatrix.bias}
+                    />
+                    <feFuncA type="identity" />
+                  </feComponentTransfer>
+                </filter>
+              </svg>
               <CameraPreview
                 eventId={selection.eventId}
                 fingerprint={file.fingerprint}
@@ -753,35 +788,12 @@ export default function DarkroomScreen() {
                   clipPath: `inset(0 0 0 ${split}%)`,
                 }}
               />
-              {!holdOriginal && (
-                <>
-                  <span
-                    className={styles.warmthOverlay}
-                    style={{
-                      ...jpegPreviewStyle,
-                      clipPath: `inset(0 0 0 ${split}%)`,
-                    }}
-                    aria-hidden="true"
-                  />
-                  <span
-                    className={styles.tintOverlay}
-                    style={{
-                      ...jpegPreviewStyle,
-                      clipPath: `inset(0 0 0 ${split}%)`,
-                    }}
-                    aria-hidden="true"
-                  />
-                </>
-              )}
               <JpegRenderedPreview
                 eventId={selection.eventId}
                 fingerprint={file.fingerprint}
                 controls={jpegControls}
-                alt={`JPEG render ${file.filename}`}
-                className={styles.photoAfter}
-                style={{
-                  clipPath: `inset(0 0 0 ${split}%)`,
-                }}
+                alt={`JPEG render verification ${file.filename}`}
+                showRendered={false}
               />
             </>
           ) : showIllustration ? (
@@ -837,7 +849,7 @@ export default function DarkroomScreen() {
           {hasComparison && (
             <p className={styles.truth}>
               {learningSource === "jpeg"
-                ? "המחשה מיידית · ה-render המדויק מתעדכן ברקע."
+                ? "המחשה מיידית · ה-render המדויק מאומת ברקע."
                 : "תצוגה משוערת בלבד · התוצאה הסופית נקבעת ב-Lightroom."}
             </p>
           )}
