@@ -48,7 +48,7 @@ Historical plans and superseded planning notes live under `docs/archive/` and ar
 
 - Added automated backup-copy restore coverage for Event + RAW profile + saved Review; source RAW must remain byte-identical.
 - Added `docs/PG_00_05_FIXTURE_RESTORE_MATRIX.md`.
-- **BUG-PG00-001:** JPEG profile stores an absolute manifest path; portable restore is not yet proven.
+- **BUG-PG00-001:** portable JPEG manifest reference + legacy absolute-path rebinding are implemented; focused local restore verification is pending before marking the bug closed.
 - Real historical backup restore and real-camera licensed fixture evidence are still missing.
 
 ## Current blockers / gates
@@ -231,3 +231,27 @@ Do not start Auth/Cloud implementation or a new production Brain.
 - D-015 records the draft threshold/primary-metric decision.
 - Phase-01 preparation is now complete across PG-01.01–PG-01.07 at draft/
   engineering-prepared level; ratification remains blocked by G0.
+
+
+## Frontend verification — 2026-10-06
+
+Current UI baseline `18fb9438bc273dd9809aa23ce864c23384a3f91f` passed locally on Windows:
+
+- `npm.cmd run lint` — PASS,
+- `npx.cmd tsc --noEmit` — PASS,
+- `npm.cmd run build` — PASS,
+- Next.js 16.3.5 production build completed successfully.
+
+The frontend cleanup package is therefore engineering-verified on Windows at
+that baseline. Further UI work should be driven by a concrete UX defect rather
+than general polishing.
+
+## PG-00.05 — BUG-PG00-001 implementation
+
+- JPEG profile persistence now stores the managed manifest as a relative
+  `testing_datasets/<profile_id>/manifest.json` reference.
+- Runtime/API resolution binds it to the active `PROGRAPHER_DATA_DIR`.
+- Legacy absolute managed-manifest paths are rebound by profile identity so a
+  restored backup does not silently keep reading the old app-data copy.
+- Two focused restore regressions were added; local execution is still required
+  before B-007 is closed.

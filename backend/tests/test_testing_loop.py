@@ -158,6 +158,152 @@ def test_pg00_backup_copy_restores_event_raw_profile_and_review(
     assert event_raw.read_bytes() == source_bytes
 
 
+def test_pg00_backup_copy_restores_jpeg_manifest_portably(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    source_data = tmp_path / "source-data"
+    restored_data = tmp_path / "restored-data"
+    originals = tmp_path / "jpeg-originals"
+    edits = tmp_path / "jpeg-edits"
+
+    original_path = originals / "IMG_0001.jpg"
+    edited_path = edits / "IMG_0001.jpg"
+    _jpeg(original_path, b"jpeg-original-source" * 200)
+    _jpeg(edited_path, b"jpeg-photographer-edit" * 200)
+    original_bytes = original_path.read_bytes()
+    edited_bytes = edited_path.read_bytes()
+
+    monkeypatch.setenv("PROGRAPHER_DATA_DIR", str(source_data))
+
+    with TestClient(create_app()) as client:
+        created = client.post(
+            "/api/testing/profile",
+            headers=HEADERS,
+            json={
+                "raw_root": str(originals),
+                "edits_root": str(edits),
+                "learning_source": "jpeg",
+            },
+        )
+
+    assert created.status_code == 200
+    created_body = created.json()
+    profile_id = created_body["profile_id"]
+    source_manifest = Path(created_body["dataset_manifest_path"])
+    assert source_manifest == (
+        source_data
+        / "testing_datasets"
+        / profile_id
+        / "manifest.json"
+    )
+    assert source_manifest.is_file()
+
+    source_document = __import__("json").loads(
+        (source_data / "testing_profile.json").read_text(encoding="utf-8")
+    )
+    stored_reference = source_document["profiles"]["jpeg"]["dataset_manifest_path"]
+    assert stored_reference == f"testing_datasets/{profile_id}/manifest.json"
+    assert not Path(stored_reference).is_absolute()
+
+    manifest_bytes = source_manifest.read_bytes()
+    shutil.copytree(source_data, restored_data)
+    monkeypatch.setenv("PROGRAPHER_DATA_DIR", str(restored_data))
+
+    with TestClient(create_app()) as restored_client:
+        restored = restored_client.get(
+            "/api/testing/profile?learning_source=jpeg",
+            headers=HEADERS,
+        )
+
+    assert restored.status_code == 200
+    restored_manifest = Path(restored.json()["dataset_manifest_path"])
+    assert restored_manifest == (
+        restored_data
+        / "testing_datasets"
+        / profile_id
+        / "manifest.json"
+    )
+    assert restored_manifest.is_file()
+    assert restored_manifest.read_bytes() == manifest_bytes
+    assert original_path.read_bytes() == original_bytes
+    assert edited_path.read_bytes() == edited_bytes
+
+
+def test_pg00_legacy_absolute_jpeg_manifest_rebinds_to_restored_data_dir(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    source_data = tmp_path / "legacy-source-data"
+    restored_data = tmp_path / "legacy-restored-data"
+    originals = tmp_path / "legacy-originals"
+    edits = tmp_path / "legacy-edits"
+    _jpeg(originals / "IMG_0001.jpg", b"legacy-original" * 200)
+    _jpeg(edits / "IMG_0001.jpg", b"legacy-edited" * 200)
+
+    monkeypatch.setenv("PROGRAPHER_DATA_DIR", str(source_data))
+
+    with TestClient(create_app()) as client:
+        created = client.post(
+            "/api/testing/profile",
+            headers=HEADERS,
+            json={
+                "raw_root": str(originals),
+                "edits_root": str(edits),
+                "learning_source": "jpeg",
+            },
+        )
+
+    assert created.status_code == 200
+    body = created.json()
+    profile_id = body["profile_id"]
+    source_manifest = Path(body["dataset_manifest_path"])
+    assert source_manifest.is_file()
+
+    document_path = source_data / "testing_profile.json"
+    document = __import__("json").loads(document_path.read_text(encoding="utf-8"))
+    document["profiles"]["jpeg"]["dataset_manifest_path"] = str(source_manifest)
+    document_path.write_text(
+        __import__("json").dumps(document),
+        encoding="utf-8",
+    )
+
+    shutil.copytree(source_data, restored_data)
+    monkeypatch.setenv("PROGRAPHER_DATA_DIR", str(restored_data))
+
+    with TestClient(create_app()) as restored_client:
+        restored = restored_client.get(
+            "/api/testing/profile?learning_source=jpeg",
+            headers=HEADERS,
+        )
+        assert restored.status_code == 200
+        restored_manifest = Path(restored.json()["dataset_manifest_path"])
+        assert restored_manifest == (
+            restored_data
+            / "testing_datasets"
+            / profile_id
+            / "manifest.json"
+        )
+        assert restored_manifest.is_file()
+        assert restored_manifest != source_manifest
+
+        activated = restored_client.post(
+            "/api/testing/profile/activate",
+            headers=HEADERS,
+            json={"learning_source": "jpeg"},
+        )
+        assert activated.status_code == 200
+        assert Path(activated.json()["dataset_manifest_path"]) == restored_manifest
+
+    migrated_document = __import__("json").loads(
+        (restored_data / "testing_profile.json").read_text(encoding="utf-8")
+    )
+    assert (
+        migrated_document["profiles"]["jpeg"]["dataset_manifest_path"]
+        == f"testing_datasets/{profile_id}/manifest.json"
+    )
+
+
 def test_profile_uses_median_and_keeps_missing_targets_out(
     tmp_path: Path,
     monkeypatch,

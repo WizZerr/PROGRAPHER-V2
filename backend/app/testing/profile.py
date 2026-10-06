@@ -63,6 +63,43 @@ def _dataset_manifest_path(profile_id: str) -> Path:
     return user_data_dir() / "testing_datasets" / profile_id / "manifest.json"
 
 
+def _dataset_manifest_reference(profile_id: str) -> str:
+    return (Path("testing_datasets") / profile_id / "manifest.json").as_posix()
+
+
+def _normalize_dataset_manifest_reference(
+    value: str | None,
+    profile_id: str | None,
+) -> str | None:
+    if not value:
+        return None
+
+    path = Path(value)
+    if not path.is_absolute():
+        return path.as_posix()
+
+    if (
+        profile_id
+        and path.name == "manifest.json"
+        and path.parent.name == profile_id
+        and path.parent.parent.name == "testing_datasets"
+    ):
+        return _dataset_manifest_reference(profile_id)
+
+    return str(path)
+
+
+def _runtime_profile_summary(summary: dict) -> TestingProfileSummary:
+    payload = dict(summary)
+    reference = payload.get("dataset_manifest_path")
+    if reference:
+        manifest_path = Path(reference)
+        if not manifest_path.is_absolute():
+            manifest_path = user_data_dir() / manifest_path
+        payload["dataset_manifest_path"] = str(manifest_path)
+    return TestingProfileSummary.model_validate(payload)
+
+
 def _write_jpeg_manifest(
     *,
     profile_id: str,
@@ -127,6 +164,10 @@ def _normalize_profile_document(document: dict) -> dict:
                 "jpeg_pairs" if source == "jpeg" else "raw_xmp",
             )
             summary.setdefault("dataset_manifest_path", None)
+            summary["dataset_manifest_path"] = _normalize_dataset_manifest_reference(
+                summary.get("dataset_manifest_path"),
+                summary.get("profile_id"),
+            )
             profiles[source] = summary
         normalized["profiles"] = profiles
         reviews = document.get("reviews") or {}
@@ -149,6 +190,10 @@ def _normalize_profile_document(document: dict) -> dict:
         "jpeg_pairs" if source == "jpeg" else "raw_xmp",
     )
     summary.setdefault("dataset_manifest_path", None)
+    summary["dataset_manifest_path"] = _normalize_dataset_manifest_reference(
+        summary.get("dataset_manifest_path"),
+        summary.get("profile_id"),
+    )
     normalized = _empty_profile_document()
     normalized["active_source"] = source
     normalized["profiles"][source] = summary
@@ -246,7 +291,12 @@ def _round_exposure(value: float) -> float:
 def _persist_profile(summary: TestingProfileSummary) -> None:
     document = load_profile_document() or _empty_profile_document()
     profiles = dict(document.get("profiles") or {})
-    profiles[summary.learning_source] = summary.model_dump()
+    persisted = summary.model_dump()
+    persisted["dataset_manifest_path"] = _normalize_dataset_manifest_reference(
+        summary.dataset_manifest_path,
+        summary.profile_id,
+    )
+    profiles[summary.learning_source] = persisted
     document["profiles"] = profiles
     document["active_source"] = summary.learning_source
     _reviews_for(document, summary.learning_source)
@@ -510,7 +560,7 @@ def active_testing_profile(
     summary = (document.get("profiles") or {}).get(source)
     if not isinstance(summary, dict):
         return None
-    return TestingProfileSummary.model_validate(summary)
+    return _runtime_profile_summary(summary)
 
 
 def activate_testing_profile(
@@ -526,7 +576,7 @@ def activate_testing_profile(
         )
     document["active_source"] = learning_source
     _write_document(document)
-    return TestingProfileSummary.model_validate(summary)
+    return _runtime_profile_summary(summary)
 
 
 def build_review_sheet(
