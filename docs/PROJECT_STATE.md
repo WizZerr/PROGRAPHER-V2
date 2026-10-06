@@ -19,7 +19,7 @@ Historical plans and superseded planning notes live under `docs/archive/` and ar
 
 ## Current execution position
 
-- Active preparation lane: **Phase 01 — product/data/measurement contracts**, currently **PG-01.06 — Evaluation Protocol finalization**.
+- **Phase 01 preparation package is complete at draft/engineering-prepared level (PG-01.01–PG-01.07).** Ratification remains blocked by G0. The next executable non-manual engineering lane is **PG-00.05 — portability/restore hardening**.
 - **PG-03.02–PG-03.09 — V**: pre-photographer JPEG/data-safety package complete.
 - **PG-06.01 — V**: photographer data-request package ready.
 - **PG-06.02 — BLOCKED** until authorized photographer material arrives.
