@@ -114,57 +114,6 @@
   line-height: 1.5;
 }
 
-.heroEngine {
-  position: fixed;
-  right: calc(var(--pg-sidebar-width) + 18px);
-  bottom: 18px;
-  z-index: 40;
-  min-height: 36px;
-  padding: 7px 11px;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  border: 1px solid rgba(120, 145, 180, 0.25);
-  border-radius: 999px;
-  background: rgba(9, 14, 22, 0.9);
-  color: #dbe3ef;
-  box-shadow:
-    0 10px 28px rgba(0, 0, 0, 0.24),
-    inset 0 1px 0 rgba(255, 255, 255, 0.035);
-  backdrop-filter: blur(14px);
-}
-
-.heroEngine strong {
-  font-size: 12px;
-  font-weight: 600;
-  white-space: nowrap;
-}
-
-.engineMeta {
-  color: #65738a;
-  font-family: "Inter", "Heebo", sans-serif;
-  font-size: 10px;
-  white-space: nowrap;
-}
-
-.engineDot {
-  width: 8px;
-  height: 8px;
-  flex: 0 0 8px;
-  border-radius: 50%;
-  background: var(--pg-success);
-  box-shadow:
-    0 0 0 3px rgba(78, 226, 138, 0.08),
-    0 0 9px rgba(78, 226, 138, 0.42);
-}
-
-.heroEngineError .engineDot {
-  background: var(--pg-danger);
-  box-shadow:
-    0 0 0 3px rgba(255, 107, 114, 0.08),
-    0 0 9px rgba(255, 107, 114, 0.36);
-}
-
 .actions {
   width: 100%;
   margin-top: 25px;
@@ -385,6 +334,53 @@
   font-weight: 600;
 }
 
+.localCardTopline {
+  justify-content: space-between;
+}
+
+.cardTitleGroup {
+  min-width: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.engineStatusInline {
+  min-height: 28px;
+  padding: 0 9px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  flex: 0 0 auto;
+  border: 1px solid rgba(78, 226, 138, 0.16);
+  border-radius: 999px;
+  background: rgba(78, 226, 138, 0.07);
+  color: #7ee6a7;
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.engineStatusDot {
+  width: 7px;
+  height: 7px;
+  flex: 0 0 7px;
+  border-radius: 50%;
+  background: var(--pg-success);
+  box-shadow: 0 0 8px rgba(78, 226, 138, 0.55);
+}
+
+.engineStatusError {
+  border-color: rgba(255, 107, 114, 0.18);
+  background: rgba(255, 107, 114, 0.07);
+  color: #ff9ca1;
+}
+
+.engineStatusError .engineStatusDot {
+  background: var(--pg-danger);
+  box-shadow: 0 0 8px rgba(255, 107, 114, 0.48);
+}
+
 .systemIcon {
   width: 43px;
   height: 43px;
@@ -493,23 +489,7 @@
   }
 }
 
-@media (max-width: 1280px) {
-  .heroEngine {
-    right: calc(var(--pg-sidebar-compact-width) + 16px);
-    bottom: 16px;
-  }
-}
-
 @media (max-width: 820px) {
-  .heroEngine {
-    right: 14px;
-    bottom: 14px;
-  }
-
-  .engineMeta {
-    display: none;
-  }
-
   .hero {
     height: 500px;
   }

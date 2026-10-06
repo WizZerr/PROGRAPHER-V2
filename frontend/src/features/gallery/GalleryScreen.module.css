@@ -1210,13 +1210,17 @@
 }
 
 .loadingState {
-  grid-template-columns: auto auto;
+  grid-template-columns: minmax(0, 1fr);
+  justify-items: center;
+  gap: 14px;
+  direction: rtl;
 }
 
 .loadingState > div {
   display: grid;
-  gap: 4px;
-  text-align: right;
+  justify-items: center;
+  gap: 5px;
+  text-align: center;
 }
 
 .loadingState strong,

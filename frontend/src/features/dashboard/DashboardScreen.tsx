@@ -129,20 +129,6 @@ export default function DashboardScreen() {
         </div>
         <div className={styles.heroShade} aria-hidden="true" />
 
-        <div
-          className={`${styles.heroEngine} ${state === "error" ? styles.heroEngineError : ""}`}
-        >
-          <span className={styles.engineDot} aria-hidden="true" />
-          <strong>
-            {state === "checking"
-              ? "מתחבר למנוע"
-              : state === "connected"
-                ? "מנוע מחובר"
-                : "המנוע אינו זמין"}
-          </strong>
-          <span className={styles.engineMeta}>ProGrapher Engine</span>
-        </div>
-
         <div className={styles.heroCopy}>
           <span className={styles.heroGreeting}>שלום,</span>
           <h2>
@@ -213,9 +199,23 @@ export default function DashboardScreen() {
           <small>{profile ? `${profile.usable_pairs.toLocaleString("he-IL")} זוגות שמישים` : "הלמידה מחכה לחומר"}</small>
         </article>
         <article className={styles.card}>
-          <div className={styles.cardTopline}>
-            <span className={styles.systemIcon}><SystemGlyph kind="local" /></span>
-            <span>עיבוד מקומי</span>
+          <div className={`${styles.cardTopline} ${styles.localCardTopline}`}>
+            <span className={styles.cardTitleGroup}>
+              <span className={styles.systemIcon}><SystemGlyph kind="local" /></span>
+              <span>עיבוד מקומי</span>
+            </span>
+            <span
+              className={`${styles.engineStatusInline} ${
+                state === "error" ? styles.engineStatusError : ""
+              }`}
+            >
+              <span className={styles.engineStatusDot} aria-hidden="true" />
+              {state === "checking"
+                ? "מתחבר"
+                : state === "connected"
+                  ? "מחובר"
+                  : "לא זמין"}
+            </span>
           </div>
           <strong>{engine ? `127.0.0.1:${engine.port}` : "—"}</strong>
           <small>{runtime?.service ?? "המנוע עדיין לא זמין"}</small>
