@@ -524,12 +524,6 @@
     width: auto;
   }
 
-  .heroEngine {
-    top: 18px;
-    left: 18px;
-    right: auto;
-  }
-
   .hero h2 {
     font-size: 55px;
   }
@@ -575,29 +569,6 @@
   .hero p {
     margin-top: 14px;
     font-size: 17px;
-  }
-
-  .heroEngine {
-    top: 20px;
-    left: 20px;
-    min-width: 205px;
-    min-height: 76px;
-    padding: 12px 14px;
-  }
-
-  .heroEngine strong {
-    font-size: 17px;
-  }
-
-  .heroEngine span:not(.engineDot) {
-    font-size: 12px;
-  }
-
-  .engineDot {
-    width: 10px;
-    height: 10px;
-    flex-basis: 10px;
-    margin-top: 5px;
   }
 
   .actions {
@@ -668,10 +639,6 @@
     font-size: 15px;
   }
 
-  .heroEngine {
-    min-width: 180px;
-  }
-
   .eventStrip {
     grid-template-columns: 1fr;
   }
@@ -700,13 +667,6 @@
   .primary,
   .secondary {
     width: 100%;
-  }
-
-  .heroEngine {
-    top: 14px;
-    left: 14px;
-    min-width: 160px;
-    min-height: 64px;
   }
 
   .sectionHeader h3 {
