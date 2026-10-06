@@ -113,3 +113,31 @@ Changing a threshold after observing a candidate cannot retroactively make that
 candidate pass. A new protocol version and future evaluation are required.
 
 This decision remains draft until G0 and Phase-01 ratification.
+
+
+## D-016 — Account-aware UI uses an identity seam before cloud Auth
+
+Adopted 2026-10-07 as frontend preparation only.
+
+User-facing personalization must consume the ProGrapher account identity contract
+rather than reading a future cloud provider directly from individual screens.
+
+Initial UI identity fields:
+
+- `firstName`,
+- `displayName`,
+- `profileName`.
+
+Display rules:
+
+- Dashboard greeting: `שלום, {firstName}`,
+- profile owner label: `profileName` when set, otherwise `firstName`.
+
+Until the gated Auth/Cloud phase begins, this identity is persisted locally by
+the frontend as a temporary compatibility seam. This does **not** start
+Supabase/Auth implementation, does not create a production Account, and does
+not change D-008/D-012 cloud gating.
+
+When real Accounts arrive, the provider behind this contract is replaced; the
+Dashboard/Profile UI should not need to be rewritten around provider-specific
+APIs.

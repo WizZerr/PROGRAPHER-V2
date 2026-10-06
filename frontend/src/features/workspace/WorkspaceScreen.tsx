@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import AppShell from "@/components/layout/AppShell";
+import { AccountIdentityProvider } from "@/features/account/AccountIdentity";
 import DashboardScreen from "@/features/dashboard/DashboardScreen";
 import EventsScreen from "@/features/events/EventsScreen";
 import GalleryScreen from "@/features/gallery/GalleryScreen";
@@ -40,6 +41,7 @@ export default function WorkspaceScreen() {
   }
 
   return (
+    <AccountIdentityProvider>
     <TestingNavProvider
       onOpenDarkroom={() => selectView("darkroom")}
       onOpenGallery={() => selectView("gallery")}
@@ -64,5 +66,6 @@ export default function WorkspaceScreen() {
       </AppShell>
     </WorkspaceNavProvider>
     </TestingNavProvider>
+    </AccountIdentityProvider>
   );
 }

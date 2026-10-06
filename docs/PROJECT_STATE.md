@@ -254,3 +254,19 @@ than general polishing.
 - Legacy absolute managed-manifest paths are rebound by profile identity so a
   restored backup does not silently keep reading the old app-data copy.
 - Two focused restore regressions plus the existing RAW restore regression passed locally on Windows: **3 passed / 0 failed in 1.11s**. B-007 is closed.
+
+
+## Account-ready frontend identity — 2026-10-07
+
+- Added a frontend `AccountIdentity` seam with `firstName`, `displayName`
+  and optional `profileName`.
+- Dashboard greeting now derives from that identity contract:
+  `שלום, {firstName}`.
+- The profile screen derives its owner label from `profileName` when present,
+  otherwise from `firstName`.
+- Identity is local-only for now and editable from profile settings.
+- This is forward-compatibility work only; Auth/Supabase/Cloud implementation
+  remains gated and is **not started**.
+- Profile UX is reorganized around the two expected initial JPEG learning
+  paths, with RAW secondary and technical settings hidden behind the profile
+  settings dialog.

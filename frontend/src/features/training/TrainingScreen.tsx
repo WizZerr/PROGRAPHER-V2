@@ -30,7 +30,27 @@ export default function TrainingScreen() {
   }, []);
 
   useEffect(() => {
-    void getTestingProfile()
+    let preferred: LearningSource | null = null;
+
+    try {
+      const stored = window.sessionStorage.getItem(
+        "prographer.training.preferred-source",
+      );
+      if (stored === "raw" || stored === "jpeg") {
+        preferred = stored;
+        window.sessionStorage.removeItem(
+          "prographer.training.preferred-source",
+        );
+      }
+    } catch {
+      // The training screen can still open without session storage.
+    }
+
+    if (preferred) {
+      setLearningSource(preferred);
+    }
+
+    void getTestingProfile(preferred ?? undefined)
       .then(applyProfile)
       .catch((cause: unknown) => {
         setError(cause instanceof Error ? cause.message : "לא ניתן לטעון את מצב הלמידה.");

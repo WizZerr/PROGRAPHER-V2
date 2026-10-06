@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useAccountIdentity } from "@/features/account/AccountIdentity";
 import { getRuntimeInfo } from "@/features/dashboard/dashboard.api";
 import EventCover from "@/features/events/EventCover";
 import { listEvents, type EventSummary } from "@/features/events/events.api";
@@ -68,6 +69,7 @@ function SystemGlyph({ kind }: { kind: SystemGlyphKind }) {
 }
 
 export default function DashboardScreen() {
+  const { firstNameLabel, profileOwnerLabel } = useAccountIdentity();
   const openView = useWorkspaceNav();
   const { setGalleryEventId, openGallery } = useTestingNav();
   const [state, setState] = useState<ConnectionState>("checking");
@@ -130,7 +132,7 @@ export default function DashboardScreen() {
         <div className={styles.heroShade} aria-hidden="true" />
 
         <div className={styles.heroCopy}>
-          <span className={styles.heroGreeting}>שלום,</span>
+          <span className={styles.heroGreeting}>שלום, {firstNameLabel}</span>
           <h2>
             <span>סביבת העבודה</span>
             <span className={styles.heroAccent}>מוכנים להתחיל.</span>
@@ -193,7 +195,7 @@ export default function DashboardScreen() {
         <article className={styles.card}>
           <div className={styles.cardTopline}>
             <span className={styles.systemIcon}><SystemGlyph kind="profile" /></span>
-            <span>הפרופיל הפעיל</span>
+            <span>הפרופיל של {profileOwnerLabel}</span>
           </div>
           <strong>{profile ? (profile.learning_source === "jpeg" ? "JPEG" : "RAW") : "לא הוגדר"}</strong>
           <small>{profile ? `${profile.usable_pairs.toLocaleString("he-IL")} זוגות שמישים` : "הלמידה מחכה לחומר"}</small>
