@@ -1167,47 +1167,114 @@
 .emptyWorkflow {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 12px;
+  gap: 16px;
 }
 
 .emptyWorkflow article {
-  min-height: 104px;
-  padding: 16px 18px;
+  position: relative;
+  min-height: 154px;
+  padding: 24px 26px;
+  overflow: hidden;
   display: flex;
   align-items: flex-start;
-  gap: 14px;
-  border: 1px solid rgba(120, 145, 180, 0.16);
-  border-radius: 12px;
+  gap: 18px;
+  border: 1px solid rgba(128, 148, 182, 0.2);
+  border-radius: 14px;
   background:
-    linear-gradient(180deg, rgba(17, 25, 38, 0.94), rgba(11, 17, 27, 0.96));
-  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.02) inset;
+    radial-gradient(circle at 92% 12%, rgba(111, 91, 255, 0.095), transparent 28%),
+    linear-gradient(180deg, rgba(18, 27, 41, 0.98), rgba(10, 16, 25, 0.98));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.03),
+    0 12px 34px rgba(0, 0, 0, 0.12);
+  transition:
+    transform var(--pg-transition-fast),
+    border-color var(--pg-transition-fast),
+    box-shadow var(--pg-transition-fast);
+}
+
+.emptyWorkflow article::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 26px;
+  width: 54px;
+  height: 2px;
+  border-radius: 0 0 999px 999px;
+  background: linear-gradient(90deg, rgba(116, 103, 248, 0.22), #8074ff);
+  box-shadow: 0 0 14px rgba(116, 103, 248, 0.24);
+}
+
+.emptyWorkflow article:hover {
+  border-color: rgba(138, 123, 255, 0.32);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.035),
+    0 16px 38px rgba(0, 0, 0, 0.16);
+  transform: translateY(-2px);
 }
 
 .workflowIndex {
-  min-width: 34px;
-  color: #7d70f8;
+  width: 46px;
+  height: 46px;
+  flex: 0 0 46px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(138, 123, 255, 0.26);
+  border-radius: 11px;
+  background: rgba(111, 91, 255, 0.1);
+  color: #9c91ff;
   font-family: "Inter", sans-serif;
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.035);
 }
 
 .emptyWorkflow article > div {
+  min-width: 0;
+  padding-top: 2px;
   display: grid;
-  gap: 5px;
+  gap: 9px;
 }
 
 .emptyWorkflow strong {
-  font-size: 15px;
+  color: #f0f3fa;
+  font-size: 19px;
   font-weight: 700;
+  letter-spacing: -0.02em;
 }
 
 .emptyWorkflow small {
-  color: #77859a;
-  font-size: 11px;
-  line-height: 1.55;
+  max-width: 310px;
+  color: #8794a9;
+  font-size: 13px;
+  line-height: 1.7;
 }
 
 @container empty-darkroom (max-width: 1120px) {
+  .emptyWorkflow {
+    gap: 12px;
+  }
+
+  .emptyWorkflow article {
+    min-height: 140px;
+    padding: 20px;
+    gap: 14px;
+  }
+
+  .workflowIndex {
+    width: 42px;
+    height: 42px;
+    flex-basis: 42px;
+  }
+
+  .emptyWorkflow strong {
+    font-size: 17px;
+  }
+
+  .emptyWorkflow small {
+    font-size: 12px;
+  }
+
   .emptyHero {
     grid-template-columns: 1fr 1.15fr;
   }
