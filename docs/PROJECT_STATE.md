@@ -19,7 +19,7 @@ Historical plans and superseded planning notes live under `docs/archive/` and ar
 
 ## Current execution position
 
-- Active preparation lane: **Phase 01 — product/data/measurement contracts**, currently **PG-01.07 — Hardware / OS Support Matrix**.
+- Active preparation lane: **Phase 01 — product/data/measurement contracts**, currently **PG-01.06 — Evaluation Protocol finalization**.
 - **PG-03.02–PG-03.09 — V**: pre-photographer JPEG/data-safety package complete.
 - **PG-06.01 — V**: photographer data-request package ready.
 - **PG-06.02 — BLOCKED** until authorized photographer material arrives.
@@ -62,10 +62,12 @@ Historical plans and superseded planning notes live under `docs/archive/` and ar
 ## Next executable work
 
 1. **Phase 04 — COMPLETE** — PG-04.01 through PG-04.07 are V within their exact technical scope.
-2. **PG-01.07 — PREP ACTIVE / ◐** — Release 1 hardware/OS support matrix and Intel Mac decision are prepared while G0 remains paused.
-3. **PG-01.05 — ◐ CONTRACT PREPARED / G0 BLOCKED** — lifecycle/consent contract remains ready for later ratification.
-4. **Phase 05 remains BLOCKED on its formal entry dependencies** until PG-01.02/01.04 can be ratified after G0.
-5. **PG-06.02** remains blocked until authorized photographer material arrives.
+2. **PG-01.06 — PREP COMPLETE / ◐** — Evaluation Protocol 1.0 draft is frozen; V waits for G0 + ratification.
+3. **PG-01.07 — PREP COMPLETE / ◐** — Release 1 hardware/OS matrix and Intel Mac decision are prepared; V waits for G0 + measurements/ratification.
+4. **PG-01.05 — ◐ CONTRACT PREPARED / G0 BLOCKED** — lifecycle/consent contract remains ready for later ratification.
+5. **Next executable non-manual lane: PG-00.05** — portability/restore hardening, including BUG-PG00-001; PG-00.02 manual QA remains intentionally paused.
+6. **Phase 05 remains BLOCKED** until formal Phase-01 dependencies can be ratified after G0.
+7. **PG-06.02** remains blocked until authorized photographer material arrives.
 
 Do not start Auth/Cloud implementation or a new production Brain.
 
@@ -208,3 +210,24 @@ Do not start Auth/Cloud implementation or a new production Brain.
   this is not claimed as one final-head certification run.
 - Apple Silicon remains UNVERIFIED and is still required before relevant
   platform gates can close.
+
+
+## PG-01.06 evaluation protocol preparation
+
+- **PG-01.06 — ◐ PROTOCOL FROZEN AS DRAFT / G0 RATIFICATION PENDING.**
+- `docs/EVALUATION_15A_PROTOCOL.md` is now Protocol 1.0 for Release 1.
+- JPEG G2 representation, JPEG G3 source-only prediction, RAW-assisted safety,
+  G4 local value and G6 beta value are evaluated separately.
+- G3 primary metric is frozen as acceptance without manual correction.
+- Frozen draft thresholds: G2 >=90% close-enough + >=80% representation
+  coverage; G3 >=10 percentage-point acceptance improvement vs strong baseline
+  with no serious-failure increase; G4 >=30% median active-time saving on at
+  least two new Events; G6 >=70% median beta-Event saving and >=50% per
+  Photographer, with 80%+ aspirational.
+- Every primary rate now has an explicit denominator and exclusion reporting.
+- Locked Test is confirmatory and cannot be repeatedly used for candidate
+  selection.
+- RAW time/quality evidence cannot be mixed into JPEG claims.
+- D-015 records the draft threshold/primary-metric decision.
+- Phase-01 preparation is now complete across PG-01.01–PG-01.07 at draft/
+  engineering-prepared level; ratification remains blocked by G0.

@@ -84,3 +84,32 @@ Intel Mac (`x86_64`) is a separate feasibility track:
   on the two mandatory platforms.
 
 This decision is still a draft while G0 is unsigned.
+
+
+## D-015 — [DRAFT] Evaluation Protocol 1.0 freezes the initial promotion metrics
+Prepared 2026-10-06 under PG-01.06.
+
+Before real candidate selection:
+
+- G2 uses close-enough representation fidelity + representation coverage,
+- G3 primary metric is **acceptance without manual correction**, not time saved,
+- G4/G6 use active workflow time at equal approved delivery quality,
+- JPEG and RAW evidence remain separate.
+
+Initial thresholds are the Section-7 values from Master Workflow v3.0:
+
+- G2: >=90% close-enough in-scope Validation pairs and >=80% representation
+  coverage,
+- G3: >=10 percentage-point acceptance improvement over a frozen strong simple
+  baseline, no serious-failure-rate increase and no new systematic serious
+  failure,
+- G4: >=30% median active-time saving on at least two new Events of the target
+  Photographer,
+- G6: >=70% median beta-Event saving, >=50% median per Photographer; 80%+ is
+  aspirational, with an initial evidence target of at least 3 Photographers x
+  3 new Events.
+
+Changing a threshold after observing a candidate cannot retroactively make that
+candidate pass. A new protocol version and future evaluation are required.
+
+This decision remains draft until G0 and Phase-01 ratification.

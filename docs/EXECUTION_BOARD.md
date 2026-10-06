@@ -21,7 +21,7 @@ Status vocabulary:
 
 | Lane | Part | Status | Exact next output |
 |---|---|---|---|
-| Primary development | **PG-01.07** | PREP ACTIVE / ◐ | Ratify-ready Release 1 hardware/OS matrix; Windows evidence recorded; Apple Silicon measurement + G0 still required |
+| Primary development | **PG-00.05** | READY / ◐ | Resume non-manual portability/restore hardening when continuing development; BUG-PG00-001 is the concrete code blocker |
 | Photographer intake | **PG-06.02** | BLOCKED | Authorized photographer material |
 | Residual PR1 QA | **PG-00.02** | PAUSED | Only resume when product owner returns to the remaining hardware/manual QA |
 | Cloud/Auth | **PG-12+** | BLOCKED / NOT STARTED | Do not start before workflow gate permits |
@@ -124,7 +124,7 @@ A Part can be marked DONE/V only when:
 
 **Phase 04 is complete.**
 
-A dependency check found that Phase 05 formally requires PG-01.02/PG-01.04. PG-01.04 is engineering-verified. PG-01.05 lifecycle preparation is complete as a draft; **PG-01.07 hardware/OS support preparation is now the active lane** while G0 remains paused. Phase 05 is not marked ready prematurely.
+Phase-01 preparation is now complete at draft/engineering-prepared level through PG-01.07. PG-01.06 Evaluation Protocol 1.0 and PG-01.07 hardware/OS matrix are ready for later ratification, but G0 remains unsigned. The next executable non-manual engineering lane is **PG-00.05 portability/restore hardening**; PG-00.02 manual QA remains intentionally PAUSED. Phase 05 is not marked ready prematurely.
 
 PG-06.02 stays BLOCKED on authorized photographer files. Residual PG-00.02 QA stays PAUSED. No Auth/Cloud implementation and no new production Brain begins here.
 
@@ -180,3 +180,19 @@ PG-06.02 stays BLOCKED on authorized photographer files. Residual PG-00.02 QA st
 - Candidate hardware floor is 16 GB RAM + SSD; 32 GB is the recommended
   professional planning tier. These values are not final until measured.
 - GPU requirements stay open until a real Brain candidate is benchmarked.
+
+
+## PG-01.06 evaluation preparation
+
+- Evaluation Protocol 1.0 draft is frozen before candidate quality results.
+- G2: >=90% close-enough reconstruction + >=80% representation coverage.
+- G3 primary: acceptance without correction; >=10 percentage-point improvement
+  over a frozen strong simple baseline, with no serious-failure increase or new
+  systematic serious failure.
+- G4: >=30% median active-time saving on at least two new Events of the target
+  Photographer with approved delivery quality and required platform evidence.
+- G6: >=70% median beta-Event active-time saving, >=50% median per Photographer,
+  initial evidence target >=3 Photographers x 3 new Events; 80%+ aspirational.
+- RAW stays a separate assisted/safety evaluation path and is not blended into
+  JPEG claims.
+- PG-01.06 remains ◐ until G0 + ratification.
