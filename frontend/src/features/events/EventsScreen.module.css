@@ -401,7 +401,7 @@
 }
 
 .libraryFooter {
-  min-height: 38px;
+  min-height: 50px;
   justify-content: space-between;
   gap: 12px;
   padding-top: 10px;
@@ -413,17 +413,17 @@
 .cardActions {
   display: flex;
   align-items: center;
-  gap: 7px;
+  gap: 9px;
 }
 
 .openButton,
 .relinkButton,
 .deleteButton {
-  min-height: 32px;
-  padding: 0 10px;
-  border-radius: 8px;
+  min-height: 42px;
+  padding: 0 15px;
+  border-radius: 9px;
   font: inherit;
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 700;
   cursor: pointer;
   transition:
@@ -433,9 +433,10 @@
 }
 
 .openButton {
-  border: 1px solid rgba(138, 123, 255, 0.34);
-  background: rgba(111, 91, 255, 0.08);
-  color: #c9c2ff;
+  min-width: 112px;
+  border: 1px solid rgba(138, 123, 255, 0.46);
+  background: rgba(111, 91, 255, 0.11);
+  color: #d4ceff;
 }
 
 .openButton:hover:not(:disabled) {
@@ -455,6 +456,7 @@
 }
 
 .deleteButton {
+  min-width: 64px;
   border: 1px solid rgba(255, 107, 114, 0.28);
   background: transparent;
   color: #ff9298;

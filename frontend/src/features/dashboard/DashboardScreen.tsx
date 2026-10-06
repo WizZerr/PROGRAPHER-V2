@@ -24,6 +24,49 @@ function formatDate(value: string) {
   }).format(date);
 }
 
+type SystemGlyphKind = "profile" | "local" | "system";
+
+function SystemGlyph({ kind }: { kind: SystemGlyphKind }) {
+  const common = {
+    width: 22,
+    height: 22,
+    viewBox: "0 0 24 24",
+    fill: "none",
+    stroke: "currentColor",
+    strokeWidth: 1.7,
+    strokeLinecap: "round" as const,
+    strokeLinejoin: "round" as const,
+    "aria-hidden": true,
+  };
+
+  if (kind === "local") {
+    return (
+      <svg {...common}>
+        <rect x="5" y="5" width="14" height="14" rx="2.5" />
+        <rect x="9" y="9" width="6" height="6" rx="1" />
+        <path d="M9 2.8v2.1M15 2.8v2.1M9 19.1v2.1M15 19.1v2.1M2.8 9h2.1M2.8 15h2.1M19.1 9h2.1M19.1 15h2.1" />
+      </svg>
+    );
+  }
+
+  if (kind === "system") {
+    return (
+      <svg {...common}>
+        <rect x="3.5" y="4.5" width="17" height="12" rx="2.5" />
+        <path d="M8.5 20h7M12 16.5V20" />
+      </svg>
+    );
+  }
+
+  return (
+    <svg {...common}>
+      <circle cx="12" cy="12" r="7.5" />
+      <circle cx="12" cy="12" r="3.2" />
+      <path d="M12 4.5v2M19.5 12h-2M12 19.5v-2M4.5 12h2" />
+    </svg>
+  );
+}
+
 export default function DashboardScreen() {
   const openView = useWorkspaceNav();
   const { setGalleryEventId, openGallery } = useTestingNav();
@@ -90,16 +133,14 @@ export default function DashboardScreen() {
           className={`${styles.heroEngine} ${state === "error" ? styles.heroEngineError : ""}`}
         >
           <span className={styles.engineDot} aria-hidden="true" />
-          <div>
-            <strong>
-              {state === "checking"
-                ? "מתחבר למנוע"
-                : state === "connected"
-                  ? "המנוע מחובר"
-                  : "המנוע אינו זמין"}
-            </strong>
-            <span>ProGrapher Engine</span>
-          </div>
+          <strong>
+            {state === "checking"
+              ? "מתחבר למנוע"
+              : state === "connected"
+                ? "מנוע מחובר"
+                : "המנוע אינו זמין"}
+          </strong>
+          <span className={styles.engineMeta}>ProGrapher Engine</span>
         </div>
 
         <div className={styles.heroCopy}>
@@ -165,7 +206,7 @@ export default function DashboardScreen() {
       <section className={styles.system}>
         <article className={styles.card}>
           <div className={styles.cardTopline}>
-            <span className={styles.systemIcon} aria-hidden="true">◉</span>
+            <span className={styles.systemIcon}><SystemGlyph kind="profile" /></span>
             <span>הפרופיל הפעיל</span>
           </div>
           <strong>{profile ? (profile.learning_source === "jpeg" ? "JPEG" : "RAW") : "לא הוגדר"}</strong>
@@ -173,7 +214,7 @@ export default function DashboardScreen() {
         </article>
         <article className={styles.card}>
           <div className={styles.cardTopline}>
-            <span className={styles.systemIcon} aria-hidden="true">▣</span>
+            <span className={styles.systemIcon}><SystemGlyph kind="local" /></span>
             <span>עיבוד מקומי</span>
           </div>
           <strong>{engine ? `127.0.0.1:${engine.port}` : "—"}</strong>
@@ -181,7 +222,7 @@ export default function DashboardScreen() {
         </article>
         <article className={styles.card}>
           <div className={styles.cardTopline}>
-            <span className={styles.systemIcon} aria-hidden="true">▤</span>
+            <span className={styles.systemIcon}><SystemGlyph kind="system" /></span>
             <span>מערכת</span>
           </div>
           <strong>{platform}</strong>

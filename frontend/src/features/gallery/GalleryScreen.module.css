@@ -229,32 +229,30 @@
 
 .eventPickerShell {
   position: relative;
-  width: clamp(330px, 30vw, 410px);
-  min-width: 280px;
-  flex: 0 1 410px;
+  width: clamp(230px, 24vw, 320px);
+  min-width: 220px;
+  flex: 0 1 320px;
   z-index: 30;
 }
 
 .eventPicker {
   position: relative;
   width: 100%;
-  height: 64px;
+  height: 56px;
   display: grid;
-  grid-template-columns: 58px minmax(0, 1fr) 24px;
+  grid-template-columns: 42px minmax(0, 1fr) 18px;
   align-items: center;
-  gap: 11px;
+  gap: 10px;
   padding: 0 13px;
-  border: 1px solid rgba(138, 123, 255, 0.24);
-  border-radius: 12px;
-  background:
-    linear-gradient(180deg, #111927, #0d141f);
+  border: 1px solid rgba(138, 123, 255, 0.34);
+  border-radius: 11px;
+  background: #101722;
   color: inherit;
   font: inherit;
   text-align: right;
   cursor: pointer;
-  overflow: hidden;
   box-shadow:
-    inset -3px 0 0 rgba(118, 104, 255, 0.72),
+    inset -3px 0 0 rgba(118, 104, 255, 0.78),
     0 1px 0 rgba(255, 255, 255, 0.025);
   transition:
     border-color var(--pg-transition-fast),
@@ -264,11 +262,11 @@
 
 .eventPicker:hover,
 .eventPickerOpen {
-  border-color: rgba(138, 123, 255, 0.58);
-  background: #141d2b;
+  border-color: rgba(138, 123, 255, 0.68);
+  background: #141c29;
   box-shadow:
     inset -3px 0 0 #8174ff,
-    0 10px 26px rgba(0, 0, 0, 0.16);
+    0 9px 24px rgba(0, 0, 0, 0.16);
 }
 
 .eventPicker:disabled {
@@ -276,77 +274,36 @@
   opacity: 0.56;
 }
 
-.eventPickerThumb,
-.eventPickerPlaceholder {
-  width: 58px;
-  height: 44px;
-  overflow: hidden;
-  border: 1px solid rgba(160, 180, 210, 0.18);
+.eventPickerIcon {
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(138, 123, 255, 0.22);
   border-radius: 8px;
-  background: #0b111a;
+  background: rgba(111, 91, 255, 0.11);
+  color: #9387ff;
   pointer-events: none;
 }
 
-.eventPickerThumb > div,
-.eventPickerThumb img {
-  width: 100%;
-  height: 100%;
-}
-
-.eventPickerThumb img {
-  object-fit: cover;
-}
-
-.eventPickerPlaceholder {
-  padding: 9px;
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 4px;
-}
-
-.eventPickerPlaceholder span {
+.eventPickerIcon svg {
   display: block;
-  border-radius: 2px;
-  background: #7d70f8;
-  opacity: 0.82;
-}
-
-.eventPickerPlaceholder span:nth-child(2),
-.eventPickerPlaceholder span:nth-child(3) {
-  opacity: 0.34;
+  stroke: currentColor;
+  stroke-width: 1.6;
 }
 
 .eventPickerText {
   min-width: 0;
-  display: grid;
-  gap: 2px;
   pointer-events: none;
 }
 
-.eventPickerKicker {
-  color: #8b80ff !important;
-  font-family: inherit !important;
-  font-size: 10.5px !important;
-  font-weight: 700;
-  direction: rtl !important;
-}
-
 .eventPickerText strong {
+  display: block;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: 17px;
+  font-size: 16px;
   font-weight: 700;
-}
-
-.eventPickerText span {
-  overflow: hidden;
-  color: #738198;
-  font-family: "Inter", "Heebo", sans-serif;
-  font-size: 12px;
-  direction: ltr;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 .eventPickerArrow {
@@ -1351,20 +1308,19 @@
   }
 
   .eventPickerShell {
-    width: clamp(280px, 29vw, 340px);
-    min-width: 240px;
-    flex-basis: 340px;
+    width: clamp(230px, 24vw, 300px);
+    min-width: 220px;
+    flex-basis: 300px;
   }
 
   .eventPicker {
-    height: 60px;
-    grid-template-columns: 54px minmax(0, 1fr) 22px;
+    height: 54px;
+    grid-template-columns: 40px minmax(0, 1fr) 18px;
   }
 
-  .eventPickerThumb,
-  .eventPickerPlaceholder {
-    width: 54px;
-    height: 40px;
+  .eventPickerIcon {
+    width: 36px;
+    height: 36px;
   }
 
   .photoCount {
@@ -1427,9 +1383,9 @@
   }
 
   .eventPickerShell {
-    width: clamp(235px, 27vw, 300px);
-    min-width: 215px;
-    flex-basis: 300px;
+    width: clamp(220px, 25vw, 280px);
+    min-width: 205px;
+    flex-basis: 280px;
   }
 
   .searchWrap {
@@ -1474,10 +1430,6 @@
 
   .topIdentity {
     justify-self: stretch;
-  }
-
-  .eventPickerText span {
-    display: none;
   }
 
   .filterShell {
@@ -1547,14 +1499,13 @@
 
   .eventPicker {
     height: 52px;
-    grid-template-columns: 44px minmax(0, 1fr) 18px;
+    grid-template-columns: 38px minmax(0, 1fr) 18px;
     padding-inline: 10px;
   }
 
-  .eventPickerThumb,
-  .eventPickerPlaceholder {
-    width: 44px;
-    height: 32px;
+  .eventPickerIcon {
+    width: 34px;
+    height: 34px;
   }
 
   .eventPickerText strong {

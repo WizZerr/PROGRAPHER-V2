@@ -453,29 +453,17 @@ export default function GalleryScreen() {
             aria-haspopup="listbox"
             aria-expanded={eventMenuOpen}
           >
-            {selectedEvent ? (
-              <div className={styles.eventPickerThumb}>
-                <EventCover eventId={selectedEvent.id} label={selectedEvent.name} />
-              </div>
-            ) : (
-              <div className={styles.eventPickerPlaceholder} aria-hidden="true">
-                <span />
-                <span />
-                <span />
-                <span />
-              </div>
-            )}
+            <span className={styles.eventPickerIcon} aria-hidden="true">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+                <rect x="3.5" y="4" width="7" height="6" rx="1.4" />
+                <rect x="13.5" y="4" width="7" height="6" rx="1.4" />
+                <rect x="3.5" y="14" width="7" height="6" rx="1.4" />
+                <rect x="13.5" y="14" width="7" height="6" rx="1.4" />
+              </svg>
+            </span>
 
             <div className={styles.eventPickerText}>
-              <span className={styles.eventPickerKicker}>אירוע פעיל</span>
               <strong>{selectedEvent?.name || "בחר אירוע"}</strong>
-              <span>
-                {selectedEvent
-                  ? eventCountLabel(selectedEvent)
-                  : events.length > 0
-                    ? `${events.length.toLocaleString("he-IL")} אירועים זמינים`
-                    : "אין אירועים זמינים"}
-              </span>
             </div>
 
             <span className={styles.eventPickerArrow} aria-hidden="true" />
