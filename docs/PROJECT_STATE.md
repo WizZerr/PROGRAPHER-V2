@@ -287,3 +287,16 @@ than general polishing.
   meaningful progress/metrics.
 - Catalog route setup is preparation only until its separate training Brain is
   implemented and evaluated.
+
+
+## RAW/JPEG learning navigation correction — 2026-10-07
+
+- Fixed the learning handoff so Profile → JPEG and Profile → RAW enter distinct
+  flows directly instead of falling back to a shared "choose file type" page.
+- The media choice is now made only once, on the Profile screen.
+- JPEG remains two separate learning routes:
+  Original/Edited pairs and JPEG + Lightroom Catalog.
+- RAW is one RAW + Lightroom learning capability.
+- XMP and LRCAT are treated as two sources for Lightroom edit metadata inside
+  that RAW capability, not as two RAW learning Brains.
+- Profile status therefore reports JPEG as 0/2..2/2 and RAW as 0/1..1/1.

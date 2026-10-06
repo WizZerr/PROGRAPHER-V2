@@ -34,16 +34,10 @@ function routeState(profile: TestingProfile | null): RouteState {
   return profile.usable_pairs > 0 ? "ready" : "pending";
 }
 
-function pairStatus(
-  profile: TestingProfile | null,
-  media: LearningMedia,
-): string {
+function jpegPairStatus(profile: TestingProfile | null): string {
   if (!profile) return "לא הוגדר";
   if (profile.usable_pairs <= 0) return "נבדק · אין חומר שמיש";
-
-  return media === "jpeg"
-    ? `${profile.usable_pairs.toLocaleString("he-IL")} זוגות מוכנים`
-    : `${profile.usable_pairs.toLocaleString("he-IL")} זוגות RAW/XMP`;
+  return `${profile.usable_pairs.toLocaleString("he-IL")} זוגות מוכנים`;
 }
 
 function catalogStatus(binding?: CatalogBinding): string {
@@ -51,6 +45,41 @@ function catalogStatus(binding?: CatalogBinding): string {
   return binding.catalogPhotoRecords !== null
     ? `${binding.catalogPhotoRecords.toLocaleString("he-IL")} רשומות בקטלוג`
     : "קטלוג הוגדר";
+}
+
+function rawStatus(
+  profile: TestingProfile | null,
+  catalog?: CatalogBinding,
+): { state: RouteState; label: string; source: string } {
+  if (profile?.usable_pairs && profile.usable_pairs > 0) {
+    return {
+      state: "ready",
+      label: `${profile.usable_pairs.toLocaleString("he-IL")} זוגות RAW/XMP`,
+      source: "עריכות דרך XMP",
+    };
+  }
+
+  if (catalog) {
+    return {
+      state: "ready",
+      label: catalogStatus(catalog),
+      source: "עריכות דרך Lightroom Catalog",
+    };
+  }
+
+  if (profile) {
+    return {
+      state: "pending",
+      label: "נבדק · אין חומר שמיש",
+      source: "עריכות דרך XMP",
+    };
+  }
+
+  return {
+    state: "idle",
+    label: "לא הוגדר",
+    source: "XMP או Lightroom Catalog",
+  };
 }
 
 function StatusPill({
@@ -94,8 +123,10 @@ export default function ProfileScreen() {
   const [error, setError] = useState("");
   const [saved, setSaved] = useState("");
 
-  const [firstNameDraft, setFirstNameDraft] = useState("");
-  const [profileNameDraft, setProfileNameDraft] = useState("");
+  const [firstNameDraft, setFirstNameDraft] = useState(identity.firstName);
+  const [profileNameDraft, setProfileNameDraft] = useState(
+    identity.profileName ?? "",
+  );
   const [styleName, setStyleName] = useState("");
   const [presetPath, setPresetPath] = useState<string | null>(null);
   const [profileMode, setProfileMode] =
@@ -111,12 +142,14 @@ export default function ProfileScreen() {
 
   const refresh = useCallback(async () => {
     setError("");
+
     try {
       const [setup, jpeg, raw] = await Promise.all([
         getPhotographerSetup(),
         getTestingProfile("jpeg").catch(() => null),
         getTestingProfile("raw").catch(() => null),
       ]);
+
       applyOverview(setup);
       setJpegProfile(jpeg);
       setRawProfile(raw);
@@ -132,14 +165,15 @@ export default function ProfileScreen() {
     void refresh();
   }, [refresh]);
 
-  useEffect(() => {
-    setFirstNameDraft(identity.firstName);
-    setProfileNameDraft(identity.profileName ?? "");
-  }, [identity]);
-
   function openLearning(media: LearningMedia) {
     writeTrainingEntry({ media });
     openView("training");
+  }
+
+  function openSettings() {
+    setFirstNameDraft(identity.firstName);
+    setProfileNameDraft(identity.profileName ?? "");
+    setSettingsOpen(true);
   }
 
   async function choosePreset() {
@@ -149,6 +183,7 @@ export default function ProfileScreen() {
       title: "בחר פריסט Lightroom",
       filters: [{ name: "Lightroom Preset", extensions: ["xmp"] }],
     });
+
     if (!selected || Array.isArray(selected)) return;
     setPresetPath(selected);
   }
@@ -190,19 +225,20 @@ export default function ProfileScreen() {
 
   const jpegCatalog = catalogBindings.jpeg;
   const rawCatalog = catalogBindings.raw;
+  const rawLearning = rawStatus(rawProfile, rawCatalog);
 
   const jpegConfigured =
     Number(Boolean(jpegProfile)) + Number(Boolean(jpegCatalog));
-  const rawConfigured =
-    Number(Boolean(rawProfile)) + Number(Boolean(rawCatalog));
-
+  const rawConfigured = Number(Boolean(rawProfile) || Boolean(rawCatalog));
   const totalConfigured = jpegConfigured + rawConfigured;
 
   const profileStatus = useMemo(() => {
     if (totalConfigured === 0) return "עדיין לא הוגדר";
-    if (totalConfigured === 4) return "כל מסלולי הלמידה הוגדרו";
+    if (jpegConfigured === 2 && rawConfigured === 1) {
+      return "כל מסלולי הלמידה הוגדרו";
+    }
     return "בתהליך בנייה";
-  }, [totalConfigured]);
+  }, [jpegConfigured, rawConfigured, totalConfigured]);
 
   return (
     <section className={styles.screen}>
@@ -211,8 +247,8 @@ export default function ProfileScreen() {
           <span className={styles.eyebrow}>הפרופיל שלי</span>
           <h1>סגנון העריכה של {profileOwnerLabel}</h1>
           <p>
-            כאן רואים רק את מצב הלמידה שלך. נכנסים למסלול, בוחרים את סוג החומר,
-            ומתקדמים שלב אחר שלב.
+            כאן רואים רק את מצב הלמידה שלך. JPEG ו־RAW נשמרים בנפרד,
+            וכל מסלול מציג רק מידע שבאמת נמדד.
           </p>
         </div>
 
@@ -233,7 +269,7 @@ export default function ProfileScreen() {
             type="button"
             aria-label="הגדרות הפרופיל"
             title="הגדרות הפרופיל"
-            onClick={() => setSettingsOpen(true)}
+            onClick={openSettings}
           >
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
               <circle cx="12" cy="12" r="3.2" />
@@ -252,7 +288,7 @@ export default function ProfileScreen() {
             <div>
               <span className={styles.mediaBadge}>JPEG</span>
               <h2>למידה לפי JPEG</h2>
-              <p>שני מסלולי למידה נפרדים לאותו סוג קובץ.</p>
+              <p>שני מסלולי למידה נפרדים ל־JPEG.</p>
             </div>
             <span className={styles.configuredCount}>
               {jpegConfigured}/2 הוגדרו
@@ -266,7 +302,7 @@ export default function ProfileScreen() {
                 <small>JPEG מקור מול JPEG ערוך</small>
               </div>
               <StatusPill state={routeState(jpegProfile)}>
-                {pairStatus(jpegProfile, "jpeg")}
+                {jpegPairStatus(jpegProfile)}
               </StatusPill>
             </div>
 
@@ -296,33 +332,27 @@ export default function ProfileScreen() {
             <div>
               <span className={styles.mediaBadge}>RAW</span>
               <h2>למידה לפי RAW</h2>
-              <p>אותו תהליך פשוט, עם מקורות שמתאימים ל־RAW.</p>
+              <p>מסלול למידה אחד שמבוסס על עריכות Lightroom.</p>
             </div>
             <span className={styles.configuredCount}>
-              {rawConfigured}/2 הוגדרו
+              {rawConfigured}/1 הוגדר
             </span>
           </div>
 
           <div className={styles.routeList}>
             <div className={styles.routeRow}>
               <div>
-                <strong>RAW + עריכות Lightroom</strong>
-                <small>RAW מקור + XMP / עריכות תואמות</small>
+                <strong>RAW + Lightroom</strong>
+                <small>{rawLearning.source}</small>
               </div>
-              <StatusPill state={routeState(rawProfile)}>
-                {pairStatus(rawProfile, "raw")}
+              <StatusPill state={rawLearning.state}>
+                {rawLearning.label}
               </StatusPill>
             </div>
+          </div>
 
-            <div className={styles.routeRow}>
-              <div>
-                <strong>Lightroom Catalog</strong>
-                <small>RAW מקור + קובץ LRCAT</small>
-              </div>
-              <StatusPill state={rawCatalog ? "ready" : "idle"}>
-                {catalogStatus(rawCatalog)}
-              </StatusPill>
-            </div>
+          <div className={styles.routeNote}>
+            XMP ו־LRCAT הם רק שתי דרכים לקרוא את עריכות Lightroom — לא שני מסלולי למידה שונים.
           </div>
 
           <button

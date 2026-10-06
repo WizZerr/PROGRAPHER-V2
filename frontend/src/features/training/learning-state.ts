@@ -1,5 +1,5 @@
 export type LearningMedia = "jpeg" | "raw";
-export type LearningMethod = "pairs" | "catalog";
+export type LearningMethod = "pairs" | "xmp" | "catalog";
 
 export type TrainingEntry = {
   media: LearningMedia;
@@ -18,15 +18,32 @@ type CatalogBindings = Partial<Record<LearningMedia, CatalogBinding>>;
 const ENTRY_KEY = "prographer.training.entry.v2";
 const CATALOG_KEY = "prographer.training.catalog-bindings.v1";
 
+let pendingEntry: TrainingEntry | null = null;
+
 export function writeTrainingEntry(entry: TrainingEntry) {
+  pendingEntry = entry;
+
   try {
     window.sessionStorage.setItem(ENTRY_KEY, JSON.stringify(entry));
   } catch {
-    // Navigation remains functional when session storage is unavailable.
+    // Same-runtime navigation still works through pendingEntry.
   }
 }
 
 export function consumeTrainingEntry(): TrainingEntry | null {
+  if (pendingEntry) {
+    const entry = pendingEntry;
+    pendingEntry = null;
+
+    try {
+      window.sessionStorage.removeItem(ENTRY_KEY);
+    } catch {
+      // The in-memory handoff is already consumed.
+    }
+
+    return entry;
+  }
+
   try {
     const value = window.sessionStorage.getItem(ENTRY_KEY);
     if (!value) return null;
@@ -36,6 +53,7 @@ export function consumeTrainingEntry(): TrainingEntry | null {
     if (
       parsed.method !== undefined &&
       parsed.method !== "pairs" &&
+      parsed.method !== "xmp" &&
       parsed.method !== "catalog"
     ) {
       return null;

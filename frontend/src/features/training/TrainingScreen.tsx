@@ -2,9 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { open } from "@tauri-apps/plugin-dialog";
-import {
-  selectLightroomCatalog,
-} from "@/features/profile/profile.api";
+import { selectLightroomCatalog } from "@/features/profile/profile.api";
 import {
   createTestingProfile,
   getTestingProfile,
@@ -30,10 +28,10 @@ function mediaLabel(media: LearningMedia) {
 }
 
 async function fetchExistingProfile(
-  nextMedia: LearningMedia,
+  media: LearningMedia,
 ): Promise<TestingProfile | null> {
   try {
-    return await getTestingProfile(profileSource(nextMedia));
+    return await getTestingProfile(profileSource(media));
   } catch {
     return null;
   }
@@ -41,41 +39,39 @@ async function fetchExistingProfile(
 
 export default function TrainingScreen() {
   const openView = useWorkspaceNav();
+  const [entry] = useState(() => consumeTrainingEntry());
+  const media = entry?.media ?? null;
 
-  const [media, setMedia] = useState<LearningMedia | null>(null);
-  const [method, setMethod] = useState<LearningMethod | null>(null);
+  const [method, setMethod] = useState<LearningMethod | null>(
+    entry?.method ?? null,
+  );
   const [profile, setProfile] = useState<TestingProfile | null>(null);
-
   const [sourceRoot, setSourceRoot] = useState("");
   const [editsRoot, setEditsRoot] = useState("");
   const [catalogPath, setCatalogPath] = useState("");
   const [catalogRecords, setCatalogRecords] = useState<number | null>(null);
-
   const [checkedNow, setCheckedNow] = useState(false);
   const [catalogSaved, setCatalogSaved] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
 
   useEffect(() => {
-    const entry = consumeTrainingEntry();
-    if (!entry) return;
+    if (!media) return;
 
     let cancelled = false;
 
-    void fetchExistingProfile(entry.media).then((existing) => {
+    void fetchExistingProfile(media).then((existing) => {
       if (cancelled) return;
 
       setProfile(existing);
-      setMedia(entry.media);
-      setMethod(entry.method ?? null);
 
-      if (entry.method === "pairs" && existing) {
+      if ((method === "pairs" || method === "xmp") && existing) {
         setSourceRoot(existing.raw_root);
         setEditsRoot(existing.edits_root);
       }
 
-      if (entry.method === "catalog") {
-        const binding = loadCatalogBindings()[entry.media];
+      if (method === "catalog") {
+        const binding = loadCatalogBindings()[media];
         if (binding) {
           setSourceRoot(binding.sourceRoot);
           setCatalogPath(binding.catalogPath);
@@ -88,20 +84,7 @@ export default function TrainingScreen() {
     return () => {
       cancelled = true;
     };
-  }, []);
-
-  async function chooseMedia(nextMedia: LearningMedia) {
-    setMedia(nextMedia);
-    setMethod(null);
-    setSourceRoot("");
-    setEditsRoot("");
-    setCatalogPath("");
-    setCatalogRecords(null);
-    setCheckedNow(false);
-    setCatalogSaved(false);
-    setError("");
-    setProfile(await fetchExistingProfile(nextMedia));
-  }
+  }, [media, method]);
 
   function chooseMethod(nextMethod: LearningMethod) {
     if (!media) return;
@@ -110,7 +93,7 @@ export default function TrainingScreen() {
     setError("");
     setCheckedNow(false);
 
-    if (nextMethod === "pairs") {
+    if (nextMethod === "pairs" || nextMethod === "xmp") {
       setSourceRoot(profile?.raw_root ?? "");
       setEditsRoot(profile?.edits_root ?? "");
       setCatalogPath("");
@@ -138,12 +121,6 @@ export default function TrainingScreen() {
       setCatalogPath("");
       setCatalogRecords(null);
       setCatalogSaved(false);
-      return;
-    }
-
-    if (media) {
-      setMedia(null);
-      setProfile(null);
       return;
     }
 
@@ -212,8 +189,8 @@ export default function TrainingScreen() {
     }
   }
 
-  async function checkPairs() {
-    if (!media || method !== "pairs") return;
+  async function checkPairedMaterial() {
+    if (!media || (method !== "pairs" && method !== "xmp")) return;
 
     setBusy(true);
     setError("");
@@ -251,44 +228,88 @@ export default function TrainingScreen() {
     setCatalogSaved(true);
   }
 
-  const currentStep = !media ? 1 : !method ? 2 : 3;
-
-  const materialReady =
-    method === "pairs"
-      ? Boolean(sourceRoot && editsRoot)
-      : Boolean(sourceRoot && catalogPath);
-
   const methodOptions = useMemo(() => {
     if (!media) return null;
 
     if (media === "jpeg") {
       return {
-        pairs: {
+        heading: "איך נלמד את ה־JPEG?",
+        copy: "בחר את מסלול הלמידה שמתאים לחומר שכבר יש לך.",
+        first: {
+          method: "pairs" as const,
+          tag: "PAIRS",
           title: "זוגות לפני + אחרי",
           copy: "JPEG מקור מול JPEG סופי שכבר ערכת.",
-          tag: "PAIRS",
         },
-        catalog: {
-          title: "Lightroom Catalog",
-          copy: "תיקיית JPEG מקור יחד עם קובץ LRCAT.",
+        second: {
+          method: "catalog" as const,
           tag: "LRCAT",
+          title: "Lightroom Catalog",
+          copy: "JPEG מקור יחד עם קטלוג Lightroom.",
         },
       };
     }
 
     return {
-      pairs: {
-        title: "RAW + עריכות Lightroom",
-        copy: "RAW מקור יחד עם XMP / עריכות תואמות.",
+      heading: "איך נקרא את עריכות Lightroom?",
+      copy: "זה עדיין מסלול RAW אחד. כאן בוחרים רק מאיפה לקרוא את העריכות.",
+      first: {
+        method: "xmp" as const,
         tag: "XMP",
+        title: "קובצי XMP",
+        copy: "RAW מקור יחד עם קובצי XMP תואמים.",
       },
-      catalog: {
-        title: "Lightroom Catalog",
-        copy: "תיקיית RAW מקור יחד עם קובץ LRCAT.",
+      second: {
+        method: "catalog" as const,
         tag: "LRCAT",
+        title: "Lightroom Catalog",
+        copy: "RAW מקור יחד עם קטלוג Lightroom.",
       },
     };
   }, [media]);
+
+  if (!media || !methodOptions) {
+    return (
+      <main className={styles.screen}>
+        <header className={styles.header}>
+          <button
+            className={styles.backButton}
+            type="button"
+            onClick={() => openView("profile")}
+          >
+            → חזרה לפרופיל
+          </button>
+          <div>
+            <span className={styles.eyebrow}>בניית הפרופיל</span>
+            <h1>בחר מסלול מהפרופיל שלך</h1>
+            <p>למידת JPEG ו־RAW מתחילות מהכרטיס המתאים בעמוד הפרופיל.</p>
+          </div>
+        </header>
+
+        <section className={styles.stage}>
+          <div className={styles.stageHeading}>
+            <span>לא נבחר מסלול</span>
+            <h2>חזור לפרופיל ובחר JPEG או RAW</h2>
+          </div>
+          <div className={styles.stageActions}>
+            <button
+              className={styles.primaryButton}
+              type="button"
+              onClick={() => openView("profile")}
+            >
+              חזרה לפרופיל
+            </button>
+          </div>
+        </section>
+      </main>
+    );
+  }
+
+  const currentStep = method ? 2 : 1;
+  const pairedMethod = method === "pairs" || method === "xmp";
+  const materialReady = pairedMethod
+    ? Boolean(sourceRoot && editsRoot)
+    : Boolean(sourceRoot && catalogPath);
 
   return (
     <main className={styles.screen}>
@@ -298,122 +319,72 @@ export default function TrainingScreen() {
           type="button"
           onClick={backOneStep}
         >
-          → {currentStep === 1 ? "חזרה לפרופיל" : "חזרה"}
+          → {method ? "חזרה" : "חזרה לפרופיל"}
         </button>
 
         <div>
           <span className={styles.eyebrow}>בניית הפרופיל</span>
-          <h1>
-            {media
-              ? `למידה לפי ${mediaLabel(media)}`
-              : "איך נלמד את העריכה שלך?"}
-          </h1>
+          <h1>למידה לפי {mediaLabel(media)}</h1>
           <p>
-            בכל שלב מוצגת רק הבחירה שצריך לקבל עכשיו.
+            {media === "jpeg"
+              ? "בחר מסלול למידה, ואז את החומר שלו."
+              : "מסלול RAW אחד. בוחרים מקור לעריכות Lightroom ואז את החומר."}
           </p>
         </div>
       </header>
 
       <nav className={styles.progress} aria-label="שלבי הגדרת הלמידה">
-        <div className={currentStep >= 1 ? styles.progressActive : styles.progressItem}>
+        <div className={styles.progressActive}>
           <span>1</span>
-          <strong>סוג קובץ</strong>
+          <strong>
+            {media === "jpeg" ? "שיטת למידה" : "מקור עריכות"}
+          </strong>
         </div>
         <div className={currentStep >= 2 ? styles.progressActive : styles.progressItem}>
           <span>2</span>
-          <strong>שיטת למידה</strong>
-        </div>
-        <div className={currentStep >= 3 ? styles.progressActive : styles.progressItem}>
-          <span>3</span>
           <strong>בחירת חומר</strong>
         </div>
       </nav>
 
-      {currentStep === 1 ? (
+      {!method ? (
         <section className={styles.stage}>
           <div className={styles.stageHeading}>
-            <span>שלב 1</span>
-            <h2>בחר סוג קובץ</h2>
-            <p>זו הבחירה היחידה שצריך לעשות כרגע.</p>
-          </div>
-
-          <div className={styles.mediaGrid}>
-            <button
-              className={styles.mediaCard}
-              type="button"
-              onClick={() => void chooseMedia("jpeg")}
-            >
-              <span className={styles.mediaMark}>JPEG</span>
-              <div>
-                <h3>למידה לפי JPEG</h3>
-                <p>מתאים לזוגות לפני/אחרי או ל־Lightroom Catalog.</p>
-              </div>
-              <span className={styles.cardArrow} aria-hidden="true">←</span>
-            </button>
-
-            <button
-              className={styles.mediaCard}
-              type="button"
-              onClick={() => void chooseMedia("raw")}
-            >
-              <span className={styles.mediaMark}>RAW</span>
-              <div>
-                <h3>למידה לפי RAW</h3>
-                <p>מתאים לעריכות Lightroom/XMP או ל־Lightroom Catalog.</p>
-              </div>
-              <span className={styles.cardArrow} aria-hidden="true">←</span>
-            </button>
-          </div>
-        </section>
-      ) : null}
-
-      {currentStep === 2 && media && methodOptions ? (
-        <section className={styles.stage}>
-          <div className={styles.stageHeading}>
-            <span>שלב 2 · {mediaLabel(media)}</span>
-            <h2>איך נלמד?</h2>
-            <p>בחר את סוג החומר שכבר קיים אצלך.</p>
+            <span>שלב 1 · {mediaLabel(media)}</span>
+            <h2>{methodOptions.heading}</h2>
+            <p>{methodOptions.copy}</p>
           </div>
 
           <div className={styles.methodGrid}>
-            <button
-              className={styles.methodCard}
-              type="button"
-              onClick={() => chooseMethod("pairs")}
-            >
-              <span className={styles.methodTag}>{methodOptions.pairs.tag}</span>
-              <div>
-                <h3>{methodOptions.pairs.title}</h3>
-                <p>{methodOptions.pairs.copy}</p>
-              </div>
-              <span className={styles.cardArrow} aria-hidden="true">←</span>
-            </button>
-
-            <button
-              className={styles.methodCard}
-              type="button"
-              onClick={() => chooseMethod("catalog")}
-            >
-              <span className={styles.methodTag}>{methodOptions.catalog.tag}</span>
-              <div>
-                <h3>{methodOptions.catalog.title}</h3>
-                <p>{methodOptions.catalog.copy}</p>
-              </div>
-              <span className={styles.cardArrow} aria-hidden="true">←</span>
-            </button>
+            {[methodOptions.first, methodOptions.second].map((option) => (
+              <button
+                key={option.method}
+                className={styles.methodCard}
+                type="button"
+                onClick={() => chooseMethod(option.method)}
+              >
+                <span className={styles.methodTag}>{option.tag}</span>
+                <div>
+                  <h3>{option.title}</h3>
+                  <p>{option.copy}</p>
+                </div>
+                <span className={styles.cardArrow} aria-hidden="true">←</span>
+              </button>
+            ))}
           </div>
         </section>
-      ) : null}
-
-      {currentStep === 3 && media && method ? (
+      ) : (
         <section className={styles.stage}>
           <div className={styles.stageHeading}>
             <span>
-              שלב 3 · {mediaLabel(media)} ·{" "}
-              {method === "pairs" ? "קבצי עריכה" : "Lightroom Catalog"}
+              שלב 2 · {mediaLabel(media)} ·{" "}
+              {method === "catalog"
+                ? "Lightroom Catalog"
+                : method === "xmp"
+                  ? "XMP"
+                  : "לפני + אחרי"}
             </span>
             <h2>בחר את החומר</h2>
-            <p>שני מקורות בלבד. כל השאר נשאר מאחורי הקלעים.</p>
+            <p>רק שני מקורות. כל השאר נשאר מאחורי הקלעים.</p>
           </div>
 
           <div className={styles.materialGrid}>
@@ -440,7 +411,7 @@ export default function TrainingScreen() {
               </div>
             </button>
 
-            {method === "pairs" ? (
+            {pairedMethod ? (
               <button
                 className={
                   editsRoot
@@ -455,7 +426,7 @@ export default function TrainingScreen() {
                 </span>
                 <div>
                   <span className={styles.materialLabel}>
-                    {media === "jpeg" ? "JPEG ערוך" : "עריכות Lightroom / XMP"}
+                    {media === "jpeg" ? "JPEG ערוך" : "עריכות XMP"}
                   </span>
                   <strong>
                     {editsRoot ? "תיקיית העריכות נבחרה" : "בחר תיקיית עריכות"}
@@ -496,15 +467,15 @@ export default function TrainingScreen() {
               type="button"
               onClick={() => setMethod(null)}
             >
-              שנה שיטת למידה
+              {media === "jpeg" ? "שנה שיטת למידה" : "שנה מקור עריכות"}
             </button>
 
-            {method === "pairs" ? (
+            {pairedMethod ? (
               <button
                 className={styles.primaryButton}
                 type="button"
                 disabled={busy || !materialReady}
-                onClick={() => void checkPairs()}
+                onClick={() => void checkPairedMaterial()}
               >
                 {busy ? "בודק…" : profile ? "בדוק מחדש" : "בדוק את החומר"}
               </button>
@@ -520,7 +491,7 @@ export default function TrainingScreen() {
             )}
           </div>
 
-          {method === "pairs" && checkedNow && profile ? (
+          {pairedMethod && checkedNow && profile ? (
             <section className={styles.result}>
               <span className={styles.resultIcon} aria-hidden="true">✓</span>
               <div>
@@ -530,7 +501,7 @@ export default function TrainingScreen() {
                 </h3>
                 <p>
                   {profile.usable_pairs > 0
-                    ? "החומר הוגדר למסלול ויופיע עכשיו בעמוד הפרופיל."
+                    ? "החומר הוגדר ויופיע עכשיו בעמוד הפרופיל."
                     : "לא נמצאו עדיין זוגות שמישים. אפשר להחליף את החומר ולבדוק שוב."}
                 </p>
               </div>
@@ -551,8 +522,8 @@ export default function TrainingScreen() {
                     : "Lightroom Catalog מוכן"}
                 </h3>
                 <p>
-                  המקור והקטלוג נשמרו למסלול {mediaLabel(media)}. לא מוצג כאן
-                  סטטוס אימון עד שקיים Brain מאומן בפועל.
+                  המקור והקטלוג נשמרו. לא יוצג סטטוס אימון עד שקיים Brain
+                  מאומן בפועל.
                 </p>
               </div>
               <button type="button" onClick={() => openView("profile")}>
@@ -561,7 +532,7 @@ export default function TrainingScreen() {
             </section>
           ) : null}
         </section>
-      ) : null}
+      )}
     </main>
   );
 }

@@ -151,16 +151,23 @@ The main Profile screen is a status surface, not a setup form.
 
 Top-level learning architecture:
 
-1. **למידה לפי JPEG**
+1. **למידה לפי JPEG** has two genuinely separate learning routes:
    - JPEG Original + Edited pairs,
    - JPEG source + Lightroom Catalog (`.lrcat`).
-2. **למידה לפי RAW**
-   - RAW source + Lightroom/XMP edits,
-   - RAW source + Lightroom Catalog (`.lrcat`).
+2. **למידה לפי RAW** is one RAW + Lightroom learning capability.
+   XMP and Lightroom Catalog are two ingestion sources for Lightroom edit
+   metadata, not separate RAW Brains or separate top-level learning routes.
 
-The user sees only one decision at a time:
+The Profile screen selects JPEG or RAW before entering learning. Therefore the
+learning wizard must not ask for media type again.
 
-`JPEG / RAW → learning method → required material → validation/result`.
+JPEG flow:
+
+`Profile → JPEG → learning route → required material → validation/result`.
+
+RAW flow:
+
+`Profile → RAW + Lightroom → edit-metadata source (XMP/LRCAT) → required material → validation/result`.
 
 Technical paths, manifests, model internals and unrelated setup metadata are not
 shown in the main learning flow.
