@@ -1,6 +1,6 @@
 # ProGrapher V2 — Execution Board
 
-Updated: 2026-10-04  
+Updated: 2026-10-06  
 Authority: `docs/MASTER_PLAN_SOURCE_OF_TRUTH.md` — Master Workflow v3.0
 
 This board implements **PG-00.06**. It is an execution view, not a second master plan.
@@ -21,7 +21,7 @@ Status vocabulary:
 
 | Lane | Part | Status | Exact next output |
 |---|---|---|---|
-| Primary development | **PG-01.05** | PREP ACTIVE / ◐ | Ratify-ready data ownership/lifecycle/consent contract; V remains blocked by G0 + product-owner approval |
+| Primary development | **PG-01.07** | PREP ACTIVE / ◐ | Ratify-ready Release 1 hardware/OS matrix; Windows evidence recorded; Apple Silicon measurement + G0 still required |
 | Photographer intake | **PG-06.02** | BLOCKED | Authorized photographer material |
 | Residual PR1 QA | **PG-00.02** | PAUSED | Only resume when product owner returns to the remaining hardware/manual QA |
 | Cloud/Auth | **PG-12+** | BLOCKED / NOT STARTED | Do not start before workflow gate permits |
@@ -124,7 +124,7 @@ A Part can be marked DONE/V only when:
 
 **Phase 04 is complete.**
 
-A dependency check found that Phase 05 formally requires PG-01.02/PG-01.04. PG-01.04 is engineering-verified. PG-01.05 data ownership/lifecycle preparation is now the active lane while G0 remains paused; Phase 05 is not marked ready prematurely.
+A dependency check found that Phase 05 formally requires PG-01.02/PG-01.04. PG-01.04 is engineering-verified. PG-01.05 lifecycle preparation is complete as a draft; **PG-01.07 hardware/OS support preparation is now the active lane** while G0 remains paused. Phase 05 is not marked ready prematurely.
 
 PG-06.02 stays BLOCKED on authorized photographer files. Residual PG-00.02 QA stays PAUSED. No Auth/Cloud implementation and no new production Brain begins here.
 
@@ -168,3 +168,15 @@ PG-06.02 stays BLOCKED on authorized photographer files. Residual PG-00.02 QA st
 - **PG-04.05 — V:** renderer semantic goldens, encoded JPEG budgets and large preview-vs-export budgets passed.
 - **PG-04.06 — V:** normalized JPEG controls are wired to the real renderer; stale async responses cannot replace newer state; RAW-only semantics remain separate.
 - **PG-04.07 — V:** RAW/XMP boundary verified; Phase 04 complete.
+
+
+## PG-01.07 platform preparation
+
+- Windows x64 + macOS Apple Silicon are mandatory Release 1 target families.
+- Windows now has one real local engineering evidence run, but not broad
+  commercial hardware certification.
+- Apple Silicon remains UNVERIFIED and retains blocker B-003.
+- Intel Mac is EVALUATION ONLY under D-014; it is not a Release 1 blocker.
+- Candidate hardware floor is 16 GB RAM + SSD; 32 GB is the recommended
+  professional planning tier. These values are not final until measured.
+- GPU requirements stay open until a real Brain candidate is benchmarked.

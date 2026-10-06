@@ -168,7 +168,7 @@
 | PG-01.04 | ◐ | portable `.pgprofile` package implementation prepared: UUID identities, required weights/normalizer, model/feature/recipe/renderer versions, metrics, SHA-256, engine compatibility, safe atomic import | regression fixtures נכתבו ל-move/load, incompatibility, tamper, missing roles ו-immutable install; V חסום עד G0 + ratification לפי כניסת Phase 01 |
 | PG-01.05 | ◐ | `PG_01_05_DATA_LIFECYCLE_CONTRACT.md` מקבע source-of-truth לכל data class, local/cloud ownership, consent C0–C3, selected-learning scope, quotas, retention ומחיקה נפרדת ל-Event/Profile/Device/Account | contract checklist מוכן; Profile sync מופרד במפורש מ-photo backup; V חסום עד G0 + product-owner ratification |
 | PG-01.06 | ◐ | לעדכן את EVALUATION_15A_PROTOCOL לפרוטוקול JPEG, RAW נפרד, time study וספי סעיף 7 במסמך זה | הספים והחרגות קבועים לפני השוואת מועמדים; לכל מדד מכנה והגדרת כשל |
-| PG-01.07 | ☐ | לקבוע מטריצת חומרה/OS וקבוצות תמיכה ראשוניות; לפתוח החלטת Intel Mac נפרדת | Mac Apple Silicon + Windows x64 חובה; דרישות מינימום עדיין 'מועמדות' עד מדידה |
+| PG-01.07 | ◐ | `docs/TARGET_SYSTEM_MATRIX.md` נבנה מחדש כמטריצת Release 1: Windows x64 + Apple Silicon חובה, קבוצות SUPPORTED/DEGRADED/UNVERIFIED/UNSUPPORTED, tiers מועמדים, schema לראיות ו-Windows local evidence; D-014 פותח Intel Mac כ-evaluation נפרד | המטריצה מוכנה ל-ratification; V חסום עד G0, ודרישות מינימום נשארות מועמדות עד מדידות Phase 02/09/11 |
 
 **יציאה:** חוזים וספים בגרסה קבועה; מותר לבנות רכיבים ללא פרשנות מחדש בכל Part. אין תלות בחומר צלם כדי לכתוב ולבדוק חוזי נתונים.
 

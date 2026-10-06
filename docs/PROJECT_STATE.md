@@ -1,6 +1,6 @@
 # ProGrapher V2 — Project State
 
-Updated: 2026-10-04
+Updated: 2026-10-06
 
 ## Single source of truth
 
@@ -12,14 +12,14 @@ Historical plans and superseded planning notes live under `docs/archive/` and ar
 
 - Repository: `WizZerr/PROGRAPHER-V2`
 - **Single development Source of Truth: `main`.**
-- Verified pre-PG-04.02 main HEAD: `86b67d2e65a8cd2876a29eb10f85b88703b34f17`.
+- Pre-PG-01.07 baseline verified on `main`: `1cfce09a3da06725088b981b9dfcc6f042fa8f67`.
 - Repository branch inventory at verification: **`main` only**.
 - PR #1 is closed and is not the active development path.
 - New work is committed directly to `main` unless a strong engineering reason requires a temporary branch.
 
 ## Current execution position
 
-- Active phase: **Phase 04 — JPEG engine, preview truth and technical export**.
+- Active preparation lane: **Phase 01 — product/data/measurement contracts**, currently **PG-01.07 — Hardware / OS Support Matrix**.
 - **PG-03.02–PG-03.09 — V**: pre-photographer JPEG/data-safety package complete.
 - **PG-06.01 — V**: photographer data-request package ready.
 - **PG-06.02 — BLOCKED** until authorized photographer material arrives.
@@ -62,9 +62,10 @@ Historical plans and superseded planning notes live under `docs/archive/` and ar
 ## Next executable work
 
 1. **Phase 04 — COMPLETE** — PG-04.01 through PG-04.07 are V within their exact technical scope.
-2. **PG-01.05 — PREP ACTIVE / ◐** — data ownership/lifecycle/consent contract is now the active Phase-01 preparation lane while G0 remains paused.
-3. **Phase 05 remains BLOCKED on its formal entry dependencies** until PG-01.02/01.04 can be ratified after G0.
-4. **PG-06.02** remains blocked until authorized photographer material arrives.
+2. **PG-01.07 — PREP ACTIVE / ◐** — Release 1 hardware/OS support matrix and Intel Mac decision are prepared while G0 remains paused.
+3. **PG-01.05 — ◐ CONTRACT PREPARED / G0 BLOCKED** — lifecycle/consent contract remains ready for later ratification.
+4. **Phase 05 remains BLOCKED on its formal entry dependencies** until PG-01.02/01.04 can be ratified after G0.
+5. **PG-06.02** remains blocked until authorized photographer material arrives.
 
 Do not start Auth/Cloud implementation or a new production Brain.
 
@@ -188,3 +189,21 @@ Do not start Auth/Cloud implementation or a new production Brain.
 - Quota behavior cannot silently delete source media or active profile data.
 - Event/Profile/Device/Account deletion semantics are separate.
 - No Supabase/Auth/Cloud implementation was started.
+
+
+## PG-01.07 hardware / OS support preparation
+
+- **PG-01.07 — ◐ CANDIDATE MATRIX PREPARED / G0 + MEASUREMENT PENDING.**
+- `docs/TARGET_SYSTEM_MATRIX.md` now defines Release 1 support classes instead
+  of the old Phase-0 three-row placeholder.
+- Windows x64 and macOS Apple Silicon remain mandatory Release 1 targets.
+- Intel Mac is evaluation-only under D-014 and does not block Release 1.
+- Candidate floor: 16 GB RAM + SSD-class storage; 32 GB recommended. These are
+  not final commercial requirements until measured.
+- GPU/accelerator requirements intentionally remain model-dependent until a real
+  Brain candidate exists.
+- Current Windows local evidence is recorded: 118 backend tests, 27 focused
+  JPEG tests, frontend lint/TS/build, Rust/Tauri and real desktop JPEG/RAW flow
+  passed.
+- Apple Silicon remains UNVERIFIED and is still required before relevant
+  platform gates can close.

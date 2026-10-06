@@ -66,3 +66,21 @@ Canonical spine:
 JPEG and RAW remain semantically separate. Product inference may use source-side information only and must never depend on the edited target. NoOp/fixed baselines are wiring/comparison components and cannot be presented as implemented AI capability.
 
 Ratification waits for G0.
+
+
+## D-014 — [DRAFT] Intel Mac is evaluation-only for Release 1
+Prepared 2026-10-06 under PG-01.07.
+
+Release 1 remains mandatory on **Windows x64** and **macOS Apple Silicon arm64**.
+
+Intel Mac (`x86_64`) is a separate feasibility track:
+
+- it is not a Release 1 launch blocker,
+- Phase 02 may run a low-cost build/start smoke if suitable hardware is
+  available,
+- no Intel Mac support/marketing promise exists without a later versioned
+  promotion decision,
+- Intel support must not reduce testing depth, performance or packaging quality
+  on the two mandatory platforms.
+
+This decision is still a draft while G0 is unsigned.
