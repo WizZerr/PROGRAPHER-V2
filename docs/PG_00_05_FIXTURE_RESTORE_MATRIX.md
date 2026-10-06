@@ -28,7 +28,7 @@ PG-00.05 requires:
 | Local FiveK PR1 fixture | LOCAL / RESEARCH ONLY | Manual PR1 RAW/XMP behavior and real DNG previews were exercised | Commercial/product licensing is not established here; do not ship it as a product fixture |
 | Event catalog SQLite state | AVAILABLE | Events persist in `prographer.sqlite3` under `PROGRAPHER_DATA_DIR` | Real historical user backup still not supplied/verified |
 | RAW profile + review state | AUTOMATED RESTORE TEST ADDED | Copy of local data dir can restore event catalog, RAW profile and saved review while source RAW bytes stay unchanged | CI still needs to run the new test |
-| JPEG profile manifest | IMPLEMENTED / VERIFICATION PENDING | New profiles persist a relative `testing_datasets/<profile_id>/manifest.json` reference; runtime resolves it against the current data dir; legacy absolute references matching the managed manifest layout are rebound to the restored data dir | Run the new focused restore regressions locally; then B-007 can close |
+| JPEG profile manifest | **VERIFIED / B-007 CLOSED** | New profiles persist a relative `testing_datasets/<profile_id>/manifest.json` reference; runtime resolves it against the current data dir; legacy absolute references matching the managed manifest layout are rebound to the restored data dir | Windows focused restore verification on 2026-10-06: 3/3 PASS, including RAW restore, portable JPEG restore and legacy absolute-path rebinding |
 | Real camera fixture with explicit redistribution/use provenance | MISSING | — | Need a small licensed fixture set before PG-00.05 can be V |
 | Real historical DB/profile backup restore | MISSING | — | Need a safe copy of actual user development state; never test restore destructively on the only copy |
 
@@ -57,7 +57,7 @@ This is a state-restore plumbing test. It does not claim migration compatibility
 
 **Class:** BUG  
 **Severity:** High for backup/restore; not source-corruption.  
-**Status:** IMPLEMENTED / VERIFICATION PENDING.
+**Status:** VERIFIED / CLOSED on Windows (2026-10-06).
 
 Implementation prepared on 2026-10-06:
 
@@ -72,7 +72,7 @@ New regressions:
 - `test_pg00_backup_copy_restores_jpeg_manifest_portably`,
 - `test_pg00_legacy_absolute_jpeg_manifest_rebinds_to_restored_data_dir`.
 
-B-007 remains open only until these regressions pass locally on the current commit.
+Verification result on commit `1fa7cca24dd01ee3fb32baf272402f1d2b2fa3db`: **3 passed / 0 failed** in 1.11s on Windows. B-007 is closed.
 
 ## Provenance policy for fixtures
 
@@ -84,7 +84,7 @@ B-007 remains open only until these regressions pass locally on the current comm
 ## Exit blockers for PG-00.05
 
 - **B-004:** real historical DB/profile backup restore evidence missing.
-- **B-007:** implementation prepared; focused local restore regressions still need to pass before closure.
+- **B-007:** CLOSED — portable JPEG manifest restore and legacy rebinding verified locally on Windows (3/3 PASS).
 - **B-008:** small real-camera fixture set with explicit usable provenance/license missing.
 - New restore test must pass CI.
 

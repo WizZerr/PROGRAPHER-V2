@@ -48,7 +48,7 @@ Historical plans and superseded planning notes live under `docs/archive/` and ar
 
 - Added automated backup-copy restore coverage for Event + RAW profile + saved Review; source RAW must remain byte-identical.
 - Added `docs/PG_00_05_FIXTURE_RESTORE_MATRIX.md`.
-- **BUG-PG00-001:** portable JPEG manifest reference + legacy absolute-path rebinding are implemented; focused local restore verification is pending before marking the bug closed.
+- **BUG-PG00-001 / B-007 — CLOSED / VERIFIED:** portable JPEG manifest reference + legacy absolute-path rebinding passed the focused Windows restore suite (3/3 PASS) on `1fa7cca24dd01ee3fb32baf272402f1d2b2fa3db`.
 - Real historical backup restore and real-camera licensed fixture evidence are still missing.
 
 ## Current blockers / gates
@@ -253,5 +253,4 @@ than general polishing.
 - Runtime/API resolution binds it to the active `PROGRAPHER_DATA_DIR`.
 - Legacy absolute managed-manifest paths are rebound by profile identity so a
   restored backup does not silently keep reading the old app-data copy.
-- Two focused restore regressions were added; local execution is still required
-  before B-007 is closed.
+- Two focused restore regressions plus the existing RAW restore regression passed locally on Windows: **3 passed / 0 failed in 1.11s**. B-007 is closed.

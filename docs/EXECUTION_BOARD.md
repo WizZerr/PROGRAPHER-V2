@@ -37,7 +37,7 @@ Status vocabulary:
 | B-004 | PG-00.05 full completion | No verified copy of the user's historical DB/profile backup has been restored in this workflow | Restore on a copy; profile/events/reviews readable; source files unchanged |
 | B-005 | G1/G2/G3 quality work | Representative photographer dataset is not yet available | Authorized events split by whole event/source group with provenance |
 | B-006 | Commercial claims | No real photographer quality/time-savings measurement | Gate-specific evaluation on unseen photographer events |
-| B-007 | PG-00.05 | Portable manifest reference + legacy rebinding implemented; focused local verification pending | New + legacy JPEG backup-copy restore tests pass and resolve the manifest under the restored data dir, not the old copy |
+| B-007 | PG-00.05 | **CLOSED 2026-10-06** — portable manifest reference + legacy rebinding verified on Windows | 3/3 focused restore regressions PASS on `1fa7cca24dd01ee3fb32baf272402f1d2b2fa3db`; restored JPEG manifest resolves under restored data dir, not old copy |
 | B-008 | PG-00.05 | No small real-camera fixture set with explicit product-safe provenance/license is recorded | Add licensed/provenanced camera fixtures without committing restricted photographer material |
 
 ## Risk map
@@ -130,7 +130,7 @@ PG-06.02 stays BLOCKED on authorized photographer files. Residual PG-00.02 QA st
 
 ## Current bug batch
 
-- **BUG-PG00-001** — implementation prepared: relative managed-manifest reference + legacy absolute-path rebinding. Remains open until the focused restore regressions pass locally.
+- **BUG-PG00-001 — CLOSED / VERIFIED:** relative managed-manifest reference + legacy absolute-path rebinding passed the focused Windows restore suite (3/3 PASS).
 
 ## Phase 01 contract risks
 
