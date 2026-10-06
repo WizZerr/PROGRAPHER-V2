@@ -202,8 +202,9 @@ Do not start Auth/Cloud implementation or a new production Brain.
   not final commercial requirements until measured.
 - GPU/accelerator requirements intentionally remain model-dependent until a real
   Brain candidate exists.
-- Current Windows local evidence is recorded: 118 backend tests, 27 focused
+- Current Windows session evidence is recorded: 118 backend tests, 27 focused
   JPEG tests, frontend lint/TS/build, Rust/Tauri and real desktop JPEG/RAW flow
-  passed.
+  passed on the tested commits. Later UI-only corrections were manually verified;
+  this is not claimed as one final-head certification run.
 - Apple Silicon remains UNVERIFIED and is still required before relevant
   platform gates can close.

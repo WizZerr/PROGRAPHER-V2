@@ -26,15 +26,17 @@ Status: **◐ PREPARED / G0 + PLATFORM MEASUREMENT PENDING**
 
 ## New Windows evidence recorded
 
-The current Windows local-verification session provides stronger evidence than
-the old Phase-0 matrix:
+The Windows local-verification session provides stronger evidence than the old
+Phase-0 matrix, but it is not presented as one final-head certification run:
 
 - 118 backend tests passed,
 - 27 focused JPEG renderer/product/control tests passed after optimization,
 - ESLint, TypeScript and Next production build passed,
 - Rust/Tauri check and actual desktop launch passed,
 - local engine autostart passed,
-- real JPEG + MPO-backed JPG + RAW manual paths were exercised.
+- real JPEG + MPO-backed JPG + RAW manual paths were exercised,
+- the later JPEG UI-only corrections were manually verified in the desktop app;
+  the complete automated suite was not rerun after every UI-only commit.
 
 This remains one-machine engineering evidence. Hardware specs, 2,000-photo
 performance, external-drive recovery and clean second-machine installer testing

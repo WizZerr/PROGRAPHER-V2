@@ -188,7 +188,7 @@ promoted to commercial minimum requirements.
 Evidence class: **real local engineering evidence on one Windows x64 development
 machine; not broad hardware certification.**
 
-Observed against the current mainline during the local verification session:
+Observed during the Windows local-verification session across the tested commits:
 
 - Python **3.12.10** product environment created cleanly.
 - Product dependency check: no broken requirements.
@@ -208,6 +208,10 @@ Observed against the current mainline during the local verification session:
   authoritative render behavior manually confirmed.
 - RAW Exposure/Temperature/Tint preview path manually confirmed unchanged and
   working.
+- Later JPEG UI-only fixes through pre-PG-01.07 baseline
+  `1cfce09a3da06725088b981b9dfcc6f042fa8f67` were manually exercised in the
+  desktop app, but the full lint/build/backend suite was not rerun on that final
+  UI baseline.
 
 Not captured in this evidence record:
 
