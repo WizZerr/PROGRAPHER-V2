@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { open } from "@tauri-apps/plugin-dialog";
 import {
   selectLightroomCatalog,
@@ -29,6 +29,16 @@ function mediaLabel(media: LearningMedia) {
   return media === "jpeg" ? "JPEG" : "RAW";
 }
 
+async function fetchExistingProfile(
+  nextMedia: LearningMedia,
+): Promise<TestingProfile | null> {
+  try {
+    return await getTestingProfile(profileSource(nextMedia));
+  } catch {
+    return null;
+  }
+}
+
 export default function TrainingScreen() {
   const openView = useWorkspaceNav();
 
@@ -46,26 +56,16 @@ export default function TrainingScreen() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
 
-  const loadExistingProfile = useCallback(async (nextMedia: LearningMedia) => {
-    try {
-      const existing = await getTestingProfile(profileSource(nextMedia));
-      setProfile(existing);
-      return existing;
-    } catch {
-      setProfile(null);
-      return null;
-    }
-  }, []);
-
   useEffect(() => {
     const entry = consumeTrainingEntry();
     if (!entry) return;
 
     let cancelled = false;
 
-    void loadExistingProfile(entry.media).then((existing) => {
+    void fetchExistingProfile(entry.media).then((existing) => {
       if (cancelled) return;
 
+      setProfile(existing);
       setMedia(entry.media);
       setMethod(entry.method ?? null);
 
@@ -88,7 +88,7 @@ export default function TrainingScreen() {
     return () => {
       cancelled = true;
     };
-  }, [loadExistingProfile]);
+  }, []);
 
   async function chooseMedia(nextMedia: LearningMedia) {
     setMedia(nextMedia);
@@ -100,7 +100,7 @@ export default function TrainingScreen() {
     setCheckedNow(false);
     setCatalogSaved(false);
     setError("");
-    await loadExistingProfile(nextMedia);
+    setProfile(await fetchExistingProfile(nextMedia));
   }
 
   function chooseMethod(nextMethod: LearningMethod) {
