@@ -12,7 +12,6 @@ const items: Array<{ id: WorkspaceView; label: string }> = [
   { id: "gallery", label: "גלריה" },
   { id: "darkroom", label: "חדר עריכה" },
   { id: "profile", label: "הפרופיל שלי" },
-  { id: "training", label: "למידה" },
 ];
 
 function NavIcon({ view }: { view: WorkspaceView }) {
@@ -57,13 +56,6 @@ function NavIcon({ view }: { view: WorkspaceView }) {
         <svg {...common}>
           <circle cx="12" cy="8.5" r="3.2" />
           <path d="M5.8 19c.7-3.2 2.8-5 6.2-5s5.5 1.8 6.2 5" />
-        </svg>
-      );
-    case "training":
-      return (
-        <svg {...common}>
-          <path d="M6 17.5V13M12 17.5V9M18 17.5V5" />
-          <path d="M4 19.5h16" />
         </svg>
       );
     case "dashboard":
@@ -128,12 +120,6 @@ export default function Sidebar({ activeView, onSelect }: SidebarProps) {
         ))}
       </nav>
 
-      <div className={styles.sidebarFooter}>
-        <div className={styles.localStatus}>
-          <span className={styles.statusDot} aria-hidden="true" />
-          <span>עיבוד מקומי</span>
-        </div>
-      </div>
     </aside>
   );
 }

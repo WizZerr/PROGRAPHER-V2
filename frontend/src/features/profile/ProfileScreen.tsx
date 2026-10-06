@@ -2,8 +2,8 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { open } from "@tauri-apps/plugin-dialog";
+import { useWorkspaceNav } from "@/features/workspace/workspace-nav";
 import {
-  continueWithoutEditSource,
   getPhotographerSetup,
   saveStylePreferences,
   selectEditsFolder,
@@ -14,48 +14,73 @@ import {
 import styles from "./ProfileScreen.module.css";
 
 const STATUS_LABELS: Record<PhotographerSetupStatus, string> = {
-  no_profile: "אין פרופיל",
-  data_review: "הנתונים בבדיקה",
-  training: "באימון",
-  needs_more_data: "נדרש חומר נוסף",
+  no_profile: "עדיין אין פרופיל",
+  data_review: "בודק את החומר",
+  training: "הפרופיל באימון",
+  needs_more_data: "צריך עוד חומר",
   experimental: "פרופיל ניסויי",
-  evaluated: "פרופיל שעבר הערכה",
+  evaluated: "הפרופיל מוכן",
 };
 
+type TrackProps = {
+  eyebrow: string;
+  title: string;
+  copy: string;
+  badge: string;
+  disabled?: boolean;
+  onClick?: () => void;
+};
+
+function LearningTrack({
+  eyebrow,
+  title,
+  copy,
+  badge,
+  disabled = false,
+  onClick,
+}: TrackProps) {
+  return (
+    <article className={disabled ? `${styles.track} ${styles.trackDisabled}` : styles.track}>
+      <div className={styles.trackTop}>
+        <span className={styles.trackEyebrow}>{eyebrow}</span>
+        <span className={disabled ? styles.trackBadgeMuted : styles.trackBadge}>{badge}</span>
+      </div>
+      <h3>{title}</h3>
+      <p>{copy}</p>
+      <button type="button" disabled={disabled} onClick={onClick}>
+        {disabled ? "עדיין לא זמין" : "התחל למידה"}
+        <span aria-hidden="true">←</span>
+      </button>
+    </article>
+  );
+}
+
 export default function ProfileScreen() {
-  const [overview, setOverview] =
-    useState<PhotographerSetupOverview | null>(null);
+  const openView = useWorkspaceNav();
+  const [overview, setOverview] = useState<PhotographerSetupOverview | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [saved, setSaved] = useState("");
 
   const [styleName, setStyleName] = useState("");
   const [presetPath, setPresetPath] = useState<string | null>(null);
-  const [profileMode, setProfileMode] =
-    useState<"from_source" | "explicit">("from_source");
+  const [profileMode, setProfileMode] = useState<"from_source" | "explicit">("from_source");
   const [cameraProfile, setCameraProfile] = useState("");
 
-  const applyOverview = useCallback(
-    (value: PhotographerSetupOverview) => {
-      setOverview(value);
-      setStyleName(value.setup.style_name ?? "");
-      setPresetPath(value.setup.preset_path);
-      setProfileMode(value.setup.color_profile_mode);
-      setCameraProfile(value.setup.camera_profile ?? "");
-    },
-    [],
-  );
+  const applyOverview = useCallback((value: PhotographerSetupOverview) => {
+    setOverview(value);
+    setStyleName(value.setup.style_name ?? "");
+    setPresetPath(value.setup.preset_path);
+    setProfileMode(value.setup.color_profile_mode);
+    setCameraProfile(value.setup.camera_profile ?? "");
+  }, []);
 
   const refresh = useCallback(async () => {
     setError("");
     try {
       applyOverview(await getPhotographerSetup());
     } catch (cause) {
-      setError(
-        cause instanceof Error
-          ? cause.message
-          : "לא ניתן לטעון את הגדרת הצלם.",
-      );
+      setError(cause instanceof Error ? cause.message : "לא ניתן לטעון את הפרופיל.");
     }
   }, [applyOverview]);
 
@@ -64,86 +89,51 @@ export default function ProfileScreen() {
   }, [refresh]);
 
   async function chooseCatalog() {
-    setError("");
-    setSaved("");
-
     const selected = await open({
       multiple: false,
       directory: false,
       title: "בחר קטלוג Lightroom",
       filters: [{ name: "Lightroom Catalog", extensions: ["lrcat"] }],
     });
-
     if (!selected || Array.isArray(selected)) return;
 
     setBusy(true);
+    setError("");
     try {
       applyOverview(await selectLightroomCatalog(selected));
     } catch (cause) {
-      setError(
-        cause instanceof Error
-          ? cause.message
-          : "לא ניתן לקרוא את קטלוג Lightroom.",
-      );
+      setError(cause instanceof Error ? cause.message : "לא ניתן לקרוא את קטלוג Lightroom.");
     } finally {
       setBusy(false);
     }
   }
 
   async function chooseEditsFolder() {
-    setError("");
-    setSaved("");
-
     const selected = await open({
       multiple: false,
       directory: true,
       title: "בחר תיקיית עריכות / XMP",
     });
-
     if (!selected || Array.isArray(selected)) return;
 
     setBusy(true);
+    setError("");
     try {
       applyOverview(await selectEditsFolder(selected));
     } catch (cause) {
-      setError(
-        cause instanceof Error
-          ? cause.message
-          : "לא ניתן לקרוא את תיקיית העריכות.",
-      );
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function noExistingSource() {
-    setBusy(true);
-    setError("");
-    setSaved("");
-    try {
-      applyOverview(await continueWithoutEditSource());
-    } catch (cause) {
-      setError(
-        cause instanceof Error
-          ? cause.message
-          : "לא ניתן לעדכן את מצב הפרופיל.",
-      );
+      setError(cause instanceof Error ? cause.message : "לא ניתן לקרוא את תיקיית העריכות.");
     } finally {
       setBusy(false);
     }
   }
 
   async function choosePreset() {
-    setError("");
-    setSaved("");
-
     const selected = await open({
       multiple: false,
       directory: false,
       title: "בחר פריסט Lightroom",
       filters: [{ name: "Lightroom Preset", extensions: ["xmp"] }],
     });
-
     if (!selected || Array.isArray(selected)) return;
     setPresetPath(selected);
   }
@@ -152,250 +142,192 @@ export default function ProfileScreen() {
     setBusy(true);
     setError("");
     setSaved("");
-
     try {
       const result = await saveStylePreferences({
         style_name: styleName.trim() || null,
         preset_path: presetPath,
         color_profile_mode: profileMode,
-        camera_profile:
-          profileMode === "explicit"
-            ? cameraProfile.trim() || null
-            : null,
+        camera_profile: profileMode === "explicit" ? cameraProfile.trim() || null : null,
       });
-
       applyOverview(result);
-      setSaved("הגדרות הסגנון נשמרו.");
+      setSaved("ההגדרות נשמרו.");
     } catch (cause) {
-      setError(
-        cause instanceof Error
-          ? cause.message
-          : "לא ניתן לשמור את הגדרות הסגנון.",
-      );
+      setError(cause instanceof Error ? cause.message : "לא ניתן לשמור את ההגדרות.");
     } finally {
       setBusy(false);
     }
   }
 
   const setup = overview?.setup;
-  const catalog = overview?.selected_catalog;
-  const editsFolder = overview?.selected_edits_folder;
+  const reasons = overview?.readiness_reasons ?? [];
+  const profileReady = setup?.status === "evaluated";
+  const statusLabel = setup ? STATUS_LABELS[setup.status] : "טוען…";
 
   return (
     <section className={styles.screen}>
-      <div className={styles.hero}>
-        <span className={styles.eyebrow}>DNA של העריכה</span>
-        <h2>הפרופיל שלי</h2>
-        <p>
-          ProGrapher לומד את הדרך שבה אתה עורך באמת — מתוך חומר שכבר ערכת,
-          הבחירות שלך והעדפות הסגנון שאתה שומר לאורך העבודה.
-        </p>
-      </div>
+      <header className={styles.hero}>
+        <div>
+          <span className={styles.eyebrow}>הפרופיל שלי</span>
+          <h2>{profileReady ? "הסגנון שלך מוכן לעבודה." : "מלמדים את ProGrapher לערוך כמוך."}</h2>
+          <p>
+            הפרופיל שלך שומר את הדרך שבה אתה עורך. בחר איך ללמד אותו,
+            ו-ProGrapher ינחה אותך רק במה שצריך.
+          </p>
+        </div>
+        <div className={styles.heroStatus}>
+          <span className={profileReady ? styles.readyDot : styles.pendingDot} aria-hidden="true" />
+          <div>
+            <small>מצב הפרופיל</small>
+            <strong>{statusLabel}</strong>
+          </div>
+        </div>
+      </header>
 
       {error ? <div className={styles.error}>{error}</div> : null}
       {saved ? <div className={styles.success}>{saved}</div> : null}
 
-      <div className={styles.grid}>
-        <article className={styles.card}>
-          <div className={styles.cardHeader}>
-            <div>
-              <span className={styles.label}>סביבת עבודה</span>
-              <h3>Lightroom Classic</h3>
-            </div>
-            <span
-              className={
-                overview?.lightroom.detected
-                  ? styles.okBadge
-                  : styles.warningBadge
-              }
-            >
-              {overview?.lightroom.detected ? "זוהה" : "לא זוהה"}
-            </span>
+      {!profileReady && (
+        <section className={styles.nextStep}>
+          <div>
+            <span className={styles.sectionLabel}>השלב הבא</span>
+            <h3>{reasons.length > 0 ? "צריך חומר כדי להתחיל ללמוד." : "הפרופיל מוכן לשלב הבא."}</h3>
+            <p>
+              בחר את סוג החומר שיש לך. אין צורך להבין קטלוגים, manifests או הגדרות מודל.
+            </p>
           </div>
+          <button type="button" onClick={() => openView("training")}>
+            התחל לבנות פרופיל
+          </button>
+        </section>
+      )}
 
-          <p className={styles.path}>
-            {overview?.lightroom.application_path ??
-              "ProGrapher לא מצא התקנת Lightroom Classic אוטומטית."}
-          </p>
-        </article>
-
-        <article className={styles.card}>
-          <div className={styles.cardHeader}>
-            <div>
-              <span className={styles.label}>מוכנות</span>
-              <h3>מצב הפרופיל</h3>
-            </div>
-            <span className={styles.statusBadge}>
-              {setup ? STATUS_LABELS[setup.status] : "טוען..."}
-            </span>
+      <section className={styles.learningSection}>
+        <div className={styles.sectionHead}>
+          <div>
+            <span className={styles.sectionLabel}>דרכי למידה</span>
+            <h2>איך אפשר ללמד את הפרופיל?</h2>
           </div>
-
-          <p>
-            הפרופיל הופך למוכן רק אחרי שיש מספיק חומר עריכה תקין והמערכת
-            עוברת בדיקת איכות.
-          </p>
-
-          <div className={styles.readinessInline}>
-            <div className={styles.readinessInlineHeader}>
-              <span>מה חסר כרגע</span>
-              <span>{overview?.readiness_reasons.length ?? 0}</span>
-            </div>
-
-            {(overview?.readiness_reasons.length ?? 0) > 0 ? (
-              <ul>
-                {(overview?.readiness_reasons ?? []).map((reason) => (
-                  <li key={reason}>{reason}</li>
-                ))}
-              </ul>
-            ) : (
-              <div className={styles.readinessReady}>הפרופיל מוכן לשלב הבא.</div>
-            )}
-          </div>
-        </article>
-      </div>
-
-      <article className={styles.sourceCard}>
-        <span className={styles.label}>01 · מקור הלמידה</span>
-        <h3>מאיפה נלמד את הסגנון שלך?</h3>
-
-        <div className={styles.sourceOptions}>
-          <button
-            type="button"
-            className={`${styles.sourceOption} ${setup?.source_type === "lightroom_catalog" ? styles.sourceOptionSelected : ""}`}
-            onClick={() => void chooseCatalog()}
-            disabled={busy}
-          >
-            <strong>יש לי קטלוג Lightroom</strong>
-            <span>בחירת קובץ .lrcat קיים</span>
-          </button>
-
-          <button
-            type="button"
-            className={`${styles.sourceOption} ${setup?.source_type === "edits_folder" ? styles.sourceOptionSelected : ""}`}
-            onClick={() => void chooseEditsFolder()}
-            disabled={busy}
-          >
-            <strong>יש לי תיקיית עריכות / XMP</strong>
-            <span>נשתמש רק בחומר שתבחר במפורש</span>
-          </button>
-
-          <button
-            type="button"
-            className={`${styles.sourceOption} ${setup?.source_type === "none" ? styles.sourceOptionSelected : ""}`}
-            onClick={() => void noExistingSource()}
-            disabled={busy}
-          >
-            <strong>אין לי חומר ערוך כרגע</strong>
-            <span>ממשיכים בלי פרופיל אישי בשלב הזה</span>
-          </button>
+          <p>כל מסלול נשמר ונמדד בנפרד. אפשר להוסיף מסלול נוסף בהמשך.</p>
         </div>
 
-        {catalog ? (
-          <div className={styles.details}>
-            <div className={styles.pathBox}>{catalog.path}</div>
-            <div className={styles.info}>{catalog.note}</div>
-          </div>
-        ) : null}
+        <div className={styles.tracks}>
+          <LearningTrack
+            eyebrow="RAW"
+            title="RAW + עריכות Lightroom"
+            copy="מתאים לצלם שעובד RAW ושומר את העריכות שלו ב-Lightroom/XMP."
+            badge="זמין לניסוי"
+            onClick={() => openView("training")}
+          />
+          <LearningTrack
+            eyebrow="JPEG"
+            title="JPEG לפני + אחרי"
+            copy="מקור JPEG מול JPEG סופי שכבר ערכת. ProGrapher לומד מההבדל ביניהם."
+            badge="זמין לניסוי"
+            onClick={() => openView("training")}
+          />
+          <LearningTrack
+            eyebrow="JPEG + LR"
+            title="JPEG + Lightroom Catalog"
+            copy="למידה ישירה מה-JPEG ומהחלטות העריכה שנשמרו ב-Lightroom."
+            badge="בתכנון"
+            disabled
+          />
+        </div>
+      </section>
 
-        {editsFolder ? (
-          <div className={styles.details}>
-            <div className={styles.pathBox}>{editsFolder.path}</div>
-            <div className={styles.info}>{editsFolder.note}</div>
-          </div>
-        ) : null}
+      <details className={styles.advanced}>
+        <summary>
+          <span>
+            <strong>הגדרות מתקדמות</strong>
+            <small>Lightroom, מקור עריכות והעדפות סגנון</small>
+          </span>
+          <span className={styles.chevron} aria-hidden="true">⌄</span>
+        </summary>
 
-        {setup?.source_type === "none" ? (
-          <div className={styles.warning}>
-            אין כרגע מקור לעריכות אישיות. זה לא חוסם את התוכנה — רק אומר
-            שעדיין אי אפשר לאמן פרופיל אישי מהסגנון שלך.
-          </div>
-        ) : null}
-      </article>
+        <div className={styles.advancedBody}>
+          <section className={styles.advancedCard}>
+            <div className={styles.advancedHead}>
+              <div>
+                <span className={styles.sectionLabel}>Lightroom</span>
+                <h3>{overview?.lightroom.detected ? "Lightroom Classic זוהה" : "Lightroom Classic לא זוהה"}</h3>
+              </div>
+              <span className={overview?.lightroom.detected ? styles.goodBadge : styles.neutralBadge}>
+                {overview?.lightroom.detected ? "מחובר" : "לא זוהה"}
+              </span>
+            </div>
+            <p className={styles.techPath}>
+              {overview?.lightroom.application_path ?? "לא נמצא נתיב התקנה."}
+            </p>
+            <div className={styles.advancedActions}>
+              <button type="button" onClick={() => void chooseCatalog()} disabled={busy}>
+                {overview?.selected_catalog ? "החלף קטלוג Lightroom" : "בחר קטלוג Lightroom"}
+              </button>
+              <button type="button" onClick={() => void chooseEditsFolder()} disabled={busy}>
+                {overview?.selected_edits_folder ? "החלף תיקיית עריכות" : "בחר תיקיית עריכות / XMP"}
+              </button>
+            </div>
+          </section>
 
-      <article className={styles.styleCard}>
-        <span className={styles.label}>02 · זהות הסגנון</span>
-        <h3>איך נזהה את הסגנון שלך?</h3>
-        <p className={styles.sourceIntro}>
-          ההגדרות כאן מתארות את כיוון העבודה שלך. הן לא מחליפות את נתוני
-          העריכה האמיתיים שמהם ProGrapher לומד.
-        </p>
+          <section className={styles.advancedCard}>
+            <div className={styles.advancedHead}>
+              <div>
+                <span className={styles.sectionLabel}>סגנון</span>
+                <h3>פרטים אופציונליים</h3>
+              </div>
+            </div>
 
-        <div className={styles.formGrid}>
-          <label className={styles.field}>
-            <span>שם הסגנון</span>
-            <input
-              value={styleName}
-              onChange={(event) => setStyleName(event.target.value)}
-              placeholder="לדוגמה: טבעי, חם, נקי"
-            />
-          </label>
+            <div className={styles.formGrid}>
+              <label>
+                <span>שם הסגנון</span>
+                <input
+                  value={styleName}
+                  onChange={(event) => setStyleName(event.target.value)}
+                  placeholder="לדוגמה: טבעי וחם"
+                />
+              </label>
 
-          <div className={styles.field}>
-            <span>פריסט Lightroom</span>
-            <button
-              type="button"
-              className={styles.secondaryButton}
-              onClick={() => void choosePreset()}
-              disabled={busy}
-            >
-              {presetPath ? "החלפת פריסט" : "בחירת פריסט XMP"}
+              <div className={styles.fieldButton}>
+                <span>פריסט Lightroom</span>
+                <button type="button" onClick={() => void choosePreset()} disabled={busy}>
+                  {presetPath ? "החלף פריסט" : "בחר פריסט"}
+                </button>
+              </div>
+            </div>
+
+            <div className={styles.profileModes}>
+              <label>
+                <input
+                  type="radio"
+                  name="profile-mode"
+                  checked={profileMode === "from_source"}
+                  onChange={() => setProfileMode("from_source")}
+                />
+                <span>קבע פרופיל צבע מתוך החומר</span>
+              </label>
+              <label>
+                <input
+                  type="radio"
+                  name="profile-mode"
+                  checked={profileMode === "explicit"}
+                  onChange={() => setProfileMode("explicit")}
+                />
+                <span>הגדר פרופיל צבע ידנית</span>
+              </label>
+              {profileMode === "explicit" ? (
+                <input
+                  value={cameraProfile}
+                  onChange={(event) => setCameraProfile(event.target.value)}
+                  placeholder="לדוגמה: Adobe Color"
+                />
+              ) : null}
+            </div>
+
+            <button className={styles.saveAdvanced} type="button" onClick={() => void saveStyle()} disabled={busy}>
+              {busy ? "שומר…" : "שמור הגדרות"}
             </button>
-            <small className={styles.pathHint}>
-              {presetPath ??
-                `${overview?.discovered_presets.length ?? 0} פריסטים אותרו אוטומטית`}
-            </small>
-          </div>
+          </section>
         </div>
-
-        <div className={styles.profileChoice}>
-          <strong>פרופיל צבע</strong>
-
-          <label>
-            <input
-              type="radio"
-              name="profile-mode"
-              checked={profileMode === "from_source"}
-              onChange={() => setProfileMode("from_source")}
-            />
-            <span>
-              ייקבע מתוך חומר העריכה המאומת
-              <small>ברירת המחדל הבטוחה כשאין פרופיל ידוע מראש</small>
-            </span>
-          </label>
-
-          <label>
-            <input
-              type="radio"
-              name="profile-mode"
-              checked={profileMode === "explicit"}
-              onChange={() => setProfileMode("explicit")}
-            />
-            <span>
-              יש לי דרישת פרופיל צבע מפורשת
-              <small>נשמור את השם, אך נבדוק התאמה למצלמה לפני שימוש</small>
-            </span>
-          </label>
-
-          {profileMode === "explicit" ? (
-            <input
-              className={styles.profileInput}
-              value={cameraProfile}
-              onChange={(event) => setCameraProfile(event.target.value)}
-              placeholder="לדוגמה: Adobe Color"
-            />
-          ) : null}
-        </div>
-
-        <button
-          type="button"
-          className={styles.primaryButton}
-          onClick={() => void saveStyle()}
-          disabled={busy}
-        >
-          {busy ? "שומר…" : "שמור הגדרות"}
-        </button>
-      </article>
-
+      </details>
     </section>
   );
 }

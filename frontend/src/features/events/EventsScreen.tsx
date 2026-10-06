@@ -277,7 +277,7 @@ export default function EventsScreen() {
           <div>
             <h2>אירועים</h2>
             <p>
-              בחר תיקיית צילום מהמחשב. ProGrapher קורא את קובצי המקור מהמיקום
+              הוסף אירוע חדש מהמחשב. ProGrapher קורא את קובצי המקור מהמיקום
               שלהם ואינו מעתיק או משנה את התמונות.
             </p>
           </div>
@@ -288,7 +288,7 @@ export default function EventsScreen() {
             onClick={() => void chooseFolder()}
             disabled={busy}
           >
-            {busy ? "סורק תיקייה..." : "בחירת תיקיית אירוע"}
+            {busy ? "מוסיף אירוע…" : "＋ אירוע חדש"}
           </button>
         </div>
       </div>

@@ -18,7 +18,10 @@ export default function AppShell({
 }: AppShellProps) {
   return (
     <div className={styles.shell}>
-      <Sidebar activeView={activeView} onSelect={onSelect} />
+      <Sidebar
+        activeView={activeView === "training" ? "profile" : activeView}
+        onSelect={onSelect}
+      />
       <div className={immersive ? `${styles.main} ${styles.mainImmersive}` : styles.main}>
         <div className={immersive ? `${styles.content} ${styles.contentImmersive}` : styles.content}>
           {children}

@@ -334,51 +334,24 @@
   font-weight: 600;
 }
 
-.localCardTopline {
-  justify-content: space-between;
-}
-
-.cardTitleGroup {
-  min-width: 0;
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.engineStatusInline {
-  min-height: 28px;
-  padding: 0 9px;
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  flex: 0 0 auto;
-  border: 1px solid rgba(78, 226, 138, 0.16);
-  border-radius: 999px;
-  background: rgba(78, 226, 138, 0.07);
-  color: #7ee6a7;
-  font-size: 11px;
-  font-weight: 700;
-  white-space: nowrap;
-}
-
 .engineStatusDot {
-  width: 7px;
-  height: 7px;
-  flex: 0 0 7px;
+  width: 8px;
+  height: 8px;
+  margin-inline-start: 1px;
+  flex: 0 0 8px;
   border-radius: 50%;
   background: var(--pg-success);
-  box-shadow: 0 0 8px rgba(78, 226, 138, 0.55);
+  box-shadow: 0 0 9px rgba(78, 226, 138, 0.52);
 }
 
 .engineStatusError {
-  border-color: rgba(255, 107, 114, 0.18);
-  background: rgba(255, 107, 114, 0.07);
-  color: #ff9ca1;
+  background: var(--pg-danger);
+  box-shadow: 0 0 9px rgba(255, 107, 114, 0.48);
 }
 
-.engineStatusError .engineStatusDot {
-  background: var(--pg-danger);
-  box-shadow: 0 0 8px rgba(255, 107, 114, 0.48);
+.engineStatusChecking {
+  background: var(--pg-warning);
+  box-shadow: 0 0 9px rgba(241, 199, 106, 0.42);
 }
 
 .systemIcon {

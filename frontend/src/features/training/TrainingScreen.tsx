@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { open } from "@tauri-apps/plugin-dialog";
+import { useWorkspaceNav } from "@/features/workspace/workspace-nav";
 import {
   activateTestingProfile,
   createTestingProfile,
@@ -12,11 +13,10 @@ import {
 import styles from "@/features/testing/testing.module.css";
 
 export default function TrainingScreen() {
+  const openView = useWorkspaceNav();
   const [profile, setProfile] = useState<TestingProfile | null>(null);
-  const [rawRoot, setRawRoot] = useState("");
+  const [sourceRoot, setSourceRoot] = useState("");
   const [editsRoot, setEditsRoot] = useState("");
-  const [photographerId, setPhotographerId] = useState("local-photographer");
-  const [eventLabel, setEventLabel] = useState("reference");
   const [learningSource, setLearningSource] = useState<LearningSource>("raw");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -24,10 +24,8 @@ export default function TrainingScreen() {
   const applyProfile = useCallback((value: TestingProfile | null) => {
     setProfile(value);
     if (!value) return;
-    setRawRoot(value.raw_root);
+    setSourceRoot(value.raw_root);
     setEditsRoot(value.edits_root);
-    setPhotographerId(value.photographer_id);
-    setEventLabel(value.event_label);
     setLearningSource(value.learning_source);
   }, []);
 
@@ -35,7 +33,7 @@ export default function TrainingScreen() {
     void getTestingProfile()
       .then(applyProfile)
       .catch((cause: unknown) => {
-        setError(cause instanceof Error ? cause.message : "טעינת הפרופיל נכשלה.");
+        setError(cause instanceof Error ? cause.message : "לא ניתן לטעון את מצב הלמידה.");
       });
   }, [applyProfile]);
 
@@ -48,21 +46,20 @@ export default function TrainingScreen() {
       const message = cause instanceof Error ? cause.message : "";
       if (message.includes("עדיין אין")) {
         setProfile(null);
-        setRawRoot("");
+        setSourceRoot("");
         setEditsRoot("");
         return;
       }
-      setError(message || "טעינת המסלול נכשלה.");
+      setError(message || "לא ניתן לפתוח את מסלול הלמידה.");
     }
   }
 
-  async function chooseFolder(target: "raw" | "edits") {
-    setError("");
+  async function chooseFolder(target: "source" | "edits") {
     const selected = await open({
       directory: true,
       multiple: false,
       title:
-        target === "raw"
+        target === "source"
           ? learningSource === "jpeg"
             ? "בחר תיקיית JPEG מקור"
             : "בחר תיקיית RAW"
@@ -70,13 +67,15 @@ export default function TrainingScreen() {
             ? "בחר תיקיית JPEG ערוך"
             : "בחר תיקיית XMP",
     });
+
     if (!selected || Array.isArray(selected)) return;
-    if (target === "raw") {
-      setRawRoot(selected);
+
+    if (target === "source") {
+      setSourceRoot(selected);
       if (learningSource === "raw" && !editsRoot) setEditsRoot(selected);
-      return;
+    } else {
+      setEditsRoot(selected);
     }
-    setEditsRoot(selected);
   }
 
   async function build() {
@@ -85,244 +84,164 @@ export default function TrainingScreen() {
     try {
       setProfile(
         await createTestingProfile({
-          raw_root: rawRoot,
-          edits_root:
-            learningSource === "jpeg" ? editsRoot : editsRoot || rawRoot,
-          photographer_id: photographerId,
-          event_label: eventLabel,
+          raw_root: sourceRoot,
+          edits_root: learningSource === "jpeg" ? editsRoot : editsRoot || sourceRoot,
+          photographer_id: "local-photographer",
+          event_label: "profile-learning",
           learning_source: learningSource,
         }),
       );
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "בניית הפרופיל נכשלה.");
+      setError(cause instanceof Error ? cause.message : "לא ניתן לבדוק את החומר.");
     } finally {
       setBusy(false);
     }
   }
 
+  const hasRequiredMaterial =
+    Boolean(sourceRoot) && (learningSource === "raw" || Boolean(editsRoot));
+
   return (
-    <div className={styles.screen}>
-      <header className={styles.labHead}>
-        <div className={styles.headCopy}>
-          <span className={styles.sectionEyebrow}>מעבדת למידה</span>
-          <h2>למידה</h2>
-          <p>
-            בונים בסיס בדיקה מחומר אמיתי, מאמתים התאמות ורק אז מתקדמים
-            לפרופיל חכם יותר.
-          </p>
+    <main className={styles.screen}>
+      <header className={styles.wizardHeader}>
+        <button className={styles.backButton} type="button" onClick={() => openView("profile")}>
+          → חזרה לפרופיל
+        </button>
+        <div>
+          <span className={styles.eyebrow}>בניית הפרופיל</span>
+          <h2>בוא נלמד איך אתה עורך.</h2>
+          <p>שלושה צעדים קצרים. בחר סוג חומר, הוסף אותו, ו-ProGrapher יבדוק אם הוא מתאים ללמידה.</p>
         </div>
-        <ol className={styles.steps}>
-          <li className={rawRoot ? styles.stepOn : undefined}>בחירת תיקיות</li>
-          <li className={profile && profile.matched_pairs > 0 ? styles.stepOn : undefined}>זיהוי זוגות</li>
-          <li className={profile && profile.usable_pairs > 0 ? styles.stepOn : undefined}>בסיס לבדיקה</li>
-        </ol>
       </header>
-      <div className={styles.lab}>
-        <button
-          type="button"
-          className={learningSource === "raw" ? styles.labCardActive : styles.labCard}
-          onClick={() => void switchLearningSource("raw")}
-        >
-          <strong>RAW</strong>
-          <span>RAW + XMP. בסיס חשיפה, טמפרטורה וגוון.</span>
-        </button>
-        <button
-          type="button"
-          className={learningSource === "jpeg" ? styles.labCardActive : styles.labCard}
-          onClick={() => void switchLearningSource("jpeg")}
-        >
-          <strong>JPEG</strong>
-          <span>JPEG מקור + JPEG ערוך. ללא נתוני פיתוח של Lightroom.</span>
-        </button>
-      </div>
 
-      <section className={styles.panel}>
-        <div className={styles.panelHead}>
-          <div>
-            <span className={styles.sectionEyebrow}>הגדרת המדגם</span>
-            <h3>בחר את החומר לבדיקה</h3>
-          </div>
-          <span className={styles.modeBadge}>
-            {learningSource === "raw" ? "RAW + XMP" : "JPEG PAIRS"}
-          </span>
-        </div>
-
-        <div className={styles.row}>
-          <label className={styles.field}>
-            <span>צלם</span>
-            <input
-              value={photographerId}
-              onChange={(event) => setPhotographerId(event.target.value)}
-            />
-          </label>
-          <label className={styles.field}>
-            <span>שם המדגם</span>
-            <input
-              value={eventLabel}
-              onChange={(event) => setEventLabel(event.target.value)}
-            />
-          </label>
-        </div>
-        <div className={styles.actions}>
-          <button className={styles.secondary} type="button" onClick={() => void chooseFolder("raw")}>
-            {learningSource === "jpeg" ? "תיקיית JPEG מקור" : "תיקיית RAW"}
-          </button>
-          <button className={styles.secondary} type="button" onClick={() => void chooseFolder("edits")}>
-            {learningSource === "jpeg" ? "תיקיית JPEG ערוך" : "תיקיית XMP"}
-          </button>
-          <button
-            className={styles.primary}
-            type="button"
-            disabled={busy || !rawRoot || (learningSource === "jpeg" && !editsRoot)}
-            onClick={() => void build()}
-          >
-            {busy ? "קורא קבצים…" : "בנה בסיס בדיקה"}
-          </button>
-        </div>
-        <p className={styles.note}>
-          {learningSource === "jpeg" ? "JPEG מקור" : "RAW"}:{" "}
-          <bdi className={styles.ltr}>{rawRoot || "עדיין לא נבחר"}</bdi>
-        </p>
-        <p className={styles.note}>
-          {learningSource === "jpeg" ? "JPEG ערוך" : "XMP"}:{" "}
-          <bdi className={styles.ltr}>{editsRoot || rawRoot || "אותה תיקייה"}</bdi>
-        </p>
+      <section className={styles.steps} aria-label="שלבי בניית הפרופיל">
+        <div className={styles.stepActive}><span>1</span><strong>סוג החומר</strong></div>
+        <div className={sourceRoot ? styles.stepActive : styles.step}><span>2</span><strong>בחירת חומר</strong></div>
+        <div className={profile ? styles.stepActive : styles.step}><span>3</span><strong>בדיקה</strong></div>
       </section>
 
-      {error && <p className={styles.error}>{error}</p>}
-
-      {profile && (
-        <section className={styles.profilePanel}>
-          <div className={styles.profileHeader}>
-            <div>
-              <span className={styles.sectionEyebrow}>תוצאות הבדיקה</span>
-              <h3>
-                {profile.learning_source === "jpeg"
-                  ? "מאגר ה-JPEG הנוכחי"
-                  : "בסיס ה-RAW הנוכחי"}
-              </h3>
-              <p className={styles.profileLead}>{profile.note}</p>
-            </div>
-            <span
-              className={
-                profile.learning_source === "jpeg"
-                  ? `${styles.sourceBadge} ${styles.sourceJpeg}`
-                  : `${styles.sourceBadge} ${styles.sourceRaw}`
-              }
-            >
-              {profile.learning_source === "jpeg" ? "JPEG" : "RAW"}
-            </span>
+      <section className={styles.block}>
+        <div className={styles.blockHead}>
+          <span className={styles.blockIndex}>01</span>
+          <div>
+            <h3>איזה חומר יש לך?</h3>
+            <p>בחר את הדרך שמתאימה למה שכבר קיים אצלך.</p>
           </div>
+        </div>
 
-          <div className={styles.profileInfo}>
-            <div className={styles.infoBlock}>
-              <span>מצב המסלול</span>
+        <div className={styles.modeGrid}>
+          <button
+            type="button"
+            className={learningSource === "raw" ? styles.modeActive : styles.mode}
+            onClick={() => void switchLearningSource("raw")}
+          >
+            <span className={styles.modeTag}>RAW</span>
+            <strong>RAW + Lightroom/XMP</strong>
+            <small>קבצי RAW והעריכות ששמרת עבורם.</small>
+          </button>
+
+          <button
+            type="button"
+            className={learningSource === "jpeg" ? styles.modeActive : styles.mode}
+            onClick={() => void switchLearningSource("jpeg")}
+          >
+            <span className={styles.modeTag}>JPEG</span>
+            <strong>JPEG לפני + אחרי</strong>
+            <small>תמונות המקור מול הקבצים הסופיים שכבר ערכת.</small>
+          </button>
+
+          <button type="button" className={styles.modeDisabled} disabled>
+            <span className={styles.modeTag}>JPEG + LR</span>
+            <strong>JPEG + Lightroom Catalog</strong>
+            <small>מסלול נפרד שנחבר בהמשך.</small>
+          </button>
+        </div>
+      </section>
+
+      <section className={styles.block}>
+        <div className={styles.blockHead}>
+          <span className={styles.blockIndex}>02</span>
+          <div>
+            <h3>בחר את החומר</h3>
+            <p>
+              {learningSource === "jpeg"
+                ? "צריך תיקיית מקור ותיקיית JPEG ערוך."
+                : "צריך RAW ואת עריכות ה-XMP המתאימות."}
+            </p>
+          </div>
+        </div>
+
+        <div className={styles.folderGrid}>
+          <button type="button" className={styles.folderCard} onClick={() => void chooseFolder("source")}>
+            <span className={styles.folderIcon} aria-hidden="true">＋</span>
+            <div>
+              <strong>{learningSource === "jpeg" ? "JPEG מקור" : "RAW מקור"}</strong>
+              <small>{sourceRoot || "בחר תיקייה"}</small>
+            </div>
+          </button>
+
+          <button type="button" className={styles.folderCard} onClick={() => void chooseFolder("edits")}>
+            <span className={styles.folderIcon} aria-hidden="true">＋</span>
+            <div>
+              <strong>{learningSource === "jpeg" ? "JPEG ערוך" : "עריכות XMP"}</strong>
+              <small>{editsRoot || (learningSource === "raw" && sourceRoot ? sourceRoot : "בחר תיקייה")}</small>
+            </div>
+          </button>
+        </div>
+
+        <button
+          className={styles.checkButton}
+          type="button"
+          disabled={busy || !hasRequiredMaterial}
+          onClick={() => void build()}
+        >
+          {busy ? "בודק את החומר…" : "בדוק את החומר"}
+        </button>
+      </section>
+
+      {error ? <div className={styles.error}>{error}</div> : null}
+
+      {profile ? (
+        <section className={styles.result}>
+          <div className={styles.resultHero}>
+            <span className={styles.resultDot} aria-hidden="true" />
+            <div>
+              <span>תוצאת הבדיקה</span>
+              <h3>
+                {profile.usable_pairs.toLocaleString("he-IL")} זוגות מוכנים ללמידה
+              </h3>
               <p>{profile.note}</p>
             </div>
-
-            {profile.dataset_manifest_path && (
-              <div className={styles.infoBlock}>
-                <span>קובץ Manifest</span>
-                <bdi className={styles.pathValue}>
-                  {profile.dataset_manifest_path}
-                </bdi>
-              </div>
-            )}
           </div>
 
-          <div
-            className={
-              profile.learning_source === "jpeg"
-                ? `${styles.metrics} ${styles.metricsJpeg}`
-                : styles.metrics
-            }
-          >
-            <div className={styles.metric}>
-              <span>
-                {profile.learning_source === "jpeg" ? "קובצי JPEG" : "קובצי RAW"}
-              </span>
-              <strong>
-                <bdi>{profile.raw_files.toLocaleString("he-IL")}</bdi>
-              </strong>
-            </div>
-
-            {profile.learning_source === "raw" && (
-              <div className={styles.metric}>
-                <span>קובצי XMP</span>
-                <strong>
-                  <bdi>{profile.xmp_files.toLocaleString("he-IL")}</bdi>
-                </strong>
-              </div>
-            )}
-
-            <div className={styles.metric}>
-              <span>זוגות שנמצאו</span>
-              <strong>
-                <bdi>{profile.matched_pairs.toLocaleString("he-IL")}</bdi>
-              </strong>
-            </div>
-
-            <div className={styles.metric}>
-              <span>זוגות שמישים</span>
-              <strong>
-                <bdi>{profile.usable_pairs.toLocaleString("he-IL")}</bdi>
-              </strong>
-            </div>
-
-            {profile.learning_source === "raw" && (
-              <>
-                <div className={styles.metric}>
-                  <span>חשיפה בסיסית</span>
-                  <strong>
-                    <bdi>
-                      {profile.baseline
-                        ? profile.baseline.exposure.toFixed(2)
-                        : "לא זמין"}
-                    </bdi>
-                  </strong>
-                </div>
-
-                <div className={styles.metric}>
-                  <span>טמפרטורה בסיסית</span>
-                  <strong>
-                    <bdi>
-                      {profile.baseline
-                        ? `${profile.baseline.temperature} K`
-                        : "לא זמין"}
-                    </bdi>
-                  </strong>
-                </div>
-
-                <div className={styles.metric}>
-                  <span>גוון בסיסי</span>
-                  <strong>
-                    <bdi>
-                      {profile.baseline
-                        ? profile.baseline.tint
-                        : "לא זמין"}
-                    </bdi>
-                  </strong>
-                </div>
-              </>
-            )}
+          <div className={styles.resultStats}>
+            <div><span>קבצים</span><strong>{profile.raw_files.toLocaleString("he-IL")}</strong></div>
+            <div><span>התאמות</span><strong>{profile.matched_pairs.toLocaleString("he-IL")}</strong></div>
+            <div><span>שמישים</span><strong>{profile.usable_pairs.toLocaleString("he-IL")}</strong></div>
           </div>
 
-          {profile.warnings.length > 0 && (
-            <div className={styles.warningStack}>
-              <div className={styles.warningHeader}>
-                <strong>מה צריך לדעת על המדגם הזה</strong>
-                <span>{profile.warnings.length}</span>
-              </div>
-              {profile.warnings.map((warning) => (
-                <div className={styles.warning} key={warning}>
-                  <span className={styles.warningDot} aria-hidden="true" />
-                  <p>{warning}</p>
-                </div>
-              ))}
+          {profile.warnings.length > 0 ? (
+            <div className={styles.warnings}>
+              <strong>יש כמה דברים שצריך לבדוק</strong>
+              {profile.warnings.map((warning) => <p key={warning}>{warning}</p>)}
             </div>
-          )}
+          ) : null}
+
+          <details className={styles.technical}>
+            <summary>פרטים טכניים</summary>
+            <dl>
+              <div><dt>מסלול</dt><dd>{profile.learning_source === "jpeg" ? "JPEG PAIRS" : "RAW + XMP"}</dd></div>
+              <div><dt>Manifest</dt><dd>{profile.dataset_manifest_path || "לא נוצר"}</dd></div>
+              <div><dt>מקור</dt><dd>{profile.raw_root}</dd></div>
+              <div><dt>עריכות</dt><dd>{profile.edits_root}</dd></div>
+            </dl>
+          </details>
+
+          <button className={styles.finishButton} type="button" onClick={() => openView("profile")}>
+            חזרה לפרופיל
+          </button>
         </section>
-      )}
-    </div>
+      ) : null}
+    </main>
   );
 }

@@ -199,23 +199,33 @@ export default function DashboardScreen() {
           <small>{profile ? `${profile.usable_pairs.toLocaleString("he-IL")} זוגות שמישים` : "הלמידה מחכה לחומר"}</small>
         </article>
         <article className={styles.card}>
-          <div className={`${styles.cardTopline} ${styles.localCardTopline}`}>
-            <span className={styles.cardTitleGroup}>
-              <span className={styles.systemIcon}><SystemGlyph kind="local" /></span>
-              <span>עיבוד מקומי</span>
-            </span>
+          <div className={styles.cardTopline}>
+            <span className={styles.systemIcon}><SystemGlyph kind="local" /></span>
+            <span>עיבוד מקומי</span>
             <span
-              className={`${styles.engineStatusInline} ${
-                state === "error" ? styles.engineStatusError : ""
+              className={`${styles.engineStatusDot} ${
+                state === "error"
+                  ? styles.engineStatusError
+                  : state === "checking"
+                    ? styles.engineStatusChecking
+                    : ""
               }`}
-            >
-              <span className={styles.engineStatusDot} aria-hidden="true" />
-              {state === "checking"
-                ? "מתחבר"
-                : state === "connected"
-                  ? "מחובר"
-                  : "לא זמין"}
-            </span>
+              role="status"
+              aria-label={
+                state === "checking"
+                  ? "המנוע המקומי מתחבר"
+                  : state === "connected"
+                    ? "המנוע המקומי מחובר"
+                    : "המנוע המקומי אינו זמין"
+              }
+              title={
+                state === "checking"
+                  ? "מתחבר"
+                  : state === "connected"
+                    ? "מחובר"
+                    : "לא זמין"
+              }
+            />
           </div>
           <strong>{engine ? `127.0.0.1:${engine.port}` : "—"}</strong>
           <small>{runtime?.service ?? "המנוע עדיין לא זמין"}</small>
