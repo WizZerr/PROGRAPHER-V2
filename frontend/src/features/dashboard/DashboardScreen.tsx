@@ -132,7 +132,7 @@ export default function DashboardScreen() {
         <div className={styles.heroShade} aria-hidden="true" />
 
         <div className={styles.heroCopy}>
-          <span className={styles.heroGreeting}>שלום, {firstNameLabel}</span>
+          <span className={styles.heroGreeting}>שלום {firstNameLabel},</span>
           <h2>
             <span>סביבת העבודה</span>
             <span className={styles.heroAccent}>מוכנים להתחיל.</span>

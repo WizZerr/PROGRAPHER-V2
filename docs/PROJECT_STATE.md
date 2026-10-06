@@ -270,3 +270,20 @@ than general polishing.
 - Profile UX is reorganized around the two expected initial JPEG learning
   paths, with RAW secondary and technical settings hidden behind the profile
   settings dialog.
+
+
+## Profile learning UX refinement — 2026-10-07
+
+- Dashboard greeting grammar corrected to `שלום {firstName},`.
+- The Profile screen is now intended to show two equal top-level capabilities:
+  `למידה לפי JPEG` and `למידה לפי RAW`.
+- Each capability exposes exactly two route statuses on the Profile screen.
+- Entering learning uses progressive disclosure:
+  media type → learning method → required material → result.
+- JPEG routes: before/after pairs or JPEG source + Lightroom Catalog.
+- RAW routes: RAW + Lightroom/XMP edits or RAW source + Lightroom Catalog.
+- Pair counts/catalog record counts are shown only when backed by real data.
+- No fake learning percentage is displayed before a real trained Brain exposes
+  meaningful progress/metrics.
+- Catalog route setup is preparation only until its separate training Brain is
+  implemented and evaluated.

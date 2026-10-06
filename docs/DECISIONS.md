@@ -130,7 +130,7 @@ Initial UI identity fields:
 
 Display rules:
 
-- Dashboard greeting: `שלום, {firstName}`,
+- Dashboard greeting: `שלום {firstName},`,
 - profile owner label: `profileName` when set, otherwise `firstName`.
 
 Until the gated Auth/Cloud phase begins, this identity is persisted locally by
@@ -141,3 +141,38 @@ not change D-008/D-012 cloud gating.
 When real Accounts arrive, the provider behind this contract is replaced; the
 Dashboard/Profile UI should not need to be rewritten around provider-specific
 APIs.
+
+
+## D-017 — Profile learning UX is media-first and progressively disclosed
+
+Adopted 2026-10-07 as the frontend interaction model for photographer learning.
+
+The main Profile screen is a status surface, not a setup form.
+
+Top-level learning architecture:
+
+1. **למידה לפי JPEG**
+   - JPEG Original + Edited pairs,
+   - JPEG source + Lightroom Catalog (`.lrcat`).
+2. **למידה לפי RAW**
+   - RAW source + Lightroom/XMP edits,
+   - RAW source + Lightroom Catalog (`.lrcat`).
+
+The user sees only one decision at a time:
+
+`JPEG / RAW → learning method → required material → validation/result`.
+
+Technical paths, manifests, model internals and unrelated setup metadata are not
+shown in the main learning flow.
+
+Status language must remain evidence-based:
+
+- `לא הוגדר` when no material is configured,
+- real pair counts when validated pairs exist,
+- catalog record counts when a catalog has been inspected,
+- training percentages or "learned" claims only when a real trained Brain and
+  measured progress exist.
+
+Catalog-based routes may be prepared in the UI before their Brain implementation
+exists, but the UI must not present them as trained or production-ready until
+the corresponding backend/model path is actually implemented and evaluated.

@@ -1,61 +1,76 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  type ReactNode,
+} from "react";
 import { open } from "@tauri-apps/plugin-dialog";
 import { useAccountIdentity } from "@/features/account/AccountIdentity";
 import {
   getTestingProfile,
-  type LearningSource,
   type TestingProfile,
 } from "@/features/testing/testing.api";
+import {
+  loadCatalogBindings,
+  writeTrainingEntry,
+  type CatalogBinding,
+  type LearningMedia,
+} from "@/features/training/learning-state";
 import { useWorkspaceNav } from "@/features/workspace/workspace-nav";
 import {
   getPhotographerSetup,
   saveStylePreferences,
-  selectEditsFolder,
-  selectLightroomCatalog,
   type PhotographerSetupOverview,
-  type PhotographerSetupStatus,
 } from "./profile.api";
 import styles from "./ProfileScreen.module.css";
 
-const STATUS_LABELS: Record<PhotographerSetupStatus, string> = {
-  no_profile: "עדיין לא הוגדר",
-  data_review: "בודק את החומר",
-  training: "באימון",
-  needs_more_data: "צריך עוד חומר",
-  experimental: "פרופיל ניסויי",
-  evaluated: "מוכן לעבודה",
-};
+type RouteState = "idle" | "pending" | "ready";
 
-type ActivityItem = {
-  title: string;
-  meta: string;
-  date: string | null;
-};
-
-function formatDate(value: string | null) {
-  if (!value) return "";
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "";
-  return new Intl.DateTimeFormat("he-IL", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  }).format(date);
+function routeState(profile: TestingProfile | null): RouteState {
+  if (!profile) return "idle";
+  return profile.usable_pairs > 0 ? "ready" : "pending";
 }
 
-function LearningState({
-  label,
-  ready,
+function pairStatus(
+  profile: TestingProfile | null,
+  media: LearningMedia,
+): string {
+  if (!profile) return "לא הוגדר";
+  if (profile.usable_pairs <= 0) return "נבדק · אין חומר שמיש";
+
+  return media === "jpeg"
+    ? `${profile.usable_pairs.toLocaleString("he-IL")} זוגות מוכנים`
+    : `${profile.usable_pairs.toLocaleString("he-IL")} זוגות RAW/XMP`;
+}
+
+function catalogStatus(binding?: CatalogBinding): string {
+  if (!binding) return "לא הוגדר";
+  return binding.catalogPhotoRecords !== null
+    ? `${binding.catalogPhotoRecords.toLocaleString("he-IL")} רשומות בקטלוג`
+    : "קטלוג הוגדר";
+}
+
+function StatusPill({
+  state,
+  children,
 }: {
-  label: string;
-  ready: boolean;
+  state: RouteState;
+  children: ReactNode;
 }) {
+  const className =
+    state === "ready"
+      ? styles.statusReady
+      : state === "pending"
+        ? styles.statusPending
+        : styles.statusIdle;
+
   return (
-    <span className={ready ? styles.stateReady : styles.stateIdle}>
+    <span className={className}>
       <span aria-hidden="true" />
-      {label}
+      {children}
     </span>
   );
 }
@@ -69,14 +84,15 @@ export default function ProfileScreen() {
     updateIdentity,
   } = useAccountIdentity();
 
-  const [overview, setOverview] =
-    useState<PhotographerSetupOverview | null>(null);
   const [jpegProfile, setJpegProfile] = useState<TestingProfile | null>(null);
   const [rawProfile, setRawProfile] = useState<TestingProfile | null>(null);
+  const [catalogBindings, setCatalogBindings] = useState<
+    Partial<Record<LearningMedia, CatalogBinding>>
+  >({});
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [saved, setSaved] = useState("");
-  const [settingsOpen, setSettingsOpen] = useState(false);
 
   const [firstNameDraft, setFirstNameDraft] = useState("");
   const [profileNameDraft, setProfileNameDraft] = useState("");
@@ -87,7 +103,6 @@ export default function ProfileScreen() {
   const [cameraProfile, setCameraProfile] = useState("");
 
   const applyOverview = useCallback((value: PhotographerSetupOverview) => {
-    setOverview(value);
     setStyleName(value.setup.style_name ?? "");
     setPresetPath(value.setup.preset_path);
     setProfileMode(value.setup.color_profile_mode);
@@ -105,6 +120,7 @@ export default function ProfileScreen() {
       applyOverview(setup);
       setJpegProfile(jpeg);
       setRawProfile(raw);
+      setCatalogBindings(loadCatalogBindings());
     } catch (cause) {
       setError(
         cause instanceof Error ? cause.message : "לא ניתן לטעון את הפרופיל.",
@@ -121,72 +137,12 @@ export default function ProfileScreen() {
     setProfileNameDraft(identity.profileName ?? "");
   }, [identity]);
 
-  function openLearning(source: LearningSource) {
-    try {
-      window.sessionStorage.setItem("prographer.training.preferred-source", source);
-    } catch {
-      // Navigation still works even if session storage is unavailable.
-    }
+  function openLearning(media: LearningMedia) {
+    writeTrainingEntry({ media });
     openView("training");
   }
 
-  async function chooseCatalog() {
-    setError("");
-    setSaved("");
-
-    const selected = await open({
-      multiple: false,
-      directory: false,
-      title: "בחר קטלוג Lightroom",
-      filters: [{ name: "Lightroom Catalog", extensions: ["lrcat"] }],
-    });
-    if (!selected || Array.isArray(selected)) return;
-
-    setBusy(true);
-    try {
-      applyOverview(await selectLightroomCatalog(selected));
-      setSaved("קטלוג Lightroom נשמר בפרופיל.");
-    } catch (cause) {
-      setError(
-        cause instanceof Error
-          ? cause.message
-          : "לא ניתן לקרוא את קטלוג Lightroom.",
-      );
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function chooseEditsFolder() {
-    setError("");
-    setSaved("");
-
-    const selected = await open({
-      multiple: false,
-      directory: true,
-      title: "בחר תיקיית עריכות / XMP",
-    });
-    if (!selected || Array.isArray(selected)) return;
-
-    setBusy(true);
-    try {
-      applyOverview(await selectEditsFolder(selected));
-      setSaved("תיקיית העריכות נשמרה בפרופיל.");
-    } catch (cause) {
-      setError(
-        cause instanceof Error
-          ? cause.message
-          : "לא ניתן לקרוא את תיקיית העריכות.",
-      );
-    } finally {
-      setBusy(false);
-    }
-  }
-
   async function choosePreset() {
-    setError("");
-    setSaved("");
-
     const selected = await open({
       multiple: false,
       directory: false,
@@ -232,56 +188,21 @@ export default function ProfileScreen() {
     }
   }
 
-  const setup = overview?.setup;
-  const profileReady = setup?.status === "evaluated";
-  const jpegReady = Boolean(jpegProfile && jpegProfile.usable_pairs > 0);
-  const rawReady = Boolean(rawProfile && rawProfile.usable_pairs > 0);
-  const catalogReady = Boolean(
-    overview?.selected_catalog?.readable && overview.selected_catalog.sqlite_valid,
-  );
-  const hasAnyMaterial = jpegReady || rawReady || catalogReady;
+  const jpegCatalog = catalogBindings.jpeg;
+  const rawCatalog = catalogBindings.raw;
 
-  const overallStatus = profileReady
-    ? STATUS_LABELS.evaluated
-    : hasAnyMaterial
-      ? "בתהליך בנייה"
-      : setup
-        ? STATUS_LABELS[setup.status]
-        : "טוען…";
+  const jpegConfigured =
+    Number(Boolean(jpegProfile)) + Number(Boolean(jpegCatalog));
+  const rawConfigured =
+    Number(Boolean(rawProfile)) + Number(Boolean(rawCatalog));
 
-  const activity = useMemo<ActivityItem[]>(() => {
-    const items: ActivityItem[] = [];
+  const totalConfigured = jpegConfigured + rawConfigured;
 
-    if (jpegProfile) {
-      items.push({
-        title: "חומר JPEG נבדק",
-        meta: `${jpegProfile.usable_pairs.toLocaleString("he-IL")} זוגות שמישים`,
-        date: jpegProfile.created_at,
-      });
-    }
-
-    if (overview?.selected_catalog) {
-      const count = overview.selected_catalog.catalog_photo_records;
-      items.push({
-        title: "קטלוג Lightroom נבחר",
-        meta:
-          typeof count === "number"
-            ? `${count.toLocaleString("he-IL")} רשומות צילום`
-            : "הקטלוג מוכן לניתוח",
-        date: overview.setup.updated_at,
-      });
-    }
-
-    if (rawProfile) {
-      items.push({
-        title: "חומר RAW נבדק",
-        meta: `${rawProfile.usable_pairs.toLocaleString("he-IL")} זוגות שמישים`,
-        date: rawProfile.created_at,
-      });
-    }
-
-    return items.slice(0, 3);
-  }, [jpegProfile, rawProfile, overview]);
+  const profileStatus = useMemo(() => {
+    if (totalConfigured === 0) return "עדיין לא הוגדר";
+    if (totalConfigured === 4) return "כל מסלולי הלמידה הוגדרו";
+    return "בתהליך בנייה";
+  }, [totalConfigured]);
 
   return (
     <section className={styles.screen}>
@@ -290,20 +211,20 @@ export default function ProfileScreen() {
           <span className={styles.eyebrow}>הפרופיל שלי</span>
           <h1>סגנון העריכה של {profileOwnerLabel}</h1>
           <p>
-            כל מסלול לומד בנפרד את דרך העריכה שלך. כאן רואים מה כבר מוכן,
-            מה חסר ומה הפעולה הבאה.
+            כאן רואים רק את מצב הלמידה שלך. נכנסים למסלול, בוחרים את סוג החומר,
+            ומתקדמים שלב אחר שלב.
           </p>
         </div>
 
         <div className={styles.headerControls}>
           <div className={styles.profileStatus}>
             <span
-              className={profileReady ? styles.readyDot : styles.pendingDot}
+              className={totalConfigured > 0 ? styles.readyDot : styles.pendingDot}
               aria-hidden="true"
             />
             <div>
               <small>מצב הפרופיל</small>
-              <strong>{overallStatus}</strong>
+              <strong>{profileStatus}</strong>
             </div>
           </div>
 
@@ -325,162 +246,94 @@ export default function ProfileScreen() {
       {error ? <div className={styles.error}>{error}</div> : null}
       {saved ? <div className={styles.success}>{saved}</div> : null}
 
-      <section className={styles.learningSection}>
-        <div className={styles.sectionHeader}>
-          <div>
-            <span className={styles.sectionLabel}>מסלולי JPEG</span>
-            <h2>שתי דרכים ללמוד את העריכה שלך</h2>
-          </div>
-          <p>כל מסלול נשמר, נמדד ומתפתח בנפרד.</p>
-        </div>
-
-        <div className={styles.primaryTracks}>
-          <article className={styles.learningCard}>
-            <div className={styles.cardTop}>
-              <span className={styles.formatBadge}>JPEG</span>
-              <LearningState
-                ready={jpegReady}
-                label={jpegReady ? "חומר מוכן" : "לא הוגדר"}
-              />
-            </div>
-
-            <div className={styles.cardCopy}>
-              <h3>לפני + אחרי</h3>
-              <p>
-                תמונות JPEG מקור מול הגרסה הסופית שכבר ערכת. ProGrapher לומד
-                מההבדל ביניהן.
-              </p>
-            </div>
-
-            {jpegProfile ? (
-              <div className={styles.cardMetrics}>
-                <div>
-                  <span>זוגות שמישים</span>
-                  <strong>{jpegProfile.usable_pairs.toLocaleString("he-IL")}</strong>
-                </div>
-                <div>
-                  <span>קובצי מקור</span>
-                  <strong>{jpegProfile.raw_files.toLocaleString("he-IL")}</strong>
-                </div>
-              </div>
-            ) : (
-              <div className={styles.emptyHint}>
-                צריך שתי תיקיות: JPEG מקור ו-JPEG ערוך.
-              </div>
-            )}
-
-            <button
-              className={styles.cardAction}
-              type="button"
-              onClick={() => openLearning("jpeg")}
-            >
-              {jpegProfile ? "המשך למסלול" : "התחל הגדרה"}
-              <span aria-hidden="true">←</span>
-            </button>
-          </article>
-
-          <article className={styles.learningCard}>
-            <div className={styles.cardTop}>
-              <span className={styles.formatBadge}>JPEG + LR</span>
-              <LearningState
-                ready={catalogReady}
-                label={catalogReady ? "קטלוג נבחר" : "לא הוגדר"}
-              />
-            </div>
-
-            <div className={styles.cardCopy}>
-              <h3>Lightroom Catalog</h3>
-              <p>
-                JPEG יחד עם החלטות העריכה שנשמרו ב-Lightroom. זהו מסלול למידה
-                נפרד ממסלול לפני/אחרי.
-              </p>
-            </div>
-
-            {overview?.selected_catalog ? (
-              <div className={styles.catalogInfo}>
-                <span>קטלוג נבחר</span>
-                <strong>
-                  {overview.selected_catalog.catalog_photo_records !== null
-                    ? `${overview.selected_catalog.catalog_photo_records.toLocaleString("he-IL")} רשומות`
-                    : "מוכן לניתוח"}
-                </strong>
-                <small>
-                  מנוע הלמידה למסלול הזה יחובר בנפרד עם חומר הצלם.
-                </small>
-              </div>
-            ) : (
-              <div className={styles.emptyHint}>
-                בחר קובץ Lightroom Catalog כדי להכין את המסלול.
-              </div>
-            )}
-
-            <button
-              className={styles.cardAction}
-              type="button"
-              onClick={() => void chooseCatalog()}
-              disabled={busy}
-            >
-              {overview?.selected_catalog ? "החלף קטלוג" : "בחר קטלוג Lightroom"}
-              <span aria-hidden="true">←</span>
-            </button>
-          </article>
-        </div>
-      </section>
-
-      <section className={styles.rawLane}>
-        <div className={styles.rawIdentity}>
-          <span className={styles.rawBadge}>RAW</span>
-          <div>
-            <strong>RAW + Lightroom/XMP</strong>
-            <small>
-              מסלול משני כרגע. נוכל להפעיל אותו אם נקבל מהצלם חומר RAW מתאים.
-            </small>
-          </div>
-        </div>
-
-        <div className={styles.rawControls}>
-          <LearningState
-            ready={rawReady}
-            label={rawReady ? "חומר מוכן" : "לא הוגדר"}
-          />
-          <button type="button" onClick={() => openLearning("raw")}>
-            {rawProfile ? "המשך" : "הגדר RAW"}
-          </button>
-        </div>
-      </section>
-
-      <section className={styles.activitySection}>
-        <div className={styles.sectionHeader}>
-          <div>
-            <span className={styles.sectionLabel}>פעילות אחרונה</span>
-            <h2>מה קרה בפרופיל</h2>
-          </div>
-        </div>
-
-        {activity.length === 0 ? (
-          <div className={styles.activityEmpty}>
-            <span aria-hidden="true">○</span>
+      <section className={styles.learningGrid}>
+        <article className={styles.learningCard}>
+          <div className={styles.cardHeader}>
             <div>
-              <strong>אין עדיין פעילות בפרופיל</strong>
-              <small>
-                אחרי שתוסיף חומר, בדיקות והתקדמות יופיעו כאן בצורה פשוטה.
-              </small>
+              <span className={styles.mediaBadge}>JPEG</span>
+              <h2>למידה לפי JPEG</h2>
+              <p>שני מסלולי למידה נפרדים לאותו סוג קובץ.</p>
+            </div>
+            <span className={styles.configuredCount}>
+              {jpegConfigured}/2 הוגדרו
+            </span>
+          </div>
+
+          <div className={styles.routeList}>
+            <div className={styles.routeRow}>
+              <div>
+                <strong>זוגות לפני + אחרי</strong>
+                <small>JPEG מקור מול JPEG ערוך</small>
+              </div>
+              <StatusPill state={routeState(jpegProfile)}>
+                {pairStatus(jpegProfile, "jpeg")}
+              </StatusPill>
+            </div>
+
+            <div className={styles.routeRow}>
+              <div>
+                <strong>Lightroom Catalog</strong>
+                <small>JPEG מקור + קובץ LRCAT</small>
+              </div>
+              <StatusPill state={jpegCatalog ? "ready" : "idle"}>
+                {catalogStatus(jpegCatalog)}
+              </StatusPill>
             </div>
           </div>
-        ) : (
-          <div className={styles.activityList}>
-            {activity.map((item) => (
-              <div className={styles.activityRow} key={`${item.title}-${item.date ?? ""}`}>
-                <span className={styles.activityDot} aria-hidden="true" />
-                <div>
-                  <strong>{item.title}</strong>
-                  <small>{item.meta}</small>
-                </div>
-                <time>{formatDate(item.date)}</time>
-              </div>
-            ))}
+
+          <button
+            className={styles.learningAction}
+            type="button"
+            onClick={() => openLearning("jpeg")}
+          >
+            <span>פתח למידת JPEG</span>
+            <span aria-hidden="true">←</span>
+          </button>
+        </article>
+
+        <article className={styles.learningCard}>
+          <div className={styles.cardHeader}>
+            <div>
+              <span className={styles.mediaBadge}>RAW</span>
+              <h2>למידה לפי RAW</h2>
+              <p>אותו תהליך פשוט, עם מקורות שמתאימים ל־RAW.</p>
+            </div>
+            <span className={styles.configuredCount}>
+              {rawConfigured}/2 הוגדרו
+            </span>
           </div>
-        )}
+
+          <div className={styles.routeList}>
+            <div className={styles.routeRow}>
+              <div>
+                <strong>RAW + עריכות Lightroom</strong>
+                <small>RAW מקור + XMP / עריכות תואמות</small>
+              </div>
+              <StatusPill state={routeState(rawProfile)}>
+                {pairStatus(rawProfile, "raw")}
+              </StatusPill>
+            </div>
+
+            <div className={styles.routeRow}>
+              <div>
+                <strong>Lightroom Catalog</strong>
+                <small>RAW מקור + קובץ LRCAT</small>
+              </div>
+              <StatusPill state={rawCatalog ? "ready" : "idle"}>
+                {catalogStatus(rawCatalog)}
+              </StatusPill>
+            </div>
+          </div>
+
+          <button
+            className={styles.learningAction}
+            type="button"
+            onClick={() => openLearning("raw")}
+          >
+            <span>פתח למידת RAW</span>
+            <span aria-hidden="true">←</span>
+          </button>
+        </article>
       </section>
 
       {settingsOpen ? (
@@ -499,7 +352,7 @@ export default function ProfileScreen() {
           >
             <header className={styles.modalHeader}>
               <div>
-                <span className={styles.sectionLabel}>הגדרות פרופיל</span>
+                <span className={styles.eyebrow}>הגדרות פרופיל</span>
                 <h2>החשבון והסגנון שלך</h2>
               </div>
               <button
@@ -514,12 +367,10 @@ export default function ProfileScreen() {
             <div className={styles.settingsScroll}>
               <section className={styles.settingsGroup}>
                 <div className={styles.settingsGroupHead}>
-                  <div>
-                    <strong>זהות החשבון</strong>
-                    <small>
-                      נשמר מקומית כרגע ויתחבר לאותו contract כשנוסיף Accounts.
-                    </small>
-                  </div>
+                  <strong>זהות</strong>
+                  <small>
+                    השדות האלה כבר משתמשים ב־Account Identity שמוכן לחיבור לחשבון עתידי.
+                  </small>
                 </div>
 
                 <div className={styles.formGrid}>
@@ -546,99 +397,74 @@ export default function ProfileScreen() {
                 </div>
               </section>
 
-              <section className={styles.settingsGroup}>
-                <div className={styles.settingsGroupHead}>
-                  <div>
-                    <strong>Lightroom</strong>
-                    <small>
-                      כל הפרטים הטכניים נשארים כאן, מחוץ למסך הראשי.
-                    </small>
-                  </div>
-                  <span
-                    className={
-                      overview?.lightroom.detected
-                        ? styles.lightroomReady
-                        : styles.lightroomIdle
-                    }
-                  >
-                    {overview?.lightroom.detected ? "זוהה" : "לא זוהה"}
+              <details className={styles.advancedSettings}>
+                <summary>
+                  <span>
+                    <strong>הגדרות מתקדמות</strong>
+                    <small>סגנון, פריסט ופרופיל צבע</small>
                   </span>
-                </div>
+                  <span aria-hidden="true">⌄</span>
+                </summary>
 
-                <div className={styles.settingsActions}>
-                  <button type="button" onClick={() => void chooseCatalog()} disabled={busy}>
-                    {overview?.selected_catalog ? "החלף קטלוג" : "בחר קטלוג Lightroom"}
-                  </button>
-                  <button type="button" onClick={() => void chooseEditsFolder()} disabled={busy}>
-                    {overview?.selected_edits_folder ? "החלף תיקיית XMP" : "בחר תיקיית עריכות / XMP"}
-                  </button>
-                </div>
-              </section>
+                <div className={styles.advancedBody}>
+                  <div className={styles.formGrid}>
+                    <label>
+                      <span>שם הסגנון</span>
+                      <input
+                        value={styleName}
+                        onChange={(event) => setStyleName(event.target.value)}
+                        placeholder="לדוגמה: טבעי וחם"
+                      />
+                    </label>
 
-              <section className={styles.settingsGroup}>
-                <div className={styles.settingsGroupHead}>
-                  <div>
-                    <strong>העדפות סגנון</strong>
-                    <small>אופציונלי. חומר העריכה האמיתי הוא מקור הלמידה.</small>
+                    <div className={styles.fieldButton}>
+                      <span>פריסט Lightroom</span>
+                      <button
+                        type="button"
+                        onClick={() => void choosePreset()}
+                        disabled={busy}
+                      >
+                        {presetPath ? "החלף פריסט" : "בחר פריסט"}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className={styles.profileModes}>
+                    <label>
+                      <input
+                        type="radio"
+                        name="profile-mode"
+                        checked={profileMode === "from_source"}
+                        onChange={() => setProfileMode("from_source")}
+                      />
+                      <span>קבע פרופיל צבע מתוך החומר</span>
+                    </label>
+
+                    <label>
+                      <input
+                        type="radio"
+                        name="profile-mode"
+                        checked={profileMode === "explicit"}
+                        onChange={() => setProfileMode("explicit")}
+                      />
+                      <span>הגדר פרופיל צבע ידנית</span>
+                    </label>
+
+                    {profileMode === "explicit" ? (
+                      <input
+                        value={cameraProfile}
+                        onChange={(event) => setCameraProfile(event.target.value)}
+                        placeholder="לדוגמה: Adobe Color"
+                      />
+                    ) : null}
                   </div>
                 </div>
-
-                <div className={styles.formGrid}>
-                  <label>
-                    <span>שם הסגנון</span>
-                    <input
-                      value={styleName}
-                      onChange={(event) => setStyleName(event.target.value)}
-                      placeholder="לדוגמה: טבעי וחם"
-                    />
-                  </label>
-
-                  <div className={styles.fieldButton}>
-                    <span>פריסט Lightroom</span>
-                    <button
-                      type="button"
-                      onClick={() => void choosePreset()}
-                      disabled={busy}
-                    >
-                      {presetPath ? "החלף פריסט" : "בחר פריסט"}
-                    </button>
-                  </div>
-                </div>
-
-                <div className={styles.profileModes}>
-                  <label>
-                    <input
-                      type="radio"
-                      name="profile-mode"
-                      checked={profileMode === "from_source"}
-                      onChange={() => setProfileMode("from_source")}
-                    />
-                    <span>קבע פרופיל צבע מתוך החומר</span>
-                  </label>
-                  <label>
-                    <input
-                      type="radio"
-                      name="profile-mode"
-                      checked={profileMode === "explicit"}
-                      onChange={() => setProfileMode("explicit")}
-                    />
-                    <span>הגדר פרופיל צבע ידנית</span>
-                  </label>
-
-                  {profileMode === "explicit" ? (
-                    <input
-                      value={cameraProfile}
-                      onChange={(event) => setCameraProfile(event.target.value)}
-                      placeholder="לדוגמה: Adobe Color"
-                    />
-                  ) : null}
-                </div>
-              </section>
+              </details>
             </div>
 
             <footer className={styles.modalFooter}>
               <span>
-                שלום, {firstNameDraft.trim() || "צלם"} · סגנון העריכה של{" "}
+                שלום {firstNameDraft.trim() || "צלם"}, · סגנון העריכה של{" "}
                 {profileNameDraft.trim() || firstNameDraft.trim() || "צלם"}
               </span>
               <div>
