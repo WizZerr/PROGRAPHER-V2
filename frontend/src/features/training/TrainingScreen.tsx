@@ -61,10 +61,14 @@ export default function TrainingScreen() {
     const entry = consumeTrainingEntry();
     if (!entry) return;
 
-    setMedia(entry.media);
-    setMethod(entry.method ?? null);
+    let cancelled = false;
 
     void loadExistingProfile(entry.media).then((existing) => {
+      if (cancelled) return;
+
+      setMedia(entry.media);
+      setMethod(entry.method ?? null);
+
       if (entry.method === "pairs" && existing) {
         setSourceRoot(existing.raw_root);
         setEditsRoot(existing.edits_root);
@@ -80,6 +84,10 @@ export default function TrainingScreen() {
         }
       }
     });
+
+    return () => {
+      cancelled = true;
+    };
   }, [loadExistingProfile]);
 
   async function chooseMedia(nextMedia: LearningMedia) {

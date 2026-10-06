@@ -3,9 +3,8 @@
 import {
   createContext,
   useContext,
-  useEffect,
   useMemo,
-  useState,
+  useSyncExternalStore,
   type ReactNode,
 } from "react";
 
@@ -34,8 +33,13 @@ const AccountIdentityContext = createContext<AccountIdentityContextValue | null>
   null,
 );
 
+const listeners = new Set<() => void>();
+let cachedRaw: string | null | undefined;
+let cachedIdentity: AccountIdentity = EMPTY_IDENTITY;
+
 function normalizeIdentity(value: Partial<AccountIdentity>): AccountIdentity {
-  const firstName = typeof value.firstName === "string" ? value.firstName.trim() : "";
+  const firstName =
+    typeof value.firstName === "string" ? value.firstName.trim() : "";
   const displayName =
     typeof value.displayName === "string" && value.displayName.trim()
       ? value.displayName.trim()
@@ -52,38 +56,92 @@ function normalizeIdentity(value: Partial<AccountIdentity>): AccountIdentity {
   };
 }
 
-export function AccountIdentityProvider({ children }: { children: ReactNode }) {
-  const [identity, setIdentity] = useState<AccountIdentity>(EMPTY_IDENTITY);
+function readIdentitySnapshot(): AccountIdentity {
+  if (typeof window === "undefined") return EMPTY_IDENTITY;
 
-  useEffect(() => {
-    try {
-      const stored = window.localStorage.getItem(STORAGE_KEY);
-      if (!stored) return;
-      setIdentity(normalizeIdentity(JSON.parse(stored) as Partial<AccountIdentity>));
-    } catch {
-      // A damaged local identity must never block the application shell.
-    }
-  }, []);
+  let raw: string | null = null;
 
-  function updateIdentity(patch: Partial<AccountIdentity>) {
-    setIdentity((current) => {
-      const next = normalizeIdentity({ ...current, ...patch });
-      try {
-        window.localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
-      } catch {
-        // Local persistence is a temporary account-ready seam until cloud Auth.
-      }
-      return next;
-    });
+  try {
+    raw = window.localStorage.getItem(STORAGE_KEY);
+  } catch {
+    return cachedIdentity;
   }
+
+  if (raw === cachedRaw) return cachedIdentity;
+
+  cachedRaw = raw;
+
+  if (!raw) {
+    cachedIdentity = EMPTY_IDENTITY;
+    return cachedIdentity;
+  }
+
+  try {
+    cachedIdentity = normalizeIdentity(
+      JSON.parse(raw) as Partial<AccountIdentity>,
+    );
+  } catch {
+    cachedIdentity = EMPTY_IDENTITY;
+  }
+
+  return cachedIdentity;
+}
+
+function subscribeIdentity(listener: () => void) {
+  listeners.add(listener);
+
+  function onStorage(event: StorageEvent) {
+    if (event.key !== STORAGE_KEY) return;
+    cachedRaw = undefined;
+    listener();
+  }
+
+  if (typeof window !== "undefined") {
+    window.addEventListener("storage", onStorage);
+  }
+
+  return () => {
+    listeners.delete(listener);
+    if (typeof window !== "undefined") {
+      window.removeEventListener("storage", onStorage);
+    }
+  };
+}
+
+function persistIdentity(next: AccountIdentity) {
+  cachedIdentity = next;
+
+  try {
+    const raw = JSON.stringify(next);
+    window.localStorage.setItem(STORAGE_KEY, raw);
+    cachedRaw = raw;
+  } catch {
+    cachedRaw = undefined;
+  }
+
+  for (const listener of listeners) {
+    listener();
+  }
+}
+
+export function AccountIdentityProvider({ children }: { children: ReactNode }) {
+  const identity = useSyncExternalStore(
+    subscribeIdentity,
+    readIdentitySnapshot,
+    () => EMPTY_IDENTITY,
+  );
 
   const value = useMemo<AccountIdentityContextValue>(() => {
     const firstNameLabel = identity.firstName || "צלם";
+
     return {
       identity,
       firstNameLabel,
       profileOwnerLabel: identity.profileName || firstNameLabel,
-      updateIdentity,
+      updateIdentity: (patch) => {
+        const current = readIdentitySnapshot();
+        persistIdentity(normalizeIdentity({ ...current, ...patch }));
+      },
     };
   }, [identity]);
 
@@ -96,8 +154,12 @@ export function AccountIdentityProvider({ children }: { children: ReactNode }) {
 
 export function useAccountIdentity() {
   const context = useContext(AccountIdentityContext);
+
   if (!context) {
-    throw new Error("useAccountIdentity must be used inside AccountIdentityProvider");
+    throw new Error(
+      "useAccountIdentity must be used inside AccountIdentityProvider",
+    );
   }
+
   return context;
 }
