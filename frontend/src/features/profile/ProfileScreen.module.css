@@ -621,14 +621,33 @@
   padding: 13px 6px 0;
   display: flex;
   align-items: center;
-  gap: 10px;
+  justify-content: space-between;
+  gap: 18px;
+  direction: rtl;
   border-top: 1px solid rgba(107, 126, 160, 0.22);
   color: #a8b7ca;
+}
+
+.footerMetric,
+.footerNote {
+  display: inline-flex;
+  align-items: center;
+}
+
+.footerMetric {
+  gap: 8px;
+  flex: 0 0 auto;
+}
+
+.footerNote {
+  gap: 9px;
+  min-width: 0;
 }
 
 .footerIcon {
   display: grid;
   place-items: center;
+  flex: 0 0 auto;
   color: #8777ff;
 }
 
@@ -637,9 +656,9 @@
   height: 22px;
 }
 
-.paneFooter strong {
-  margin-inline-start: auto;
+.footerMetric strong {
   color: #e0e6ef;
+  direction: ltr;
   font-family: "Inter", sans-serif;
   font-size: 15px;
 }
@@ -649,10 +668,10 @@
   font-size: 12px;
 }
 
-.footerRule {
-  width: 1px;
-  height: 18px;
-  background: rgba(118, 136, 168, 0.36);
+.footerNote small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .modalBackdrop {

@@ -136,19 +136,6 @@
   color: var(--pg-accent-hover);
 }
 
-.profileShell::after {
-  content: "";
-  position: absolute;
-  inset: 4px;
-  z-index: 50;
-  pointer-events: none;
-  border: 1px solid rgba(126, 102, 255, 0.8);
-  border-radius: 16px;
-  box-shadow:
-    inset 0 0 18px rgba(88, 70, 255, 0.16),
-    0 0 18px rgba(73, 56, 226, 0.28);
-}
-
 .profileShell .sidebar {
   position: relative;
   overflow: hidden;
@@ -160,28 +147,16 @@
 .profileShell .sidebar::after {
   content: "";
   position: absolute;
-  left: -12%;
-  right: -12%;
-  bottom: -3%;
-  height: 43%;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 46%;
   z-index: 0;
-  opacity: 0.58;
+  opacity: 0.78;
   background:
-    radial-gradient(circle at 50% 8%, rgba(100, 82, 255, 0.35), transparent 34%),
-    linear-gradient(180deg, rgba(38, 44, 96, 0.34), rgba(9, 12, 25, 0.05));
-  clip-path: polygon(
-    0 75%,
-    14% 63%,
-    26% 69%,
-    43% 36%,
-    55% 53%,
-    68% 30%,
-    82% 51%,
-    100% 40%,
-    100% 100%,
-    0 100%
-  );
-  filter: drop-shadow(0 -10px 22px rgba(87, 69, 255, 0.16));
+    linear-gradient(180deg, rgba(7, 10, 17, 0) 0%, rgba(7, 10, 17, 0.08) 28%, rgba(7, 10, 17, 0.58) 100%),
+    url("/profile-sidebar-mountain.webp") center bottom / 155% auto no-repeat;
+  pointer-events: none;
 }
 
 .profileShell .sidebar > * {
@@ -194,8 +169,7 @@
   background:
     linear-gradient(90deg, rgba(95, 70, 235, 0.34), rgba(59, 42, 137, 0.2));
   box-shadow:
-    inset 4px 0 0 rgba(142, 119, 255, 0.96),
-    0 0 18px rgba(91, 69, 220, 0.14);
+    inset 4px 0 0 rgba(142, 119, 255, 0.96);
 }
 
 .profileShell .main {
@@ -210,7 +184,7 @@
 
 .profileShell .profileMotto {
   margin-top: auto;
-  padding: 20px 18px 22px;
+  padding: 20px 18px 30px;
   display: grid;
   gap: 8px;
   direction: ltr;

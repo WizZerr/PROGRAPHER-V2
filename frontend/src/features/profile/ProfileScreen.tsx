@@ -563,11 +563,14 @@ export default function ProfileScreen() {
           </div>
 
           <footer className={styles.paneFooter}>
-            <span className={styles.footerIcon}><VisualGlyph kind="chart" /></span>
-            <small>כל מסלול נשמר ונמדד בנפרד</small>
-            <span className={styles.footerRule} />
-            <strong>{jpegConfigured}/2</strong>
-            <small>מסלולים הוגדרו</small>
+            <div className={styles.footerMetric}>
+              <strong>{jpegConfigured}/2</strong>
+              <small>מסלולים הוגדרו</small>
+            </div>
+            <div className={styles.footerNote}>
+              <span className={styles.footerIcon}><VisualGlyph kind="chart" /></span>
+              <small>כל מסלול נשמר ונמדד בנפרד</small>
+            </div>
           </footer>
         </article>
 
@@ -624,11 +627,14 @@ export default function ProfileScreen() {
           </div>
 
           <footer className={styles.paneFooter}>
-            <span className={styles.footerIcon}><VisualGlyph kind="chart" /></span>
-            <small>XMP ו־LRCAT הם מקורות לאותו Brain</small>
-            <span className={styles.footerRule} />
-            <strong>{rawConfigured}/1</strong>
-            <small>מסלול הוגדר</small>
+            <div className={styles.footerMetric}>
+              <strong>{rawConfigured}/1</strong>
+              <small>מסלול הוגדר</small>
+            </div>
+            <div className={styles.footerNote}>
+              <span className={styles.footerIcon}><VisualGlyph kind="chart" /></span>
+              <small>XMP ו־LRCAT הם מקורות לאותו Brain</small>
+            </div>
           </footer>
         </article>
       </section>
