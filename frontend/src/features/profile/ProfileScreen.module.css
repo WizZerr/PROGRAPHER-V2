@@ -48,10 +48,10 @@
 }
 
 .profileIdentity p {
-  max-width: 720px;
-  margin: 10px 0 0;
-  color: #8190a5;
-  font-size: 14px;
+  max-width: 780px;
+  margin: 12px 0 0;
+  color: #93a1b5;
+  font-size: 15px;
   line-height: 1.7;
 }
 
@@ -79,12 +79,12 @@
 }
 
 .profileStatus small {
-  color: #68768a;
-  font-size: 11px;
+  color: #7d8ba0;
+  font-size: 12px;
 }
 
 .profileStatus strong {
-  font-size: 15px;
+  font-size: 16px;
   font-weight: 700;
 }
 
@@ -157,7 +157,7 @@
 }
 
 .coveragePanel {
-  min-height: 118px;
+  min-height: 132px;
   display: grid;
   grid-template-columns: 220px minmax(0, 1fr);
   overflow: hidden;
@@ -167,7 +167,7 @@
 }
 
 .coverageSummary {
-  padding: 20px 22px;
+  padding: 22px 24px;
   display: grid;
   align-content: center;
   border-inline-end: 1px solid rgba(120, 145, 180, 0.1);
@@ -175,10 +175,10 @@
 
 .sectionKicker,
 .paneEyebrow {
-  color: #6f63dc;
+  color: #8377f8;
   direction: ltr;
   font-family: "Inter", sans-serif;
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.1em;
 }
@@ -192,21 +192,21 @@
 
 .coverageValue strong {
   font-family: "Inter", sans-serif;
-  font-size: 32px;
+  font-size: 36px;
   font-weight: 700;
   letter-spacing: -0.04em;
 }
 
 .coverageValue > span {
-  color: #657388;
+  color: #77859a;
   font-family: "Inter", sans-serif;
-  font-size: 14px;
+  font-size: 15px;
 }
 
 .coverageSummary > small {
-  margin-top: 2px;
-  color: #657388;
-  font-size: 11px;
+  margin-top: 4px;
+  color: #77859a;
+  font-size: 12px;
 }
 
 .coverageRail {
@@ -218,7 +218,7 @@
 .coverageItem,
 .coverageItemReady {
   min-width: 0;
-  padding: 0 20px;
+  padding: 0 22px;
   display: grid;
   grid-template-columns: 30px minmax(0, 1fr) 9px;
   align-items: center;
@@ -233,10 +233,10 @@
 }
 
 .coverageIndex {
-  color: #59677b;
+  color: #667489;
   direction: ltr;
   font-family: "Inter", sans-serif;
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 700;
 }
 
@@ -259,8 +259,8 @@
 .coverageItem small,
 .coverageItemReady small {
   overflow: hidden;
-  color: #647287;
-  font-size: 11px;
+  color: #7b899e;
+  font-size: 12px;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -292,8 +292,8 @@
 
 .learningPane {
   min-width: 0;
-  min-height: 470px;
-  padding: 32px 32px 24px;
+  min-height: 500px;
+  padding: 34px 34px 26px;
   display: flex;
   flex-direction: column;
 }
@@ -309,7 +309,7 @@
 }
 
 .paneHeader {
-  min-height: 96px;
+  min-height: 104px;
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
@@ -324,18 +324,18 @@
 }
 
 .mediaMonogram {
-  width: 46px;
-  height: 46px;
+  width: 50px;
+  height: 50px;
   display: grid;
   place-items: center;
-  flex: 0 0 46px;
+  flex: 0 0 50px;
   border: 1px solid rgba(132, 118, 242, 0.24);
-  border-radius: 9px;
-  background: rgba(111, 91, 255, 0.065);
-  color: #9c92ff;
+  border-radius: 10px;
+  background: rgba(111, 91, 255, 0.075);
+  color: #aaa2ff;
   direction: ltr;
   font-family: "Inter", sans-serif;
-  font-size: 15px;
+  font-size: 16px;
   font-weight: 700;
 }
 
@@ -344,32 +344,32 @@
 }
 
 .paneIdentity h2 {
-  margin: 5px 0 0;
-  font-size: 30px;
+  margin: 6px 0 0;
+  font-size: 34px;
   font-weight: 700;
   letter-spacing: -0.035em;
 }
 
 .paneIdentity p {
-  margin: 5px 0 0;
-  color: #6f7d91;
-  font-size: 12px;
+  margin: 7px 0 0;
+  color: #8391a6;
+  font-size: 13px;
   line-height: 1.6;
 }
 
 .paneAction {
-  min-height: 42px;
-  padding: 0 14px;
+  min-height: 48px;
+  padding: 0 16px;
   display: inline-flex;
   align-items: center;
   gap: 12px;
   flex: 0 0 auto;
-  border: 1px solid rgba(132, 118, 242, 0.24);
-  border-radius: 8px;
-  background: rgba(111, 91, 255, 0.055);
-  color: #aaa2ff;
+  border: 1px solid rgba(132, 118, 242, 0.3);
+  border-radius: 9px;
+  background: rgba(111, 91, 255, 0.075);
+  color: #c1bbff;
   font: inherit;
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 700;
   cursor: pointer;
   transition:
@@ -385,12 +385,12 @@
 }
 
 .capabilityTable {
-  margin-top: 28px;
+  margin-top: 30px;
   border-top: 1px solid rgba(120, 145, 180, 0.11);
 }
 
 .capabilityRow {
-  min-height: 108px;
+  min-height: 118px;
   display: grid;
   grid-template-columns: 34px minmax(0, 1fr) auto;
   align-items: center;
@@ -402,10 +402,10 @@
 }
 
 .capabilityNumber {
-  color: #566477;
+  color: #667489;
   direction: ltr;
   font-family: "Inter", sans-serif;
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 700;
 }
 
@@ -416,13 +416,13 @@
 }
 
 .capabilityMain strong {
-  font-size: 15px;
+  font-size: 17px;
   font-weight: 700;
 }
 
 .capabilityMain small {
-  color: #657388;
-  font-size: 11px;
+  color: #7b899e;
+  font-size: 12px;
 }
 
 .capabilityStatus {
@@ -434,10 +434,10 @@
 }
 
 .capabilityStatus > span:first-child {
-  color: #5c697c;
+  color: #718095;
   direction: ltr;
   font-family: "Inter", sans-serif;
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.06em;
 }
@@ -445,14 +445,14 @@
 .statusReady,
 .statusPending,
 .statusIdle {
-  min-height: 30px;
-  padding: 0 10px;
+  min-height: 34px;
+  padding: 0 12px;
   display: inline-flex;
   align-items: center;
-  gap: 7px;
+  gap: 8px;
   flex: 0 0 auto;
   border-radius: 999px;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
   white-space: nowrap;
 }
@@ -495,22 +495,22 @@
 }
 
 .sourceLabel {
-  margin-inline-end: 2px;
-  color: #5f6d81;
-  font-size: 10px;
+  margin-inline-end: 3px;
+  color: #748297;
+  font-size: 11px;
   font-weight: 700;
 }
 
 .sourceChip,
 .sourceActive {
-  min-height: 28px;
-  padding: 0 10px;
+  min-height: 32px;
+  padding: 0 11px;
   display: inline-flex;
   align-items: center;
-  border-radius: 6px;
+  border-radius: 7px;
   direction: ltr;
   font-family: "Inter", sans-serif;
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 700;
 }
 
@@ -526,7 +526,7 @@
 }
 
 .paneFooter {
-  min-height: 42px;
+  min-height: 48px;
   margin-top: auto;
   padding-top: 18px;
   display: flex;
@@ -537,16 +537,16 @@
 }
 
 .paneFooter > span:first-child {
-  color: #9ca8b9;
+  color: #b2bcc9;
   direction: ltr;
   font-family: "Inter", "Heebo", sans-serif;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 700;
 }
 
 .paneFooter small {
-  color: #5f6d81;
-  font-size: 10px;
+  color: #748297;
+  font-size: 11px;
   font-weight: 500;
 }
 
