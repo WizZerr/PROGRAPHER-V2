@@ -392,16 +392,16 @@
 }
 
 .capabilityTable {
-  margin-top: 30px;
+  margin-top: 34px;
   border-top: 1px solid rgba(120, 145, 180, 0.11);
 }
 
 .capabilityRow {
-  min-height: 118px;
+  min-height: 142px;
   display: grid;
-  grid-template-columns: 34px minmax(0, 1fr) auto;
+  grid-template-columns: 42px minmax(0, 1fr) auto;
   align-items: center;
-  gap: 18px;
+  gap: 22px;
 }
 
 .capabilityRow + .capabilityRow {
@@ -409,27 +409,29 @@
 }
 
 .capabilityNumber {
-  color: #667489;
+  color: #748297;
   direction: ltr;
   font-family: "Inter", sans-serif;
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 700;
 }
 
 .capabilityMain {
   min-width: 0;
   display: grid;
-  gap: 5px;
+  gap: 8px;
 }
 
 .capabilityMain strong {
-  font-size: 17px;
+  font-size: 22px;
   font-weight: 700;
+  letter-spacing: -0.02em;
 }
 
 .capabilityMain small {
-  color: #7b899e;
-  font-size: 12px;
+  color: #8d9bb0;
+  font-size: 15px;
+  line-height: 1.55;
 }
 
 .capabilityStatus {
@@ -437,130 +439,130 @@
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  gap: 10px;
+  gap: 14px;
 }
 
 .capabilityStatus > span:first-child {
-  color: #718095;
+  color: #8290a5;
   direction: ltr;
   font-family: "Inter", sans-serif;
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 700;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.05em;
 }
 
 .statusReady,
 .statusPending,
 .statusIdle {
-  min-height: 34px;
-  padding: 0 12px;
+  min-height: 40px;
+  padding: 0 14px;
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: 9px;
   flex: 0 0 auto;
   border-radius: 999px;
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 700;
   white-space: nowrap;
 }
 
 .statusReady {
-  border: 1px solid rgba(78, 226, 138, 0.14);
-  background: rgba(78, 226, 138, 0.055);
-  color: #75dca0;
+  border: 1px solid rgba(78, 226, 138, 0.17);
+  background: rgba(78, 226, 138, 0.07);
+  color: #7ee6a7;
 }
 
 .statusPending {
-  border: 1px solid rgba(241, 199, 106, 0.14);
-  background: rgba(241, 199, 106, 0.05);
-  color: #d6ba69;
+  border: 1px solid rgba(241, 199, 106, 0.17);
+  background: rgba(241, 199, 106, 0.06);
+  color: #e0c272;
 }
 
 .statusIdle {
-  border: 1px solid rgba(120, 145, 180, 0.12);
-  background: rgba(120, 145, 180, 0.035);
-  color: #69778b;
+  border: 1px solid rgba(120, 145, 180, 0.15);
+  background: rgba(120, 145, 180, 0.05);
+  color: #8190a5;
 }
 
 .statusReady > span,
 .statusPending > span,
 .statusIdle > span {
-  width: 6px;
-  height: 6px;
-  flex: 0 0 6px;
+  width: 7px;
+  height: 7px;
+  flex: 0 0 7px;
   border-radius: 50%;
   background: currentColor;
 }
 
 .sourceStrip {
-  margin-top: 20px;
-  padding-top: 18px;
+  margin-top: 24px;
+  padding-top: 22px;
   display: flex;
   align-items: center;
-  gap: 9px;
+  gap: 11px;
   border-top: 1px solid rgba(120, 145, 180, 0.08);
 }
 
 .sourceLabel {
-  margin-inline-end: 3px;
-  color: #748297;
-  font-size: 11px;
+  margin-inline-end: 4px;
+  color: #8694a8;
+  font-size: 13px;
   font-weight: 700;
 }
 
 .sourceChip,
 .sourceActive {
-  min-height: 32px;
-  padding: 0 11px;
+  min-height: 36px;
+  padding: 0 13px;
   display: inline-flex;
   align-items: center;
-  border-radius: 7px;
+  border-radius: 8px;
   direction: ltr;
   font-family: "Inter", sans-serif;
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 700;
 }
 
 .sourceChip {
-  border: 1px solid rgba(120, 145, 180, 0.1);
-  color: #59677a;
+  border: 1px solid rgba(120, 145, 180, 0.12);
+  color: #6f7d92;
 }
 
 .sourceActive {
-  border: 1px solid rgba(78, 226, 138, 0.14);
-  background: rgba(78, 226, 138, 0.045);
-  color: #71d99c;
+  border: 1px solid rgba(78, 226, 138, 0.17);
+  background: rgba(78, 226, 138, 0.06);
+  color: #79e3a2;
 }
 
 .paneFooter {
-  min-height: 48px;
+  min-height: 58px;
   margin-top: auto;
-  padding-top: 18px;
+  padding-top: 20px;
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 14px;
   border-top: 1px solid rgba(120, 145, 180, 0.08);
-  color: #667489;
+  color: #748297;
 }
 
 .paneFooter > span:first-child {
-  color: #b2bcc9;
+  color: #c2cad5;
   direction: ltr;
   font-family: "Inter", "Heebo", sans-serif;
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 700;
 }
 
 .paneFooter small {
-  color: #748297;
-  font-size: 11px;
+  color: #8290a5;
+  font-size: 13px;
   font-weight: 500;
 }
 
 .footerRule {
   width: 1px;
-  height: 12px;
-  background: rgba(120, 145, 180, 0.12);
+  height: 16px;
+  background: rgba(120, 145, 180, 0.14);
 }
 
 .modalBackdrop {
