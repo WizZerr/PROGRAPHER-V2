@@ -830,6 +830,105 @@
   opacity: 0.52;
 }
 
+.settingsModal .eyebrow {
+  font-size: 15px;
+}
+
+.modalHeader h2 {
+  margin-top: 7px;
+  font-size: 32px;
+  line-height: 1.15;
+}
+
+.modalHeader > button {
+  width: 40px;
+  height: 40px;
+  font-size: 26px;
+}
+
+.settingsGroupHead {
+  gap: 7px;
+}
+
+.settingsGroupHead strong {
+  font-size: 18px;
+}
+
+.settingsGroupHead small {
+  color: #8997aa;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.formGrid label,
+.fieldButton {
+  gap: 9px;
+}
+
+.formGrid label > span,
+.fieldButton > span {
+  color: #91a0b4;
+  font-size: 14px;
+}
+
+.formGrid label > small {
+  color: #748297;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.formGrid input,
+.profileModes > input {
+  min-height: 48px;
+  padding: 0 14px;
+  font-size: 16px;
+}
+
+.fieldButton button {
+  min-height: 48px;
+  padding: 0 14px;
+  font-size: 14px;
+}
+
+.advancedSettings > summary {
+  min-height: 72px;
+}
+
+.advancedSettings > summary strong {
+  font-size: 17px;
+}
+
+.advancedSettings > summary small {
+  color: #8190a5;
+  font-size: 13px;
+}
+
+.profileModes {
+  gap: 10px;
+}
+
+.profileModes label {
+  gap: 10px;
+  color: #9aa8bb;
+  font-size: 14px;
+}
+
+.modalFooter > span {
+  color: #7f8da2;
+  font-size: 12px;
+}
+
+.cancelButton,
+.saveButton {
+  min-height: 46px;
+  padding: 0 18px;
+  font-size: 14px;
+}
+
+.saveButton {
+  min-width: 104px;
+}
+
 @container profile (max-width: 1100px) {
   .profileHeader {
     align-items: flex-start;
