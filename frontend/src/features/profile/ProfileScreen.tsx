@@ -282,87 +282,179 @@ export default function ProfileScreen() {
       {error ? <div className={styles.error}>{error}</div> : null}
       {saved ? <div className={styles.success}>{saved}</div> : null}
 
-      <section className={styles.learningGrid}>
-        <article className={styles.learningCard}>
-          <div className={styles.cardHeader}>
-            <div>
-              <span className={styles.mediaBadge}>JPEG</span>
-              <h2>למידה לפי JPEG</h2>
-              <p>שני מסלולי למידה נפרדים ל־JPEG.</p>
-            </div>
-            <span className={styles.configuredCount}>
-              {jpegConfigured}/2 הוגדרו
-            </span>
+      <section className={styles.coveragePanel} aria-label="מצב מסלולי הלמידה">
+        <div className={styles.coverageSummary}>
+          <span className={styles.sectionKicker}>LEARNING COVERAGE</span>
+          <div className={styles.coverageValue}>
+            <strong>{totalConfigured}</strong>
+            <span>/ 3</span>
           </div>
+          <small>יכולות למידה הוגדרו</small>
+        </div>
 
-          <div className={styles.routeList}>
-            <div className={styles.routeRow}>
-              <div>
-                <strong>זוגות לפני + אחרי</strong>
-                <small>JPEG מקור מול JPEG ערוך</small>
-              </div>
-              <StatusPill state={routeState(jpegProfile)}>
-                {jpegPairStatus(jpegProfile)}
-              </StatusPill>
-            </div>
-
-            <div className={styles.routeRow}>
-              <div>
-                <strong>Lightroom Catalog</strong>
-                <small>JPEG מקור + קובץ LRCAT</small>
-              </div>
-              <StatusPill state={jpegCatalog ? "ready" : "idle"}>
-                {catalogStatus(jpegCatalog)}
-              </StatusPill>
-            </div>
-          </div>
-
-          <button
-            className={styles.learningAction}
-            type="button"
-            onClick={() => openLearning("jpeg")}
+        <div className={styles.coverageRail}>
+          <div
+            className={
+              routeState(jpegProfile) === "ready"
+                ? styles.coverageItemReady
+                : styles.coverageItem
+            }
           >
-            <span>פתח למידת JPEG</span>
-            <span aria-hidden="true">←</span>
-          </button>
+            <span className={styles.coverageIndex}>01</span>
+            <div>
+              <strong>JPEG · לפני + אחרי</strong>
+              <small>{jpegPairStatus(jpegProfile)}</small>
+            </div>
+            <span className={styles.coverageDot} aria-hidden="true" />
+          </div>
+
+          <div
+            className={
+              jpegCatalog ? styles.coverageItemReady : styles.coverageItem
+            }
+          >
+            <span className={styles.coverageIndex}>02</span>
+            <div>
+              <strong>JPEG · Lightroom</strong>
+              <small>{catalogStatus(jpegCatalog)}</small>
+            </div>
+            <span className={styles.coverageDot} aria-hidden="true" />
+          </div>
+
+          <div
+            className={
+              rawLearning.state === "ready"
+                ? styles.coverageItemReady
+                : styles.coverageItem
+            }
+          >
+            <span className={styles.coverageIndex}>03</span>
+            <div>
+              <strong>RAW · Lightroom</strong>
+              <small>{rawLearning.label}</small>
+            </div>
+            <span className={styles.coverageDot} aria-hidden="true" />
+          </div>
+        </div>
+      </section>
+
+      <section className={styles.learningSurface}>
+        <article className={`${styles.learningPane} ${styles.jpegPane}`}>
+          <header className={styles.paneHeader}>
+            <div className={styles.paneIdentity}>
+              <span className={styles.mediaMonogram}>J</span>
+              <div>
+                <span className={styles.paneEyebrow}>JPEG LEARNING</span>
+                <h2>למידה לפי JPEG</h2>
+                <p>שני מנגנוני למידה עצמאיים לאותו workflow.</p>
+              </div>
+            </div>
+
+            <button
+              className={styles.paneAction}
+              type="button"
+              onClick={() => openLearning("jpeg")}
+            >
+              <span>{jpegConfigured > 0 ? "המשך הגדרה" : "התחל הגדרה"}</span>
+              <span aria-hidden="true">←</span>
+            </button>
+          </header>
+
+          <div className={styles.capabilityTable}>
+            <div className={styles.capabilityRow}>
+              <span className={styles.capabilityNumber}>01</span>
+              <div className={styles.capabilityMain}>
+                <strong>זוגות לפני + אחרי</strong>
+                <small>JPEG מקור מול JPEG סופי ערוך</small>
+              </div>
+              <div className={styles.capabilityStatus}>
+                <span>PAIRS</span>
+                <StatusPill state={routeState(jpegProfile)}>
+                  {jpegPairStatus(jpegProfile)}
+                </StatusPill>
+              </div>
+            </div>
+
+            <div className={styles.capabilityRow}>
+              <span className={styles.capabilityNumber}>02</span>
+              <div className={styles.capabilityMain}>
+                <strong>Lightroom Catalog</strong>
+                <small>JPEG מקור + החלטות עריכה מתוך LRCAT</small>
+              </div>
+              <div className={styles.capabilityStatus}>
+                <span>LRCAT</span>
+                <StatusPill state={jpegCatalog ? "ready" : "idle"}>
+                  {catalogStatus(jpegCatalog)}
+                </StatusPill>
+              </div>
+            </div>
+          </div>
+
+          <footer className={styles.paneFooter}>
+            <span>
+              {jpegConfigured}/2
+              <small> מסלולים הוגדרו</small>
+            </span>
+            <span className={styles.footerRule} />
+            <small>כל מסלול נשמר ונמדד בנפרד</small>
+          </footer>
         </article>
 
-        <article className={styles.learningCard}>
-          <div className={styles.cardHeader}>
-            <div>
-              <span className={styles.mediaBadge}>RAW</span>
-              <h2>למידה לפי RAW</h2>
-              <p>מסלול למידה אחד שמבוסס על עריכות Lightroom.</p>
-            </div>
-            <span className={styles.configuredCount}>
-              {rawConfigured}/1 הוגדר
-            </span>
-          </div>
-
-          <div className={styles.routeList}>
-            <div className={styles.routeRow}>
+        <article className={`${styles.learningPane} ${styles.rawPane}`}>
+          <header className={styles.paneHeader}>
+            <div className={styles.paneIdentity}>
+              <span className={styles.mediaMonogram}>R</span>
               <div>
+                <span className={styles.paneEyebrow}>RAW LEARNING</span>
+                <h2>למידה לפי RAW</h2>
+                <p>Brain אחד שמבוסס על החלטות Lightroom.</p>
+              </div>
+            </div>
+
+            <button
+              className={styles.paneAction}
+              type="button"
+              onClick={() => openLearning("raw")}
+            >
+              <span>{rawConfigured ? "המשך הגדרה" : "התחל הגדרה"}</span>
+              <span aria-hidden="true">←</span>
+            </button>
+          </header>
+
+          <div className={styles.capabilityTable}>
+            <div className={styles.capabilityRow}>
+              <span className={styles.capabilityNumber}>01</span>
+              <div className={styles.capabilityMain}>
                 <strong>RAW + Lightroom</strong>
                 <small>{rawLearning.source}</small>
               </div>
-              <StatusPill state={rawLearning.state}>
-                {rawLearning.label}
-              </StatusPill>
+              <div className={styles.capabilityStatus}>
+                <span>RAW</span>
+                <StatusPill state={rawLearning.state}>
+                  {rawLearning.label}
+                </StatusPill>
+              </div>
             </div>
           </div>
 
-          <div className={styles.routeNote}>
-            XMP ו־LRCAT הם רק שתי דרכים לקרוא את עריכות Lightroom — לא שני מסלולי למידה שונים.
+          <div className={styles.sourceStrip}>
+            <span className={styles.sourceLabel}>מקורות עריכה</span>
+            <span className={rawProfile ? styles.sourceActive : styles.sourceChip}>
+              XMP
+            </span>
+            <span className={rawCatalog ? styles.sourceActive : styles.sourceChip}>
+              LRCAT
+            </span>
           </div>
 
-          <button
-            className={styles.learningAction}
-            type="button"
-            onClick={() => openLearning("raw")}
-          >
-            <span>פתח למידת RAW</span>
-            <span aria-hidden="true">←</span>
-          </button>
+          <footer className={styles.paneFooter}>
+            <span>
+              {rawConfigured}/1
+              <small> מסלול הוגדר</small>
+            </span>
+            <span className={styles.footerRule} />
+            <small>XMP ו־LRCAT הם מקורות לאותו Brain</small>
+          </footer>
         </article>
       </section>
 
