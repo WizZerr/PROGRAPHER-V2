@@ -16,8 +16,13 @@ export default function AppShell({
   immersive = false,
   onSelect,
 }: AppShellProps) {
+  const shellClass =
+    activeView === "profile" || activeView === "training"
+      ? `${styles.shell} ${styles.profileShell}`
+      : styles.shell;
+
   return (
-    <div className={styles.shell}>
+    <div className={shellClass}>
       <Sidebar
         activeView={activeView === "training" ? "profile" : activeView}
         onSelect={onSelect}

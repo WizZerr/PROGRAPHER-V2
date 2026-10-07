@@ -104,6 +104,148 @@ function StatusPill({
   );
 }
 
+type VisualIcon =
+  | "sliders"
+  | "camera"
+  | "layers"
+  | "database"
+  | "chart"
+  | "settings";
+
+function VisualGlyph({ kind }: { kind: VisualIcon }) {
+  const common = {
+    width: 28,
+    height: 28,
+    viewBox: "0 0 24 24",
+    fill: "none",
+    stroke: "currentColor",
+    strokeWidth: 1.6,
+    strokeLinecap: "round" as const,
+    strokeLinejoin: "round" as const,
+    "aria-hidden": true,
+  };
+
+  if (kind === "sliders") {
+    return (
+      <svg {...common}>
+        <path d="M4 6h16M4 12h16M4 18h16" />
+        <circle cx="9" cy="6" r="2" />
+        <circle cx="15" cy="12" r="2" />
+        <circle cx="11" cy="18" r="2" />
+      </svg>
+    );
+  }
+
+  if (kind === "camera") {
+    return (
+      <svg {...common}>
+        <path d="M4 8.5h16v10H4z" />
+        <path d="M8 8.5 9.5 5.5h5L16 8.5" />
+        <circle cx="12" cy="13.5" r="3.2" />
+      </svg>
+    );
+  }
+
+  if (kind === "layers") {
+    return (
+      <svg {...common}>
+        <path d="m12 4 7 4-7 4-7-4 7-4Z" />
+        <path d="m5 12 7 4 7-4" />
+        <path d="m5 16 7 4 7-4" />
+      </svg>
+    );
+  }
+
+  if (kind === "database") {
+    return (
+      <svg {...common}>
+        <ellipse cx="12" cy="5.5" rx="6.5" ry="3" />
+        <path d="M5.5 5.5v6c0 1.7 2.9 3 6.5 3s6.5-1.3 6.5-3v-6" />
+        <path d="M5.5 11.5v6c0 1.7 2.9 3 6.5 3s6.5-1.3 6.5-3v-6" />
+      </svg>
+    );
+  }
+
+  if (kind === "chart") {
+    return (
+      <svg {...common}>
+        <path d="M5 19V7M5 19h14" />
+        <path d="m8 15 3-4 3 2 3-5" />
+        <path d="M17 8h2v2" />
+      </svg>
+    );
+  }
+
+  return (
+    <svg {...common}>
+      <circle cx="12" cy="12" r="3.2" />
+      <path d="M19 13.6v-3.2l-2.1-.6a7.3 7.3 0 0 0-.7-1.6l1-1.9-2.3-2.3-1.9 1a7.3 7.3 0 0 0-1.6-.7L10.8 2H7.6L7 4.2a7.3 7.3 0 0 0-1.6.7l-1.9-1-2.3 2.3 1 1.9a7.3 7.3 0 0 0-.7 1.6l-2.1.6v3.2l2.1.6c.2.6.4 1.1.7 1.6l-1 1.9 2.3 2.3 1.9-1c.5.3 1 .5 1.6.7l.6 2.1h3.2l.6-2.1c.6-.2 1.1-.4 1.6-.7l1.9 1 2.3-2.3-1-1.9c.3-.5.5-1 .7-1.6l2.1-.6Z" />
+    </svg>
+  );
+}
+
+function HeroLandscape() {
+  return (
+    <svg
+      className={styles.heroLandscape}
+      viewBox="0 0 1200 220"
+      preserveAspectRatio="xMidYMid slice"
+      aria-hidden="true"
+    >
+      <defs>
+        <linearGradient id="pg-sky" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stopColor="#111a34" />
+          <stop offset=".46" stopColor="#1b244b" />
+          <stop offset=".7" stopColor="#243b68" />
+          <stop offset="1" stopColor="#080d18" />
+        </linearGradient>
+        <radialGradient id="pg-glow" cx="68%" cy="20%" r="42%">
+          <stop offset="0" stopColor="#5d67ff" stopOpacity=".5" />
+          <stop offset=".48" stopColor="#3f4ea5" stopOpacity=".17" />
+          <stop offset="1" stopColor="#0b1020" stopOpacity="0" />
+        </radialGradient>
+        <linearGradient id="pg-m1" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="#14233d" />
+          <stop offset="1" stopColor="#08101c" />
+        </linearGradient>
+        <linearGradient id="pg-m2" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="#101a2e" />
+          <stop offset="1" stopColor="#050a12" />
+        </linearGradient>
+      </defs>
+      <rect width="1200" height="220" fill="url(#pg-sky)" />
+      <rect width="1200" height="220" fill="url(#pg-glow)" />
+      <path d="M0 92 140 48 252 84 356 42 500 99 632 55 760 93 892 48 1020 82 1200 32V220H0Z" fill="url(#pg-m1)" opacity=".82" />
+      <path d="M0 138 128 108 236 132 346 91 448 128 566 102 704 144 842 92 942 125 1064 86 1200 126V220H0Z" fill="url(#pg-m2)" />
+      <path d="M0 170 132 147 250 163 364 137 482 166 620 143 748 176 864 139 1004 171 1200 136V220H0Z" fill="#050910" />
+      <path d="M160 187c165-35 277 5 430-7 143-11 228-57 450-37" fill="none" stroke="#4e71b9" strokeOpacity=".17" strokeWidth="7" />
+      <circle cx="854" cy="69" r="2.8" fill="#d8ddff" opacity=".72" />
+      <path d="m850 76-8 18h16Z" fill="#080c13" />
+      <rect x="848.5" y="72" width="3" height="10" rx="1.5" fill="#080c13" />
+    </svg>
+  );
+}
+
+function CoverageRing({ value, total }: { value: number; total: number }) {
+  const radius = 27;
+  const circumference = Math.PI * 2 * radius;
+  const ratio = total > 0 ? Math.min(value / total, 1) : 0;
+
+  return (
+    <svg className={styles.coverageRing} viewBox="0 0 72 72" aria-hidden="true">
+      <circle className={styles.coverageRingTrack} cx="36" cy="36" r={radius} />
+      <circle
+        className={styles.coverageRingValue}
+        cx="36"
+        cy="36"
+        r={radius}
+        strokeDasharray={circumference}
+        strokeDashoffset={circumference * (1 - ratio)}
+      />
+    </svg>
+  );
+}
+
 export default function ProfileScreen() {
   const openView = useWorkspaceNav();
   const {
@@ -243,27 +385,19 @@ export default function ProfileScreen() {
   return (
     <section className={styles.screen}>
       <header className={styles.profileHeader}>
+        <HeroLandscape />
+        <div className={styles.heroShade} aria-hidden="true" />
+
         <div className={styles.profileIdentity}>
           <span className={styles.eyebrow}>הפרופיל שלי</span>
           <h1>סגנון העריכה של {profileOwnerLabel}</h1>
           <p>
-            כאן רואים רק את מצב הלמידה שלך. JPEG ו־RAW נשמרים בנפרד,
+            כאן רואים את מצב הלמידה שלך. JPEG ו־RAW נשמרים בנפרד,
             וכל מסלול מציג רק מידע שבאמת נמדד.
           </p>
         </div>
 
         <div className={styles.headerControls}>
-          <div className={styles.profileStatus}>
-            <span
-              className={totalConfigured > 0 ? styles.readyDot : styles.pendingDot}
-              aria-hidden="true"
-            />
-            <div>
-              <small>מצב הפרופיל</small>
-              <strong>{profileStatus}</strong>
-            </div>
-          </div>
-
           <button
             className={styles.settingsButton}
             type="button"
@@ -271,11 +405,21 @@ export default function ProfileScreen() {
             title="הגדרות הפרופיל"
             onClick={openSettings}
           >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-              <circle cx="12" cy="12" r="3.2" />
-              <path d="M19 13.6v-3.2l-2.1-.6a7.3 7.3 0 0 0-.7-1.6l1-1.9-2.3-2.3-1.9 1a7.3 7.3 0 0 0-1.6-.7L10.8 2H7.6L7 4.2a7.3 7.3 0 0 0-1.6.7l-1.9-1-2.3 2.3 1 1.9a7.3 7.3 0 0 0-.7 1.6l-2.1.6v3.2l2.1.6c.2.6.4 1.1.7 1.6l-1 1.9 2.3 2.3 1.9-1c.5.3 1 .5 1.6.7l.6 2.1h3.2l.6-2.1c.6-.2 1.1-.4 1.6-.7l1.9 1 2.3-2.3-1-1.9c.3-.5.5-1 .7-1.6l2.1-.6Z" />
-            </svg>
+            <VisualGlyph kind="settings" />
           </button>
+
+          <div className={styles.headerDivider} aria-hidden="true" />
+
+          <div className={styles.profileStatus}>
+            <div>
+              <small>מצב הפרופיל</small>
+              <strong>{profileStatus}</strong>
+            </div>
+            <span
+              className={totalConfigured > 0 ? styles.readyDot : styles.pendingDot}
+              aria-hidden="true"
+            />
+          </div>
         </div>
       </header>
 
@@ -284,12 +428,15 @@ export default function ProfileScreen() {
 
       <section className={styles.coveragePanel} aria-label="מצב מסלולי הלמידה">
         <div className={styles.coverageSummary}>
-          <span className={styles.sectionKicker}>LEARNING COVERAGE</span>
-          <div className={styles.coverageValue}>
-            <strong>{totalConfigured}</strong>
-            <span>/ 3</span>
+          <div className={styles.coverageSummaryCopy}>
+            <span className={styles.sectionKicker}>LEARNING COVERAGE</span>
+            <div className={styles.coverageValue}>
+              <strong>{totalConfigured}</strong>
+              <span>/ 3</span>
+            </div>
+            <small>יכולות למידה הוגדרו</small>
           </div>
-          <small>יכולות למידה הוגדרו</small>
+          <CoverageRing value={totalConfigured} total={3} />
         </div>
 
         <div className={styles.coverageRail}>
@@ -300,9 +447,14 @@ export default function ProfileScreen() {
                 : styles.coverageItem
             }
           >
-            <span className={styles.coverageIndex}>01</span>
-            <div>
-              <strong>JPEG · לפני + אחרי</strong>
+            <span className={styles.coverageIcon}>
+              <VisualGlyph kind="sliders" />
+            </span>
+            <div className={styles.coverageText}>
+              <div>
+                <strong>JPEG · לפני + אחרי</strong>
+                <span className={styles.coverageIndex}>01</span>
+              </div>
               <small>{jpegPairStatus(jpegProfile)}</small>
             </div>
             <span className={styles.coverageDot} aria-hidden="true" />
@@ -313,9 +465,14 @@ export default function ProfileScreen() {
               jpegCatalog ? styles.coverageItemReady : styles.coverageItem
             }
           >
-            <span className={styles.coverageIndex}>02</span>
-            <div>
-              <strong>JPEG · Lightroom</strong>
+            <span className={styles.coverageIcon}>
+              <VisualGlyph kind="camera" />
+            </span>
+            <div className={styles.coverageText}>
+              <div>
+                <strong>JPEG · Lightroom</strong>
+                <span className={styles.coverageIndex}>02</span>
+              </div>
               <small>{catalogStatus(jpegCatalog)}</small>
             </div>
             <span className={styles.coverageDot} aria-hidden="true" />
@@ -328,9 +485,14 @@ export default function ProfileScreen() {
                 : styles.coverageItem
             }
           >
-            <span className={styles.coverageIndex}>03</span>
-            <div>
-              <strong>RAW · Lightroom</strong>
+            <span className={styles.coverageIcon}>
+              <VisualGlyph kind="layers" />
+            </span>
+            <div className={styles.coverageText}>
+              <div>
+                <strong>RAW · Lightroom</strong>
+                <span className={styles.coverageIndex}>03</span>
+              </div>
               <small>{rawLearning.label}</small>
             </div>
             <span className={styles.coverageDot} aria-hidden="true" />
@@ -362,9 +524,14 @@ export default function ProfileScreen() {
 
           <div className={styles.capabilityTable}>
             <div className={styles.capabilityRow}>
-              <span className={styles.capabilityNumber}>01</span>
+              <span className={styles.capabilityIcon}>
+                <VisualGlyph kind="sliders" />
+              </span>
               <div className={styles.capabilityMain}>
-                <strong>זוגות לפני + אחרי</strong>
+                <div>
+                  <strong>זוגות לפני + אחרי</strong>
+                  <span className={styles.capabilityNumber}>01</span>
+                </div>
                 <small>JPEG מקור מול JPEG סופי ערוך</small>
               </div>
               <div className={styles.capabilityStatus}>
@@ -376,9 +543,14 @@ export default function ProfileScreen() {
             </div>
 
             <div className={styles.capabilityRow}>
-              <span className={styles.capabilityNumber}>02</span>
+              <span className={styles.capabilityIcon}>
+                <VisualGlyph kind="database" />
+              </span>
               <div className={styles.capabilityMain}>
-                <strong>Lightroom Catalog</strong>
+                <div>
+                  <strong>Lightroom Catalog</strong>
+                  <span className={styles.capabilityNumber}>02</span>
+                </div>
                 <small>JPEG מקור + החלטות עריכה מתוך LRCAT</small>
               </div>
               <div className={styles.capabilityStatus}>
@@ -391,12 +563,11 @@ export default function ProfileScreen() {
           </div>
 
           <footer className={styles.paneFooter}>
-            <span>
-              {jpegConfigured}/2
-              <small> מסלולים הוגדרו</small>
-            </span>
-            <span className={styles.footerRule} />
+            <span className={styles.footerIcon}><VisualGlyph kind="chart" /></span>
             <small>כל מסלול נשמר ונמדד בנפרד</small>
+            <span className={styles.footerRule} />
+            <strong>{jpegConfigured}/2</strong>
+            <small>מסלולים הוגדרו</small>
           </footer>
         </article>
 
@@ -407,7 +578,7 @@ export default function ProfileScreen() {
               <div>
                 <span className={styles.paneEyebrow}>RAW LEARNING</span>
                 <h2>למידה לפי RAW</h2>
-                <p>Brain אחד שמבוסס על החלטות Lightroom.</p>
+                <p>Brain אחד שמתבסס על החלטות Lightroom.</p>
               </div>
             </div>
 
@@ -423,9 +594,14 @@ export default function ProfileScreen() {
 
           <div className={styles.capabilityTable}>
             <div className={styles.capabilityRow}>
-              <span className={styles.capabilityNumber}>01</span>
+              <span className={styles.capabilityIcon}>
+                <VisualGlyph kind="layers" />
+              </span>
               <div className={styles.capabilityMain}>
-                <strong>RAW + Lightroom</strong>
+                <div>
+                  <strong>RAW + Lightroom</strong>
+                  <span className={styles.capabilityNumber}>01</span>
+                </div>
                 <small>{rawLearning.source}</small>
               </div>
               <div className={styles.capabilityStatus}>
@@ -448,12 +624,11 @@ export default function ProfileScreen() {
           </div>
 
           <footer className={styles.paneFooter}>
-            <span>
-              {rawConfigured}/1
-              <small> מסלול הוגדר</small>
-            </span>
-            <span className={styles.footerRule} />
+            <span className={styles.footerIcon}><VisualGlyph kind="chart" /></span>
             <small>XMP ו־LRCAT הם מקורות לאותו Brain</small>
+            <span className={styles.footerRule} />
+            <strong>{rawConfigured}/1</strong>
+            <small>מסלול הוגדר</small>
           </footer>
         </article>
       </section>

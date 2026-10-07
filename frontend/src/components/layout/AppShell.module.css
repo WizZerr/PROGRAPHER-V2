@@ -1,4 +1,5 @@
 .shell {
+  position: relative;
   height: 100vh;
   display: grid;
   grid-template-columns: var(--pg-sidebar-width) minmax(0, 1fr);
@@ -135,6 +136,102 @@
   color: var(--pg-accent-hover);
 }
 
+.profileShell::after {
+  content: "";
+  position: absolute;
+  inset: 4px;
+  z-index: 50;
+  pointer-events: none;
+  border: 1px solid rgba(126, 102, 255, 0.8);
+  border-radius: 16px;
+  box-shadow:
+    inset 0 0 18px rgba(88, 70, 255, 0.16),
+    0 0 18px rgba(73, 56, 226, 0.28);
+}
+
+.profileShell .sidebar {
+  position: relative;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 76% 4%, rgba(111, 91, 255, 0.18), transparent 24%),
+    linear-gradient(180deg, #0d1320 0%, #090e17 48%, #070a11 100%);
+}
+
+.profileShell .sidebar::after {
+  content: "";
+  position: absolute;
+  left: -12%;
+  right: -12%;
+  bottom: -3%;
+  height: 43%;
+  z-index: 0;
+  opacity: 0.58;
+  background:
+    radial-gradient(circle at 50% 8%, rgba(100, 82, 255, 0.35), transparent 34%),
+    linear-gradient(180deg, rgba(38, 44, 96, 0.34), rgba(9, 12, 25, 0.05));
+  clip-path: polygon(
+    0 75%,
+    14% 63%,
+    26% 69%,
+    43% 36%,
+    55% 53%,
+    68% 30%,
+    82% 51%,
+    100% 40%,
+    100% 100%,
+    0 100%
+  );
+  filter: drop-shadow(0 -10px 22px rgba(87, 69, 255, 0.16));
+}
+
+.profileShell .sidebar > * {
+  position: relative;
+  z-index: 1;
+}
+
+.profileShell .active {
+  border-color: rgba(130, 107, 255, 0.58);
+  background:
+    linear-gradient(90deg, rgba(95, 70, 235, 0.34), rgba(59, 42, 137, 0.2));
+  box-shadow:
+    inset 4px 0 0 rgba(142, 119, 255, 0.96),
+    0 0 18px rgba(91, 69, 220, 0.14);
+}
+
+.profileShell .main {
+  background:
+    radial-gradient(circle at 84% -10%, rgba(98, 78, 225, 0.13), transparent 28%),
+    linear-gradient(145deg, #060a11, #080d15 58%, #04070c);
+}
+
+.profileMotto {
+  display: none;
+}
+
+.profileShell .profileMotto {
+  margin-top: auto;
+  padding: 20px 18px 22px;
+  display: grid;
+  gap: 8px;
+  direction: ltr;
+  color: #8996cc;
+  font-family: "Inter", sans-serif;
+  font-size: 9px;
+  letter-spacing: 0.32em;
+}
+
+.profileShell .profileMotto > span {
+  width: 38px;
+  height: 1px;
+  margin-bottom: 7px;
+  background: linear-gradient(90deg, #8c72ff, rgba(140,114,255,0));
+}
+
+.profileShell .profileMotto strong {
+  font-size: inherit;
+  font-weight: 500;
+}
+
 .sidebarFooter {
   margin-top: auto;
   padding: 18px 13px 8px;
@@ -252,7 +349,8 @@
 
   .brandText,
   .navLabel,
-  .sidebarFooter {
+  .sidebarFooter,
+  .profileShell .profileMotto {
     display: none;
   }
 
