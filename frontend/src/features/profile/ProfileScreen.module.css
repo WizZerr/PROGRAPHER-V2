@@ -13,8 +13,8 @@
 }
 
 .profileHeader {
-  min-height: 148px;
-  padding: 24px 28px;
+  min-height: 164px;
+  padding: 28px 32px;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -34,14 +34,14 @@
 
 .eyebrow {
   color: #8175f8;
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 700;
   letter-spacing: 0.025em;
 }
 
 .profileIdentity h1 {
   margin: 7px 0 0;
-  font-size: clamp(34px, 2.8vw, 44px);
+  font-size: clamp(40px, 3.2vw, 52px);
   font-weight: 700;
   line-height: 1.04;
   letter-spacing: -0.045em;
@@ -51,8 +51,8 @@
   max-width: 720px;
   margin: 10px 0 0;
   color: #8190a5;
-  font-size: 12px;
-  line-height: 1.65;
+  font-size: 14px;
+  line-height: 1.7;
 }
 
 .headerControls {
@@ -63,8 +63,8 @@
 }
 
 .profileStatus {
-  min-width: 190px;
-  min-height: 48px;
+  min-width: 210px;
+  min-height: 56px;
   padding: 0 14px;
   display: flex;
   align-items: center;
@@ -80,11 +80,11 @@
 
 .profileStatus small {
   color: #68768a;
-  font-size: 10px;
+  font-size: 11px;
 }
 
 .profileStatus strong {
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 700;
 }
 
@@ -107,11 +107,11 @@
 }
 
 .settingsButton {
-  width: 42px;
-  height: 42px;
+  width: 48px;
+  height: 48px;
   display: grid;
   place-items: center;
-  flex: 0 0 42px;
+  flex: 0 0 48px;
   border: 1px solid rgba(120, 145, 180, 0.13);
   border-radius: 10px;
   background: rgba(8, 13, 20, 0.5);
@@ -157,9 +157,9 @@
 }
 
 .coveragePanel {
-  min-height: 94px;
+  min-height: 118px;
   display: grid;
-  grid-template-columns: 190px minmax(0, 1fr);
+  grid-template-columns: 220px minmax(0, 1fr);
   overflow: hidden;
   border: 1px solid rgba(120, 145, 180, 0.12);
   border-radius: 12px;
@@ -167,7 +167,7 @@
 }
 
 .coverageSummary {
-  padding: 16px 18px;
+  padding: 20px 22px;
   display: grid;
   align-content: center;
   border-inline-end: 1px solid rgba(120, 145, 180, 0.1);
@@ -178,9 +178,9 @@
   color: #6f63dc;
   direction: ltr;
   font-family: "Inter", sans-serif;
-  font-size: 8px;
+  font-size: 10px;
   font-weight: 700;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.1em;
 }
 
 .coverageValue {
@@ -192,7 +192,7 @@
 
 .coverageValue strong {
   font-family: "Inter", sans-serif;
-  font-size: 26px;
+  font-size: 32px;
   font-weight: 700;
   letter-spacing: -0.04em;
 }
@@ -200,13 +200,13 @@
 .coverageValue > span {
   color: #657388;
   font-family: "Inter", sans-serif;
-  font-size: 12px;
+  font-size: 14px;
 }
 
 .coverageSummary > small {
   margin-top: 2px;
   color: #657388;
-  font-size: 9px;
+  font-size: 11px;
 }
 
 .coverageRail {
@@ -218,9 +218,9 @@
 .coverageItem,
 .coverageItemReady {
   min-width: 0;
-  padding: 0 16px;
+  padding: 0 20px;
   display: grid;
-  grid-template-columns: 26px minmax(0, 1fr) 8px;
+  grid-template-columns: 30px minmax(0, 1fr) 9px;
   align-items: center;
   gap: 10px;
 }
@@ -236,7 +236,7 @@
   color: #59677b;
   direction: ltr;
   font-family: "Inter", sans-serif;
-  font-size: 9px;
+  font-size: 10px;
   font-weight: 700;
 }
 
@@ -260,14 +260,14 @@
 .coverageItemReady small {
   overflow: hidden;
   color: #647287;
-  font-size: 9px;
+  font-size: 11px;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .coverageDot {
-  width: 7px;
-  height: 7px;
+  width: 8px;
+  height: 8px;
   border-radius: 50%;
   background: #4e596a;
 }
@@ -292,8 +292,8 @@
 
 .learningPane {
   min-width: 0;
-  min-height: 390px;
-  padding: 26px 26px 20px;
+  min-height: 470px;
+  padding: 32px 32px 24px;
   display: flex;
   flex-direction: column;
 }
@@ -309,7 +309,7 @@
 }
 
 .paneHeader {
-  min-height: 80px;
+  min-height: 96px;
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
@@ -320,22 +320,22 @@
   min-width: 0;
   display: flex;
   align-items: flex-start;
-  gap: 13px;
+  gap: 16px;
 }
 
 .mediaMonogram {
-  width: 38px;
-  height: 38px;
+  width: 46px;
+  height: 46px;
   display: grid;
   place-items: center;
-  flex: 0 0 38px;
+  flex: 0 0 46px;
   border: 1px solid rgba(132, 118, 242, 0.24);
   border-radius: 9px;
   background: rgba(111, 91, 255, 0.065);
   color: #9c92ff;
   direction: ltr;
   font-family: "Inter", sans-serif;
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 700;
 }
 
@@ -345,7 +345,7 @@
 
 .paneIdentity h2 {
   margin: 5px 0 0;
-  font-size: 24px;
+  font-size: 30px;
   font-weight: 700;
   letter-spacing: -0.035em;
 }
@@ -353,13 +353,13 @@
 .paneIdentity p {
   margin: 5px 0 0;
   color: #6f7d91;
-  font-size: 10px;
-  line-height: 1.55;
+  font-size: 12px;
+  line-height: 1.6;
 }
 
 .paneAction {
-  min-height: 36px;
-  padding: 0 11px;
+  min-height: 42px;
+  padding: 0 14px;
   display: inline-flex;
   align-items: center;
   gap: 12px;
@@ -369,7 +369,7 @@
   background: rgba(111, 91, 255, 0.055);
   color: #aaa2ff;
   font: inherit;
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 700;
   cursor: pointer;
   transition:
@@ -385,16 +385,16 @@
 }
 
 .capabilityTable {
-  margin-top: 22px;
+  margin-top: 28px;
   border-top: 1px solid rgba(120, 145, 180, 0.11);
 }
 
 .capabilityRow {
-  min-height: 88px;
+  min-height: 108px;
   display: grid;
-  grid-template-columns: 28px minmax(0, 1fr) auto;
+  grid-template-columns: 34px minmax(0, 1fr) auto;
   align-items: center;
-  gap: 14px;
+  gap: 18px;
 }
 
 .capabilityRow + .capabilityRow {
@@ -405,7 +405,7 @@
   color: #566477;
   direction: ltr;
   font-family: "Inter", sans-serif;
-  font-size: 9px;
+  font-size: 10px;
   font-weight: 700;
 }
 
@@ -416,13 +416,13 @@
 }
 
 .capabilityMain strong {
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 700;
 }
 
 .capabilityMain small {
   color: #657388;
-  font-size: 9px;
+  font-size: 11px;
 }
 
 .capabilityStatus {
@@ -437,7 +437,7 @@
   color: #5c697c;
   direction: ltr;
   font-family: "Inter", sans-serif;
-  font-size: 8px;
+  font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.06em;
 }
@@ -445,14 +445,14 @@
 .statusReady,
 .statusPending,
 .statusIdle {
-  min-height: 26px;
-  padding: 0 8px;
+  min-height: 30px;
+  padding: 0 10px;
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 7px;
   flex: 0 0 auto;
   border-radius: 999px;
-  font-size: 9px;
+  font-size: 11px;
   font-weight: 700;
   white-space: nowrap;
 }
@@ -478,39 +478,39 @@
 .statusReady > span,
 .statusPending > span,
 .statusIdle > span {
-  width: 5px;
-  height: 5px;
-  flex: 0 0 5px;
+  width: 6px;
+  height: 6px;
+  flex: 0 0 6px;
   border-radius: 50%;
   background: currentColor;
 }
 
 .sourceStrip {
-  margin-top: 15px;
-  padding-top: 15px;
+  margin-top: 20px;
+  padding-top: 18px;
   display: flex;
   align-items: center;
-  gap: 7px;
+  gap: 9px;
   border-top: 1px solid rgba(120, 145, 180, 0.08);
 }
 
 .sourceLabel {
   margin-inline-end: 2px;
   color: #5f6d81;
-  font-size: 8px;
+  font-size: 10px;
   font-weight: 700;
 }
 
 .sourceChip,
 .sourceActive {
-  min-height: 24px;
-  padding: 0 8px;
+  min-height: 28px;
+  padding: 0 10px;
   display: inline-flex;
   align-items: center;
   border-radius: 6px;
   direction: ltr;
   font-family: "Inter", sans-serif;
-  font-size: 8px;
+  font-size: 10px;
   font-weight: 700;
 }
 
@@ -526,12 +526,12 @@
 }
 
 .paneFooter {
-  min-height: 34px;
+  min-height: 42px;
   margin-top: auto;
-  padding-top: 14px;
+  padding-top: 18px;
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
   border-top: 1px solid rgba(120, 145, 180, 0.08);
   color: #667489;
 }
@@ -540,13 +540,13 @@
   color: #9ca8b9;
   direction: ltr;
   font-family: "Inter", "Heebo", sans-serif;
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 700;
 }
 
 .paneFooter small {
   color: #5f6d81;
-  font-size: 8px;
+  font-size: 10px;
   font-weight: 500;
 }
 
