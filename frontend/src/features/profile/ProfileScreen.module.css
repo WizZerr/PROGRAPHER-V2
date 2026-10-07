@@ -157,20 +157,20 @@
 }
 
 .coveragePanel {
-  min-height: 132px;
+  min-height: 160px;
   display: grid;
-  grid-template-columns: 220px minmax(0, 1fr);
+  grid-template-columns: 260px minmax(0, 1fr);
   overflow: hidden;
-  border: 1px solid rgba(120, 145, 180, 0.12);
-  border-radius: 12px;
-  background: rgba(9, 15, 24, 0.74);
+  border: 1px solid rgba(120, 145, 180, 0.13);
+  border-radius: 13px;
+  background: rgba(9, 15, 24, 0.78);
 }
 
 .coverageSummary {
-  padding: 22px 24px;
+  padding: 26px 28px;
   display: grid;
   align-content: center;
-  border-inline-end: 1px solid rgba(120, 145, 180, 0.1);
+  border-inline-end: 1px solid rgba(120, 145, 180, 0.11);
 }
 
 .sectionKicker,
@@ -183,30 +183,36 @@
   letter-spacing: 0.1em;
 }
 
+.coverageSummary .sectionKicker {
+  font-size: 13px;
+  letter-spacing: 0.09em;
+}
+
 .coverageValue {
-  margin-top: 5px;
+  margin-top: 7px;
   display: flex;
   align-items: baseline;
-  gap: 4px;
+  gap: 6px;
 }
 
 .coverageValue strong {
   font-family: "Inter", sans-serif;
-  font-size: 36px;
+  font-size: 46px;
   font-weight: 700;
-  letter-spacing: -0.04em;
+  letter-spacing: -0.05em;
+  line-height: 1;
 }
 
 .coverageValue > span {
-  color: #77859a;
+  color: #8694a8;
   font-family: "Inter", sans-serif;
-  font-size: 15px;
+  font-size: 17px;
 }
 
 .coverageSummary > small {
-  margin-top: 4px;
-  color: #77859a;
-  font-size: 12px;
+  margin-top: 7px;
+  color: #8997aa;
+  font-size: 14px;
 }
 
 .coverageRail {
@@ -218,25 +224,25 @@
 .coverageItem,
 .coverageItemReady {
   min-width: 0;
-  padding: 0 22px;
+  padding: 0 28px;
   display: grid;
-  grid-template-columns: 30px minmax(0, 1fr) 9px;
+  grid-template-columns: 34px minmax(0, 1fr) 11px;
   align-items: center;
-  gap: 10px;
+  gap: 14px;
 }
 
 .coverageItem + .coverageItem,
 .coverageItem + .coverageItemReady,
 .coverageItemReady + .coverageItem,
 .coverageItemReady + .coverageItemReady {
-  border-inline-start: 1px solid rgba(120, 145, 180, 0.09);
+  border-inline-start: 1px solid rgba(120, 145, 180, 0.1);
 }
 
 .coverageIndex {
-  color: #667489;
+  color: #748297;
   direction: ltr;
   font-family: "Inter", sans-serif;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
 }
 
@@ -244,14 +250,15 @@
 .coverageItemReady > div {
   min-width: 0;
   display: grid;
-  gap: 4px;
+  gap: 7px;
 }
 
 .coverageItem strong,
 .coverageItemReady strong {
   overflow: hidden;
-  font-size: 11px;
+  font-size: 16px;
   font-weight: 700;
+  letter-spacing: -0.01em;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -259,22 +266,22 @@
 .coverageItem small,
 .coverageItemReady small {
   overflow: hidden;
-  color: #7b899e;
-  font-size: 12px;
+  color: #8a98ac;
+  font-size: 13px;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .coverageDot {
-  width: 8px;
-  height: 8px;
+  width: 10px;
+  height: 10px;
   border-radius: 50%;
-  background: #4e596a;
+  background: #596678;
 }
 
 .coverageItemReady .coverageDot {
   background: var(--pg-success);
-  box-shadow: 0 0 8px rgba(78, 226, 138, 0.4);
+  box-shadow: 0 0 10px rgba(78, 226, 138, 0.5);
 }
 
 .learningSurface {
