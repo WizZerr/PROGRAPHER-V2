@@ -34,7 +34,7 @@
 
 .eyebrow {
   color: #8175f8;
-  font-size: 13px;
+  font-size: 16px;
   font-weight: 700;
   letter-spacing: 0.025em;
 }
@@ -84,7 +84,7 @@
 }
 
 .profileStatus strong {
-  font-size: 16px;
+  font-size: 18px;
   font-weight: 700;
 }
 
@@ -157,9 +157,9 @@
 }
 
 .coveragePanel {
-  min-height: 160px;
+  min-height: 184px;
   display: grid;
-  grid-template-columns: 260px minmax(0, 1fr);
+  grid-template-columns: 290px minmax(0, 1fr);
   overflow: hidden;
   border: 1px solid rgba(120, 145, 180, 0.13);
   border-radius: 13px;
@@ -167,7 +167,7 @@
 }
 
 .coverageSummary {
-  padding: 26px 28px;
+  padding: 30px 32px;
   display: grid;
   align-content: center;
   border-inline-end: 1px solid rgba(120, 145, 180, 0.11);
@@ -184,7 +184,7 @@
 }
 
 .coverageSummary .sectionKicker {
-  font-size: 13px;
+  font-size: 14px;
   letter-spacing: 0.09em;
 }
 
@@ -197,22 +197,22 @@
 
 .coverageValue strong {
   font-family: "Inter", sans-serif;
-  font-size: 46px;
+  font-size: 54px;
   font-weight: 700;
   letter-spacing: -0.05em;
   line-height: 1;
 }
 
 .coverageValue > span {
-  color: #8694a8;
+  color: #8f9db1;
   font-family: "Inter", sans-serif;
-  font-size: 17px;
+  font-size: 19px;
 }
 
 .coverageSummary > small {
-  margin-top: 7px;
-  color: #8997aa;
-  font-size: 14px;
+  margin-top: 8px;
+  color: #96a4b8;
+  font-size: 15px;
 }
 
 .coverageRail {
@@ -224,11 +224,11 @@
 .coverageItem,
 .coverageItemReady {
   min-width: 0;
-  padding: 0 28px;
+  padding: 0 32px;
   display: grid;
-  grid-template-columns: 34px minmax(0, 1fr) 11px;
+  grid-template-columns: 38px minmax(0, 1fr) 12px;
   align-items: center;
-  gap: 14px;
+  gap: 16px;
 }
 
 .coverageItem + .coverageItem,
@@ -239,10 +239,10 @@
 }
 
 .coverageIndex {
-  color: #748297;
+  color: #8190a5;
   direction: ltr;
   font-family: "Inter", sans-serif;
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 700;
 }
 
@@ -256,7 +256,7 @@
 .coverageItem strong,
 .coverageItemReady strong {
   overflow: hidden;
-  font-size: 16px;
+  font-size: 18px;
   font-weight: 700;
   letter-spacing: -0.01em;
   text-overflow: ellipsis;
@@ -266,15 +266,15 @@
 .coverageItem small,
 .coverageItemReady small {
   overflow: hidden;
-  color: #8a98ac;
-  font-size: 13px;
+  color: #96a4b8;
+  font-size: 14px;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .coverageDot {
-  width: 10px;
-  height: 10px;
+  width: 11px;
+  height: 11px;
   border-radius: 50%;
   background: #596678;
 }
@@ -299,8 +299,8 @@
 
 .learningPane {
   min-width: 0;
-  min-height: 500px;
-  padding: 34px 34px 26px;
+  min-height: 620px;
+  padding: 40px 40px 30px;
   display: flex;
   flex-direction: column;
 }
@@ -316,7 +316,7 @@
 }
 
 .paneHeader {
-  min-height: 104px;
+  min-height: 124px;
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
@@ -327,15 +327,15 @@
   min-width: 0;
   display: flex;
   align-items: flex-start;
-  gap: 16px;
+  gap: 18px;
 }
 
 .mediaMonogram {
-  width: 50px;
-  height: 50px;
+  width: 58px;
+  height: 58px;
   display: grid;
   place-items: center;
-  flex: 0 0 50px;
+  flex: 0 0 58px;
   border: 1px solid rgba(132, 118, 242, 0.24);
   border-radius: 10px;
   background: rgba(111, 91, 255, 0.075);
@@ -351,22 +351,22 @@
 }
 
 .paneIdentity h2 {
-  margin: 6px 0 0;
-  font-size: 34px;
+  margin: 7px 0 0;
+  font-size: 40px;
   font-weight: 700;
   letter-spacing: -0.035em;
 }
 
 .paneIdentity p {
-  margin: 7px 0 0;
-  color: #8391a6;
-  font-size: 13px;
+  margin: 9px 0 0;
+  color: #93a1b5;
+  font-size: 16px;
   line-height: 1.6;
 }
 
 .paneAction {
-  min-height: 48px;
-  padding: 0 16px;
+  min-height: 54px;
+  padding: 0 18px;
   display: inline-flex;
   align-items: center;
   gap: 12px;
@@ -392,16 +392,16 @@
 }
 
 .capabilityTable {
-  margin-top: 34px;
+  margin-top: 40px;
   border-top: 1px solid rgba(120, 145, 180, 0.11);
 }
 
 .capabilityRow {
-  min-height: 142px;
+  min-height: 168px;
   display: grid;
-  grid-template-columns: 42px minmax(0, 1fr) auto;
+  grid-template-columns: 48px minmax(0, 1fr) auto;
   align-items: center;
-  gap: 22px;
+  gap: 26px;
 }
 
 .capabilityRow + .capabilityRow {
@@ -409,28 +409,28 @@
 }
 
 .capabilityNumber {
-  color: #748297;
+  color: #8190a5;
   direction: ltr;
   font-family: "Inter", sans-serif;
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 700;
 }
 
 .capabilityMain {
   min-width: 0;
   display: grid;
-  gap: 8px;
+  gap: 10px;
 }
 
 .capabilityMain strong {
-  font-size: 22px;
+  font-size: 26px;
   font-weight: 700;
   letter-spacing: -0.02em;
 }
 
 .capabilityMain small {
-  color: #8d9bb0;
-  font-size: 15px;
+  color: #9aa8bb;
+  font-size: 17px;
   line-height: 1.55;
 }
 
@@ -439,14 +439,14 @@
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  gap: 14px;
+  gap: 16px;
 }
 
 .capabilityStatus > span:first-child {
-  color: #8290a5;
+  color: #91a0b4;
   direction: ltr;
   font-family: "Inter", sans-serif;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 700;
   letter-spacing: 0.05em;
 }
@@ -454,8 +454,8 @@
 .statusReady,
 .statusPending,
 .statusIdle {
-  min-height: 40px;
-  padding: 0 14px;
+  min-height: 44px;
+  padding: 0 16px;
   display: inline-flex;
   align-items: center;
   gap: 9px;
@@ -495,25 +495,25 @@
 }
 
 .sourceStrip {
-  margin-top: 24px;
-  padding-top: 22px;
+  margin-top: 28px;
+  padding-top: 26px;
   display: flex;
   align-items: center;
-  gap: 11px;
+  gap: 13px;
   border-top: 1px solid rgba(120, 145, 180, 0.08);
 }
 
 .sourceLabel {
-  margin-inline-end: 4px;
-  color: #8694a8;
-  font-size: 13px;
+  margin-inline-end: 5px;
+  color: #93a1b5;
+  font-size: 14px;
   font-weight: 700;
 }
 
 .sourceChip,
 .sourceActive {
-  min-height: 36px;
-  padding: 0 13px;
+  min-height: 40px;
+  padding: 0 15px;
   display: inline-flex;
   align-items: center;
   border-radius: 8px;
@@ -535,12 +535,12 @@
 }
 
 .paneFooter {
-  min-height: 58px;
+  min-height: 68px;
   margin-top: auto;
-  padding-top: 20px;
+  padding-top: 24px;
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 16px;
   border-top: 1px solid rgba(120, 145, 180, 0.08);
   color: #748297;
 }
@@ -554,15 +554,30 @@
 }
 
 .paneFooter small {
-  color: #8290a5;
-  font-size: 13px;
+  color: #91a0b4;
+  font-size: 14px;
   font-weight: 500;
 }
 
 .footerRule {
   width: 1px;
-  height: 16px;
+  height: 18px;
   background: rgba(120, 145, 180, 0.14);
+}
+
+
+.rawPane .capabilityTable {
+  flex: 1;
+  display: grid;
+  align-content: center;
+}
+
+.rawPane .capabilityRow {
+  min-height: 210px;
+}
+
+.jpegPane .capabilityRow {
+  min-height: 176px;
 }
 
 .modalBackdrop {
