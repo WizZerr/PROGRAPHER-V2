@@ -120,12 +120,6 @@ export default function Sidebar({ activeView, onSelect }: SidebarProps) {
         ))}
       </nav>
 
-      <div className={styles.profileMotto} aria-hidden="true">
-        <span />
-        <strong>PHOTOGRAPHY</strong>
-        <strong>LEARNING</strong>
-        <strong>CREATIVE GROWTH</strong>
-      </div>
     </aside>
   );
 }
