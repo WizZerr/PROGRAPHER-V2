@@ -144,6 +144,26 @@
     linear-gradient(180deg, #0d1320 0%, #090e17 48%, #070a11 100%);
 }
 
+.profileShell .sidebar::after {
+  content: "";
+  position: absolute;
+  inset-inline: 0;
+  bottom: 0;
+  height: 44%;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.82;
+  background:
+    linear-gradient(
+      180deg,
+      rgba(7, 10, 17, 1) 0%,
+      rgba(7, 10, 17, 0.12) 23%,
+      rgba(7, 10, 17, 0.04) 68%,
+      rgba(7, 10, 17, 0.26) 100%
+    ),
+    url("/profile-sidebar-mountain.png") center bottom / cover no-repeat;
+}
+
 .profileShell .sidebar > * {
   position: relative;
   z-index: 1;
@@ -260,6 +280,10 @@
 @media (max-width: 1280px) {
   .shell {
     grid-template-columns: var(--pg-sidebar-compact-width) minmax(0, 1fr);
+  }
+
+  .profileShell .sidebar::after {
+    display: none;
   }
 
   .sidebar {
