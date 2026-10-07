@@ -1,9 +1,9 @@
 .screen {
   min-height: 100%;
-  padding: 28px 30px 44px;
+  padding: 32px 36px 48px;
   display: grid;
   align-content: start;
-  gap: 16px;
+  gap: 20px;
   container-type: inline-size;
   container-name: training;
   background:
@@ -13,11 +13,11 @@
 }
 
 .header {
-  min-height: 158px;
-  padding: 24px 30px;
+  min-height: 190px;
+  padding: 30px 36px;
   display: grid;
   align-content: center;
-  gap: 16px;
+  gap: 18px;
   border: 1px solid rgba(120, 145, 180, 0.16);
   border-radius: 15px;
   background:
@@ -33,9 +33,9 @@
   padding: 0;
   border: 0;
   background: transparent;
-  color: #78869a;
+  color: #8c9aaf;
   font: inherit;
-  font-size: 11px;
+  font-size: 14px;
   font-weight: 600;
   cursor: pointer;
 }
@@ -45,24 +45,24 @@
 }
 
 .eyebrow {
-  color: #8175f8;
-  font-size: 11px;
+  color: #8d82ff;
+  font-size: 13px;
   font-weight: 700;
   letter-spacing: 0.025em;
 }
 
 .header h1 {
-  margin: 7px 0 0;
-  font-size: clamp(38px, 3.3vw, 50px);
+  margin: 9px 0 0;
+  font-size: clamp(46px, 3.7vw, 60px);
   font-weight: 700;
   line-height: 1.04;
   letter-spacing: -0.045em;
 }
 
 .header p {
-  margin: 10px 0 0;
-  color: #8694a8;
-  font-size: 12px;
+  margin: 12px 0 0;
+  color: #95a3b7;
+  font-size: 15px;
 }
 
 .progress {
@@ -73,11 +73,11 @@
 
 .progressItem,
 .progressActive {
-  min-height: 52px;
-  padding: 0 14px;
+  min-height: 66px;
+  padding: 0 20px;
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 13px;
   border: 1px solid rgba(120, 145, 180, 0.12);
   border-radius: 10px;
   background: rgba(12, 19, 29, 0.72);
@@ -86,21 +86,21 @@
 
 .progressItem > span,
 .progressActive > span {
-  width: 25px;
-  height: 25px;
+  width: 34px;
+  height: 34px;
   display: grid;
   place-items: center;
-  flex: 0 0 25px;
+  flex: 0 0 34px;
   border-radius: 50%;
   background: #172131;
   font-family: "Inter", sans-serif;
-  font-size: 10px;
+  font-size: 13px;
   font-weight: 700;
 }
 
 .progressItem strong,
 .progressActive strong {
-  font-size: 11px;
+  font-size: 14px;
   font-weight: 700;
 }
 
@@ -115,9 +115,9 @@
 }
 
 .stage {
-  padding: 26px;
+  padding: 32px;
   display: grid;
-  gap: 22px;
+  gap: 28px;
   border: 1px solid rgba(120, 145, 180, 0.16);
   border-radius: 15px;
   background:
@@ -127,26 +127,26 @@
 }
 
 .stageHeading {
-  max-width: 760px;
+  max-width: 900px;
 }
 
 .stageHeading > span {
-  color: #7d72ef;
-  font-size: 10px;
+  color: #8c81ff;
+  font-size: 13px;
   font-weight: 700;
 }
 
 .stageHeading h2 {
-  margin: 7px 0 0;
-  font-size: 28px;
+  margin: 9px 0 0;
+  font-size: 36px;
   font-weight: 700;
   letter-spacing: -0.035em;
 }
 
 .stageHeading p {
-  margin: 7px 0 0;
-  color: #748297;
-  font-size: 11px;
+  margin: 9px 0 0;
+  color: #8b99ad;
+  font-size: 15px;
   line-height: 1.6;
 }
 
@@ -155,14 +155,14 @@
 .materialGrid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 14px;
+  gap: 18px;
 }
 
 .mediaCard,
 .methodCard {
   position: relative;
-  min-height: 210px;
-  padding: 22px;
+  min-height: 255px;
+  padding: 28px;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
@@ -193,57 +193,57 @@
 
 .mediaMark,
 .methodTag {
-  min-height: 29px;
-  padding: 0 10px;
+  min-height: 36px;
+  padding: 0 13px;
   display: inline-flex;
   align-items: center;
-  border: 1px solid rgba(138, 123, 255, 0.22);
-  border-radius: 7px;
-  background: rgba(111, 91, 255, 0.08);
-  color: #a59cff;
+  border: 1px solid rgba(138, 123, 255, 0.28);
+  border-radius: 8px;
+  background: rgba(111, 91, 255, 0.09);
+  color: #b3abff;
   direction: ltr;
   font-family: "Inter", sans-serif;
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 700;
 }
 
 .mediaCard > div,
 .methodCard > div {
-  margin-top: 30px;
+  margin-top: 34px;
 }
 
 .mediaCard h3,
 .methodCard h3 {
   margin: 0;
-  font-size: clamp(25px, 2.2vw, 34px);
+  font-size: clamp(32px, 2.6vw, 42px);
   font-weight: 700;
   letter-spacing: -0.04em;
 }
 
 .mediaCard p,
 .methodCard p {
-  max-width: 430px;
-  margin: 9px 0 0;
-  color: #7c8a9f;
-  font-size: 11px;
+  max-width: 560px;
+  margin: 12px 0 0;
+  color: #91a0b4;
+  font-size: 14px;
   line-height: 1.65;
 }
 
 .cardArrow {
   position: absolute;
-  left: 22px;
-  bottom: 20px;
-  color: #8b80f7;
-  font-size: 20px;
+  left: 28px;
+  bottom: 26px;
+  color: #9d93ff;
+  font-size: 28px;
 }
 
 .materialCard {
   min-width: 0;
-  min-height: 132px;
-  padding: 18px;
+  min-height: 164px;
+  padding: 24px;
   display: flex;
   align-items: center;
-  gap: 15px;
+  gap: 19px;
   border: 1px dashed rgba(120, 145, 180, 0.22);
   border-radius: 13px;
   background: rgba(7, 12, 19, 0.45);
@@ -275,16 +275,16 @@
 }
 
 .materialIcon {
-  width: 46px;
-  height: 46px;
+  width: 58px;
+  height: 58px;
   display: grid;
   place-items: center;
-  flex: 0 0 46px;
-  border: 1px solid rgba(138, 123, 255, 0.2);
-  border-radius: 10px;
-  background: rgba(111, 91, 255, 0.08);
-  color: #9e94ff;
-  font-size: 18px;
+  flex: 0 0 58px;
+  border: 1px solid rgba(138, 123, 255, 0.24);
+  border-radius: 11px;
+  background: rgba(111, 91, 255, 0.09);
+  color: #aaa1ff;
+  font-size: 23px;
   font-weight: 700;
 }
 
@@ -297,57 +297,57 @@
 .materialCard > div {
   min-width: 0;
   display: grid;
-  gap: 5px;
+  gap: 7px;
 }
 
 .materialLabel {
-  color: #7469e9;
+  color: #8d82ff;
   font-family: "Inter", "Heebo", sans-serif;
-  font-size: 9px;
+  font-size: 12px;
   font-weight: 700;
 }
 
 .materialCard strong {
-  font-size: 14px;
+  font-size: 17px;
   font-weight: 700;
 }
 
 .materialCard small {
   max-width: 100%;
   overflow: hidden;
-  color: #657388;
+  color: #8190a5;
   direction: ltr;
   font-family: "Inter", sans-serif;
-  font-size: 9px;
+  font-size: 11px;
   text-align: right;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .error {
-  padding: 12px 14px;
+  padding: 14px 16px;
   border: 1px solid rgba(255, 107, 114, 0.28);
   border-radius: 10px;
   background: rgba(180, 35, 35, 0.12);
   color: #ff9ca1;
-  font-size: 11px;
+  font-size: 13px;
 }
 
 .stageActions {
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  gap: 9px;
+  gap: 11px;
 }
 
 .secondaryButton,
 .primaryButton,
 .result > button {
-  min-height: 43px;
-  padding: 0 15px;
+  min-height: 52px;
+  padding: 0 19px;
   border-radius: 9px;
   font: inherit;
-  font-size: 11px;
+  font-size: 14px;
   font-weight: 700;
   cursor: pointer;
 }
@@ -359,7 +359,7 @@
 }
 
 .primaryButton {
-  min-width: 150px;
+  min-width: 180px;
   border: 1px solid rgba(144, 130, 255, 0.58);
   background: linear-gradient(180deg, #735fff, #6652f5);
   color: white;
@@ -371,12 +371,12 @@
 }
 
 .result {
-  min-height: 116px;
-  padding: 18px;
+  min-height: 142px;
+  padding: 22px;
   display: grid;
-  grid-template-columns: 42px minmax(0, 1fr) auto;
+  grid-template-columns: 52px minmax(0, 1fr) auto;
   align-items: center;
-  gap: 14px;
+  gap: 18px;
   border: 1px solid rgba(78, 226, 138, 0.18);
   border-radius: 12px;
   background:
@@ -385,15 +385,15 @@
 }
 
 .resultIcon {
-  width: 42px;
-  height: 42px;
+  width: 52px;
+  height: 52px;
   display: grid;
   place-items: center;
   border: 1px solid rgba(78, 226, 138, 0.18);
   border-radius: 50%;
   background: rgba(78, 226, 138, 0.07);
   color: #7ee6a7;
-  font-size: 17px;
+  font-size: 21px;
   font-weight: 700;
 }
 
@@ -402,22 +402,22 @@
 }
 
 .resultLabel {
-  color: #74d99b;
-  font-size: 9px;
+  color: #7fe2a7;
+  font-size: 12px;
   font-weight: 700;
 }
 
 .result h3 {
-  margin: 4px 0 0;
-  font-size: 22px;
+  margin: 6px 0 0;
+  font-size: 28px;
   font-weight: 700;
   letter-spacing: -0.03em;
 }
 
 .result p {
-  margin: 5px 0 0;
-  color: #77859a;
-  font-size: 10px;
+  margin: 7px 0 0;
+  color: #8a98ac;
+  font-size: 13px;
   line-height: 1.55;
 }
 
@@ -436,7 +436,7 @@
 
   .mediaCard,
   .methodCard {
-    min-height: 180px;
+    min-height: 220px;
   }
 }
 
@@ -447,7 +447,7 @@
 
   .header,
   .stage {
-    padding: 22px;
+    padding: 24px;
   }
 
   .progress {
