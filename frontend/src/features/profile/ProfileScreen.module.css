@@ -34,7 +34,7 @@
 
 .eyebrow {
   color: #8175f8;
-  font-size: 16px;
+  font-size: 17px;
   font-weight: 700;
   letter-spacing: 0.025em;
 }
@@ -184,7 +184,7 @@
 }
 
 .coverageSummary .sectionKicker {
-  font-size: 14px;
+  font-size: 15px;
   letter-spacing: 0.09em;
 }
 
@@ -197,7 +197,7 @@
 
 .coverageValue strong {
   font-family: "Inter", sans-serif;
-  font-size: 54px;
+  font-size: 56px;
   font-weight: 700;
   letter-spacing: -0.05em;
   line-height: 1;
@@ -206,13 +206,13 @@
 .coverageValue > span {
   color: #8f9db1;
   font-family: "Inter", sans-serif;
-  font-size: 19px;
+  font-size: 20px;
 }
 
 .coverageSummary > small {
   margin-top: 8px;
   color: #96a4b8;
-  font-size: 15px;
+  font-size: 16px;
 }
 
 .coverageRail {
@@ -242,7 +242,7 @@
   color: #8190a5;
   direction: ltr;
   font-family: "Inter", sans-serif;
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 700;
 }
 
@@ -256,7 +256,7 @@
 .coverageItem strong,
 .coverageItemReady strong {
   overflow: hidden;
-  font-size: 18px;
+  font-size: 22px;
   font-weight: 700;
   letter-spacing: -0.01em;
   text-overflow: ellipsis;
@@ -266,8 +266,8 @@
 .coverageItem small,
 .coverageItemReady small {
   overflow: hidden;
-  color: #96a4b8;
-  font-size: 14px;
+  color: #9eabbc;
+  font-size: 16px;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -299,8 +299,8 @@
 
 .learningPane {
   min-width: 0;
-  min-height: 620px;
-  padding: 40px 40px 30px;
+  min-height: 470px;
+  padding: 28px 30px 22px;
   display: flex;
   flex-direction: column;
 }
@@ -316,7 +316,7 @@
 }
 
 .paneHeader {
-  min-height: 124px;
+  min-height: 88px;
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
@@ -327,15 +327,15 @@
   min-width: 0;
   display: flex;
   align-items: flex-start;
-  gap: 18px;
+  gap: 14px;
 }
 
 .mediaMonogram {
-  width: 58px;
-  height: 58px;
+  width: 52px;
+  height: 52px;
   display: grid;
   place-items: center;
-  flex: 0 0 58px;
+  flex: 0 0 52px;
   border: 1px solid rgba(132, 118, 242, 0.24);
   border-radius: 10px;
   background: rgba(111, 91, 255, 0.075);
@@ -351,22 +351,22 @@
 }
 
 .paneIdentity h2 {
-  margin: 7px 0 0;
-  font-size: 40px;
+  margin: 5px 0 0;
+  font-size: 42px;
   font-weight: 700;
   letter-spacing: -0.035em;
 }
 
 .paneIdentity p {
-  margin: 9px 0 0;
-  color: #93a1b5;
-  font-size: 16px;
+  margin: 6px 0 0;
+  color: #9aa8bb;
+  font-size: 17px;
   line-height: 1.6;
 }
 
 .paneAction {
-  min-height: 54px;
-  padding: 0 18px;
+  min-height: 48px;
+  padding: 0 16px;
   display: inline-flex;
   align-items: center;
   gap: 12px;
@@ -392,16 +392,16 @@
 }
 
 .capabilityTable {
-  margin-top: 40px;
+  margin-top: 20px;
   border-top: 1px solid rgba(120, 145, 180, 0.11);
 }
 
 .capabilityRow {
-  min-height: 168px;
+  min-height: 112px;
   display: grid;
-  grid-template-columns: 48px minmax(0, 1fr) auto;
+  grid-template-columns: 42px minmax(0, 1fr) auto;
   align-items: center;
-  gap: 26px;
+  gap: 18px;
 }
 
 .capabilityRow + .capabilityRow {
@@ -419,18 +419,18 @@
 .capabilityMain {
   min-width: 0;
   display: grid;
-  gap: 10px;
+  gap: 5px;
 }
 
 .capabilityMain strong {
-  font-size: 26px;
+  font-size: 28px;
   font-weight: 700;
   letter-spacing: -0.02em;
 }
 
 .capabilityMain small {
-  color: #9aa8bb;
-  font-size: 17px;
+  color: #9eabbc;
+  font-size: 18px;
   line-height: 1.55;
 }
 
@@ -439,14 +439,14 @@
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  gap: 16px;
+  gap: 12px;
 }
 
 .capabilityStatus > span:first-child {
-  color: #91a0b4;
+  color: #97a5b8;
   direction: ltr;
   font-family: "Inter", sans-serif;
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 700;
   letter-spacing: 0.05em;
 }
@@ -454,8 +454,8 @@
 .statusReady,
 .statusPending,
 .statusIdle {
-  min-height: 44px;
-  padding: 0 16px;
+  min-height: 40px;
+  padding: 0 14px;
   display: inline-flex;
   align-items: center;
   gap: 9px;
@@ -495,25 +495,25 @@
 }
 
 .sourceStrip {
-  margin-top: 28px;
-  padding-top: 26px;
+  margin-top: 12px;
+  padding-top: 14px;
   display: flex;
   align-items: center;
-  gap: 13px;
+  gap: 10px;
   border-top: 1px solid rgba(120, 145, 180, 0.08);
 }
 
 .sourceLabel {
-  margin-inline-end: 5px;
-  color: #93a1b5;
-  font-size: 14px;
+  margin-inline-end: 4px;
+  color: #9aa8bb;
+  font-size: 15px;
   font-weight: 700;
 }
 
 .sourceChip,
 .sourceActive {
-  min-height: 40px;
-  padding: 0 15px;
+  min-height: 36px;
+  padding: 0 13px;
   display: inline-flex;
   align-items: center;
   border-radius: 8px;
@@ -535,12 +535,12 @@
 }
 
 .paneFooter {
-  min-height: 68px;
+  min-height: 44px;
   margin-top: auto;
-  padding-top: 24px;
+  padding-top: 12px;
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 12px;
   border-top: 1px solid rgba(120, 145, 180, 0.08);
   color: #748297;
 }
@@ -554,30 +554,21 @@
 }
 
 .paneFooter small {
-  color: #91a0b4;
-  font-size: 14px;
+  color: #97a5b8;
+  font-size: 15px;
   font-weight: 500;
 }
 
 .footerRule {
   width: 1px;
-  height: 18px;
+  height: 14px;
   background: rgba(120, 145, 180, 0.14);
 }
 
 
-.rawPane .capabilityTable {
-  flex: 1;
-  display: grid;
-  align-content: center;
-}
-
-.rawPane .capabilityRow {
-  min-height: 210px;
-}
-
+.rawPane .capabilityRow,
 .jpegPane .capabilityRow {
-  min-height: 176px;
+  min-height: 118px;
 }
 
 .modalBackdrop {
