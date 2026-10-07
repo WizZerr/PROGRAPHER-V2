@@ -144,21 +144,6 @@
     linear-gradient(180deg, #0d1320 0%, #090e17 48%, #070a11 100%);
 }
 
-.profileShell .sidebar::after {
-  content: "";
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  height: 46%;
-  z-index: 0;
-  opacity: 0.78;
-  background:
-    linear-gradient(180deg, rgba(7, 10, 17, 0) 0%, rgba(7, 10, 17, 0.08) 28%, rgba(7, 10, 17, 0.58) 100%),
-    url("/profile-sidebar-mountain.webp") center bottom / 155% auto no-repeat;
-  pointer-events: none;
-}
-
 .profileShell .sidebar > * {
   position: relative;
   z-index: 1;
