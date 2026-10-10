@@ -39,19 +39,8 @@
 }
 
 .crumbs {
-  display: flex;
-  align-items: center;
-  gap: 8px;
   min-width: 0;
-  color: #96a2c1;
-  font-size: 13px;
-  font-weight: 500;
-  white-space: nowrap;
 }
-
-.crumbs svg { color: #a3a9df; }
-.crumbs b { font-weight: 600; }
-.slash { color: #495876; }
 
 .back {
   padding: 3px 0;
@@ -308,7 +297,7 @@
   background: rgba(35, 22, 81, 0.18);
   transition: background 150ms ease;
 }
-.arrowCircle svg { transform: rotate(180deg); }
+.arrowCircle svg { transform: none; }
 .methodCard:hover .arrowCircle { background: rgba(113, 77, 232, 0.23); }
 
 .footnote {
@@ -416,7 +405,7 @@
   .topArea { min-height: 154px; }
 }
 @container jpeg-training (max-width: 550px) {
-  .crumbs { gap: 5px; font-size: 11px; }
+  .crumbs { max-width: 100%; }
   .topLine { align-items: flex-start; flex-direction: column-reverse; }
   .titleBlock { margin-top: 10px; }
   .titleBlock h1 { font-size: 34px; }

@@ -4,6 +4,7 @@ import Image from "next/image";
 import type { ReactNode } from "react";
 import type { TestingProfile } from "@/features/testing/testing.api";
 import styles from "./JpegTrainingView.module.css";
+import TrainingBreadcrumbs from "./TrainingBreadcrumbs";
 
 type LearningChoice = "pairs" | "catalog";
 
@@ -28,12 +29,11 @@ type Props = {
   onReturnProfile: () => void;
 };
 
-type GlyphName = "arrow" | "house" | "star" | "target" | "monitor" | "bolt" | "book" | "info" | "folder" | "check";
+type GlyphName = "arrow" | "star" | "target" | "monitor" | "bolt" | "book" | "info" | "folder" | "check";
 
 function Glyph({ name, size = 21 }: { name: GlyphName; size?: number }) {
   const paths: Record<GlyphName, ReactNode> = {
     arrow: <><path d="M19 12H5m7-7-7 7 7 7" /></>,
-    house: <><path d="m3 10 9-7 9 7M5 9v12h14V9M9 21v-7h6v7" /></>,
     star: <><path d="m12 2 3 6 6.5.9-4.7 4.6 1.1 6.5L12 17l-5.9 3 1.1-6.5L2.5 9 9 8z" /></>,
     target: <><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/></>,
     monitor: <><rect x="3" y="4" width="18" height="13" rx="2"/><path d="M8 21h8m-4-4v4"/></>,
@@ -165,11 +165,8 @@ export default function JpegTrainingView({
       <section className={styles.frame}>
         <header className={styles.topArea}>
           <div className={styles.topLine}>
-            <div className={styles.crumbs} aria-label="מיקום נוכחי">
-              <Glyph name="house" size={20} />
-              <span>הפרופיל שלי</span><span className={styles.slash}>/</span>
-              <span>בניית פרופיל</span><span className={styles.slash}>/</span>
-              <b dir="ltr">JPEG</b>
+            <div className={styles.crumbs}>
+              <TrainingBreadcrumbs media="jpeg" />
             </div>
             <button type="button" className={styles.back} onClick={onBack}>
               <Glyph name="arrow" size={22} /> {secondStep ? "חזרה לשיטת למידה" : "חזרה לפרופיל"}

@@ -41,13 +41,7 @@
   right: 5px;
   z-index: 2;
   min-height: 29px;
-  display: flex;
-  gap: 9px;
-  align-items: center;
-  color: #9eadd1;
-  font-size: 13px;
 }
-.chevron { color: #7e83bf; }
 .backButton {
   position: absolute;
   left: 5px;
@@ -339,7 +333,7 @@
 @container raw-learning (max-width: 520px) {
   .screen { padding: 12px; }
   .hero { min-height: 222px; padding: 14px; }
-  .breadcrumbs { font-size: 11px; }
+  .breadcrumbs { max-width: calc(100% - 10px); }
   .backButton { top: 37px; left: 0; min-height: 35px; padding: 0 9px; font-size: 12px; }
   .heroCopy { width: 100%; margin-top: 92px; margin-right: 0; }
   .heroCopy h1 { font-size: 34px; }

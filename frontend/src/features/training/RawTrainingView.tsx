@@ -4,6 +4,7 @@ import Image from "next/image";
 import type { ReactNode } from "react";
 import type { TestingProfile } from "@/features/testing/testing.api";
 import styles from "./RawTrainingView.module.css";
+import TrainingBreadcrumbs from "./TrainingBreadcrumbs";
 
 type RawMethod = "catalog" | "xmp";
 
@@ -103,11 +104,9 @@ export default function RawTrainingView({
   return (
     <main className={styles.screen} dir="rtl">
       <header className={styles.hero}>
-        <nav className={styles.breadcrumbs} aria-label="מיקום נוכחי">
-          <span>הפרופיל שלי</span><span className={styles.chevron}>←</span>
-          <span>בניית הפרופיל</span><span className={styles.chevron}>←</span>
-          <span>למידה לפי RAW</span>
-        </nav>
+        <div className={styles.breadcrumbs}>
+          <TrainingBreadcrumbs media="raw" />
+        </div>
         <button className={styles.backButton} type="button" onClick={onBack}>
           <Icon name="arrow" size={21}/>{onStepTwo ? "חזרה למקור העריכה" : "חזרה לפרופיל"}
         </button>

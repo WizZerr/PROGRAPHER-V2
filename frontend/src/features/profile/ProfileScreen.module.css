@@ -14,8 +14,7 @@
 }
 
 .profileHeader,
-.coveragePanel,
-.learningSurface {
+.coveragePanel {
   border: 1px solid rgba(122, 106, 255, 0.3);
   box-shadow:
     0 0 0 1px rgba(112, 165, 255, 0.035) inset,
