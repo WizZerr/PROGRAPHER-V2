@@ -1,0 +1,17 @@
+.trail {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 9px;
+  min-width: 0;
+  color: #9eadd1;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.45;
+  text-align: right;
+}
+
+.separator {
+  flex: 0 0 auto;
+  color: #7e83bf;
+}
