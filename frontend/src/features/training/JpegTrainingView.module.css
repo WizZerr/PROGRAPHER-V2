@@ -1,0 +1,440 @@
+.screen {
+  --training-violet: #8269ff;
+  --training-muted: #a9b7d0;
+  min-height: 100%;
+  padding: 22px 28px 28px;
+  color: #edf0fc;
+  background: radial-gradient(ellipse at 60% 0%, rgba(70, 54, 142, 0.055), transparent 45%), #060b14;
+  container-type: inline-size;
+  container-name: jpeg-training;
+}
+
+.frame {
+  min-height: min(834px, calc(100vh - 52px));
+  padding: 22px 28px 20px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid rgba(85, 112, 162, 0.32);
+  border-radius: 16px;
+  background:
+    radial-gradient(ellipse at 54% 1%, rgba(38, 51, 112, 0.15), transparent 48%),
+    linear-gradient(165deg, #0a1324 0%, #07101d 49%, #060d17 100%);
+  box-shadow: inset 0 1px 0 rgba(172, 181, 248, 0.035);
+}
+
+.topArea {
+  min-height: 173px;
+  display: flex;
+  flex-direction: column;
+  border-bottom: 1px solid rgba(136, 159, 204, 0.17);
+}
+
+.topLine {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  min-height: 33px;
+}
+
+.crumbs {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  color: #96a2c1;
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.crumbs svg { color: #a3a9df; }
+.crumbs b { font-weight: 600; }
+.slash { color: #495876; }
+
+.back {
+  padding: 3px 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  flex: 0 0 auto;
+  border: 0;
+  background: transparent;
+  color: #aa98ff;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: color 140ms ease;
+}
+.back:hover { color: #dad2ff; }
+
+.titleBlock {
+  min-width: 0;
+  margin-top: 18px;
+  text-align: right;
+}
+.eyebrow,
+.stageEyebrow {
+  color: #aa91ff;
+  font-size: 13px;
+  font-weight: 700;
+}
+.titleBlock h1 {
+  margin: 3px 0 0;
+  font-size: clamp(36px, 3vw, 45px);
+  line-height: 1.2;
+  font-weight: 700;
+  letter-spacing: -0.035em;
+}
+.titleBlock p {
+  margin: 7px 0 0;
+  color: #a9b7cf;
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+.steps {
+  min-height: 81px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  border-bottom: 1px solid rgba(136, 159, 204, 0.15);
+}
+.step {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  color: #9ea9c7;
+  font-size: 15px;
+  white-space: nowrap;
+}
+.step strong { font-weight: 600; }
+.stepNumber {
+  width: 37px;
+  height: 37px;
+  flex: 0 0 37px;
+  display: grid;
+  place-items: center;
+  border: 2px solid #556586;
+  border-radius: 50%;
+  background: #0b1526;
+  font-family: "Inter", sans-serif;
+  font-size: 15px;
+  font-weight: 600;
+}
+.stepActive { color: #b18fff; }
+.stepActive .stepNumber {
+  border-color: #a491ff;
+  background: linear-gradient(140deg, #9987ff, #5e42f0);
+  color: #fff;
+  box-shadow: 0 0 0 3px rgba(125, 97, 255, 0.12), 0 0 18px rgba(105, 67, 255, 0.36);
+}
+.stepCompleted .stepNumber {
+  border-color: #8a78ed;
+  color: #b8a8ff;
+}
+.stepConnector {
+  width: clamp(72px, 12vw, 190px);
+  height: 2px;
+  background: linear-gradient(to left, #7966ee 0%, #7a70b2 45%, #34435e 100%);
+}
+
+.innerStage {
+  padding: 22px 0 14px;
+  display: grid;
+  align-content: start;
+  gap: 21px;
+}
+.stageHeader { min-width: 0; }
+.stageHeader h2 {
+  margin: 7px 0 0;
+  font-size: clamp(27px, 2.5vw, 36px);
+  line-height: 1.26;
+  font-weight: 700;
+  letter-spacing: -0.035em;
+}
+.stageHeader p {
+  margin: 7px 0 0;
+  color: #abb7cc;
+  font-size: 16px;
+  line-height: 1.55;
+}
+
+.cards {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 22px;
+}
+.methodCard {
+  position: relative;
+  min-width: 0;
+  min-height: 312px;
+  padding: 74px 25px 60px;
+  display: block;
+  isolation: isolate;
+  overflow: hidden;
+  border: 1px solid rgba(89, 114, 159, 0.43);
+  border-radius: 12px;
+  background:
+    radial-gradient(ellipse at 65% 12%, rgba(33, 54, 106, 0.2), transparent 58%),
+    linear-gradient(155deg, rgba(11, 22, 42, 0.98), rgba(6, 13, 24, 0.98));
+  color: inherit;
+  font: inherit;
+  text-align: right;
+  cursor: pointer;
+  transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+}
+.methodCard:hover {
+  border-color: rgba(153, 127, 255, 0.8);
+  transform: translateY(-2px);
+  box-shadow: inset 0 0 22px rgba(104, 77, 209, 0.055), 0 0 16px rgba(96, 67, 209, 0.12);
+}
+.methodCard:active { transform: translateY(0); }
+.recommended {
+  border-color: rgba(145, 105, 255, 0.9);
+  background:
+    radial-gradient(ellipse at 64% 5%, rgba(80, 59, 172, 0.26), transparent 61%),
+    linear-gradient(155deg, #14162f, #0c1125 65%, #090f1d);
+  box-shadow: inset 0 0 0 1px rgba(151, 111, 255, 0.12), 0 0 19px rgba(108, 74, 253, 0.23);
+}
+.recommended:hover {
+  box-shadow: inset 0 0 0 1px rgba(161, 134, 255, 0.24), 0 0 28px rgba(114, 79, 255, 0.36);
+}
+.methodTag {
+  position: absolute;
+  top: 20px;
+  left: 23px;
+  min-height: 35px;
+  padding: 0 12px;
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid rgba(124, 98, 255, 0.55);
+  border-radius: 7px;
+  background: rgba(90, 69, 193, 0.12);
+  color: #b5a1ff;
+  font-family: "Inter", sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+}
+.recommendation {
+  position: absolute;
+  top: 20px;
+  right: 22px;
+  min-height: 34px;
+  padding: 0 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border: 1px solid rgba(160, 102, 255, 0.9);
+  border-radius: 100px;
+  color: #d8baff;
+  background: rgba(106, 54, 188, 0.24);
+  font-size: 12px;
+  font-weight: 600;
+  box-shadow: 0 0 9px rgba(122, 73, 252, 0.24);
+}
+.recommendation svg { fill: currentColor; }
+.methodCopy {
+  position: relative;
+  z-index: 2;
+  width: 55%;
+  display: grid;
+  gap: 12px;
+}
+.methodCopy strong {
+  font-size: clamp(20px, 1.8vw, 26px);
+  line-height: 1.3;
+  font-weight: 700;
+  letter-spacing: -0.035em;
+}
+.methodCopy > span:last-child {
+  color: #b7c4dd;
+  font-size: 14px;
+  line-height: 1.7;
+}
+.methodArt {
+  position: absolute;
+  left: 4%;
+  top: 14%;
+  bottom: 19%;
+  width: 43%;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+}
+.methodArt img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  filter: drop-shadow(0 13px 12px rgba(0,0,0,0.22));
+}
+.methodBenefits {
+  position: absolute;
+  right: 25px;
+  bottom: 29px;
+  left: 94px;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  z-index: 3;
+  color: #aab9d9;
+  font-size: 12px;
+  line-height: 1.3;
+}
+.methodBenefits > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  white-space: nowrap;
+}
+.methodBenefits svg { color: #a7b7e7; }
+.methodBenefits i { height: 22px; width: 1px; background: #354461; }
+.arrowCircle {
+  position: absolute;
+  bottom: 19px;
+  left: 24px;
+  width: 50px;
+  height: 50px;
+  display: grid;
+  place-items: center;
+  border: 1.5px solid #9b63ff;
+  border-radius: 50%;
+  color: #c2b2ff;
+  background: rgba(35, 22, 81, 0.18);
+  transition: background 150ms ease;
+}
+.arrowCircle svg { transform: rotate(180deg); }
+.methodCard:hover .arrowCircle { background: rgba(113, 77, 232, 0.23); }
+
+.footnote {
+  min-height: 46px;
+  margin-top: auto;
+  padding-top: 21px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  border-top: 1px solid rgba(136, 159, 204, 0.14);
+  color: #a4b3d2;
+  font-size: 13px;
+}
+.footnote svg { color: #9eafe0; }
+
+.materialSection { display: grid; gap: 19px; }
+.materials { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
+.materialOption {
+  min-width: 0;
+  min-height: 176px;
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  border: 1px solid rgba(99, 124, 170, 0.44);
+  border-radius: 12px;
+  background: linear-gradient(140deg, #111d32, #08111f);
+  color: inherit;
+  text-align: right;
+  cursor: pointer;
+  transition: border-color 140ms ease;
+}
+.materialOption:hover:not(:disabled) { border-color: #917dff; }
+.materialOption:disabled { opacity: 0.55; cursor: wait; }
+.materialSelected { border-color: rgba(66, 214, 140, 0.52); }
+.materialIcon {
+  width: 53px;
+  height: 53px;
+  flex: 0 0 53px;
+  display: grid;
+  place-items: center;
+  border: 1px solid #44517c;
+  border-radius: 12px;
+  background: #121c36;
+  color: #b3abff;
+}
+.materialSelected .materialIcon { color: #58e3a7; border-color: #27895a; }
+.materialText { min-width: 0; display: grid; gap: 7px; flex: 1; }
+.materialText > span { color: #9e8cff; font-size: 13px; }
+.materialText strong { font-size: 18px; }
+.materialText small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #9aa9c4; font-size: 12px; text-align: right; }
+.materialAction { display: flex; align-items: center; gap: 8px; color: #ae9eff; font-size: 13px; }
+.actions { display: flex; justify-content: flex-start; gap: 12px; }
+.primary, .secondary, .result button {
+  min-height: 45px;
+  padding: 0 22px;
+  border-radius: 9px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.primary { border: 1px solid #9684ff; background: #715cf4; color: #fff; }
+.secondary, .result button { border: 1px solid #4b557a; background: #111a2b; color: #c1c6e3; }
+.primary:disabled { opacity: 0.4; cursor: not-allowed; }
+.error { padding: 12px 16px; border: 1px solid rgba(240, 92, 104, 0.4); border-radius: 9px; background: rgba(152, 34, 49, 0.12); color: #ffbbc0; font-size: 14px; }
+.result {
+  padding: 16px 19px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  border: 1px solid rgba(65, 211, 141, 0.33);
+  border-radius: 11px;
+  background: #0d1b25;
+}
+.result > svg { flex: 0 0 auto; color: #62e2a4; }
+.result > div { flex: 1; min-width: 0; }
+.result strong { font-size: 17px; }
+.result p { margin: 3px 0 0; color: #a4bac3; font-size: 13px; }
+
+@container jpeg-training (max-width: 1190px) {
+  .screen { padding: 15px 18px 20px; }
+  .frame { padding: 19px 22px; }
+  .methodCard { padding-inline: 18px; min-height: 305px; }
+  .methodBenefits { right: 17px; left: 78px; gap: 7px; font-size: 11px; }
+  .methodBenefits svg { width: 16px; height: 16px; }
+  .methodCopy { width: 53%; }
+  .methodCopy strong { font-size: 21px; }
+  .methodCopy > span:last-child { font-size: 13px; }
+  .methodTag { left: 17px; }
+  .recommendation { right: 17px; }
+  .arrowCircle { left: 17px; width: 44px; height: 44px; }
+}
+@container jpeg-training (max-width: 870px) {
+  .screen { padding: 12px; }
+  .frame { min-height: 0; padding: 16px 18px; }
+  .cards { grid-template-columns: 1fr; gap: 13px; }
+  .methodCard { min-height: 230px; padding-block: 58px 56px; }
+  .methodArt { width: 36%; top: 5%; bottom: 15%; }
+  .methodBenefits { bottom: 21px; }
+  .methodCopy { width: 56%; }
+  .stageHeader h2 { font-size: 28px; }
+  .materials { grid-template-columns: 1fr; gap: 12px; }
+  .materialOption { min-height: 116px; }
+  .topArea { min-height: 154px; }
+}
+@container jpeg-training (max-width: 550px) {
+  .crumbs { gap: 5px; font-size: 11px; }
+  .topLine { align-items: flex-start; flex-direction: column-reverse; }
+  .titleBlock { margin-top: 10px; }
+  .titleBlock h1 { font-size: 34px; }
+  .topArea { min-height: 166px; }
+  .steps { justify-content: space-between; gap: 7px; }
+  .step { font-size: 12px; gap: 7px; }
+  .stepNumber { width: 30px; height: 30px; flex-basis: 30px; }
+  .stepConnector { flex: 1; min-width: 20px; }
+  .methodCard { min-height: 259px; padding-top: 57px; }
+  .methodCopy { width: 60%; }
+  .methodCopy strong { font-size: 20px; }
+  .methodArt { width: 38%; left: 0; }
+  .methodBenefits { gap: 6px; left: 65px; font-size: 10px; }
+  .methodBenefits i { display: none; }
+  .arrowCircle { left: 12px; bottom: 20px; width: 40px; height: 40px; }
+  .stageHeader p { font-size: 14px; }
+  .result { flex-wrap: wrap; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .methodCard, .back, .arrowCircle, .materialOption { transition: none; }
+}

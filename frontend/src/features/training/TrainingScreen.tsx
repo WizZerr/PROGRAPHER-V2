@@ -18,6 +18,8 @@ import {
 } from "@/features/training/learning-state";
 import { useWorkspaceNav } from "@/features/workspace/workspace-nav";
 import styles from "@/features/testing/testing.module.css";
+import RawTrainingView from "./RawTrainingView";
+import JpegTrainingView from "./JpegTrainingView";
 
 function profileSource(media: LearningMedia): LearningSource {
   return media === "jpeg" ? "jpeg" : "raw";
@@ -310,6 +312,55 @@ export default function TrainingScreen() {
   const materialReady = pairedMethod
     ? Boolean(sourceRoot && editsRoot)
     : Boolean(sourceRoot && catalogPath);
+  if (media === "raw" && method !== "pairs") {
+    return (
+      <RawTrainingView
+        method={method}
+        sourceRoot={sourceRoot}
+        editsRoot={editsRoot}
+        catalogPath={catalogPath}
+        catalogRecords={catalogRecords}
+        catalogSaved={catalogSaved}
+        busy={busy}
+        error={error}
+        checkedNow={checkedNow}
+        profile={profile}
+        onBack={backOneStep}
+        onChooseMethod={chooseMethod}
+        onChooseSource={() => void chooseFolder("source")}
+        onChooseEdits={() => void chooseFolder("edits")}
+        onChooseCatalog={() => void chooseCatalog()}
+        onCheckMaterial={() => void checkPairedMaterial()}
+        onSaveCatalog={saveCatalogMaterial}
+        onReturnProfile={() => openView("profile")}
+      />
+    );
+  }
+
+  if (media === "jpeg" && method !== "xmp") {
+    return (
+      <JpegTrainingView
+        method={method}
+        sourceRoot={sourceRoot}
+        editsRoot={editsRoot}
+        catalogPath={catalogPath}
+        catalogRecords={catalogRecords}
+        catalogSaved={catalogSaved}
+        busy={busy}
+        error={error}
+        checkedNow={checkedNow}
+        profile={profile}
+        onBack={backOneStep}
+        onChooseMethod={chooseMethod}
+        onChooseSource={() => void chooseFolder("source")}
+        onChooseEdits={() => void chooseFolder("edits")}
+        onChooseCatalog={() => void chooseCatalog()}
+        onCheckMaterial={() => void checkPairedMaterial()}
+        onSaveCatalog={saveCatalogMaterial}
+        onReturnProfile={() => openView("profile")}
+      />
+    );
+  }
 
   return (
     <main className={styles.screen}>
