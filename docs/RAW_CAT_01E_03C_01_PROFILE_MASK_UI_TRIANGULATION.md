@@ -28,3 +28,14 @@ Manual evidence recorded privately for ONE reference photo (selected UI Profile 
 - Screenshots of camera subject, camera image, image-level private files and underlying mask pixels are NOT committed.
 
 NEXT manual action (still no settings changes): click the EXISTING listed mask once to select it, then send a cropped screenshot of the masking panel and adjustment controls ONLY, scrolling within those controls if needed; do not drag any slider, select another preset, or save new metadata. If clicking changes the visible overlay preview, this is selection UI and not a Develop recipe modification.
+
+## 2026-10-11 — Selected-mask UI evidence (PRIVATE values omitted)
+
+- Upon selecting the single listed Lightroom mask, the mask contained a **Select Subject** component; Lightroom displayed **Invert CHECKED**, and the tinted mask preview occupied the outside-of-subject area. This is evidence of the mask recipe as exposed by the Lightroom UI; it is NOT the original mask bitmap or independently reconstructed segmentation.
+- Lightroom displayed **two nonzero local Tone controls**. All other visible Tone controls and the visible local Color controls were zero. The exact individual Develop values are intentionally NOT stored in repository docs or reports; they remain LOCAL PRIVATE.
+- The checked inversion applies to the Subject-component mask selection and is crucial for meaning: background/outside rather than person/subject is targeted by the displayed mask overlay. Do not assume global Basic values equal mask-local values.
+- The displayed mask Amount was standard/full. This alone does NOT establish pixel-parity of adjustments or mask geometry. Hidden controls lower down were NOT inspected yet; do not assert zero on hidden fields.
+- Prior screenshots of Show Overlay relate only to Lightroom visibility toggles and cannot establish mask enabled/apply state. The sidecar companion .acr and embedded opaque structures are still not decoded, and an XMP mask field can have nested payloads that a global-property comparer deliberately excludes.
+- All photo pixels and the precise masking numbers remain PRIVATE outside the repo.
+
+NEXT: read-only scroll farther down the mask correction panel and share only the right-hand cropped controls, then assess what can be checked **locally and in aggregate** about the nested Adobe XMP mask structure without committing payloads or falsely claiming edit fidelity.
