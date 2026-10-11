@@ -1,7 +1,7 @@
 # ProGrapher V2 — Execution Board
 
 Updated: 2026-10-11  
-Authority: `docs/MASTER_PLAN_SOURCE_OF_TRUTH.md` — Master Workflow v3.0
+Authority: `docs/MASTER_PLAN_SOURCE_OF_TRUTH.md` — Master Workflow v3.1 with D-015 and D-016 amendments
 
 This board implements **PG-00.06**. It is an execution view, not a second master plan.
 
@@ -19,13 +19,13 @@ Status vocabulary:
 
 ## Scope override / product owner decision — D-015 (2026-10-11)
 
-**RAW-first**: original RAW + Lightroom exported catalog is the active learning dataset. JPEG final/edited pairs are NOT required; JPEG feature work paused, historical work kept. G0, PG-00.05 and PG-06.02 statuses do NOT change. RAW-CAT-01D is a pre-G0 **research/engineering preparation lane**, not permission to train a production Brain. Private photographer inputs must never be committed. See [D-015](D_015_RAW_FIRST_SCOPE.md).
+**RAW-first / Photographer Fidelity**: original RAW + Lightroom exported catalog is the active learning dataset (D-015); the goal is to preserve the photographer's own style using scene context from SOURCE ONLY (D-016). JPEG edited targets are not required; JPEG feature work paused, historical work kept. G0, PG-00.05 and PG-06.02 statuses do NOT change. RAW-CAT-01D is a pre-G0 **research/engineering preparation lane**, not permission to train a production Brain. Private photographer inputs must never be committed. See [D-015](D_015_RAW_FIRST_SCOPE.md).
 
 ## Current lanes
 
 | Lane | Part | Status | Exact next output |
 |---|---|---|---|
-| RAW catalog research | **RAW-CAT-01E.03C.02** | READY / research-prep only | Design local-private, read-only lrcat vs XMP/.acr mask-structure evidence probe; 03C.01 visible mask Tone/Color/Effects/Detail UI inspection complete, Adobe profile UI vs stored CameraProfile unresolved |
+| RAW catalog research | **RAW-CAT-01F.01** | ACTIVE / research-spec only | D-016 RAW-only visual-context input/target contract and synthetic leakage tests; request permissioned cross-scene original RAWs. No Brain training; G0 remains unsigned |
 | JPEG development | **FROZEN by D-015** | PAUSED | Preserve existing code/tests and fix only safety regressions |
 | Primary development | **PG-00.05** | READY / ◐ | Resume non-manual portability/restore hardening when continuing development; BUG-PG00-001 is the concrete code blocker |
 | Photographer intake | **PG-06.02** | BLOCKED | Authorized photographer material |
@@ -136,7 +136,8 @@ A Part can be marked DONE/V only when:
 - **01E.03B.01**: Windows 44/44 focused tests PASS; independent Adobe XMP from an isolated one-photo Lightroom catalog gave 48 exact field-expression matches, 0 mismatches, and 1 not-exported Boolean. Four point curves matched coordinates. 76 other top-level Camera Raw XMP fields remain untested; .acr/masks/Look/Profile and pixel rendering are NOT proven.
 - **01E.03B.02 V2**: Windows 48/48 focused tests PASS; real Adobe XMP inventory V2 PASS: 124 global crs properties; 48 matched in one sample, 76 additional untested (71 scalar, 3 shallow sequences, 2 nested/ambiguous), one catalog-only property not exported. The corrected schema groups HSL LuminanceAdjustments separately from noise and Camera Calibration separately from HSL; labels are triage hints, NOT Adobe semantics.
 - **01E.03C.01 (visible UI inspection COMPLETE)**: isolated Lightroom shows Adobe Color UI vs low-level Adobe Standard CameraProfile string (still unresolved). ONE mask is listed; Select Subject component with Invert checked, outside-subject overlay. Exactly TWO local Tone controls are nonzero among visible Tone/Color/Effects/Detail controls, all other visible local corrections are zero. Grain Amount zero; Grain Size/Roughness are shared global Grain-tool settings, NOT local mask effects. No photo IDs, mask quantities or pixels committed. This does NOT verify Adobe mask geometry, active-state semantics, original AI algorithm, .acr payload, full Profile/Look mapping or rendered pixels.
-- **01E.03C.02 (NEXT)**: research-only local aggregate lrcat/XMP/.acr structure comparison; no sidecar mutation, no private payload in repo, and no Brain training or gate status change.
+- **01E.03C.02 (PAUSED by D-016 priority)**: lrcat/XMP/.acr local-mask-structure research remains planned with all existing evidence preserved, but does not block basic context-aware GLOBAL edit investigation.
+- **01F.01 (ACTIVE / PRE-G0)**: Photographer Style Fidelity First accepted as D-016; define source-only image+camera+event-context contract, prohibit edited preview/Develop leakage, support UNKNOWN/no-op and local-mask review flags. No actual visual feature extractor or learned model has been validated. A single matched RAW example is insufficient for scene model validity or training.
 
 ## Next action
 
