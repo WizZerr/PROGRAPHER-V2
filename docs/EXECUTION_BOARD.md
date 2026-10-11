@@ -25,13 +25,18 @@ Status vocabulary:
 
 | Lane | Part | Status | Exact next output |
 |---|---|---|---|
-| RAW catalog research | **RAW-CAT-01F.03C** | ACTIVE / Windows run pending | 01F.03B Windows: 12/12 focused synthetic tests PASS, 12/12 original RAWs decoded/linked by name with 0 failures, 4 provisional catalog groups, 2 opaque local-edit structures; improved lexical spread confirmed but scene/event diversity unverified. New PRIVATE offline source-RAW contact sheet/annotation tool added, awaiting Windows tests and photographer review. G0 unsigned; training-ready 0 |
+| RAW catalog research | **RAW-CAT-01F.03D** | ACTIVE / Windows model trial pending | 03C Windows: 16/16 focused tests, 12/12 private source-RAW previews created, 0 errors, 0 human labels/events/final edits confirmed. 03D optional LOCAL CLIP wedding-scene proposals committed (user-opt-in ~605 MB model-only download); rank uncalibrated, UNKNOWN abstention, human review required. G0 unsigned, training-ready 0 |
 | JPEG development | **FROZEN by D-015** | PAUSED | Preserve existing code/tests and fix only safety regressions |
 | Primary development | **PG-00.05** | READY / ◐ | Resume non-manual portability/restore hardening when continuing development; BUG-PG00-001 is the concrete code blocker |
 | Photographer intake | **PG-06.02** | BLOCKED | Authorized photographer material |
 | Residual PR1 QA | **PG-00.02** | PAUSED | Only resume when product owner returns to the remaining hardware/manual QA |
 | Cloud/Auth | **PG-12+** | BLOCKED / NOT STARTED | Do not start before workflow gate permits |
 | Brain | **PG-07/08+** | BLOCKED / NOT STARTED | No new production Brain before required data/gates |
+
+## Latest RAW-CAT research verification
+
+- **01F.03C (real Windows smoke PASS):** 16/16 focused tests, 12/12 original-RAW private thumbnails generated; no errors; no human scene/event/Lightroom edit finality labels confirmed.
+- **01F.03D (code committed / Windows tests and inference PENDING):** LOCAL CLIP zero-shot original-RAW semantic scene suggestions. Separate raw luminance indicator; prompt-relative uncalibrated scores and UNKNOWN abstention; private browser review and CSV; opt-in model-only download, no image uploads, no trainable approvals.
 
 ## Blockers
 
