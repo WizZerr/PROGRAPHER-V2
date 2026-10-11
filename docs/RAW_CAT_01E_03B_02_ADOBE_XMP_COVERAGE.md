@@ -17,7 +17,7 @@ From backend, Lightroom closed, use:
     python -m pytest -q tests/test_lightroom_adobe_xmp_coverage.py
     python -m app.photographer.lightroom_adobe_xmp_coverage --local-plan "LOCAL_PRIVATE_PLAN.json" --xmp "ADOBE_REFERENCE.xmp" --report "AGGREGATE_REPORT_OUTSIDE_RAW_FOLDER.json"
 
-Share ONLY the aggregate JSON. No private image IDs, file stems, paths or pixel data in output. Windows tests and actual Adobe XMP coverage run remain PENDING.
+Share ONLY the aggregate JSON. No private image IDs, file stems, paths or pixel data in output. Original V1 Windows audit PASS; corrected V2 48/48 focused Windows tests PASS and local XMP coverage run PASS (schema v2).
 
 ## Interpretation and next gate
 
@@ -25,4 +25,4 @@ A matched property or curve coordinate proves agreement on that recorded propert
 
 ## V2 taxonomy correction (2026-10-11)
 
-The original real v1 audit passed in the 46/46 Windows suite and found 76 extra properties: 71 scalar text, 3 shallow sequences, 2 nested/ambiguous. Original categories are ONLY lexical hints and showed misleading overlaps (LuminanceAdjustment was counted as Detail/Noise; HSL and RGB Calibration conflated; parametric curves and PointColors left in generic other). Version 2 explicitly prioritizes HSL prefixes, noise-reduction prefixes, calibration channel fields, parametric tone curves, opaque PointColors and mask payloads, profile/Look, optics, process metadata. Schema is now `prographer.adobe_xmp_coverage_audit.v2` to avoid silently changing interpretation of v1 reports. Two new synthetic regressions added; Windows execution of V2 is PENDING. No new decoding, pixel parity or AI training claim.
+The original real v1 audit passed in the 46/46 Windows suite and found 76 extra properties: 71 scalar text, 3 shallow sequences, 2 nested/ambiguous. Original categories are ONLY lexical hints and showed misleading overlaps (LuminanceAdjustment was counted as Detail/Noise; HSL and RGB Calibration conflated; parametric curves and PointColors left in generic other). Version 2 explicitly prioritizes HSL prefixes, noise-reduction prefixes, calibration channel fields, parametric tone curves, opaque PointColors and mask payloads, profile/Look, optics, process metadata. Schema is now `prographer.adobe_xmp_coverage_audit.v2` to avoid silently changing interpretation of v1 reports. Two new synthetic regressions added; Windows V2 verification PASS: 48/48 focused tests. Actual local Adobe-generated reference coverage PASS with 124 total global crs properties = 48 matched plus 76 additional property keys; catalog-only ConvertToGrayscale was not exported. Structural forms: 71 text scalar, 3 shallow sequences, 2 nested/ambiguous. All taxonomy classes are NAME hints, not proof of Adobe edit semantics. No new decoding, pixel parity or AI training claim.

@@ -25,7 +25,7 @@ Status vocabulary:
 
 | Lane | Part | Status | Exact next output |
 |---|---|---|---|
-| RAW catalog research | **RAW-CAT-01E.03B.02** | ACTIVE / V2 taxonomy verification pending | Run corrected XMP name-family audit on Windows; compare counts without inventing semantic support. 01E.03B.01 (48 matches) retained as verified one-sample field evidence |
+| RAW catalog research | **RAW-CAT-01E.03C.01** | ACTIVE / Adobe UI evidence pending | View selected Profile/Look and Masks panel in isolated Lightroom one-photo catalog; record only redacted UI evidence, no image data; preserve XMP/catalog |
 | JPEG development | **FROZEN by D-015** | PAUSED | Preserve existing code/tests and fix only safety regressions |
 | Primary development | **PG-00.05** | READY / ◐ | Resume non-manual portability/restore hardening when continuing development; BUG-PG00-001 is the concrete code blocker |
 | Photographer intake | **PG-06.02** | BLOCKED | Authorized photographer material |
@@ -134,7 +134,8 @@ A Part can be marked DONE/V only when:
 - **01E.03A**: Windows sample selector verified; 34/34 prior tests passed; 20 unique examples across 6 provisional groups, 10/10 evidence categories. All private sample-level data remains local.
 - **01E.04A**: real aggregate DB report: 7,020/7,023 RAW local IDs overlap cache; all 7,472 cached images have exactly one Pyramid+level. Tests included in 44/44 focused Windows PASS. On-disk JPEG/photo identity still unproven.
 - **01E.03B.01**: Windows 44/44 focused tests PASS; independent Adobe XMP from an isolated one-photo Lightroom catalog gave 48 exact field-expression matches, 0 mismatches, and 1 not-exported Boolean. Four point curves matched coordinates. 76 other top-level Camera Raw XMP fields remain untested; .acr/masks/Look/Profile and pixel rendering are NOT proven.
-- **01E.03B.02**: Windows 46/46 focused tests PASS and real Adobe XMP name inventory confirmed 76 additional top-level properties (71 text scalar; 3 shallow sequences; 2 nested/ambiguous). Initial lexical taxonomy had misleading labels: HSL LuminanceAdjustment under noise/detail, Calibration/Parametric fields under other. New V2 property-name taxonomy + 2 synthetic tests staged; Windows real V2 rerun PENDING. These are naming hints only, NOT semantics. Photographer finality, multiple Events, G0/G1 and Brain training still blocked.
+- **01E.03B.02 V2**: Windows 48/48 focused tests PASS; real Adobe XMP inventory V2 PASS: 124 global crs properties; 48 matched in one sample, 76 additional untested (71 scalar, 3 shallow sequences, 2 nested/ambiguous), one catalog-only property not exported. The corrected schema groups HSL LuminanceAdjustments separately from noise and Camera Calibration separately from HSL; labels are triage hints, NOT Adobe semantics.
+- **01E.03C.01 (NEXT)**: Lightroom UI evidence for selected Profile/Look and visible mask listing on the isolated one-RAW catalog. Only cropped UI screenshots or count/status evidence; DO NOT share photo pixels, raw .acr/.xmp or private plans. Photographer finality, event splits, Adobe rendering parity, G0/G1 and Brain training remain blocked.
 
 ## Next action
 
