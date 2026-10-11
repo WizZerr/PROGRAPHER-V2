@@ -25,7 +25,7 @@ Status vocabulary:
 
 | Lane | Part | Status | Exact next output |
 |---|---|---|---|
-| RAW catalog research | **RAW-CAT-01F.01A** | ACTIVE / Windows evidence pending | Candidate-only RAW disk/catalog audit code + synthetic tests committed; run read-only on real local RAWs and share aggregate counts. 01F.01 context contract/visual features still pending; G0 unsigned |
+| RAW catalog research | **RAW-CAT-01F.01A / 01F.02A** | ACTIVE / Windows evidence pending | Run read-only original RAW/catalog name audit, then (with photographer permission) max-6 source-CR3 visual descriptor pilot. Both synthetic test suites committed, unverified on local real data; no Brain/G0 status change |
 | JPEG development | **FROZEN by D-015** | PAUSED | Preserve existing code/tests and fix only safety regressions |
 | Primary development | **PG-00.05** | READY / ◐ | Resume non-manual portability/restore hardening when continuing development; BUG-PG00-001 is the concrete code blocker |
 | Photographer intake | **PG-06.02** | BLOCKED | Authorized photographer material |
@@ -138,6 +138,7 @@ A Part can be marked DONE/V only when:
 - **01E.03C.01 (visible UI inspection COMPLETE)**: isolated Lightroom shows Adobe Color UI vs low-level Adobe Standard CameraProfile string (still unresolved). ONE mask is listed; Select Subject component with Invert checked, outside-subject overlay. Exactly TWO local Tone controls are nonzero among visible Tone/Color/Effects/Detail controls, all other visible local corrections are zero. Grain Amount zero; Grain Size/Roughness are shared global Grain-tool settings, NOT local mask effects. No photo IDs, mask quantities or pixels committed. This does NOT verify Adobe mask geometry, active-state semantics, original AI algorithm, .acr payload, full Profile/Look mapping or rendered pixels.
 - **01E.03C.02 (PAUSED by D-016 priority)**: lrcat/XMP/.acr local-mask-structure research remains planned with all existing evidence preserved, but does not block basic context-aware GLOBAL edit investigation.
 - **01F.01 (ACTIVE / PRE-G0)**: Photographer Style Fidelity First accepted as D-016; define source-only image+camera+event-context contract, prohibit edited preview/Develop leakage, support UNKNOWN/no-op and local-mask review flags. No actual visual feature extractor or learned model has been validated. A single matched RAW example is insufficient for scene model validity or training.
+- **01F.02A (CODE COMMITTED / WINDOWS VALIDATION PENDING)**: consent-gated, bounded CR3 source-only fixed rawpy linear-sRGB luminosity/decoded-RGB channel feature pilot with aggregate-only output. No arbitrary scenes inferred, no Lightroom preview/target leakage, no real RAW run or G0/G1/G2 proof.
 - **01F.01A (CODE COMMITTED / WINDOWS VALIDATION PENDING)**: read-only RAW filename/extension ↔ Lightroom catalog candidate audit. Synthetic pytest cases committed; no claim of passed tests on Windows or catalog file-content matching. 0 approved training pairs. Next actual local aggregate-only audit then fixed-neutral RAW context feature pilot.
 
 ## Next action
