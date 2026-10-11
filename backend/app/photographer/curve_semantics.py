@@ -37,14 +37,16 @@ def decode_flat_point_curve(serialized: str) -> PointCurve:
     parts = [part.strip() for part in body.split(",")]
     if parts and parts[-1] == "":  # Lua trailing comma
         parts.pop()
-    if len(parts) < 4 or len(parts) % 2:
-        raise ValueError("invalid_number_of_coordinates")
     if len(parts) > 512:
         raise ValueError("too_many_coordinates")
+    # Report unsupported Lua/nested syntax before validating the coordinate
+    # count, so a short table like { x=1, y=2 } is classified correctly.
+    if any(not _NUMBER.fullmatch(part) for part in parts):
+        raise ValueError("unsupported_non_numeric_or_nested_curve")
+    if len(parts) < 4 or len(parts) % 2:
+        raise ValueError("invalid_number_of_coordinates")
     values = []
     for part in parts:
-        if not _NUMBER.fullmatch(part):
-            raise ValueError("unsupported_non_numeric_or_nested_curve")
         numeric = float(part)
         if not math.isfinite(numeric) or not (0 <= numeric <= 255) or not numeric.is_integer():
             raise ValueError("invalid_coordinate")

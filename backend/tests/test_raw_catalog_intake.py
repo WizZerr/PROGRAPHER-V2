@@ -50,7 +50,10 @@ def test_tokenizer_preserves_zero_and_nested_unknowns():
     d, curves, seen = parse_develop_settings('s={ Exposure2012=0, ToneCurvePV2012={ 0,0,255,255 }, Foo="hello, \\\"world\\\"", ConvertToGrayscale=false }')
     assert d['Exposure2012'] == 0
     assert d['ConvertToGrayscale'] is False
-    assert curves['ToneCurvePV2012']['decoded'] is False
+    # RAW-CAT-01E.01 now decodes supported, flat numeric point curves.
+    assert curves['ToneCurvePV2012']['decoded'] is True
+    assert curves['ToneCurvePV2012']['points'] == [[0, 0], [255, 255]]
+    assert curves['ToneCurvePV2012']['lightroom_semantics_validated'] is False
     assert 'Foo' in seen and 'Foo' not in d
     with pytest.raises(ValueError):
         parse_develop_settings('s={ Exposure2012=nan }')

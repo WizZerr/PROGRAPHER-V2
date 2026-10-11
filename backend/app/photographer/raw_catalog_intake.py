@@ -88,7 +88,8 @@ def parse_develop_settings(serialized: str) -> tuple[dict[str, Any], dict[str, d
     """Tokenize top-level Lightroom Lua-like settings without executing Lua.
 
     Unsupported scalar/nested fields are inventoried, not silently interpreted.
-    Complex curves are fingerprints ONLY and cannot reconstruct Lightroom edits.
+    Supported flat point-curves retain syntactic coordinates (not Adobe-validated).
+    Unknown/complex structures remain fingerprints, never fabricated targets.
     """
     found = BLOCK.search(serialized)
     if found is None:
