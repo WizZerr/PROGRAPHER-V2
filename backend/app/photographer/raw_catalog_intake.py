@@ -19,8 +19,9 @@ from typing import Any
 
 from app.photographer.curve_semantics import describe_curve
 from app.photographer.develop_color_semantics import (
-    COLOR_FIELDS, COLOR_FAMILIES, OPAQUE_FIELDS, OPAQUE_LOCAL_FIELDS,
-    PROFILE_CONTEXT_FIELDS, parse_color_scalar, describe_opaque_field,
+    COLOR_FIELDS, COLOR_FAMILIES, GRADING_CONFIGURATION_FIELDS,
+    OPAQUE_FIELDS, OPAQUE_LOCAL_FIELDS, PROFILE_CONTEXT_FIELDS,
+    parse_color_scalar, describe_opaque_field,
 )
 
 SCHEMA = "prographer.raw_catalog_intake.v1"
@@ -296,6 +297,19 @@ def inspect_catalog(catalog: str | Path, *, include_private: bool = False) -> tu
                         c["nonzero_values"] += sum(v != 0 for v in seen)
                         if any(v != 0 for v in seen):
                             c["records_with_nonzero_field"] += 1
+                        if family == "color_grading":
+                            adjustments = [
+                                develop[k] for k in family_fields
+                                if k in develop and k not in GRADING_CONFIGURATION_FIELDS
+                            ]
+                            configurations = [
+                                develop[k] for k in GRADING_CONFIGURATION_FIELDS
+                                if k in develop
+                            ]
+                            c["nonzero_configuration_values"] += sum(v != 0 for v in configurations)
+                            c["nonzero_adjustment_values"] += sum(v != 0 for v in adjustments)
+                            if any(v != 0 for v in adjustments):
+                                c["records_with_nonzero_adjustment_candidate"] += 1
                 for field in PROFILE_CONTEXT_FIELDS:
                     if field in develop or field in complex_fields:
                         c = profile_stats.setdefault(field, Counter())
@@ -372,7 +386,7 @@ def inspect_catalog(catalog: str | Path, *, include_private: bool = False) -> tu
         "profile_field_coverage": {field: dict(sorted(counts.items())) for field, counts in sorted(profile_stats.items())},
         "opaque_local_edit_coverage": {field: dict(sorted(counts.items())) for field, counts in sorted(local_edit_stats.items())},
         "training_ready_samples": 0,
-        "warnings": ["No original RAW bytes verified", "No verified events / photographer-approved final edits", "Lightroom private schema: verify against Adobe Lightroom/XMP across versions", "Unknown keys and curves are NOT equivalent to decoded controls", "Curve point decoding is syntactic only; Adobe/LR/XMP parity is NOT verified", "Color fields are syntactic numeric extraction only; missing does not mean zero", "Opaque profile/mask/retouch fields are not interpreted as active edits", "History/preset/auto origin is NOT inferred"],
+        "warnings": ["No original RAW bytes verified", "No verified events / photographer-approved final edits", "Lightroom private schema: verify against Adobe Lightroom/XMP across versions", "Unknown keys and curves are NOT equivalent to decoded controls", "Curve point decoding is syntactic only; Adobe/LR/XMP parity is NOT verified", "Color fields are syntactic numeric extraction only; missing does not mean zero", "Color Grading Blending/Balance nonzero values are configuration, NOT proof of grading", "Opaque profile/mask/retouch fields are not interpreted as active edits", "History/preset/auto origin is NOT inferred"],
     }
     private = None
     if include_private:

@@ -88,3 +88,30 @@ def test_opaque_nested_empty_vs_present_and_not_edited_proof():
     assert d0['present'] and not d0['structure_nonempty']
     assert d1['present'] and d1['structure_nonempty']
     assert d1['decoded'] is False and d1['lightroom_semantics_validated'] is False
+
+
+
+def test_grading_blending_nonzero_does_not_inflate_adjustment_count(tmp_path: Path):
+    catalog = tmp_path / 'grading-defaults.lrcat'
+    synthetic_catalog(catalog)
+    with sqlite3.connect(catalog) as db:
+        db.execute(
+            'UPDATE Adobe_imageDevelopSettings SET text=? WHERE image=1',
+            ('s={ColorGradeBlending=50, ColorGradeGlobalHue=0, '
+             'ColorGradeGlobalSat=0, ColorGradeMidtoneLum=0}',),
+        )
+        db.execute(
+            'UPDATE Adobe_imageDevelopSettings SET text=? WHERE image=2',
+            ('s={ColorGradeBlending=50, ColorGradeGlobalSat=0, '
+             'ColorGradeMidtoneSat=12}',),
+        )
+    report, private = inspect_catalog(catalog, include_private=True)
+    counts = report['color_family_coverage']['color_grading']
+    assert counts['records_with_field'] == 2
+    assert counts['records_with_nonzero_field'] == 2
+    assert counts['nonzero_configuration_values'] == 2
+    assert counts['nonzero_adjustment_values'] == 1
+    assert counts['records_with_nonzero_adjustment_candidate'] == 1
+    assert private['records'][0]['training_eligible'] is False
+    assert private['records'][1]['training_eligible'] is False
+    assert 'PRIVATE_' not in json.dumps(report)

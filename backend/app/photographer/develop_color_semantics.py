@@ -27,6 +27,11 @@ COLOR_FAMILIES: dict[str, frozenset[str]] = {
 
 COLOR_FIELDS: frozenset[str] = frozenset().union(*COLOR_FAMILIES.values())
 
+# Blending/Balance can be nonzero in an otherwise ungraded image.
+# Keep them in raw numeric coverage, but do not count them as
+# nonzero color-adjustment candidates.
+GRADING_CONFIGURATION_FIELDS = frozenset(("ColorGradeBlending", "ColorGradeBalance"))
+
 # A fingerprint is deliberately not a parse of profiles, masks or retouch.
 OPAQUE_PROFILE_FIELDS = frozenset((
     "Look", "AILook", "CameraProfileDigest", "Preset", "ToggleStyleDigest",
