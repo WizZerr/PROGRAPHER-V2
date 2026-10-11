@@ -25,7 +25,7 @@ Status vocabulary:
 
 | Lane | Part | Status | Exact next output |
 |---|---|---|---|
-| RAW catalog research | **RAW-CAT-01D** | ACTIVE / research-prep only | Isolated read-only extractor, group/coverage report, synthetic tests; no release-gate claim |
+| RAW catalog research | **RAW-CAT-01E.03A** | ACTIVE / research-prep only | Validate sample-selection CLI on Windows and real catalog; private photo-level plan stays local; independent Adobe Lightroom/XMP parity remains open |
 | JPEG development | **FROZEN by D-015** | PAUSED | Preserve existing code/tests and fix only safety regressions |
 | Primary development | **PG-00.05** | READY / ◐ | Resume non-manual portability/restore hardening when continuing development; BUG-PG00-001 is the concrete code blocker |
 | Photographer intake | **PG-06.02** | BLOCKED | Authorized photographer material |
@@ -125,6 +125,14 @@ A Part can be marked DONE/V only when:
 3. relevant regression tests are green,
 4. open failures are either fixed or explicitly block the Part,
 5. `PROJECT_STATE.md` points to the next executable Part/Gate.
+
+## RAW-CAT-01E research progress (2026-10-11)
+
+- **01D**: read-only Lightroom catalog intake structurally verified, 7,023 RAW scanned/parsed, no exclusions.
+- **01E.01**: point-curve syntax structurally verified on same catalog, all four curve tables per RAW decoded; 112 nonlinear composite tone curves. NOT Adobe parity.
+- **01E.02**: 30/30 focused tests passed on Windows at `b5edc6c`; 7,023 records read without exclusions; 371 HSL candidates, 177 B&W mixer candidates, 30 Color Grading candidates (47 nonzero adjustments, excluding 7,023 nonzero Blending configuration values), 618 mask payloads opaque.
+- **01E.03A**: local-private Lightroom comparison sampling code added; real Windows verification PENDING.
+- **01E.03B**: independent Adobe/XMP comparison requires suitable references; not implemented or validated. G0 / G1 still blocked; no training-ready data.
 
 ## Next action
 
