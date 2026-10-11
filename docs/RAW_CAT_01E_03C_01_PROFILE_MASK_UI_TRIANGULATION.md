@@ -39,3 +39,12 @@ NEXT manual action (still no settings changes): click the EXISTING listed mask o
 - All photo pixels and the precise masking numbers remain PRIVATE outside the repo.
 
 NEXT: read-only scroll farther down the mask correction panel and share only the right-hand cropped controls, then assess what can be checked **locally and in aggregate** about the nested Adobe XMP mask structure without committing payloads or falsely claiming edit fidelity.
+
+## 2026-10-11 — Remaining Mask Effects and Detail inspected (cropped UI only)
+
+- Remaining EFFECTS controls visible in the Lightroom UI: texture, clarity, dehaze, Grain Amount — all zero. Grain Size and Roughness show ordinary stored UI values, but Lightroom explicitly says these are GLOBAL parameters shared by Grain tools, not individual mask-local effects; with Grain Amount zero do not invent a local Grain operation.
+- Remaining DETAIL controls visible: sharpness, noise reduction, moire and defringe — all zero. This observation complements the previously inspected Tone and Color panes and supports **exactly two nonzero LOCAL Tone sliders in the displayed UI for this ONE selected mask**. Hidden or version-specific fields beyond the visible Adobe UI are NOT ruled out.
+- The screenshot contains NO proof of actual mask bitmap fidelity, internal .acr interpretation, layer enable semantics, history of how the selection was generated, or Adobe rendered pixel parity. Do not automatically treat a Subject component as reproducible by an independent ProGrapher segmentation model.
+- The photographic subject and individual slider quantities are not stored in this repository. Keep photographer images and XMP/.acr and private selected-plan JSON OFF GitHub.
+
+Exit scope: this part's **visible Lightroom mask-panel reconnaissance complete** for one reference photo. Profile/Look string-to-UI discrepancy remains unresolved; 03C.02 should separately investigate only safe read-only lrcat/XMP/.acr structure matching without uploading private payload or claiming geometry/render equivalence.
