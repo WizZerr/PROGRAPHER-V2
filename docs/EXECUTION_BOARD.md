@@ -25,7 +25,7 @@ Status vocabulary:
 
 | Lane | Part | Status | Exact next output |
 |---|---|---|---|
-| RAW catalog research | **RAW-CAT-01E.03B.02** | ACTIVE / research-prep only | Windows test XMP additional-field inventory and report ONLY property names/aggregate structural counts; Adobe rendering remains unverified |
+| RAW catalog research | **RAW-CAT-01E.03B.02** | ACTIVE / V2 taxonomy verification pending | Run corrected XMP name-family audit on Windows; compare counts without inventing semantic support. 01E.03B.01 (48 matches) retained as verified one-sample field evidence |
 | JPEG development | **FROZEN by D-015** | PAUSED | Preserve existing code/tests and fix only safety regressions |
 | Primary development | **PG-00.05** | READY / ◐ | Resume non-manual portability/restore hardening when continuing development; BUG-PG00-001 is the concrete code blocker |
 | Photographer intake | **PG-06.02** | BLOCKED | Authorized photographer material |
@@ -134,7 +134,7 @@ A Part can be marked DONE/V only when:
 - **01E.03A**: Windows sample selector verified; 34/34 prior tests passed; 20 unique examples across 6 provisional groups, 10/10 evidence categories. All private sample-level data remains local.
 - **01E.04A**: real aggregate DB report: 7,020/7,023 RAW local IDs overlap cache; all 7,472 cached images have exactly one Pyramid+level. Tests included in 44/44 focused Windows PASS. On-disk JPEG/photo identity still unproven.
 - **01E.03B.01**: Windows 44/44 focused tests PASS; independent Adobe XMP from an isolated one-photo Lightroom catalog gave 48 exact field-expression matches, 0 mismatches, and 1 not-exported Boolean. Four point curves matched coordinates. 76 other top-level Camera Raw XMP fields remain untested; .acr/masks/Look/Profile and pixel rendering are NOT proven.
-- **01E.03B.02**: additional-property name/structure inventory staged with synthetic tests; real Windows XMP audit PENDING. This is research-prep only; photographer finality/multiple Events/G0/G1/Brain training all blocked.
+- **01E.03B.02**: Windows 46/46 focused tests PASS and real Adobe XMP name inventory confirmed 76 additional top-level properties (71 text scalar; 3 shallow sequences; 2 nested/ambiguous). Initial lexical taxonomy had misleading labels: HSL LuminanceAdjustment under noise/detail, Calibration/Parametric fields under other. New V2 property-name taxonomy + 2 synthetic tests staged; Windows real V2 rerun PENDING. These are naming hints only, NOT semantics. Photographer finality, multiple Events, G0/G1 and Brain training still blocked.
 
 ## Next action
 

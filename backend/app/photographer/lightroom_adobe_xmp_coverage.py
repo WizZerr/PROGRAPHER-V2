@@ -18,21 +18,57 @@ from app.photographer.lightroom_adobe_xmp_comparison import (
 from app.photographer.raw_catalog_intake import _write_atomic
 
 SAFE_KEY = re.compile(r"^[A-Za-z][A-Za-z0-9_]{0,119}$")
-FAMILIES = (
-    ("local_masks_retouch", ("Mask", "Correction", "Retouch", "Remove", "RedEye")),
-    ("look_and_profile", ("Look", "Profile", "Camera", "Preset")),
-    ("crop_geometry", ("Crop", "Perspective", "Upright", "Lens", "Transform", "Rotate", "Angle")),
-    ("detail_noise", ("Sharp", "Noise", "Luminance", "Grain", "Defringe", "Chromatic")),
-    ("color_and_tone", ("Color", "Hue", "Saturation", "Tone", "Curve", "Split", "Gray", "Grayscale")),
-)
+TAXONOMY = "xmp_name_hint_v2"
+
+# Prior generic "Luminance" classified HSL LuminanceAdjustment as
+# Detail/Noise. Families below remain lexical hints, NOT Adobe semantics.
+CALIBRATION_KEYS = frozenset((
+    "RedHue", "RedSaturation", "GreenHue", "GreenSaturation",
+    "BlueHue", "BlueSaturation", "ShadowTint",
+))
+PROFILE_KEYS = frozenset((
+    "Look", "Preset", "CameraProfileDigest", "OverrideLookVignette",
+))
+PROCESS_KEYS = frozenset((
+    "AlreadyApplied", "CompatibleVersion", "Version",
+    "HasSettings", "RawFileName", "HDREditMode",
+))
+EFFECT_KEYS = frozenset((
+    "Dehaze", "VignetteAmount", "PostCropVignetteAmount",
+))
 
 
 def lexical_family(key: str) -> str:
-    for label, prefixes in FAMILIES:
-        if key.startswith(prefixes):
-            return label
+    """Ordered property-name hints only; not decoded Develop semantics."""
+    if key.startswith(("HueAdjustment", "SaturationAdjustment", "LuminanceAdjustment")):
+        return "hsl_mixer"
+    if key.startswith("SplitToning"):
+        return "legacy_split_toning"
+    if key.startswith("ColorGrade"):
+        return "color_grading"
+    if key.startswith(("Mask", "Correction", "Retouch", "Remove", "RedEye")):
+        return "local_masks_retouch_opaque"
+    if key in PROFILE_KEYS:
+        return "profile_look_opaque"
+    if key == "PointColors":
+        return "point_color_opaque"
+    if key.startswith(("Lens", "Perspective", "Upright", "Transform",
+                       "Crop", "Rotate", "Angle")) or key == "AutoLateralCA":
+        return "optics_geometry"
+    if key.startswith(("ColorNoiseReduction", "LuminanceNoiseReduction",
+                       "Sharpen", "Grain", "Defringe", "Chromatic")):
+        return "detail_noise"
+    if key.startswith(("Parametric", "ToneCurve", "CurveRefine")):
+        return "tone_curve_controls"
+    if key in CALIBRATION_KEYS:
+        return "camera_calibration_context"
+    if key in EFFECT_KEYS:
+        return "global_tone_effects"
+    if key in PROCESS_KEYS:
+        return "process_metadata_state"
+    if key.startswith(("Color", "Hue", "Saturation")):
+        return "other_color_unvalidated"
     return "other_unclassified"
-
 
 def audit_uncompared_properties(private_plan: dict, xmp: Path) -> dict:
     parity = compare_sample(private_plan, xmp)
@@ -51,7 +87,8 @@ def audit_uncompared_properties(private_plan: dict, xmp: Path) -> dict:
               "sequence_shallow" if isinstance(value, list) else
               "nested_or_ambiguous"] += 1
     return {
-        "schema": "prographer.adobe_xmp_coverage_audit.v1",
+        "schema": "prographer.adobe_xmp_coverage_audit.v2",
+        "name_taxonomy": TAXONOMY,
         "created_utc": datetime.now(timezone.utc).isoformat(),
         "status": "RESEARCH_UNCOMPARED_XMP_PROPERTY_NAMES_ONLY",
         "privacy": "PROPERTY NAMES ONLY; no values, paths, photo IDs, image names or pixels",

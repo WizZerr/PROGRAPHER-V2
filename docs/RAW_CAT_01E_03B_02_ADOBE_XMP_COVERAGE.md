@@ -22,3 +22,7 @@ Share ONLY the aggregate JSON. No private image IDs, file stems, paths or pixel 
 ## Interpretation and next gate
 
 A matched property or curve coordinate proves agreement on that recorded property for this single sample, NOT Lightroom tone interpolation, Adobe Color/Look behavior, nested masks/retouch or .acr, and not final edit provenance. Requires representative approved RAW from more than one event and explicit gate approval before Brain training.
+
+## V2 taxonomy correction (2026-10-11)
+
+The original real v1 audit passed in the 46/46 Windows suite and found 76 extra properties: 71 scalar text, 3 shallow sequences, 2 nested/ambiguous. Original categories are ONLY lexical hints and showed misleading overlaps (LuminanceAdjustment was counted as Detail/Noise; HSL and RGB Calibration conflated; parametric curves and PointColors left in generic other). Version 2 explicitly prioritizes HSL prefixes, noise-reduction prefixes, calibration channel fields, parametric tone curves, opaque PointColors and mask payloads, profile/Look, optics, process metadata. Schema is now `prographer.adobe_xmp_coverage_audit.v2` to avoid silently changing interpretation of v1 reports. Two new synthetic regressions added; Windows execution of V2 is PENDING. No new decoding, pixel parity or AI training claim.
