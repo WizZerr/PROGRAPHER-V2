@@ -47,7 +47,7 @@ def synthetic_catalog(path: Path, *, duplicate: bool = False) -> None:
 
 
 def test_tokenizer_preserves_zero_and_nested_unknowns():
-    d, curves, seen = parse_develop_settings('s={ Exposure2012=0, ToneCurvePV2012={ 0,0,255,255 }, Foo="hello, \"world\"", ConvertToGrayscale=false }')
+    d, curves, seen = parse_develop_settings('s={ Exposure2012=0, ToneCurvePV2012={ 0,0,255,255 }, Foo="hello, \\\"world\\\"", ConvertToGrayscale=false }')
     assert d['Exposure2012'] == 0
     assert d['ConvertToGrayscale'] is False
     assert curves['ToneCurvePV2012']['decoded'] is False
