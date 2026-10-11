@@ -1,6 +1,6 @@
 # ProGrapher V2 — Execution Board
 
-Updated: 2026-10-06  
+Updated: 2026-10-11  
 Authority: `docs/MASTER_PLAN_SOURCE_OF_TRUTH.md` — Master Workflow v3.0
 
 This board implements **PG-00.06**. It is an execution view, not a second master plan.
@@ -25,7 +25,7 @@ Status vocabulary:
 
 | Lane | Part | Status | Exact next output |
 |---|---|---|---|
-| RAW catalog research | **RAW-CAT-01E.03B.01** | ACTIVE / research-prep only | Run local Adobe-generated XMP vs private catalog sample comparator and send aggregate results; no training promotion |
+| RAW catalog research | **RAW-CAT-01E.03B.02** | ACTIVE / research-prep only | Windows test XMP additional-field inventory and report ONLY property names/aggregate structural counts; Adobe rendering remains unverified |
 | JPEG development | **FROZEN by D-015** | PAUSED | Preserve existing code/tests and fix only safety regressions |
 | Primary development | **PG-00.05** | READY / ◐ | Resume non-manual portability/restore hardening when continuing development; BUG-PG00-001 is the concrete code blocker |
 | Photographer intake | **PG-06.02** | BLOCKED | Authorized photographer material |
@@ -131,9 +131,10 @@ A Part can be marked DONE/V only when:
 - **01D**: read-only Lightroom catalog intake structurally verified, 7,023 RAW scanned/parsed, no exclusions.
 - **01E.01**: point-curve syntax structurally verified on same catalog, all four curve tables per RAW decoded; 112 nonlinear composite tone curves. NOT Adobe parity.
 - **01E.02**: 30/30 focused tests passed on Windows at `b5edc6c`; 7,023 records read without exclusions; 371 HSL candidates, 177 B&W mixer candidates, 30 Color Grading candidates (47 nonzero adjustments, excluding 7,023 nonzero Blending configuration values), 618 mask payloads opaque.
-- **01E.03A**: local-private Lightroom comparison sampling code added; real Windows verification PENDING.
-- **01E.04A**: actual aggregate DB report: 7,020/7,023 RAW local IDs overlap cache; all 7,472 cached images have exactly one Pyramid+level. On-disk JPEG/photo identity still unproven; Windows pytest output still unreported.
-- **01E.03B.01**: independent Adobe-generated XMP and auxiliary .acr captured on a copied one-photo Lightroom validation catalog/RAW; 10 Basic UI controls and qualitative RGB curve checked. Aggregate-only catalog-vs-XMP comparator + synthetic tests staged, REAL Windows XMP run PENDING; .acr/masks/profile Look not decoded. G0/G1 still blocked; training ready 0.
+- **01E.03A**: Windows sample selector verified; 34/34 prior tests passed; 20 unique examples across 6 provisional groups, 10/10 evidence categories. All private sample-level data remains local.
+- **01E.04A**: real aggregate DB report: 7,020/7,023 RAW local IDs overlap cache; all 7,472 cached images have exactly one Pyramid+level. Tests included in 44/44 focused Windows PASS. On-disk JPEG/photo identity still unproven.
+- **01E.03B.01**: Windows 44/44 focused tests PASS; independent Adobe XMP from an isolated one-photo Lightroom catalog gave 48 exact field-expression matches, 0 mismatches, and 1 not-exported Boolean. Four point curves matched coordinates. 76 other top-level Camera Raw XMP fields remain untested; .acr/masks/Look/Profile and pixel rendering are NOT proven.
+- **01E.03B.02**: additional-property name/structure inventory staged with synthetic tests; real Windows XMP audit PENDING. This is research-prep only; photographer finality/multiple Events/G0/G1/Brain training all blocked.
 
 ## Next action
 
