@@ -12,6 +12,7 @@ For a **specific** event photographer, image scene/lighting features extracted s
 | Part | Status | Deliverable | Definition of done |
 |---|---|---|---|
 | RAW-CAT-01F.01 | ACTIVE / spec-prep | Versioned raw-only context feature + provenance contract, privacy and leakage rules | Input/target boundary, null/unknown states, scene label vocabulary, and synthetic safety checks identified; architecture doc reviewed |
+| RAW-CAT-01F.01A | ACTIVE / Windows run pending | Privacy-safe disk/catalog source readiness name join | Aggregate counts from actual user machine; no identities/filename lists exported; ambiguous duplicate keys reported not silently joined |
 | RAW-CAT-01F.02 | READY / depends on 01F.01 | Safe reproducible RAW-neutral decode and technical/light features | Source RAW read-only, hash unchanged, versioned decode settings, controlled color handling, metadata + numerical features on LICENSED fixtures; no Lightroom cache/edited previews |
 | RAW-CAT-01F.03 | READY / depends on approved RAW | Small, photographer-confirmed multi-scene pilot manifest | Authorized original RAW bytes matched to catalog records; photographer-confirmed final recipes/event membership; event-scoped privacy-preserving report, excluded/missing cases labelled |
 | RAW-CAT-01F.04 | BLOCKED on 01F.02+03 and gate ratification | Context-feature validity study | Independent human labels for daylight, dim indoor, strongly colored/mixed lights, other/unknown; error/confidence + failure analysis; no unsupported labels |
