@@ -25,7 +25,7 @@ Status vocabulary:
 
 | Lane | Part | Status | Exact next output |
 |---|---|---|---|
-| RAW catalog research | **RAW-CAT-01F.03A** | ACTIVE / Windows pilot pending | 01F.01A: real 5,208 name-only pairs out of 5,210 disk RAW, 0 ambiguous; 01F.02A: 6/6 original CR3 decoded successfully; 01F.03A code committed to build max-12 PRIVATE original-only features + separate catalog targets, training remains blocked and G0 unsigned |
+| RAW catalog research | **RAW-CAT-01F.03B** | ACTIVE / Windows confirmation pending | 01F.03A Windows: 10/10 tests, 12/12 candidate RAW decoded across 4 provisional groups, 3 opaque local-edit structures; sampler overconcentrated adjacent file numbers. 01F.03B lexical-span sampler fix committed and synthetic tests added; rerun bounded 12, consent-gated, then photographer identity/finality/event checks. G0 unsigned and zero training-ready |
 | JPEG development | **FROZEN by D-015** | PAUSED | Preserve existing code/tests and fix only safety regressions |
 | Primary development | **PG-00.05** | READY / ◐ | Resume non-manual portability/restore hardening when continuing development; BUG-PG00-001 is the concrete code blocker |
 | Photographer intake | **PG-06.02** | BLOCKED | Authorized photographer material |

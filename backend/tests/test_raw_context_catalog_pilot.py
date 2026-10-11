@@ -76,3 +76,42 @@ def test_source_and_develop_target_separated(tmp_path, monkeypatch):
     assert "PHOTO" not in str(shared)
     assert "Exposure2012" not in str(shared)
     assert "abc" not in str(shared)
+
+
+def test_selection_spans_full_filename_range_in_each_provisional_group(tmp_path):
+    raw = tmp_path / "raw"
+    raw.mkdir()
+    rows = []
+    for group in ("G1", "G2"):
+        for i in range(10):
+            name = f"{group}_PHOTO_{i:03d}"
+            (raw / f"{name}.CR3").write_bytes(b"synthetic")
+            rows.append({
+                "file_stem": name, "extension": "cr3",
+                "event_group_id": group, "parse_exclusion": None,
+                "virtual_copy_candidate": False,
+            })
+    selected, counters = pilot._candidate_selection(pilot._index_originals(raw), rows, 6)
+    assert [(row["event_group_id"], path.stem.split("_")[-1]) for path, row in selected] == [
+        ("G1", "000"), ("G2", "000"),
+        ("G1", "004"), ("G2", "004"),
+        ("G1", "009"), ("G2", "009"),
+    ]
+    assert counters["selection_lexically_spread"] == 6
+
+
+def test_selection_handles_small_group_without_duplicate_photos(tmp_path):
+    raw = tmp_path / "raw"
+    raw.mkdir()
+    rows = []
+    for name, group in (("A", "G1"), ("B", "G2"), ("C", "G2"),
+                        ("D", "G2"), ("E", "G2")):
+        (raw / f"{name}.CR3").write_bytes(b"synthetic")
+        rows.append({
+            "file_stem": name, "extension": "cr3",
+            "event_group_id": group, "parse_exclusion": None,
+            "virtual_copy_candidate": False,
+        })
+    selected, _ = pilot._candidate_selection(pilot._index_originals(raw), rows, 5)
+    assert len(selected) == 5
+    assert len({path.name for path, _ in selected}) == 5

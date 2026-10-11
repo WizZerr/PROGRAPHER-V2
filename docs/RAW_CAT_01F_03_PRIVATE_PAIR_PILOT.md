@@ -1,6 +1,6 @@
 # RAW-CAT-01F.03A — Private per-photo RAW→Lightroom candidate pilot
 
-Date 2026-10-11. Scope D-015 / D-016. Code committed, Windows tests and pilot run pending; G0 unsigned.
+Date 2026-10-11. Scope D-015 / D-016. 01F.03A original pilot 10/10 focused synthetic tests and 12/12 RAW decodes succeeded on Windows. G0 unsigned; no training-ready samples.
 
 ## Evidence and hypothesis
 01F.01A user Windows audit: 5208 filename-only matches, 0 ambiguous; 2 disk-only, 1815 catalog-only. 01F.02A user Windows experiment: 6/6 original CR3 decoded, 0 failed. Aggregated ranges do not connect any individual original to its Lightroom edit.
@@ -23,3 +23,7 @@ Upload only RAW_CAT_01F_03A_AGGREGATE.json. Never upload RAW_CAT_01F_03A_PRIVATE
 
 ## Quality and gates
 Required next human work: confirm RAW identity independent of name; photograph final editing state, photographer permission, real whole-event membership, original scene annotation, local-mask support policy. Only then preregister held-out event comparisons under signed G0/G1. Current training-ready count is zero.
+
+## 01F.03B selection fix (2026-10-11)
+
+Actual PRIVATE sample review showed the old 01F.03A sampler selected three adjacent or near-adjacent filenames in EACH provisional catalog group, potentially overrepresenting a capture burst. 01F.03B keeps max 20, round-robin group quotas and all existing no-leakage rules, but samples START / MIDDLE / END evenly across each group's lexical range. It is a better coverage proxy, not proof of visual/lighting diversity or independent events. New synthetic regression tests cover lexical span and scarce groups. Rerun and use NEW output names ending 03B to preserve 03A evidence. 01F.03B pending Windows verification.

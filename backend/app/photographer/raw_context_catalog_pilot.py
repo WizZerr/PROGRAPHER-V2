@@ -72,21 +72,36 @@ def _candidate_selection(
     for group in groups.values():
         group.sort(key=lambda pair: pair[0].name.casefold())
 
-    # Round-robin across PROVISIONAL catalog groups; NOT confirmed events or
-    # verified independent lighting conditions.
+    # First allocate slots evenly among PROVISIONAL groups, not confirmed
+    # events. Then spread each group's assigned picks along the WHOLE lexical
+    # filename range. This prevents sampling only adjacent first files, but
+    # does NOT establish independent scenes or event-level splits.
     group_keys = sorted(groups)
+    remaining = {key: len(groups[key]) for key in group_keys}
+    slots: list[str] = []
+    while len(slots) < max_files and any(remaining.values()):
+        for key in group_keys:
+            if remaining[key] > 0:
+                slots.append(key)
+                remaining[key] -= 1
+                if len(slots) >= max_files:
+                    break
+
+    quota = Counter(slots)
+    cursor: Counter[str] = Counter()
     selected: list[tuple[Path, dict]] = []
-    cursor = 0
-    while len(selected) < max_files and group_keys:
-        key = group_keys[cursor % len(group_keys)]
-        if groups[key]:
-            selected.append(groups[key].pop(0))
-        if not groups[key]:
-            group_keys.remove(key)
-            cursor = 0
-        else:
-            cursor += 1
+    for key in slots:
+        size = len(groups[key])
+        required = quota[key]
+        i = cursor[key]
+        index = (size - 1) // 2 if required == 1 else (
+            i * (size - 1) // (required - 1)
+        )
+        selected.append(groups[key][index])
+        cursor[key] += 1
+
     statuses["candidate_selected"] = len(selected)
+    statuses["selection_lexically_spread"] = len(selected)
     return selected, statuses
 
 
@@ -177,7 +192,7 @@ def build_pilot(
         "privacy": "AGGREGATE only — no filenames, directories, dates, photo IDs, RAW hashes or Lightroom adjustments",
         "raw_pipeline": RAW_PREPROCESSING_VERSION,
         "matching": "unique_case_insensitive_RAW_filename_and_extension_only",
-        "selection": "round_robin_provisional_catalog_groups_NOT_human_scene_or_event_strata",
+        "selection": "round_robin_provisional_groups_WITHIN_GROUP_LEXICAL_SPAN_NOT_scene_or_event_verified",
         "raw_files_indexed": sum(map(len, files.values())),
         "selected": len(selected),
         "decoded_and_catalog_linked_candidate": len(output_rows),
