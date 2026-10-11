@@ -8,7 +8,6 @@ from __future__ import annotations
 import argparse
 from collections import Counter
 from datetime import date, datetime, timezone
-import hashlib
 import json
 import math
 import os
@@ -17,6 +16,8 @@ import re
 import sqlite3
 import tempfile
 from typing import Any
+
+from app.photographer.curve_semantics import describe_curve
 
 SCHEMA = "prographer.raw_catalog_intake.v1"
 RAW_EXTS = frozenset("cr2 cr3 nef arw dng raf rw2 orf pef srw 3fr iiq raw nrw erf kdc mos mrw".split())
@@ -129,8 +130,11 @@ def parse_develop_settings(serialized: str) -> tuple[dict[str, Any], dict[str, d
                 raise ValueError(f"invalid value for {key}")
             val = token.group(0)
             pos = token.end()
-        if key in COMPLEX and nested:
-            complex_fields[key] = {"present": True, "sha256": hashlib.sha256(val.encode("utf-8")).hexdigest(), "serialized_length": len(val), "decoded": False}
+        if key in COMPLEX:
+            # Preserve safe metadata for every observed representation; decode only
+            # the strictly supported flat numeric point-table syntax. Unknown
+            # structures remain explicit and cannot be used as known edit targets.
+            complex_fields[key] = describe_curve(val)
         elif key in NUMERIC and not nested:
             try:
                 number = float(val)
@@ -185,6 +189,7 @@ def inspect_catalog(catalog: str | Path, *, include_private: bool = False) -> tu
     exclusions: Counter[str] = Counter()
     fields: Counter[str] = Counter()
     unsupported: Counter[str] = Counter()
+    curve_stats: dict[str, Counter[str]] = {}
     grouped: dict[tuple[Any, ...], dict[str, Any]] = {}
     records: list[dict[str, Any]] = []
     private_group_keys: list[tuple[Any, ...]] = []
@@ -253,6 +258,16 @@ def inspect_catalog(catalog: str | Path, *, include_private: bool = False) -> tu
                     fields[key] += 1
                     if key not in (NUMERIC | TEXT | BOOL | COMPLEX):
                         unsupported[key] += 1
+                for curve_key, meta in complex_fields.items():
+                    if curve_key not in curve_stats:
+                        curve_stats[curve_key] = Counter()
+                    c = curve_stats[curve_key]
+                    c["present"] += 1
+                    c["decoded" if meta["decoded"] else "undecoded"] += 1
+                    if meta["decoded"]:
+                        c["linear" if meta["is_linear"] else "nonlinear"] += 1
+                    else:
+                        c["reason:" + str(meta.get("undecoded_reason", "unknown"))] += 1
                 if develop.get("ConvertToGrayscale") is True or row["grayscale"] == 1:
                     report_counts["grayscale_raw_records"] += 1
                     grouped[group_key]["bw_count"] += 1
@@ -297,8 +312,13 @@ def inspect_catalog(catalog: str | Path, *, include_private: bool = False) -> tu
         "candidate_groups": [{"group_id": group_ids[key], "raw_count": val["raw_count"], "parsed_count": val["parsed_count"], "bw_count": val["bw_count"]} for key, val in groups_sorted],
         "develop_field_presence": dict(sorted(fields.items())),
         "unmapped_field_presence": dict(sorted(unsupported.items())),
+        "curve_decode_coverage": {
+            field: dict(sorted(counts.items()))
+            for field, counts in sorted(curve_stats.items())
+        },
+        "curve_decoder": "flat_numeric_0_255_syntax_only; NOT Lightroom-validated",
         "training_ready_samples": 0,
-        "warnings": ["No original RAW bytes verified", "No verified events / photographer-approved final edits", "Lightroom private schema: verify against Adobe Lightroom/XMP across versions", "Unknown keys and curves are NOT equivalent to decoded controls", "History/preset/auto origin is NOT inferred"],
+        "warnings": ["No original RAW bytes verified", "No verified events / photographer-approved final edits", "Lightroom private schema: verify against Adobe Lightroom/XMP across versions", "Unknown keys and curves are NOT equivalent to decoded controls", "Curve point decoding is syntactic only; Adobe/LR/XMP parity is NOT verified", "History/preset/auto origin is NOT inferred"],
     }
     private = None
     if include_private:

@@ -111,3 +111,33 @@ def test_rejects_nonfinite_numeric_and_preserves_untouched_source(tmp_path: Path
     assert report['exclusions']['develop_parse_failed'] == 1
     assert report['totals']['parsed_raw_records'] == 1
     assert path.read_bytes() == before
+
+def test_01e_curve_coverage_is_aggregate_only_and_points_private(tmp_path: Path):
+    catalog = tmp_path / 'curve.lrcat'
+    synthetic_catalog(catalog)
+    report, private = inspect_catalog(catalog, include_private=True)
+    curve = report['curve_decode_coverage']['ToneCurvePV2012']
+    assert curve == {'decoded': 1, 'linear': 1, 'present': 1}
+    assert report['curve_decoder'].endswith('NOT Lightroom-validated')
+    assert private['records'][0]['complex']['ToneCurvePV2012']['points'] == [[0, 0], [255, 255]]
+    assert private['records'][0]['complex']['ToneCurvePV2012']['lightroom_semantics_validated'] is False
+    assert '"points"' not in json.dumps(report)
+    assert private['records'][0]['training_eligible'] is False
+
+
+def test_01e_nested_unknown_curve_stays_undecoded_and_non_training(tmp_path: Path):
+    catalog = tmp_path / 'nested.lrcat'
+    synthetic_catalog(catalog)
+    with sqlite3.connect(catalog) as db:
+        db.execute(
+            'UPDATE Adobe_imageDevelopSettings SET text=? WHERE image=1',
+            ('s = { Exposure2012=0, ToneCurvePV2012={ x=1, y=2 } }',),
+        )
+    report, private = inspect_catalog(catalog, include_private=True)
+    curve = report['curve_decode_coverage']['ToneCurvePV2012']
+    assert curve['undecoded'] == 1
+    assert curve['reason:unsupported_non_numeric_or_nested_curve'] == 1
+    meta = private['records'][0]['complex']['ToneCurvePV2012']
+    assert meta['decoded'] is False
+    assert 'points' not in meta
+    assert private['records'][0]['training_eligible'] is False
