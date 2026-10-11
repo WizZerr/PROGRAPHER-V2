@@ -18,6 +18,10 @@ import tempfile
 from typing import Any
 
 from app.photographer.curve_semantics import describe_curve
+from app.photographer.develop_color_semantics import (
+    COLOR_FIELDS, COLOR_FAMILIES, OPAQUE_FIELDS, OPAQUE_LOCAL_FIELDS,
+    PROFILE_CONTEXT_FIELDS, parse_color_scalar, describe_opaque_field,
+)
 
 SCHEMA = "prographer.raw_catalog_intake.v1"
 RAW_EXTS = frozenset("cr2 cr3 nef arw dng raf rw2 orf pef srw 3fr iiq raw nrw erf kdc mos mrw".split())
@@ -132,10 +136,11 @@ def parse_develop_settings(serialized: str) -> tuple[dict[str, Any], dict[str, d
             val = token.group(0)
             pos = token.end()
         if key in COMPLEX:
-            # Preserve safe metadata for every observed representation; decode only
-            # the strictly supported flat numeric point-table syntax. Unknown
-            # structures remain explicit and cannot be used as known edit targets.
             complex_fields[key] = describe_curve(val)
+        elif key in OPAQUE_FIELDS:
+            complex_fields[key] = describe_opaque_field(val, nested=nested)
+        elif key in COLOR_FIELDS:
+            values[key] = parse_color_scalar(key, val, nested=nested)
         elif key in NUMERIC and not nested:
             try:
                 number = float(val)
@@ -191,6 +196,10 @@ def inspect_catalog(catalog: str | Path, *, include_private: bool = False) -> tu
     fields: Counter[str] = Counter()
     unsupported: Counter[str] = Counter()
     curve_stats: dict[str, Counter[str]] = {}
+    color_family_stats: dict[str, Counter[str]] = {family: Counter() for family in COLOR_FAMILIES}
+    color_field_stats: dict[str, Counter[str]] = {}
+    profile_stats: dict[str, Counter[str]] = {}
+    local_edit_stats: dict[str, Counter[str]] = {}
     grouped: dict[tuple[Any, ...], dict[str, Any]] = {}
     records: list[dict[str, Any]] = []
     private_group_keys: list[tuple[Any, ...]] = []
@@ -257,9 +266,11 @@ def inspect_catalog(catalog: str | Path, *, include_private: bool = False) -> tu
                 grouped[group_key]["parsed_count"] += 1
                 for key in present:
                     fields[key] += 1
-                    if key not in (NUMERIC | TEXT | BOOL | COMPLEX):
+                    if key not in (NUMERIC | TEXT | BOOL | COMPLEX | COLOR_FIELDS):
                         unsupported[key] += 1
                 for curve_key, meta in complex_fields.items():
+                    if curve_key not in COMPLEX:
+                        continue
                     if curve_key not in curve_stats:
                         curve_stats[curve_key] = Counter()
                     c = curve_stats[curve_key]
@@ -269,6 +280,38 @@ def inspect_catalog(catalog: str | Path, *, include_private: bool = False) -> tu
                         c["linear" if meta["is_linear"] else "nonlinear"] += 1
                     else:
                         c["reason:" + str(meta.get("undecoded_reason", "unknown"))] += 1
+                # Absence is not an explicit zero; counts are syntax only.
+                for field in COLOR_FIELDS:
+                    if field in develop:
+                        c = color_field_stats.setdefault(field, Counter())
+                        c["present"] += 1
+                        c["explicit_zero" if develop[field] == 0 else "nonzero"] += 1
+                for family, family_fields in COLOR_FAMILIES.items():
+                    seen = [develop[k] for k in family_fields if k in develop]
+                    c = color_family_stats[family]
+                    if seen:
+                        c["records_with_field"] += 1
+                        c["observed_values"] += len(seen)
+                        c["explicit_zero_values"] += sum(v == 0 for v in seen)
+                        c["nonzero_values"] += sum(v != 0 for v in seen)
+                        if any(v != 0 for v in seen):
+                            c["records_with_nonzero_field"] += 1
+                for field in PROFILE_CONTEXT_FIELDS:
+                    if field in develop or field in complex_fields:
+                        c = profile_stats.setdefault(field, Counter())
+                        c["present"] += 1
+                        if field in complex_fields:
+                            c["opaque_not_decoded"] += 1
+                            if complex_fields[field]["structure_nonempty"]:
+                                c["structure_nonempty"] += 1
+                        else:
+                            c["scalar_parsed"] += 1
+                for field in OPAQUE_LOCAL_FIELDS:
+                    if field in complex_fields:
+                        c = local_edit_stats.setdefault(field, Counter())
+                        c["present"] += 1
+                        c["opaque_not_decoded"] += 1
+                        c["structure_nonempty" if complex_fields[field]["structure_nonempty"] else "structure_empty"] += 1
                 if develop.get("ConvertToGrayscale") is True or row["grayscale"] == 1:
                     report_counts["grayscale_raw_records"] += 1
                     grouped[group_key]["bw_count"] += 1
@@ -284,7 +327,12 @@ def inspect_catalog(catalog: str | Path, *, include_private: bool = False) -> tu
                     "capture_day": group_key[2], "event_group_id": None,
                     "virtual_copy_candidate": row["master_image"] is not None or bool(row["copy_name"]),
                     "develop": develop, "complex": complex_fields,
-                    "unsupported_fields": sorted(set(present)-(NUMERIC | TEXT | BOOL | COMPLEX)),
+                    "unsupported_fields": sorted(set(present)-(NUMERIC | TEXT | BOOL | COMPLEX | COLOR_FIELDS)),
+                    "color_semantics_validated": False,
+                    "opaque_edit_review_required": any(
+                        complex_fields.get(field, {}).get("structure_nonempty", False)
+                        for field in OPAQUE_LOCAL_FIELDS
+                    ),
                     "parse_exclusion": reason, "status": "catalog_only_pending_source_and_finality" if not reason else "quarantined",
                     "source_raw_verified": False, "final_edit_confirmed": False,
                     "event_confirmed": False, "training_eligible": False,
@@ -318,8 +366,13 @@ def inspect_catalog(catalog: str | Path, *, include_private: bool = False) -> tu
             for field, counts in sorted(curve_stats.items())
         },
         "curve_decoder": "flat_numeric_0_255_syntax_only; NOT Lightroom-validated",
+        "color_decoder": "finite_scalars; explicit_zero_vs_absent; NOT Lightroom-validated",
+        "color_family_coverage": {family: dict(sorted(counts.items())) for family, counts in sorted(color_family_stats.items())},
+        "color_field_coverage": {field: dict(sorted(counts.items())) for field, counts in sorted(color_field_stats.items())},
+        "profile_field_coverage": {field: dict(sorted(counts.items())) for field, counts in sorted(profile_stats.items())},
+        "opaque_local_edit_coverage": {field: dict(sorted(counts.items())) for field, counts in sorted(local_edit_stats.items())},
         "training_ready_samples": 0,
-        "warnings": ["No original RAW bytes verified", "No verified events / photographer-approved final edits", "Lightroom private schema: verify against Adobe Lightroom/XMP across versions", "Unknown keys and curves are NOT equivalent to decoded controls", "Curve point decoding is syntactic only; Adobe/LR/XMP parity is NOT verified", "History/preset/auto origin is NOT inferred"],
+        "warnings": ["No original RAW bytes verified", "No verified events / photographer-approved final edits", "Lightroom private schema: verify against Adobe Lightroom/XMP across versions", "Unknown keys and curves are NOT equivalent to decoded controls", "Curve point decoding is syntactic only; Adobe/LR/XMP parity is NOT verified", "Color fields are syntactic numeric extraction only; missing does not mean zero", "Opaque profile/mask/retouch fields are not interpreted as active edits", "History/preset/auto origin is NOT inferred"],
     }
     private = None
     if include_private:

@@ -70,7 +70,7 @@ def test_aggregate_privacy_and_candidate_grouping(tmp_path: Path):
     assert report['totals']['parsed_raw_records'] == 2
     assert report['totals']['grayscale_raw_records'] == 1
     assert report['candidate_folder_day_groups'] == 1
-    assert report['unmapped_field_presence']['ColorGradeGlobalSat'] == 1
+    assert report['color_field_coverage']['ColorGradeGlobalSat'] == {'nonzero': 1, 'present': 1}
     assert report['training_ready_samples'] == 0
     assert private is not None and len(private['records']) == 2
     assert {r['event_group_id'] for r in private['records']} == {'G0001'}
