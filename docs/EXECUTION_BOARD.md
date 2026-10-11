@@ -25,7 +25,7 @@ Status vocabulary:
 
 | Lane | Part | Status | Exact next output |
 |---|---|---|---|
-| RAW catalog research | **RAW-CAT-01E.03A** | ACTIVE / research-prep only | Validate sample-selection CLI on Windows and real catalog; private photo-level plan stays local; independent Adobe Lightroom/XMP parity remains open |
+| RAW catalog research | **RAW-CAT-01E.04A** | ACTIVE / research-prep only | Windows verify read-only Preview index counts/key overlaps; report aggregate-only; 01E.03B Adobe/XMP parity remains blocked on original RAW |
 | JPEG development | **FROZEN by D-015** | PAUSED | Preserve existing code/tests and fix only safety regressions |
 | Primary development | **PG-00.05** | READY / ◐ | Resume non-manual portability/restore hardening when continuing development; BUG-PG00-001 is the concrete code blocker |
 | Photographer intake | **PG-06.02** | BLOCKED | Authorized photographer material |
