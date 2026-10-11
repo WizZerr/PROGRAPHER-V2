@@ -17,10 +17,16 @@ Status vocabulary:
 - **BLOCKED** — dependency or hardware/data gate prevents completion.
 - **DONE** — exact Part completion criteria have evidence.
 
+## Scope override / product owner decision — D-015 (2026-10-11)
+
+**RAW-first**: original RAW + Lightroom exported catalog is the active learning dataset. JPEG final/edited pairs are NOT required; JPEG feature work paused, historical work kept. G0, PG-00.05 and PG-06.02 statuses do NOT change. RAW-CAT-01D is a pre-G0 **research/engineering preparation lane**, not permission to train a production Brain. Private photographer inputs must never be committed. See [D-015](D_015_RAW_FIRST_SCOPE.md).
+
 ## Current lanes
 
 | Lane | Part | Status | Exact next output |
 |---|---|---|---|
+| RAW catalog research | **RAW-CAT-01D** | ACTIVE / research-prep only | Isolated read-only extractor, group/coverage report, synthetic tests; no release-gate claim |
+| JPEG development | **FROZEN by D-015** | PAUSED | Preserve existing code/tests and fix only safety regressions |
 | Primary development | **PG-00.05** | READY / ◐ | Resume non-manual portability/restore hardening when continuing development; BUG-PG00-001 is the concrete code blocker |
 | Photographer intake | **PG-06.02** | BLOCKED | Authorized photographer material |
 | Residual PR1 QA | **PG-00.02** | PAUSED | Only resume when product owner returns to the remaining hardware/manual QA |

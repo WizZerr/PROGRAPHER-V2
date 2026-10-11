@@ -17,6 +17,12 @@ Historical plans and superseded planning notes live under `docs/archive/` and ar
 - PR #1 is closed and is not the active development path.
 - New work is committed directly to `main` unless a strong engineering reason requires a temporary branch.
 
+## RAW-first scope decision — D-015 / 2026-10-11
+
+Product owner changed the active Release 1 learning scope to **original RAW + exported Lightroom Classic .lrcat**, with source-safe predicted RAW recipe/XMP and Lightroom as initial final renderer. **JPEG learning/rendering development is frozen** (existing evidence and code preserved). Final JPEG is NOT a training prerequisite. All pre-existing JPEG-first notes and Phase-01 draft promises below are superseded only to the extent they conflict with D-015. The existing gates/statuses are unchanged: G0 unsigned, PG-00.05 open, PG-06.02 blocked on RAW originals; production Brain, Auth, Cloud remain blocked.
+
+Active isolated engineering prep: **RAW-CAT-01D** read-only versioned catalog extractor and synthetic tests, NOT a verified product feature; next **RAW-CAT-01E** Adobe/XMP parity. Existing private photographer reports (7,023 CR3 develop records) stay local only; 0 verified source RAW pairs, 0 training-ready samples. Refer to [D-015](D_015_RAW_FIRST_SCOPE.md).
+
 ## Current execution position
 
 - **Phase 01 preparation package is complete at draft/engineering-prepared level (PG-01.01–PG-01.07).** Ratification remains blocked by G0. The next executable non-manual engineering lane is **PG-00.05 — portability/restore hardening**.

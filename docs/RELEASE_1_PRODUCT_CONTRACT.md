@@ -5,6 +5,8 @@ Prepared: 2026-10-04
 Workflow Part: **PG-01.01**  
 Authority: `docs/MASTER_PLAN_SOURCE_OF_TRUTH.md`
 
+> **RAW-first amendment D-015 / 2026-10-11:** This draft's historical JPEG-first scope is superseded. Active target: original RAW + exported Lightroom .lrcat/XMP -> photographer-specific predicted edit recipe -> source-safe XMP/Lightroom output. Final JPEG is NOT training material; independent JPEG feature development is FROZEN. No quality/renderer promise or gate status is advanced. See [D-015](D_015_RAW_FIRST_SCOPE.md).
+>
 > This document is the product-scope contract for Release 1. It is intentionally a **draft** until G0 is signed. Preparing the draft is allowed while PG-00.02 is still being closed. No item in this document becomes a market claim merely because it is written here.
 
 ## 1. Product promise
@@ -13,7 +15,7 @@ ProGrapher Release 1 is a professional desktop AI editing product for event phot
 
 The primary commercial path is:
 
-**Select original JPEG event → apply photographer profile locally → review/correct → export final JPEG locally**
+**Select original RAW + matching Lightroom Catalog → validated Develop learning → apply RAW photographer profile locally → review/correct → write source-safe XMP → render/export through Lightroom**
 
 The editing path must not modify source files.
 
@@ -32,11 +34,11 @@ A capability may be marketed only after the Gate named in the last column has pa
 
 | Capability | Release 1 commitment | Required evidence before market claim |
 |---|---|---|
-| Independent JPEG workflow | Original/edited learning material, local inference, review/correction and final local JPEG export | G1 data validity → G2 representation → G3 prediction → G4 local value |
+| Independent JPEG workflow | **FROZEN by D-015**. Preserve existing tests and evidence; no active Release 1 commitment | Re-scope explicitly before resuming |
 | Photographer-specific profile | Versioned personal profile used by local inference | G3 candidate quality + later profile lifecycle evidence |
 | Local event editing | Inference, render, review, export and jobs run on the photographer's computer | G4 |
 | Source-file safety | Original RAW/JPEG files are not modified by normal editing/export flows | G0 regression baseline + continued regression coverage |
-| RAW-assisted workflow | Existing safe RAW intake/preview/review/XMP bridge is preserved | Compatibility evidence for the supported RAW/XMP path |
+| RAW-first Lightroom-assisted workflow | RAW + exported .lrcat/XMP, source-validated target extraction, photographer-specific recipe, safe XMP/Lightroom rendering | G1 source/events/finality + G2/G3 RAW model evidence + G4 real editing value |
 | Profile backup/sync | Supported profile/settings backup or sync through commercial cloud control plane | G5 |
 | Account + entitlement | User identity, authorized devices and subscription eligibility | G5 |
 | Signed installation + updates | Installable commercial desktop package with controlled update path | G5 |
