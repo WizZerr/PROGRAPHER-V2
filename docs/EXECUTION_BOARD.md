@@ -25,7 +25,7 @@ Status vocabulary:
 
 | Lane | Part | Status | Exact next output |
 |---|---|---|---|
-| RAW catalog research | **RAW-CAT-01E.04A** | ACTIVE / research-prep only | Windows verify read-only Preview index counts/key overlaps; report aggregate-only; 01E.03B Adobe/XMP parity remains blocked on original RAW |
+| RAW catalog research | **RAW-CAT-01E.03B.01** | ACTIVE / research-prep only | Run local Adobe-generated XMP vs private catalog sample comparator and send aggregate results; no training promotion |
 | JPEG development | **FROZEN by D-015** | PAUSED | Preserve existing code/tests and fix only safety regressions |
 | Primary development | **PG-00.05** | READY / ◐ | Resume non-manual portability/restore hardening when continuing development; BUG-PG00-001 is the concrete code blocker |
 | Photographer intake | **PG-06.02** | BLOCKED | Authorized photographer material |
@@ -132,7 +132,8 @@ A Part can be marked DONE/V only when:
 - **01E.01**: point-curve syntax structurally verified on same catalog, all four curve tables per RAW decoded; 112 nonlinear composite tone curves. NOT Adobe parity.
 - **01E.02**: 30/30 focused tests passed on Windows at `b5edc6c`; 7,023 records read without exclusions; 371 HSL candidates, 177 B&W mixer candidates, 30 Color Grading candidates (47 nonzero adjustments, excluding 7,023 nonzero Blending configuration values), 618 mask payloads opaque.
 - **01E.03A**: local-private Lightroom comparison sampling code added; real Windows verification PENDING.
-- **01E.03B**: independent Adobe/XMP comparison requires suitable references; not implemented or validated. G0 / G1 still blocked; no training-ready data.
+- **01E.04A**: actual aggregate DB report: 7,020/7,023 RAW local IDs overlap cache; all 7,472 cached images have exactly one Pyramid+level. On-disk JPEG/photo identity still unproven; Windows pytest output still unreported.
+- **01E.03B.01**: independent Adobe-generated XMP and auxiliary .acr captured on a copied one-photo Lightroom validation catalog/RAW; 10 Basic UI controls and qualitative RGB curve checked. Aggregate-only catalog-vs-XMP comparator + synthetic tests staged, REAL Windows XMP run PENDING; .acr/masks/profile Look not decoded. G0/G1 still blocked; training ready 0.
 
 ## Next action
 
