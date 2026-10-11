@@ -19,3 +19,12 @@ Use ONLY the **isolated one-photo exported catalog**, with copied camera RAW. Co
 
 ## Exit criteria
 Manual evidence recorded privately for ONE reference photo (selected UI Profile label; Mask UI list/enable status; no source file changes); update findings only as aggregate categorical statuses, NO photo identifiers. This part does NOT unblock production Brain, G0, photographer data consent/finality, event-level split, or Adobe pixel-render parity.
+
+## 2026-10-11 — Independent Adobe UI observation, NO edit performed
+
+- Isolated one-photo Lightroom Develop Basic panel displays a nonempty selected Profile labelled **Adobe Color**. Catalog and XMP both contain the identical low-level CameraProfile string **Adobe Standard**. This confirms a UI/serialized-context distinction, NOT resolution or proof of the responsible Look/Profile chain.
+- Masking panel displays exactly **one named mask** with a human-silhouette miniature. The adjacent control area explicitly says **No Mask Selected**. **Show Overlay** checkbox is checked, but this only means overlay display is enabled; it is not an enabled/active mask guarantee.
+- A nonempty opaque catalog MaskGroupBasedCorrections entry and a Lightroom-visible mask coexist for this sample. Exact correspondence, mask origin/type, mask feather/geometry, stored vs active state, mask-local sliders, Adobe .acr payload semantics, and render equivalence have NOT been verified.
+- Screenshots of camera subject, camera image, image-level private files and underlying mask pixels are NOT committed.
+
+NEXT manual action (still no settings changes): click the EXISTING listed mask once to select it, then send a cropped screenshot of the masking panel and adjustment controls ONLY, scrolling within those controls if needed; do not drag any slider, select another preset, or save new metadata. If clicking changes the visible overlay preview, this is selection UI and not a Develop recipe modification.

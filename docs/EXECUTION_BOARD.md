@@ -25,7 +25,7 @@ Status vocabulary:
 
 | Lane | Part | Status | Exact next output |
 |---|---|---|---|
-| RAW catalog research | **RAW-CAT-01E.03C.01** | ACTIVE / Adobe UI evidence pending | View selected Profile/Look and Masks panel in isolated Lightroom one-photo catalog; record only redacted UI evidence, no image data; preserve XMP/catalog |
+| RAW catalog research | **RAW-CAT-01E.03C.01** | ACTIVE / read-only mask controls pending | One mask LISTED in Lightroom; Profile UI/CameraProfile stored-string difference unresolved. Select existing mask without changing controls and record cropped panel of mask adjustments; no source writes |
 | JPEG development | **FROZEN by D-015** | PAUSED | Preserve existing code/tests and fix only safety regressions |
 | Primary development | **PG-00.05** | READY / ◐ | Resume non-manual portability/restore hardening when continuing development; BUG-PG00-001 is the concrete code blocker |
 | Photographer intake | **PG-06.02** | BLOCKED | Authorized photographer material |
@@ -135,7 +135,7 @@ A Part can be marked DONE/V only when:
 - **01E.04A**: real aggregate DB report: 7,020/7,023 RAW local IDs overlap cache; all 7,472 cached images have exactly one Pyramid+level. Tests included in 44/44 focused Windows PASS. On-disk JPEG/photo identity still unproven.
 - **01E.03B.01**: Windows 44/44 focused tests PASS; independent Adobe XMP from an isolated one-photo Lightroom catalog gave 48 exact field-expression matches, 0 mismatches, and 1 not-exported Boolean. Four point curves matched coordinates. 76 other top-level Camera Raw XMP fields remain untested; .acr/masks/Look/Profile and pixel rendering are NOT proven.
 - **01E.03B.02 V2**: Windows 48/48 focused tests PASS; real Adobe XMP inventory V2 PASS: 124 global crs properties; 48 matched in one sample, 76 additional untested (71 scalar, 3 shallow sequences, 2 nested/ambiguous), one catalog-only property not exported. The corrected schema groups HSL LuminanceAdjustments separately from noise and Camera Calibration separately from HSL; labels are triage hints, NOT Adobe semantics.
-- **01E.03C.01 (NEXT)**: Lightroom UI evidence for selected Profile/Look and visible mask listing on the isolated one-RAW catalog. Only cropped UI screenshots or count/status evidence; DO NOT share photo pixels, raw .acr/.xmp or private plans. Photographer finality, event splits, Adobe rendering parity, G0/G1 and Brain training remain blocked.
+- **01E.03C.01 (ACTIVE)**: Isolated Lightroom UI shows Adobe Color as displayed Profile vs Adobe Standard as matching catalog/XMP CameraProfile string; NOT claimed equivalent. ONE stored mask appears in mask list with person silhouette preview, but No Mask Selected at time of inspection and Show Overlay checked; these do not prove active/enabled mask, AI mask origin, correction values or pixel parity. NEXT: select existing mask for read-only examination of visible control values; share cropped right-side UI only. Keep .acr, Lightroom XMP and private plan local. Photographer finality, event splits, Adobe renderer, G0/G1 and Brain training blocked.
 
 ## Next action
 
