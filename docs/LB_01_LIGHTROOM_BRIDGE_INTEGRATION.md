@@ -1,6 +1,6 @@
-# LB-01 — Lightroom Bridge research integration (code-review candidate)
+# LB-01 — Lightroom Bridge research integration (merged research adapter)
 
-**2026-10-12 · Parent: ProGrapher v4.0 · Status: REAL Windows Lightroom smoke PASS; PR review/merge pending.**
+**2026-10-12 · Parent: ProGrapher v4.0 · Status: research integration MERGED into `main` via PR #2 at `2df653526456345bf2f08a77b35e756f967af2f8`; one-RAW Windows smoke PASS.**
 
 ## Decision
 
@@ -48,7 +48,7 @@ POC reference archives saved privately; SHA-256 of archived zips for provenance:
 | Actual SDK smoke with NEW integrated code on authorized Windows research copy | **PASS — user-run integrated plugin, 2026-10-12** |
 | Baseline RAW SHA unchanged + Lightroom readbacks + JPEG for new integrated code | **PASS — ten readbacks, profile, unchanged RAW SHA, and 9,154,074-byte JPEG verified** |
 | Real Mac Lightroom smoke | NOT LB-01; required before cross-platform release |
-| LB-01 complete | **WINDOWS EXPERIMENT VERIFIED; PR REVIEW/MERGE PENDING** — not a production capability |
+| LB-01 integration disposition | **MERGED TO MAIN; WINDOWS SINGLE-RAW RESEARCH PASS; 16 LOCAL PYTEST PASS** — not a production capability; G0 still OPEN |
 
 ### Final PR #2 code-review and local QA record
 
@@ -58,7 +58,7 @@ POC reference archives saved privately; SHA-256 of archived zips for provenance:
 - GitHub Actions run `38289239558` did **not execute test steps**: the GitHub UI reported that jobs could not start because of account payments or spending limits; billing showed **2,000/2,000 included Actions minutes used**. This is **CI NOT RUN / QUOTA BLOCKED**, not CI PASS or a test failure.
 - Team decision for this research Part: rely on the recorded local synthetic test suite; keep the workflow as `workflow_dispatch` only while the hosted CI quota is exhausted. This scoped exception does **not** satisfy G0's broader final-CI requirements and does not waive required tests for a commercial release.
 - Positive-path Lightroom evidence predates the final Lua error-diagnostic refinement. The original successful SDK operations were left unchanged, but the final source revision has not received a fresh in-Lightroom smoke run. Only claim the existing single-RAW Windows research proof.
-- Final merge into `main` remains subject to PR merge acceptance. No Lightroom masking, unattended batch, Mac validation, photographer model or production Gate is promoted.
+- **PR #2 merged on 2026-10-12**, merge commit `2df653526456345bf2f08a77b35e756f967af2f8`; GitHub confirmed the committed adapter and documents on `main`. No Lightroom masking, unattended batch, Mac validation, photographer model or production Gate is promoted.
 
 ### Windows test evidence (reported by user, without private artifacts)
 
@@ -74,4 +74,4 @@ See `integrations/lightroom_classic/lb01/README_HE.md` for future controlled rep
 
 ### Next
 
-The LB-01 Windows run passed. After review/merge, design LB-02 as a separate contract: capability negotiation, authenticated local IPC, job ID/heartbeat, idempotence/restart, bounded 10→100 photo research batch, per-photo audit and source-safe export. Do not add it to LB-01 silently.
+The LB-01 Windows run passed and the research integration was merged. Next: design LB-02 as a separate contract: capability negotiation, authenticated local IPC, job ID/heartbeat, idempotence/restart, bounded 10→100 photo research batch, per-photo audit and source-safe export. Do not add it to LB-01 silently.
