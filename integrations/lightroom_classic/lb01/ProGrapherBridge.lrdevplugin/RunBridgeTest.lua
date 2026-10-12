@@ -17,6 +17,8 @@ local exportDir = LrPathUtils.child(workdir, 'exports')
 local jobPath = LrPathUtils.child(workdir, 'job.txt')
 local resultPath = LrPathUtils.child(workdir, 'result.txt')
 local stage = 'start'
+-- Only a fully validated, prepared job may receive a terminal result.
+local activeJobId = nil
 local version = 'lb01-1'
 
 local keys = {
@@ -113,6 +115,7 @@ local function run()
         error('SAFETY STOP: Job was already run or its status changed; do not retry')
     end
     if LrFileUtils.exists(fields.raw_path) ~= 'file' then error('Missing test RAW copy') end
+    activeJobId = fields.job_id
     -- SHA-256 pre/post is enforced by Python prepare/verify; SDK Lua cannot hash RAW.
     -- This is a manually invoked POC, NOT an authenticated production IPC layer.
 
@@ -171,6 +174,7 @@ local function run()
     end
     stage='write_result'
     writeResult(output..'jpeg='..jpeg..'\nbytes='..tostring(attr.fileSize)..'\n')
+    activeJobId = nil -- success is terminal; do not overwrite it if the dialog fails.
     LrDialogs.message('ProGrapher LB-01 — Research PASS',
         'Recipe values read back; Lightroom exported one JPEG.\nRun Python verify for RAW hash and JPEG signature.', 'info')
 end
@@ -179,9 +183,12 @@ LrTasks.startAsyncTask(function()
     local ok,err=LrTasks.pcall(run)
     if not ok then
         local message=tostring(err):gsub('[\r\n]',' ')
-        pcall(function()
-            writeResult('status=error\nstage='..stage..'\nerror='..message..'\n')
-        end)
+        -- Preflight failures must not overwrite the prepared job or any prior evidence.
+        if activeJobId then
+            pcall(function()
+                writeResult('status=error\njob_id='..activeJobId..'\nstage='..stage..'\nerror='..message..'\n')
+            end)
+        end
         LrDialogs.message('ProGrapher LB-01 — STOPPED', message, 'critical')
     end
 end)
