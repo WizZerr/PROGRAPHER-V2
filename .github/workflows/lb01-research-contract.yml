@@ -1,0 +1,26 @@
+name: LB-01 research contract
+
+# Temporarily manual-only: GitHub-hosted Actions minutes exhausted.
+# PR reviews use recorded local pytest results; see docs/LB_01_LIGHTROOM_BRIDGE_INTEGRATION.md.
+# Re-enable PR triggers only after GitHub billing/quota and CI policy review.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  synthetic-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install isolated test dependency
+        run: python -m pip install pytest
+      - name: LB-01 synthetic contract tests (no Lightroom or customer data)
+        env:
+          PYTHONPATH: backend
+        run: python -m pytest -q backend/tests/test_lb01_lightroom_poc.py
