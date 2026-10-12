@@ -1,12 +1,9 @@
 name: LB-01 research contract
 
+# Temporarily manual-only: GitHub-hosted Actions minutes exhausted.
+# PR reviews use recorded local pytest results; see docs/LB_01_LIGHTROOM_BRIDGE_INTEGRATION.md.
+# Re-enable PR triggers only after GitHub billing/quota and CI policy review.
 on:
-  pull_request:
-    paths:
-      - '.github/workflows/lb01-research-contract.yml'
-      - 'backend/app/lightroom_bridge/**'
-      - 'backend/tests/test_lb01_lightroom_poc.py'
-      - 'integrations/lightroom_classic/lb01/**'
   workflow_dispatch:
 
 permissions:
