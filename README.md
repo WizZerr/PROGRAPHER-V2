@@ -1,27 +1,26 @@
 # ProGrapher V2
 
-Professional desktop AI event-photography editor for Windows x64 and macOS Apple Silicon.
+Professional desktop AI assistant for event photographers. Hebrew-first (RTL), Windows x64 and macOS Apple Silicon target platforms.
 
-## Start here
+## One active execution source of truth
 
-There is **one active execution source of truth**:
+**[ProGrapher Master v4.0 — `docs/MASTER_PLAN_SOURCE_OF_TRUTH.md`](docs/MASTER_PLAN_SOURCE_OF_TRUTH.md)** (2026-10-12).
 
-**[`docs/MASTER_PLAN_SOURCE_OF_TRUTH.md`](docs/MASTER_PLAN_SOURCE_OF_TRUTH.md) — ProGrapher V2 Master Workflow v3.0**
+**Product direction:** RAW-first photographer-specific learning, with Adobe Lightroom Classic as the first RAW development/JPEG export engine. ProGrapher owns source analysis, per-photo decisions, event orchestration, quality review and delivery. A licensed compatible Lightroom Classic installation is required for the Lightroom-First workflow. A native renderer is not promised for Release 1.
 
-Use these supporting documents:
+## Working documents
+- [Execution Board](docs/EXECUTION_BOARD.md) — next executable task: **LB-01**.
+- [Project State](docs/PROJECT_STATE.md) — evidence, current limitations and Gates.
+- [Decisions](docs/DECISIONS.md) — v4 Lightroom-First decisions D-018–D-021 (existing D-017 preserved).
+- [RAW-first scope decision](docs/D_015_RAW_FIRST_SCOPE.md) and [photographer fidelity decision](docs/D_016_PHOTOGRAPHER_FIDELITY_FIRST.md) — cite by file paths to avoid historic decision-ID collisions.
+- [Archived v3.1 Master](docs/archive/MASTER_PLAN_SOURCE_OF_TRUTH_v3.1_2026-10-12.md) — reference only, not execution authority.
 
-- [`docs/PROJECT_STATE.md`](docs/PROJECT_STATE.md) — current Part, blockers and next executable work.
-- [`docs/DECISIONS.md`](docs/DECISIONS.md) — accepted architectural/product decisions.
-- [`docs/PR1_TEST_CHECKLIST_HE.md`](docs/PR1_TEST_CHECKLIST_HE.md) — PR1 QA evidence; not a replacement for the master workflow.
+## Current evidence
+- Lightroom Bridge POC v0.1.1 and v0.2.0 passed on **one Windows research RAW**: Adobe Standard plus 10 settings read back and actual JPEG generated.
+- The experimental Lightroom Subject mask exists but applying local +0.25 has **not** passed.
+- RAW ↔ Lightroom filename matching produced 5,208 candidates, **zero** fully verified, licensed, training-ready samples.
+- No photographer-trained production Brain, unattended event processing, Mac Bridge smoke or single commercial installer yet. G0 remains open; G1–G6 have not passed.
 
-## Historical documents
+Never commit photographer RAWs, catalogs, per-photo records or private previews. Preserve source originals and historic model candidates.
 
-Superseded plans and checklists are preserved under [`docs/archive/`](docs/archive/) for traceability only.
-
-Do **not** execute legacy `Pxx-yy` tasks as an active plan unless Master Workflow v3.0 explicitly maps them to a current `PG-XX.YY` Part.
-
-## Current gate
-
-Phase 00 is active. PG-00.03 is complete. PG-00.02 remains partial, so G0 is not signed and PG-00.04 merge/tag is still blocked.
-
-See `docs/PROJECT_STATE.md` for the live status.
+**NEXT:** LB-01 freeze/integrate local working POC, then LB-02 autonomous batch. DATA-01 consent/finality/source-identity engineering can proceed separately.

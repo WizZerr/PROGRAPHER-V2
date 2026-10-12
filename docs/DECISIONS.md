@@ -183,3 +183,22 @@ Status language must remain evidence-based:
 Catalog-based routes may be prepared in the UI before their Brain implementation
 exists, but the UI must not present them as trained or production-ready until
 the corresponding backend/model path is actually implemented and evaluated.
+
+## D-018 — Lightroom-First rendering for Release 1 (2026-10-12)
+**Approved product direction, not a validated commercial implementation.**
+Lightroom Classic is the first RAW development and JPEG export engine via an adapter. Customers must have their own licensed, compatible Lightroom Classic installation. POC B0 passed on one Windows research RAW (profile, ten adjustments read back, exported JPEG). Automated batches, installation, and masking remain unproven. A native renderer is deferred.
+
+## D-019 — Engine-neutral EditIntent and AdobeDevelopRecipe (2026-10-12)
+**Architectural direction, implementation pending.**
+Keep source-side photographer edit intent, exact versioned Adobe settings/profile/process semantics, and calibration/evaluation provenance in separate records. A future renderer requires testing/mapping/retraining; literal Lightroom slider numbers cannot simply be reused. Edited targets never enter inference input.
+
+## D-020 — Event-first automation with human exception review (2026-10-12)
+**Product requirement, not yet delivered.**
+Required event workflow: `ingest → analyze → predict → apply → verify → review → export`. Source/recipe identity, crash-safe jobs, honest unsupported actions, photographer review and verified delivery all matter. A single-RAW POC is not full-event automation, training, or commercial quality evidence.
+
+## D-021 — Lightweight local Lightroom Bridge and source safety (2026-10-12)
+**Security and product direction, rollout not yet verified.**
+The Lua plugin is a minimal executor and must not contain proprietary learning algorithms/secrets. Use local allowlisted and authenticated communication, source checks, job receipts, and retry safety. Never mutate photographer RAWs or write directly to a live `.lrcat` database. Validate installer, Adobe SDK/OS compatibility, licensing, macOS, and privacy before release.
+
+### Decision identifier clarification
+`D_015_RAW_FIRST_SCOPE.md` and `D_016_PHOTOGRAPHER_FIDELITY_FIRST.md` are separate scope amendments and must be cited by pathname. This log already had other D-015 and D-016 headings and D-017 (Profile Learning UX). Those existing entries remain unchanged; v4 decisions use D-018–D-021.
