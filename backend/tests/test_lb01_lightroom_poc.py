@@ -149,7 +149,7 @@ def test_error_result_does_not_pass(test_root):
 def test_legacy_error_without_job_id_fails_closed(test_root):
     root, _, raw = test_root
     bridge.prepare(research_root=root, raw_path=raw)
-    result_file(root).write_text("status=error\\nstage=readback\\nerror=example\\n", encoding="utf-8")
+    result_file(root).write_text("status=error\nstage=readback\nerror=example\n", encoding="utf-8")
     okay, message = bridge.verify(research_root=root)
     assert not okay and "stale result" in message
 
