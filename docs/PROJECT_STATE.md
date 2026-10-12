@@ -8,7 +8,7 @@
 ## Repository and adoption
 - Repository: `WizZerr/PROGRAPHER-V2`; active development mainline: `main`.
 - Verified parent commit before v4 docs adoption: `021dcc16fe4f84ac9546349f224dee8331bc8877`.
-- v4 adoption at commit `0ca3d9c` was documentation-only. LB-01 research adapter is integrated in feature PR #2 for review/merge; no AI quality gate is passed by that integration.
+- v4 adoption at commit `0ca3d9c` was documentation-only. The LB-01 research adapter was merged via PR #2 at `2df653526456345bf2f08a77b35e756f967af2f8`; no AI quality gate is passed by that integration.
 - Prior source/history and existing engineering Parts are preserved; v3.1 master and previous state are archived.
 - v4 decisions D-018–D-021 added without replacing existing D-017 Profile Learning UX.
 - Files `D_015_RAW_FIRST_SCOPE.md` and `D_016_PHOTOGRAPHER_FIDELITY_FIRST.md` are authoritative by pathname; their numeric prefixes collide with other DECISIONS.md historical headings.
@@ -28,12 +28,12 @@ Keep neutral EditIntent and exact AdobeDevelopRecipe separately; moving to anoth
 
 ## LB-01 integration review snapshot — 2026-10-12
 
-- PR #2 contains a minimal repository-owned Lightroom Classic Lua research adapter, Python allowlisted `prepare/verify`, synthetic tests, Hebrew Windows instructions and provenance documentation.
+- Merged PR #2 contains a minimal repository-owned Lightroom Classic Lua research adapter, Python allowlisted `prepare/verify`, synthetic tests, Hebrew Windows instructions and provenance documentation.
 - Integrated Windows single-RAW proof: Adobe Standard, ten Develop readbacks, unchanged source RAW SHA-256, JPEG with 9,154,074 bytes.
 - Source under local regression: `88c49a6` (test worktree); **16 pytest cases PASSED in 0.50s, exit 0**.
 - Scoped error diagnostics were revised after the real Lightroom proof. Positive-path SDK actions were not changed, but the final code revision has not itself been re-tested in Lightroom.
 - GitHub-hosted Actions quota: 2,000/2,000 minutes; workflow `38289239558` failed to *start* due to billing/spending limits. **No hosted CI test execution occurred**. The team chose recorded local testing and manual-only workflow dispatch for this research Part. G0's larger CI requirement remains open.
-- PR #2 merge and safe workstation synchronization remain the finishing steps. No private RAW/catalog or Lightroom result manifests committed.
+- PR #2 merged successfully and its integration files were verified on `main`. Safe workstation synchronization remains (local modified/untracked files must be preserved). No private RAW/catalog or Lightroom result manifests committed.
 
 ## Open gates and risks
 - **G0 OPEN:** PG-00.02 and PG-00.05 remain unfinished.
@@ -43,6 +43,6 @@ Keep neutral EditIntent and exact AdobeDevelopRecipe separately; moving to anoth
 - v0.3.x local mask SDK experiment is paused; keep evidence separate from product status.
 
 ## Next
-**LB-01:** finish PR #2 review/merge and verify the mainline plus safe desktop sync, retaining its Windows single-RAW-only evidence. Then **LB-02:** authenticated local queue/heartbeat/readback/export on 10→100 RAW, with idempotency/recovery. In parallel prepare **DATA-01** as consent/identity/finality/event-safe research, without unauthorized training.
+**LB-01:** repository research integration is merged and mainline-verified. Preserve the Windows single-RAW evidence and perform safe developer-machine sync. Then **LB-02:** authenticated local queue/heartbeat/readback/export on 10→100 RAW, with idempotency/recovery. In parallel prepare **DATA-01** as consent/identity/finality/event-safe research, without unauthorized training.
 
 Do not promote any status merely because the master plan was updated.
