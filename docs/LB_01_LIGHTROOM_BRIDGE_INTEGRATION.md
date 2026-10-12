@@ -44,11 +44,21 @@ POC reference archives saved privately; SHA-256 of archived zips for provenance:
 |---|---|
 | Working original v0.2 SDK code studied and provenance recorded | PASS |
 | Safe repo structure + research-only CLI + plugin source | IMPLEMENTED |
-| Synthetic negative-path tests | PASS locally (14 tests) |
+| Synthetic negative-path tests | PASS locally (16 tests, Windows PowerShell, 0.50s; exit 0) |
 | Actual SDK smoke with NEW integrated code on authorized Windows research copy | **PASS — user-run integrated plugin, 2026-10-12** |
 | Baseline RAW SHA unchanged + Lightroom readbacks + JPEG for new integrated code | **PASS — ten readbacks, profile, unchanged RAW SHA, and 9,154,074-byte JPEG verified** |
 | Real Mac Lightroom smoke | NOT LB-01; required before cross-platform release |
 | LB-01 complete | **WINDOWS EXPERIMENT VERIFIED; PR REVIEW/MERGE PENDING** — not a production capability |
+
+### Final PR #2 code-review and local QA record
+
+- Review basis: `88c49a650bf5de0995ba864a19bc34b2473b9c2f` (integrated code, Lua failure-path correction, focused tests and initial workflow). This was checked out in an isolated detached Git worktree, without changing the user's main worktree.
+- User-run on Windows: `python -m pytest -q backend/tests/test_lb01_lightroom_poc.py` with `PYTHONPATH` directed to the review worktree. **16 passed in 0.50s, exit code 0.**
+- Reviewed error-path correction: the Lua SDK adapter now correlates a failed validated job with its `job_id`, refuses to overwrite `prepared` evidence on preflight failure, and preserves an already successful result if the success dialog fails.
+- GitHub Actions run `38289239558` did **not execute test steps**: the GitHub UI reported that jobs could not start because of account payments or spending limits; billing showed **2,000/2,000 included Actions minutes used**. This is **CI NOT RUN / QUOTA BLOCKED**, not CI PASS or a test failure.
+- Team decision for this research Part: rely on the recorded local synthetic test suite; keep the workflow as `workflow_dispatch` only while the hosted CI quota is exhausted. This scoped exception does **not** satisfy G0's broader final-CI requirements and does not waive required tests for a commercial release.
+- Positive-path Lightroom evidence predates the final Lua error-diagnostic refinement. The original successful SDK operations were left unchanged, but the final source revision has not received a fresh in-Lightroom smoke run. Only claim the existing single-RAW Windows research proof.
+- Final merge into `main` remains subject to PR merge acceptance. No Lightroom masking, unattended batch, Mac validation, photographer model or production Gate is promoted.
 
 ### Windows test evidence (reported by user, without private artifacts)
 
