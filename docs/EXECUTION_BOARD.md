@@ -24,7 +24,7 @@ This board is an execution view, never a second master plan. One active Part per
 | Lane | Next execution Part | Status | Exit criterion |
 |---|---|---|---|
 | Master docs adoption | **PG-00.LB01** | **DONE (docs only)** | v3.1 archived, v4 master/decisions/board/state/README aligned. No Gate advanced. |
-| Lightroom POC integration | **LB-01 / PG-04.LB01** | **WINDOWS POC PASS; PR #2 REVIEW PENDING** | Six integration files, 14 synthetic tests reported locally, real Lightroom readbacks and 9,154,074-byte JPEG, unchanged RAW hash |
+| Lightroom POC integration | **LB-01 / PG-04.LB01** | **WINDOWS POC PASS; 16 LOCAL TESTS PASS; MERGE PENDING** | 16 local synthetic pytest cases PASS (Windows, 0.50s, exit 0) on PR head 88c49a6; real Lightroom single RAW readbacks and 9,154,074-byte JPEG, unchanged RAW hash |
 | Autonomous Bridge queue | **LB-02** | PLANNED | Authenticated loopback, capability check, job ID, heartbeat and 10→100 RAW idempotent apply/readback/export/restart |
 | Photographer data | **DATA-01 / PG-03/06** | RESEARCH READY; G1 BLOCKED | Consent, true source identity, final edit state, source grouping and whole-event split |
 | Personalized model | **BRAIN-01 / PG-07/08** | BLOCKED G1/G2 | Strong baseline, valid source-only features, held-out whole-event audit and confidence/abstain |
@@ -47,6 +47,14 @@ This board is an execution view, never a second master plan. One active Part per
 | G5 — independent beta | NOT PASSED | Tested installer/plugin, entitlement, privacy, recovery and updates |
 | G6 — commercial launch | NOT PASSED | Real multi-photographer evaluation, cost/support, release blockers |
 
+## LB-01 integration review disposition (2026-10-12)
+
+- PR #2 review: expected merge into `main` after all changed files, scope and remote merge status are checked; no new architecture or trained Brain.
+- Local Windows review checkout of `88c49a6`: **16/16 synthetic pytest PASS**, exit 0. This is not Lightroom SDK batch coverage.
+- Hosted CI run `38289239558`: job never started. GitHub Billing showed 2,000/2,000 included Actions minutes used; failure is infrastructure/quota, **not failing test assertions**. Scoped decision: local testing for LB-01, hosted workflow kept manual-only. Do not mark CI green.
+- One-RAW Adobe SDK positive proof is from the integrated plugin prior to the narrow error-reporting refinement; no new Lightroom positive-path validation of that revision is claimed.
+- G0 remains OPEN. G1-G6 are NOT PASSED. A reviewed POC integration may merge without promoting product readiness.
+
 ## Persistent blockers
 - Existing PG-00.02/PG-00.05 blockers: external-drive/relink, final-head CI, historical restore and licensed-camera fixture.
 - Missing Mac Apple Silicon Lightroom end-to-end proof.
@@ -63,4 +71,4 @@ This board is an execution view, never a second master plan. One active Part per
 5. Record SHA, test results, platform, assumptions and failure reason for each Part.
 6. Claims must match the narrowest evidence. A successful POC is not a production-ready feature.
 
-**NEXT:** Review/merge PR #2 for LB-01; then start LB-02 autonomous batch design while DATA-01 engineering remains separate.
+**NEXT:** Complete the checked merge of PR #2 for LB-01, verify files/commit on main and synchronize the developer computer safely; then start LB-02 as a new reviewed Part while DATA-01 remains separate.
