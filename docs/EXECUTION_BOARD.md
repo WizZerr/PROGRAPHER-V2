@@ -11,7 +11,7 @@ This board is an execution view, never a second master plan. One active Part per
 | Component | State | Evidence / limitation |
 |---|---|---|
 | Desktop/event/RAW/Brain contracts | EXISTS | Repository contains Tauri, Next.js, FastAPI, SQLite and research modules; no full-event AI editing proof |
-| **B0 Lightroom single-RAW Bridge** | **PASS, limited** | User-run v0.2: Adobe Standard + 10 Develop readbacks + real JPEG (9,152,353 bytes); v0.1.1 also passed |
+| **B0 Lightroom single-RAW Bridge** | **PASS, limited** | Original v0.2 (9,152,353-byte JPEG), plus newly integrated LB-01 user-verified on one Windows RAW (9,154,074-byte JPEG); no batch/mask proof |
 | Masking | RESEARCH INCOMPLETE | One Subject mask visible, local Exposure still 0.00; creation origin, local edit and masked export not proven |
 | Source RAW scene research | RESEARCH | Local CLIP on 12 original RAW inputs, one abstention; no calibrated or photographer-approved scene accuracy |
 | Photographer training dataset | BLOCKED | 5,208 RAW/catalog filename-only candidates, **0 validated training-ready examples** |
@@ -24,7 +24,7 @@ This board is an execution view, never a second master plan. One active Part per
 | Lane | Next execution Part | Status | Exit criterion |
 |---|---|---|---|
 | Master docs adoption | **PG-00.LB01** | **DONE (docs only)** | v3.1 archived, v4 master/decisions/board/state/README aligned. No Gate advanced. |
-| Lightroom POC integration | **LB-01 / PG-04.LB01** | **READY / NEXT** | Bring local v0.1.1/v0.2.0 POC code into reviewed repository module, synthetic tests and Windows single-RAW regression, source-hash safety |
+| Lightroom POC integration | **LB-01 / PG-04.LB01** | **WINDOWS POC PASS; PR #2 REVIEW PENDING** | Six integration files, 14 synthetic tests reported locally, real Lightroom readbacks and 9,154,074-byte JPEG, unchanged RAW hash |
 | Autonomous Bridge queue | **LB-02** | PLANNED | Authenticated loopback, capability check, job ID, heartbeat and 10→100 RAW idempotent apply/readback/export/restart |
 | Photographer data | **DATA-01 / PG-03/06** | RESEARCH READY; G1 BLOCKED | Consent, true source identity, final edit state, source grouping and whole-event split |
 | Personalized model | **BRAIN-01 / PG-07/08** | BLOCKED G1/G2 | Strong baseline, valid source-only features, held-out whole-event audit and confidence/abstain |
@@ -63,4 +63,4 @@ This board is an execution view, never a second master plan. One active Part per
 5. Record SHA, test results, platform, assumptions and failure reason for each Part.
 6. Claims must match the narrowest evidence. A successful POC is not a production-ready feature.
 
-**NEXT:** `LB-01` freeze/integrate proven Lightroom Bridge, then `LB-02` autonomous batch contract while `DATA-01` engineering runs separately.
+**NEXT:** Review/merge PR #2 for LB-01; then start LB-02 autonomous batch design while DATA-01 engineering remains separate.

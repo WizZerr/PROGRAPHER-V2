@@ -1,6 +1,6 @@
 # LB-01 — Lightroom Bridge research integration (code-review candidate)
 
-**2026-10-12 · Parent: ProGrapher v4.0 · Status: CODE + synthetic tests only, pending REAL Windows Lightroom smoke and review.**
+**2026-10-12 · Parent: ProGrapher v4.0 · Status: REAL Windows Lightroom smoke PASS; PR review/merge pending.**
 
 ## Decision
 
@@ -45,15 +45,23 @@ POC reference archives saved privately; SHA-256 of archived zips for provenance:
 | Working original v0.2 SDK code studied and provenance recorded | PASS |
 | Safe repo structure + research-only CLI + plugin source | IMPLEMENTED |
 | Synthetic negative-path tests | PASS locally (14 tests) |
-| Actual SDK smoke with NEW integrated code on authorized Windows research copy | **PENDING** |
-| Baseline RAW SHA unchanged + Lightroom readbacks + JPEG for new integrated code | **PENDING** |
+| Actual SDK smoke with NEW integrated code on authorized Windows research copy | **PASS — user-run integrated plugin, 2026-10-12** |
+| Baseline RAW SHA unchanged + Lightroom readbacks + JPEG for new integrated code | **PASS — ten readbacks, profile, unchanged RAW SHA, and 9,154,074-byte JPEG verified** |
 | Real Mac Lightroom smoke | NOT LB-01; required before cross-platform release |
-| LB-01 complete | **NOT YET** — awaiting Windows smoke/review |
+| LB-01 complete | **WINDOWS EXPERIMENT VERIFIED; PR REVIEW/MERGE PENDING** — not a production capability |
 
-### Passing the Windows test (do not claim until user run)
+### Windows test evidence (reported by user, without private artifacts)
 
-Refer to `integrations/lightroom_classic/lb01/README_HE.md`. Record `prepare` and `verify` terminal output without private file paths, active research catalog verification, Lightroom version, plugin load, pre/post RAW hash equality, profile and ten readbacks, JPEG size, source identity, and failures. If a mask/local edit appears, do not interpret it as part of LB-01.
+The initial run safely stopped because the dedicated export folder was absent. The local prepare step was subsequently completed, and PowerShell showed the four expected entries (work folder, job.txt, result.txt, exports) present. The user then successfully ran the **new integrated LB-01 Lightroom plugin** and the Python verify step returned:
+
+```text
+PASS: 10 Develop readbacks, profile, original RAW hash and 9,154,074-byte JPEG verified
+```
+
+The verifier checks recipe/readback correspondence, job ID, profile, RAW SHA-256 unchanged since prepare, and a JPEG in the authorized export folder with correct magic bytes and byte count. This **only** proves one authorized Windows research CR3; no batch, masks, AI inference, Mac, or commercial deployment. Exact Lightroom build/version was not reported. Personal image/manifest and catalog remain local.
+
+See `integrations/lightroom_classic/lb01/README_HE.md` for future controlled reproductions.
 
 ### Next
 
-When LB-01 Windows run passes, only then design LB-02 as a separate contract: capability negotiation, authenticated local IPC, job ID/heartbeat, idempotence/restart, bounded 10→100 photo research batch, per-photo audit and source-safe export. Do not add it to LB-01 silently.
+The LB-01 Windows run passed. After review/merge, design LB-02 as a separate contract: capability negotiation, authenticated local IPC, job ID/heartbeat, idempotence/restart, bounded 10→100 photo research batch, per-photo audit and source-safe export. Do not add it to LB-01 silently.
