@@ -145,6 +145,26 @@ def test_error_result_does_not_pass(test_root):
     assert not okay and "LIGHTROOM STOPPED" in msg
 
 
+
+def test_legacy_error_without_job_id_fails_closed(test_root):
+    root, _, raw = test_root
+    bridge.prepare(research_root=root, raw_path=raw)
+    result_file(root).write_text("status=error\\nstage=readback\\nerror=example\\n", encoding="utf-8")
+    okay, message = bridge.verify(research_root=root)
+    assert not okay and "stale result" in message
+
+
+def test_sdk_error_result_correlates_only_a_validated_job():
+    repo = Path(__file__).resolve().parents[2]
+    source = (repo / "integrations" / "lightroom_classic" / "lb01" /
+              "ProGrapherBridge.lrdevplugin" / "RunBridgeTest.lua").read_text(encoding="utf-8")
+    assert source.index("local activeJobId = nil") < source.index("local function run()")
+    assert source.index("activeJobId = fields.job_id") > source.index("pending.status ~= 'prepared'")
+    assert source.index("activeJobId = fields.job_id") < source.index("stage='apply_recipe'")
+    assert "if activeJobId then" in source
+    assert "writeResult('status=error\\njob_id='..activeJobId" in source
+    assert "activeJobId = nil -- success is terminal" in source
+
 def test_sdk_source_guard_static_and_no_personal_filenames():
     repo = Path(__file__).resolve().parents[2]
     plugin = repo / "integrations" / "lightroom_classic" / "lb01" / "ProGrapherBridge.lrdevplugin"
