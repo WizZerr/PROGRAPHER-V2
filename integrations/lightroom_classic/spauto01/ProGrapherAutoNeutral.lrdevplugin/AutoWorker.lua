@@ -155,8 +155,15 @@ local function run()
         end
 
         stage = 'find_master'
+        local allPhotos = catalog:getAllPhotos()
+        -- This run is deliberately FROM SCRATCH. The photographer confirmed
+        -- that every previous research VC was deleted before catalog cloning.
+        -- Abort if a stale VC was included; no implicit reuse or cleanup.
+        if #allPhotos ~= 1 then
+            error('SAFETY STOP: E2E catalog must contain exactly one master and no Virtual Copies')
+        end
         local masters = {}
-        for _, photo in ipairs(catalog:getAllPhotos()) do
+        for _, photo in ipairs(allPhotos) do
             if photo:getRawMetadata('isVirtualCopy') ~= true then
                 masters[#masters+1] = photo
             end
