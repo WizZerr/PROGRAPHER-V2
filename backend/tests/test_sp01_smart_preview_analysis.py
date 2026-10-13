@@ -83,7 +83,9 @@ def test_scene_predictions_fail_closed(tmp_path, bad_guess):
 
 def test_rejects_bad_extensions_and_fake_jpeg(tmp_path):
     png = tmp_path / "fake.png"
-    Image.new("RGB", (100, 100), "white").save(png)
+    noise = np.random.default_rng(5).integers(0, 255, size=(128, 128, 3), dtype=np.uint8)
+    Image.fromarray(noise, mode="RGB").save(png)
+    assert png.stat().st_size > 1024
     with pytest.raises(ValueError, match="JPEG"):
         sp.read_neutral_jpeg(png)
     wrong = tmp_path / "renamed.jpg"
