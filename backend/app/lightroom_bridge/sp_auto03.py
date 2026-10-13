@@ -34,7 +34,7 @@ AGGREGATE_NAME = "SP03_AGGREGATE.json"
 FIELDS = ("version", "job_id", "catalog_path", "export_dir", "operation",
           "neutral_policy", "selection_policy")
 SUCCESS_FIELDS = (
-    "status", "job_id", "jpeg_a", "jpeg_b", "master_uuid", "copy_a_uuid",
+    "status", "job_id", "jpeg_a", "jpeg_b", "jpeg_perturbed", "master_uuid", "copy_a_uuid",
     "copy_b_uuid", "target_fingerprint_unchanged",
     "pre_reset_variants_distinct", "post_reset_full_develop_equal",
     "post_reset_exposure_a", "post_reset_exposure_b",
@@ -74,6 +74,7 @@ def prepare(*, root_override: Path | None = None) -> Path:
     (work / "exports").mkdir()
     (work / "exports" / "A").mkdir()
     (work / "exports" / "B").mkdir()
+    (work / "exports" / "P").mkdir()
     from uuid import uuid4
     job_id = uuid4().hex
     # Both protocols atomically created ONCE; worker cannot claim partial job.
@@ -141,10 +142,13 @@ def verify(*, root_override: Path | None = None) -> tuple[bool, str, dict | None
             return False, "DEVELOP_NEUTRAL_EXPOSURE_FAILED", None
         jpeg_a = Path(result["jpeg_a"])
         jpeg_b = Path(result["jpeg_b"])
+        jpeg_perturbed = Path(result["jpeg_perturbed"])
         if not (_is_valid_jpeg(jpeg_a, work / "exports" / "A")
-                and _is_valid_jpeg(jpeg_b, work / "exports" / "B")):
+                and _is_valid_jpeg(jpeg_b, work / "exports" / "B")
+                and _is_valid_jpeg(jpeg_perturbed, work / "exports" / "P")):
             return False, "INVALID_OR_REDIRECTED_JPEG", None
         pixels = compare_decoded_jpegs(jpeg_a, jpeg_b)
+        intervention = compare_decoded_jpegs(jpeg_perturbed, jpeg_a)
     except (OSError, ValueError, OverflowError, MemoryError):
         return False, "RENDER_VALIDATION_FAILED", None
 
@@ -157,6 +161,13 @@ def verify(*, root_override: Path | None = None) -> tuple[bool, str, dict | None
         "original_raw_offline": True,
         "smart_preview_present": True,
         "two_unique_vc_jpegs": True,
+        "pre_reset_perturbation_rendered": True,
+        "perturbed_pixels_differ_from_reset_baseline": (
+            not intervention["pixel_equal"] if intervention["dimensions_match"] else False
+        ),
+        "counterfactual_perturbation_mean_absolute_rgb_difference_8bit": (
+            intervention["mean_absolute_rgb_difference_8bit"]
+        ),
         "dimensions_match": pixels["dimensions_match"],
         "all_decoded_rgb_pixels_equal": pixels["pixel_equal"],
         "mean_absolute_rgb_difference_8bit": pixels["mean_absolute_rgb_difference_8bit"],
@@ -167,6 +178,8 @@ def verify(*, root_override: Path | None = None) -> tuple[bool, str, dict | None
         "all_custom_lightroom_defaults_proven_safe": False,
         "training_ready": False,
     }
+    if not intervention["dimensions_match"] or intervention["pixel_equal"]:
+        return False, "PERTURBATION_DID_NOT_CHANGE_RENDER", safe
     if not pixels["dimensions_match"] or not pixels["pixel_equal"]:
         return False, "COUNTERFACTUAL_RENDER_MISMATCH", safe
     return True, "PASS_VC_ONLY_RESET_INVARIANCE_NOT_BAKE_FREE", safe
