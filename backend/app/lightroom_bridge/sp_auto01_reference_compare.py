@@ -31,8 +31,15 @@ def compare_verified_auto_to_manual(*, root_override: Path | None = None) -> dic
     state = sp_auto01._fields(work / "result.txt")
     auto = Path(state["jpeg"])
     manual = root / MANUAL_RELATIVE
-    if manual.is_symlink() or not manual.is_file():
+    if (manual.is_symlink() or not manual.is_file()
+        or manual.resolve(strict=True) != manual
+        or not manual.resolve(strict=True).is_relative_to(root)):
         raise ValueError("manual reference is missing or redirected")
+    for parent in manual.parents:
+        if parent == root:
+            break
+        if parent.is_symlink():
+            raise ValueError("redirected manual reference parent")
     # No filenames or UUIDs from the Lightroom catalog are trusted as proof
     # that these are identical photographs. The same-photo assumption is a
     # private research attestation from the photographer.
