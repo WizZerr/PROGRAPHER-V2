@@ -1,7 +1,7 @@
 """SP-AUTO-01: one-photo autonomous neutral-Smart-Preview research bridge.
 
 Two-sided local IPC with an Adobe Lightroom Classic SDK research plug-in.
-*Only* the disposable SP_01_OFFLINE_PROOF catalog is authorized.
+*Only* the disposable SP_01_AUTO_RETRY_01 catalog is authorized.
 Does not modify source files/catalogs itself, train, or open Lightroom.
 Research catalog IS mutated by the Lua worker to create one temporary VC.
 Prepare only once per clean work folder; never retries a partial job.
@@ -16,9 +16,9 @@ from pathlib import Path
 from uuid import uuid4
 
 RESEARCH_NAME = "ProGrapher_Research_Private"
-CATALOG_PARENT = Path("SP_01_Catalog_Test") / "SP_01_OFFLINE_PROOF"
-CATALOG_NAME = "SP_01_OFFLINE_PROOF.lrcat"
-PREVIEW_NAME = "SP_01_OFFLINE_PROOF Smart Previews.lrdata"
+CATALOG_PARENT = Path("SP_01_Catalog_Test") / "SP_01_AUTO_RETRY_01"
+CATALOG_NAME = "SP_01_AUTO_RETRY_01.lrcat"
+PREVIEW_NAME = "SP_01_AUTO_RETRY_01 Smart Previews.lrdata"
 WORK_NAME = "SP_01_AUTO_BRIDGE"
 VERSION = "spauto01-1"
 FORMAT = re.compile(r"[0-9a-f]{32}\Z")
@@ -183,7 +183,7 @@ def main() -> int:
         if args.action == "prepare":
             prepare()
             print("SP-AUTO-01 job PREPARED for background Lightroom plug-in.")
-            print("Open only SP_01_OFFLINE_PROOF.lrcat and wait for the plug-in.")
+            print("Open only SP_01_AUTO_RETRY_01.lrcat and wait for the plug-in.")
             print("No automatic catalog switching, no edits to production catalogs.")
             return 0
         ok, msg = verify()
