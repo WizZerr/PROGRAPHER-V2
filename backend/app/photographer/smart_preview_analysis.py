@@ -151,9 +151,16 @@ def _private_paths(neutral_jpeg: Path, output_dir: Path) -> tuple[Path, Path]:
 
 def run_research(
     neutral_jpeg: Path, output_dir: Path, *, predictor: Any | None = None,
+    human_scene: str | None = None,
 ) -> dict[str, Any]:
     src, dest = _private_paths(neutral_jpeg, output_dir)
     result = analyze_neutral_jpeg(src, predictor=predictor)
+    if human_scene is not None:
+        # Human evaluation is attached only AFTER inference, never sent to CLIP.
+        from app.photographer.smart_preview_ranked_scene import after_inference_human_review
+        result["human_review_PRIVATE"] = after_inference_human_review(
+            result["scene"], human_scene
+        )
     aggregate = {
         "schema": SCHEMA,
         "representation_version": REPRESENTATION,
@@ -181,6 +188,10 @@ def main() -> int:
     cli.add_argument("--offline-smart-preview-confirmed", action="store_true")
     cli.add_argument("--neutral-reset-and-srgb-confirmed", action="store_true")
     cli.add_argument("--run-scene-ai", action="store_true")
+    cli.add_argument("--scene-diagnostics", action="store_true",
+                     help="Keep full zero-shot eight-scene rankings in PRIVATE result")
+    cli.add_argument("--human-scene", type=str, default=None,
+                     help="Optional photographer-confirmed scene (AFTER inference only)")
     cli.add_argument("--allow-model-download", action="store_true")
     args = cli.parse_args()
     if not (args.consent_acknowledged and args.offline_smart_preview_confirmed
@@ -188,17 +199,32 @@ def main() -> int:
         cli.error("private photographer permission, offline Smart Preview and reset/sRGB export must be confirmed")
     if args.allow_model_download and not args.run_scene_ai:
         cli.error("--allow-model-download requires --run-scene-ai")
+    if args.scene_diagnostics and not args.run_scene_ai:
+        cli.error("--scene-diagnostics requires --run-scene-ai")
+    if args.human_scene and not args.scene_diagnostics:
+        cli.error("--human-scene requires --scene-diagnostics")
+
     try:
         predictor = None
         if args.run_scene_ai:
-            from app.photographer.raw_auto_scene_review import LocalClip
-            predictor = LocalClip(allow_model_download=args.allow_model_download)
-        aggregate = run_research(args.neutral_jpeg, args.out_dir, predictor=predictor)
+            if args.scene_diagnostics:
+                from app.photographer.smart_preview_ranked_scene import RankedSmartPreviewClip
+                predictor = RankedSmartPreviewClip(
+                    allow_model_download=args.allow_model_download
+                )
+            else:
+                from app.photographer.raw_auto_scene_review import LocalClip
+                predictor = LocalClip(allow_model_download=args.allow_model_download)
+        aggregate = run_research(
+            args.neutral_jpeg, args.out_dir, predictor=predictor,
+            human_scene=args.human_scene,
+        )
     except (ValueError, OSError, RuntimeError, MemoryError) as exc:
         # No exception messages exposed: may contain private filesystem paths.
         cli.exit(2, "SP-01 STOPPED: " + type(exc).__name__ + " (private inputs unchanged)\n")
     print("SP-01 neutral JPEG analyzed; AI run:", args.run_scene_ai)
     print("Scene uncertain:", aggregate["unknown_or_abstained"])
+    print("Full scene diagnostics:", args.scene_diagnostics)
     print("Training-ready: 0 (source/target anti-leak gate remains open)")
     print("PRIVATE output: keep analysis JSON and neutral JPEG on device")
     return 0
