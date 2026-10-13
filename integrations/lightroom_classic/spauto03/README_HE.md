@@ -74,3 +74,38 @@ finally { $env:PYTHONPATH = $old }
 ```
 
 Only aggregate JSON can be shared. Private JPEG, master target snapshot, local identifiers and catalog must stay local. If error/timeout, preserve all evidence and do not restart or delete. To verify a completed job again without mutation: `python -m app.lightroom_bridge.sp_auto03 verify --research-consent` with correct PYTHONPATH.
+
+## Safe recovery after first DNG-sensitive clone failure
+
+First Windows trial: 27 synthetic tests PASS, but cloned catalog setup returned a masked ValueError. Root cause strongly indicated by our old blanket RAW-extension guard: Lightroom Smart Previews.lrdata contains legitimate lossy DNG preview blocks.
+
+Patched helper strictly permits .dng ONLY inside the fixed authorized Smart Previews.lrdata; rejects all other original RAW files, symlinks, unexpected staging artifacts, modified source, and differences in byte-level checksums between all source and staged files. It can finalize the existing validated .STAGING directory atomically without deleting, recopying or overwriting any prior experiment.
+
+With Lightroom COMPLETELY CLOSED, and from clean detached worktree:
+
+```powershell
+$ErrorActionPreference = "Stop"
+$repo = "C:\Users\Matann\Desktop\PROGRAPHER V2"
+$review = Join-Path $env:TEMP "ProGrapher_SPAUTO01_Review"
+$python = Join-Path $repo "backend\.venv\Scripts\python.exe"
+if (Get-Process | Where-Object { $_.ProcessName -match "Lightroom" }) { throw "CLOSE LIGHTROOM" }
+if (git -C $review status --porcelain) { throw "Research worktree has changes" }
+git -C $repo fetch origin
+if ($LASTEXITCODE -ne 0) { throw "Fetch failed" }
+git -C $review switch --detach origin/feature/sp-auto-03-input-independence
+if ($LASTEXITCODE -ne 0) { throw "Switch failed" }
+$stage = Join-Path $env:USERPROFILE "Documents\ProGrapher_Research_Private\SP_01_Catalog_Test\SP_01_AUTO_LEAK_01.STAGING"
+if (-not (Test-Path -LiteralPath $stage -PathType Container)) { throw "STAGING missing: STOP, no clone retry" }
+$old = $env:PYTHONPATH
+$env:PYTHONPATH = Join-Path $review "backend"
+try {
+  & $python -m pytest -q -rs (Join-Path $review "backend\tests\test_sp_auto03_input_independence.py")
+  if ($LASTEXITCODE -ne 0) { throw "Tests failed; no finalization" }
+  & $python -m app.lightroom_bridge.sp_auto01_retry_setup clone --research-consent --finalize-leakage-staging
+  if ($LASTEXITCODE -ne 0) { throw "Staging validation failed; preserve evidence" }
+}
+finally { $env:PYTHONPATH = $old }
+Write-Host "SP-AUTO-03 CATALOG READY" -ForegroundColor Green
+```
+
+If staging does not exist or verification fails, STOP and report the sanitized error code. No deletion, no retry, and no changes to Lightroom originals. This command does not issue a Lightroom job. Smart Preview source folder and catalog clone require SHA256 byte-perfect validation.
