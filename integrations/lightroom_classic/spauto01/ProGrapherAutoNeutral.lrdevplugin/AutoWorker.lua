@@ -1,5 +1,5 @@
 -- SP-AUTO-01 Lightroom Classic SDK auto worker — RESEARCH ONLY.
--- Only SP_01_OFFLINE_PROOF.lrcat in the user's research tree is permitted.
+-- Only SP_01_AUTO_RETRY_01.lrcat in the user's research tree is permitted.
 -- Mutates ONLY its disposable catalog: creates one VC, resets that VC, exports.
 -- Never applies or resets Develop on the master. No customer catalog support.
 local LrApplication = import 'LrApplication'
@@ -13,9 +13,9 @@ local LrTasks = import 'LrTasks'
 local home = LrPathUtils.getStandardFilePath('home')
 local root = LrPathUtils.child(LrPathUtils.child(home, 'Documents'), 'ProGrapher_Research_Private')
 local study = LrPathUtils.child(root, 'SP_01_Catalog_Test')
-local folder = LrPathUtils.child(study, 'SP_01_OFFLINE_PROOF')
-local catalogPath = LrPathUtils.child(folder, 'SP_01_OFFLINE_PROOF.lrcat')
-local smartDir = LrPathUtils.child(folder, 'SP_01_OFFLINE_PROOF Smart Previews.lrdata')
+local folder = LrPathUtils.child(study, 'SP_01_AUTO_RETRY_01')
+local catalogPath = LrPathUtils.child(folder, 'SP_01_AUTO_RETRY_01.lrcat')
+local smartDir = LrPathUtils.child(folder, 'SP_01_AUTO_RETRY_01 Smart Previews.lrdata')
 local workdir = LrPathUtils.child(folder, 'SP_01_AUTO_BRIDGE')
 local exports = LrPathUtils.child(workdir, 'exports')
 local jobPath = LrPathUtils.child(workdir, 'job.txt')
