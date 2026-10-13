@@ -79,3 +79,11 @@ Current claim: **manual Smart Preview-only neutral export PASS on one research i
 **Additive implementation:** `backend/app/photographer/smart_preview_ranked_scene.py` records all eight fixed-prompt scores, top-3, prompt-set SHA-256, version, library versions, explicitly slow CLIP preprocessing, and optional ground-truth evaluation AFTER inference. Existing RAW analysis and model weights remain unchanged. `--scene-diagnostics --human-scene PORTRAIT` is strictly opt-in; no data is training-ready. Runbook in `integrations/lightroom_classic/sp01/README_HE.md`.
 
 **Validation gate:** locally execute synthetic ranking/privacy tests, then private JPEG top-3 test; collect a small representative labeled sample across distinct sessions and lighting before prompt experimentation. Independent no-leak, target identity and reset consistency gates remain OPEN.
+
+## SP-01.04 — second-neutral-export repeatability (candidate gate, not anti-leakage proof)
+
+After one-image zero-shot diagnostics, before expanding input features or training, test **repeatability of the same Reset Virtual Copy** while the copied RAW remains offline. Lightroom must still show `Smart Preview` alone; export the same copy again to a NEW private directory using identical full-size sRGB JPEG settings (quality, profile, no sharpening/watermark, geometry, metadata policy). Do not modify the photographer's master. Never run this experiment in a live customer catalog.
+
+`backend/app/photographer/smart_preview_repeatability.py` checks two distinct local JPEGs with strict full decoded RGB pixel equality, byte hashes (not published), geometry, MAE, p95 delta, and equality fraction. It refuses to overwrite outputs and writes only a source-identity-free aggregate into private research. **Two matching JPEGs do NOT prove independent exports, uncropped source geometry, or independence from photographer Develop.** A separate leakage intervention on a disposable catalog copy and exact master↔copy provenance check remain required. Model training eligibility remains false.
+
+Synthetic tests: `backend/tests/test_sp01_smart_preview_repeatability.py`. Real Windows/Lightroom proof pending. Existing 22 passed/1 symlink-permission skip applies to earlier diagnostics, not this new module.
