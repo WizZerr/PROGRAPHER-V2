@@ -158,3 +158,22 @@ def test_rejects_symlink_input(tmp_path, monkeypatch):
         pytest.skip("symlink creation unavailable")
     with pytest.raises(ValueError, match="symlink"):
         sp._private_paths(link, root / "OUT")
+
+
+def test_research_sdk_adapter_is_read_only_and_test_catalog_limited():
+    """Static guard; Lightroom behavior still requires a real Windows smoke."""
+    lua = (
+        sp.Path(__file__).resolve().parents[2]
+        / "integrations/lightroom_classic/sp01"
+        / "ProGrapherSmartPreviewResearch.lrdevplugin/ExportNeutralCopy.lua"
+    ).read_text(encoding="utf-8")
+    assert "SP_01_OFFLINE_PROOF.lrcat" in lua
+    assert "neutralCopy:getRawMetadata('isVirtualCopy')" in lua
+    assert "neutralCopy:checkPhotoAvailability()" in lua
+    assert "original:getDevelopSettings()" in lua
+    assert "training_ready=false" in lua
+    for forbidden in (
+        "withWriteAccessDo(", "applyDevelopSettings(", "resetAllDevelopAdjustments(",
+        "createVirtualCopies(", "deleteSmartPreview(", "setRawMetadata(",
+    ):
+        assert forbidden not in lua, f"Research exporter must not mutate catalog: {forbidden}"
