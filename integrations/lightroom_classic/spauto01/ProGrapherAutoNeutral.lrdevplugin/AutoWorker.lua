@@ -229,21 +229,39 @@ local function run()
         stage = 'develop_wait_ready'
         catalog:setSelectedPhotos(copy, {})
         LrApplicationView.switchToModule('develop')
-        local ready = false
-        for _ = 1, 48 do
+        local ready, stableControllerMatches = false, 0
+        for _ = 1, 80 do
             LrTasks.sleep(0.25)
             if LrApplicationView.getCurrentModuleName() == 'develop'
                 and catalog:getTargetPhoto() == copy then
-                -- A switched UI module is not necessarily ready to modify its
-                -- current image. Demand a working Develop-controller readback.
-                local ok, currentExposure = LrTasks.pcall(
+                -- Catalog selection and Develop controller can update at
+                -- different times. Confirm TWO actual adjustments on the
+                -- controller agree with THIS copy, three times in a row.
+                local okExposure, controllerExposure = LrTasks.pcall(
                     LrDevelopController.getValue, 'Exposure'
                 )
-                if ok and type(currentExposure) == 'number'
-                    and currentExposure == currentExposure then
+                local okHighlights, controllerHighlights = LrTasks.pcall(
+                    LrDevelopController.getValue, 'Highlights'
+                )
+                local copySettings = copy:getDevelopSettings()
+                local copyExposure = copySettings and tonumber(copySettings.Exposure2012)
+                local copyHighlights = copySettings and tonumber(copySettings.Highlights2012)
+                if okExposure and okHighlights
+                    and type(controllerExposure) == 'number'
+                    and type(controllerHighlights) == 'number'
+                    and copyExposure and copyHighlights
+                    and math.abs(controllerExposure - copyExposure) <= 0.05
+                    and math.abs(controllerHighlights - copyHighlights) <= 0.5 then
+                    stableControllerMatches = stableControllerMatches + 1
+                else
+                    stableControllerMatches = 0
+                end
+                if stableControllerMatches >= 3 then
                     ready = true
                     break
                 end
+            else
+                stableControllerMatches = 0
             end
         end
         if not ready then
