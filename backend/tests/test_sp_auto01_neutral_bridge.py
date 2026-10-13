@@ -181,6 +181,14 @@ def test_research_lua_auto_bridge_is_armed_only_for_exact_catalog():
     assert "copy:getRawMetadata('masterPhoto') ~= master" in worker
     assert "LrFileUtils.isEmptyDirectory(exports)" in worker
     assert "master_develop_unchanged" in worker
+    # Reset may be a no-op while Develop UI is still loading; never accept an
+    # unverified copy or remove its original master target.
+    assert "LrDevelopController.getValue" in worker
+    assert "develop_wait_ready" in worker
+    assert "develop_reset_readback" in worker
+    assert "SPAUTO_RESET_NO_DEVELOP_CHANGE_AFTER_12S" in worker
+    assert "SPAUTO_RESET_NONZERO_EXPOSURE_REQUIRES_BASELINE_POLICY" in worker
+    assert "SPAUTO_RESET_CROP_STILL_ACTIVE" in worker
     assert "sourcePath" in worker and "checkPhotoAvailability()" in worker
     for forbidden in (
         "master:applyDevelopSettings(", "master:applyDevelopPreset(",
