@@ -6,4 +6,7 @@ return {
     LrForceInitPlugin = true,
     LrInitPlugin = 'InitPlugin.lua',
     LrDisablePlugin = 'ShutdownPlugin.lua',
+    LrLibraryMenuItems = {
+        { title = 'SP-AUTO-01 Research Bridge Status', file = 'Status.lua' },
+    },
 }
