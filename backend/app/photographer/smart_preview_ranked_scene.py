@@ -14,7 +14,7 @@ from typing import Any, Sequence
 from PIL import Image
 
 from app.photographer.raw_auto_scene_review import (
-    LocalClip, MODEL_ID, PROMPTS, PROMPT_KEYS, _rank_relative,
+    MODEL_ID, PROMPTS, PROMPT_KEYS, _rank_relative,
 )
 
 PROMPT_SET_VERSION = "sp01-existing-wedding-scenes-v1"
@@ -81,8 +81,37 @@ def after_inference_human_review(
     }
 
 
-class RankedSmartPreviewClip(LocalClip):
-    """Reuse already-cached CLIP weights once; log all fixed-class scores."""
+class RankedSmartPreviewClip:
+    """Separate SP-01 runtime: same CLIP model as RAW, explicit slow processor."""
+
+    def __init__(self, *, allow_model_download: bool = False):
+        try:
+            import torch
+            import transformers
+            from transformers import AutoProcessor, AutoModelForZeroShotImageClassification
+        except ImportError as exc:
+            raise RuntimeError("Local vision runtime is not installed") from exc
+        try:
+            # Pin slow preprocessing behavior in SP-01. The library's future
+            # default may change; this research route must not drift silently.
+            self.processor = AutoProcessor.from_pretrained(
+                MODEL_ID, local_files_only=not allow_model_download, use_fast=False
+            )
+            self.model = AutoModelForZeroShotImageClassification.from_pretrained(
+                MODEL_ID, local_files_only=not allow_model_download, use_safetensors=True
+            )
+        except (OSError, ValueError) as exc:
+            raise RuntimeError(
+                "Local CLIP weights unavailable; no photo upload or implicit download"
+            ) from exc
+        self.model.eval()
+        self.torch = torch
+        self.runtime = {
+            "transformers_version": transformers.__version__,
+            "torch_version": torch.__version__,
+            "processor_use_fast": False,
+            "model_identifier_is_not_pinned_revision": True,
+        }
 
     def predict(self, neutral_srgb_jpeg: Image.Image) -> dict[str, Any]:
         inputs = self.processor(
@@ -94,4 +123,4 @@ class RankedSmartPreviewClip(LocalClip):
         with self.torch.inference_mode():
             logits = self.model(**inputs).logits_per_image[0]
             scores = self.torch.softmax(logits, dim=-1).detach().cpu().tolist()
-        return ranked_scene_report(scores)
+        return {**ranked_scene_report(scores), "runtime": self.runtime}
