@@ -67,3 +67,15 @@ No customer-facing automation, AI accuracy, model training or catalog-only produ
 - Real SDK automation can remain BLOCKED if unsupported; must not claim PASS based solely on the previous manual export.
 
 Current claim: **manual Smart Preview-only neutral export PASS on one research image; automatic source-only learning pipeline NOT PROVEN**.
+
+## SP-01.03 — Provenance and precision contract (2026-10-13)
+
+**What we can measure** from a Lightroom-exported neutral Smart Preview JPEG: decoded pixel dimensions, source digest, display-referred sRGB luminance/chromatic statistics after explicitly recorded sRGB transfer, sampled clipping proxies, and an uncalibrated, human-reviewable complete rank across the fixed eight CLIP scene prompts. These are **measurements of the rendered neutral JPEG**; JPEG compression and Lightroom defaults still influence them. Camera EXIF or catalog capture metadata such as ISO, shutter, aperture and focal length, if available, belongs to a separately provenance-verified *capture-metadata* channel, not derived from JPEG tone and never confused with Develop values.
+
+**What we cannot honestly recover from Smart Preview alone:** the sensor's original linear pixel values, uncompressed color, physical sensor clipping and noise, accurate sensor dynamic range, or guaranteed neutral independent of the photographer's prior Develop/Camera Default. Reset does not prove source-equivalence. Master Develop, crop/rotation, masks, profile, process version and photographer approval remain target metadata, **never** a source model input.
+
+**Human-confirmed scene for the first private image:** photographer identified `PORTRAIT` (staged couple portrait before the ceremony), while CLIP raw top-1 was `CEREMONY` (relative 0.256, margin 0.0716), with final `UNKNOWN`. One semantic top-1 error; safe abstention worked. Do not tune on this single photo.
+
+**Additive implementation:** `backend/app/photographer/smart_preview_ranked_scene.py` records all eight fixed-prompt scores, top-3, prompt-set SHA-256, version, library versions, explicitly slow CLIP preprocessing, and optional ground-truth evaluation AFTER inference. Existing RAW analysis and model weights remain unchanged. `--scene-diagnostics --human-scene PORTRAIT` is strictly opt-in; no data is training-ready. Runbook in `integrations/lightroom_classic/sp01/README_HE.md`.
+
+**Validation gate:** locally execute synthetic ranking/privacy tests, then private JPEG top-3 test; collect a small representative labeled sample across distinct sessions and lighting before prompt experimentation. Independent no-leak, target identity and reset consistency gates remain OPEN.
