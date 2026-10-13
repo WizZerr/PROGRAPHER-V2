@@ -197,7 +197,7 @@ local function run()
         -- goes to GitHub. This is intentionally a partial target recipe.
         stage = 'snapshot_master'
         local lines = {
-            'schema=prographer.spauto01.master_target.v0',
+            'schema=prographer.spauto03.master_target.v0',
             'job_id='..job.job_id,
             'master_uuid='..printable(uuid),
             'photographer_target_training_approved=false',
@@ -357,7 +357,7 @@ local function run()
                     else
                         stable = 0
                     end
-                    if stable >= 3 then ready = true break end
+                    if stable >= 3 then ready = true; break end
                 else
                     stable = 0
                 end
