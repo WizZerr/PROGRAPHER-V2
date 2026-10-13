@@ -26,9 +26,9 @@ def _completed(tmp_path, *, variant=False):
     work = job.parent
     fields = sp03.earlier._fields(job)
     target = np.random.default_rng(244).integers(0, 255, (128, 128, 3), dtype=np.uint8)
-    for name in ("A", "B"):
+    for name in ("A", "B", "P"):
         arr = target.copy()
-        if variant and name == "B":
+        if name == "P" or (variant and name == "B"):
             arr[40:80, 40:80] = 0
         Image.fromarray(arr).save(work / "exports" / name / "render.jpg",
                                   format="JPEG", quality=95)
@@ -36,6 +36,7 @@ def _completed(tmp_path, *, variant=False):
         "status": "ok", "job_id": fields["job_id"],
         "jpeg_a": str(work / "exports" / "A" / "render.jpg"),
         "jpeg_b": str(work / "exports" / "B" / "render.jpg"),
+        "jpeg_perturbed": str(work / "exports" / "P" / "render.jpg"),
         "master_uuid": "master-1", "copy_a_uuid": "copy-1", "copy_b_uuid": "copy-2",
         "target_fingerprint_unchanged": "true",
         "pre_reset_variants_distinct": "true",
@@ -58,6 +59,7 @@ def test_prepare_is_private_one_shot_and_never_mutates_catalog(tmp_path):
     assert sp03.earlier._fields(prepared)["operation"] == "COUNTERFACTUAL_VC_RESET"
     assert (prepared.parent / "exports" / "A").is_dir()
     assert (prepared.parent / "exports" / "B").is_dir()
+    assert (prepared.parent / "exports" / "P").is_dir()
     with pytest.raises(FileExistsError):
         sp03.prepare(root_override=root)
     assert hashlib.sha256(original.read_bytes()).hexdigest() == fingerprint
@@ -72,6 +74,7 @@ def test_two_distinct_vcs_converge_identical_decoded_pixels_but_stay_not_trainin
     assert message == "PASS_VC_ONLY_RESET_INVARIANCE_NOT_BAKE_FREE"
     assert safe["all_decoded_rgb_pixels_equal"] is True
     assert safe["mean_absolute_rgb_difference_8bit"] == 0
+    assert safe["perturbed_pixels_differ_from_reset_baseline"] is True
     assert safe["historical_smart_preview_bake_free_proven"] is False
     assert safe["training_ready"] is False
     assert (work / "exports" / "A" / "render.jpg").read_bytes() == before_a
@@ -170,8 +173,20 @@ def test_sdk_worker_explicitly_changes_only_b_copy_and_requires_full_fingerprint
     assert "beforeB == beforeA" in worker
     assert "neutralA ~= neutralB" in worker
     assert "resetExportOne(copyA" in worker and "resetExportOne(copyB" in worker
+    assert "exportOne(copyB, exportP" in worker
     assert "LrDevelopController.resetAllDevelopAdjustments()" in worker
     assert "fingerprint(master) ~= originalFingerprint" in worker
     assert "#allPhotos ~= 1" in worker
     assert "deleteSmartPreview(" not in worker
     assert "LrFileUtils.delete(" not in worker
+
+def test_fails_if_perturbation_export_did_not_change_pixels(tmp_path):
+    root, _, work, fields = _completed(tmp_path)
+    source = work / "exports" / "A" / "render.jpg"
+    perturbed = work / "exports" / "P" / "render.jpg"
+    perturbed.write_bytes(source.read_bytes())
+    ok, status, evidence = sp03.verify(root_override=root)
+    assert ok is False
+    assert status == "PERTURBATION_DID_NOT_CHANGE_RENDER"
+    assert evidence["perturbed_pixels_differ_from_reset_baseline"] is False
+    assert evidence["training_ready"] is False
