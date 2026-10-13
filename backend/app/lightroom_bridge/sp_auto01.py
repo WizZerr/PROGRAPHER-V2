@@ -150,10 +150,15 @@ def verify(*, root_override: Path | None = None) -> tuple[bool, str]:
             return False, "INVALID_JPEG_SIZE"
         target = Path(result["target_snapshot"])
         if (target.is_symlink() or target != workdir / "master_target_PRIVATE.txt"
-            or not target.is_file()):
+            or not target.is_file() or not 200 <= target.stat().st_size <= 16 * 1024 * 1024):
             return False, "INVALID_PRIVATE_TARGET"
         if not result["master_uuid"] or result["master_uuid"] == result["copy_uuid"]:
             return False, "INVALID_PHOTO_IDENTITY"
+        target_text = target.read_text(encoding="utf-8")
+        if (f"job_id={job['job_id']}\n" not in target_text
+            or f"master_uuid={result['master_uuid']}\n" not in target_text
+            or "full_develop_serialized_PRIVATE=" not in target_text):
+            return False, "MASTER_TARGET_SNAPSHOT_MISMATCH"
         # Force image decoding rather than trusting path and extension.
         from PIL import Image
         with Image.open(jpeg) as img:
