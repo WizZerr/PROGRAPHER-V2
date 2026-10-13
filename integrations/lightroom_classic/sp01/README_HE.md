@@ -129,14 +129,14 @@ $out = Join-Path $research ("SP_01_RANKED_" + (Get-Date -Format "yyyyMMdd_HHmmss
 $oldPythonPath = $env:PYTHONPATH
 $env:PYTHONPATH = Join-Path $review "backend"
 try {
-    & $python -m app.photographer.smart_preview_analysis \
-        --neutral-jpeg "$jpeg" \
-        --out-dir "$out" \
-        --consent-acknowledged \
-        --offline-smart-preview-confirmed \
-        --neutral-reset-and-srgb-confirmed \
-        --run-scene-ai \
-        --scene-diagnostics \
+    & $python -m app.photographer.smart_preview_analysis `
+        --neutral-jpeg "$jpeg" `
+        --out-dir "$out" `
+        --consent-acknowledged `
+        --offline-smart-preview-confirmed `
+        --neutral-reset-and-srgb-confirmed `
+        --run-scene-ai `
+        --scene-diagnostics `
         --human-scene PORTRAIT
     if ($LASTEXITCODE -ne 0) { throw "SP-01 ranked scene run failed" }
 }
@@ -146,4 +146,4 @@ $r.scene.top_3 | Format-Table rank, label, relative_score -AutoSize
 $r.human_review_PRIVATE | Select-Object ground_truth_rank, top_1_matches_ground_truth, safe_abstention_on_wrong_top_1 | Format-List
 ```
 
-הערה: בגוש PowerShell למעלה מחליפים כל `\` המשמש לסוף שורת פקודה ב־backtick `\x60` לפני הרצה, או משתמשים בפקודה בשורה אחת. אין להעלות את קובץ ה־`PRIVATE.json` ל־GitHub או לצ'אט. דירוגי 8 הסצנות וה־Ground Truth נשמרים רק בדוח הפרטי. תוצאת הרצת המודל תלויה בגרסת משקולות, transformers ו־torch; `use_fast=False` קבוע במסלול הזה.
+אין להעלות את קובץ ה־`PRIVATE.json` ל־GitHub או לצ'אט. דירוגי 8 הסצנות וה־Ground Truth נשמרים רק בדוח הפרטי. תוצאת הרצת המודל תלויה בגרסת משקולות, transformers ו־torch; `use_fast=False` קבוע במסלול הזה.
