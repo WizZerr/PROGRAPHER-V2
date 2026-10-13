@@ -41,7 +41,8 @@ def _size_safe_copytree(origin: Path, dest: Path) -> None:
 def clone(*, private_root: Path | None = None, source_name: str = SOURCE,
           dest_name: str = DEST) -> Path:
     # Explicitly enumerated research-only copies. Never accept arbitrary names.
-    allowed = {(SOURCE, DEST), ("SP_01_AUTO_RETRY_01", "SP_01_AUTO_E2E_01")}
+    allowed = {(SOURCE, DEST), ("SP_01_AUTO_RETRY_01", "SP_01_AUTO_E2E_01"),
+               ("SP_01_AUTO_RETRY_01", "SP_01_AUTO_LEAK_01")}
     if (source_name, dest_name) not in allowed:
         raise ValueError("unauthorized research source/destination pair")
     root = private_root or Path.home() / "Documents" / ROOT_NAME
@@ -92,11 +93,17 @@ def main() -> int:
     p.add_argument("action", choices=["clone"])
     p.add_argument("--research-consent", action="store_true")
     p.add_argument("--e2e-clone", action="store_true", help="Clone cleaned SP_01_AUTO_RETRY_01 to SP_01_AUTO_E2E_01")
+    p.add_argument("--leakage-clone", action="store_true", help="Clone cleaned SP_01_AUTO_RETRY_01 to SP_01_AUTO_LEAK_01")
     args = p.parse_args()
     if not args.research_consent:
         p.error("explicit local research consent required")
+    if args.e2e_clone and args.leakage_clone:
+        p.error("Choose one research clone mode only")
     try:
-        target = clone(source_name="SP_01_AUTO_RETRY_01", dest_name="SP_01_AUTO_E2E_01") if args.e2e_clone else clone()
+        target = (clone(source_name="SP_01_AUTO_RETRY_01", dest_name="SP_01_AUTO_LEAK_01")
+                  if args.leakage_clone else
+                  clone(source_name="SP_01_AUTO_RETRY_01", dest_name="SP_01_AUTO_E2E_01")
+                  if args.e2e_clone else clone())
     except (OSError, ValueError, RuntimeError, FileExistsError) as exc:
         p.exit(2, "SP-AUTO-01 RETRY SETUP STOPPED: " + type(exc).__name__ + "\n")
     print("Created one new disposable Lightroom catalog without negative files.")
