@@ -150,11 +150,8 @@ local function run()
             or LrFileUtils.exists(targetPath) then
             error('SAFETY STOP: research store/output invalid or already used')
         end
-        local entries = LrFileUtils.files(exports) or {}
-        -- LrFileUtils.files() returns an iterator in some Lightroom releases:
-        -- use an explicit destination existence check before and after export.
-        if type(entries) == 'table' and next(entries) then
-            error('SAFETY STOP: export folder not empty')
+        if not LrFileUtils.isEmptyDirectory(exports) then
+            error('SAFETY STOP: export folder must be empty')
         end
 
         stage = 'find_master'
@@ -194,6 +191,10 @@ local function run()
         for _, key in ipairs(TARGET_FIELDS) do
             lines[#lines+1] = 'target_'..key..'='..printable(originalSettings[key])
         end
+        -- Full nested Develop snapshot is private research data. Not parsed by
+        -- the model, and not claimed to be a fully supported training recipe.
+        lines[#lines+1] = 'full_develop_serialized_PRIVATE='..
+            originalFingerprint:gsub('[\r\n]', ' ')
         local targetFile = io.open(targetPath, 'wb')
         if not targetFile then error('Cannot create private target snapshot') end
         targetFile:write(table.concat(lines, '\n')..'\n')
