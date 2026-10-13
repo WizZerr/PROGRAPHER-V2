@@ -163,6 +163,9 @@ def verify(*, root_override: Path | None = None) -> tuple[bool, str, dict | None
         "smart_preview_present": True,
         "two_unique_vc_jpegs": True,
         "pre_reset_perturbation_rendered": True,
+        "perturbation_dimensions_match": intervention["dimensions_match"],
+        "perturbed_dimensions": intervention["first_dimensions"],
+        "neutral_dimensions": intervention["second_dimensions"],
         "perturbed_pixels_differ_from_reset_baseline": (
             not intervention["pixel_equal"] if intervention["dimensions_match"] else False
         ),
@@ -179,7 +182,12 @@ def verify(*, root_override: Path | None = None) -> tuple[bool, str, dict | None
         "all_custom_lightroom_defaults_proven_safe": False,
         "training_ready": False,
     }
-    if not intervention["dimensions_match"] or intervention["pixel_equal"]:
+    if not intervention["dimensions_match"]:
+        # A pre-reset, inherited Crop may yield different output dimensions
+        # from the post-reset uncropped A JPEG. A pixel comparison is then
+        # UNDEFINED, not proof that the perturbation failed.
+        return False, "PERTURBATION_DIMENSIONS_MISMATCH_NOT_COMPARABLE", safe
+    if intervention["pixel_equal"]:
         return False, "PERTURBATION_DID_NOT_CHANGE_RENDER", safe
     if not pixels["dimensions_match"] or not pixels["pixel_equal"]:
         return False, "COUNTERFACTUAL_RENDER_MISMATCH", safe
