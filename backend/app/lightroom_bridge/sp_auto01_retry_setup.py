@@ -219,7 +219,7 @@ def main() -> int:
             "no existing SP03 staging to validate": "STAGING_NOT_FOUND",
         }
         reason = reasons.get(str(exc), type(exc).__name__.upper())
-        p.exit(2, "SP-AUTO-03 CLONE STOPPED: " + reason + "\\n")
+        p.exit(2, "SP-AUTO-03 CLONE STOPPED: " + reason + "\n")
     print("Created one new disposable Lightroom catalog without negative files.")
     print("Open the new catalog after relaunching Lightroom.")
     print("Cloned catalog basename:", target.stem)
