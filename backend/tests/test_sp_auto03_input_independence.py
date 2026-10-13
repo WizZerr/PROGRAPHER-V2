@@ -190,3 +190,107 @@ def test_fails_if_perturbation_export_did_not_change_pixels(tmp_path):
     assert status == "PERTURBATION_DID_NOT_CHANGE_RENDER"
     assert evidence["perturbed_pixels_differ_from_reset_baseline"] is False
     assert evidence["training_ready"] is False
+
+
+def _smart_dng_clone_layout(tmp_path, *, bad_raw=None):
+    root = tmp_path / clone_tool.ROOT_NAME
+    source = root / clone_tool.PARENT / "SP_01_AUTO_RETRY_01"
+    source.mkdir(parents=True)
+    (source / "SP_01_AUTO_RETRY_01.lrcat").write_bytes(b"synthetic clean catalog" * 150)
+    previews = source / "SP_01_AUTO_RETRY_01 Smart Previews.lrdata"
+    (previews / "0" / "00").mkdir(parents=True)
+    (previews / "0" / "00" / "LOSSY_PREVIEW_BLOCK.dng").write_bytes(b"synthetic lossy smart preview" * 50)
+    meta = source / "SP_01_AUTO_RETRY_01.lrcat-data"
+    meta.mkdir()
+    (meta / "mask-data.bin").write_bytes(b"synthetic metadata" * 80)
+    if bad_raw:
+        folder = previews if bad_raw[0] == "preview" else meta
+        (folder / bad_raw[1]).write_bytes(b"synthetic copied original raw" * 40)
+    return root, source
+
+
+def test_clone_permits_lossy_dng_only_inside_smart_preview_store(tmp_path):
+    root, source = _smart_dng_clone_layout(tmp_path)
+    out = clone_tool.clone(
+        private_root=root,
+        source_name="SP_01_AUTO_RETRY_01",
+        dest_name="SP_01_AUTO_LEAK_01",
+    )
+    preview = out.parent / "SP_01_AUTO_LEAK_01 Smart Previews.lrdata"
+    assert (preview / "0" / "00" / "LOSSY_PREVIEW_BLOCK.dng").is_file()
+    assert out.read_bytes() == (source / "SP_01_AUTO_RETRY_01.lrcat").read_bytes()
+    assert not (out.parent / clone_tool.SOURCE).exists()
+
+
+@pytest.mark.parametrize("folder,filename", [
+    ("metadata", "original.dng"),
+    ("metadata", "original.CR3"),
+    ("preview", "original.CR3"),
+])
+def test_disallows_original_raw_outside_smart_dng_exception(tmp_path, folder, filename):
+    root, _ = _smart_dng_clone_layout(tmp_path, bad_raw=(folder, filename))
+    with pytest.raises(ValueError, match="original RAW"):
+        clone_tool.clone(
+            private_root=root, source_name="SP_01_AUTO_RETRY_01",
+            dest_name="SP_01_AUTO_LEAK_01"
+        )
+    assert not (root / clone_tool.PARENT / "SP_01_AUTO_LEAK_01").exists()
+    assert (root / clone_tool.PARENT / "SP_01_AUTO_LEAK_01.STAGING").is_dir()
+
+
+def test_safe_finalize_of_exact_existing_dng_staging(tmp_path):
+    root, source = _smart_dng_clone_layout(tmp_path)
+    result = clone_tool.clone(private_root=root,
+                              source_name="SP_01_AUTO_RETRY_01",
+                              dest_name="SP_01_AUTO_LEAK_01")
+    dest = result.parent
+    staging = dest.with_name(dest.name + ".STAGING")
+    dest.rename(staging)
+    # Preserve/inspect the existing work rather than deleting or recopying it.
+    final = clone_tool.finalize_leakage_staging(private_root=root)
+    assert final == result and final.is_file()
+    assert not staging.exists()
+    assert (source / "SP_01_AUTO_RETRY_01.lrcat").is_file()
+    assert (final.parent / "SP_01_AUTO_LEAK_01 Smart Previews.lrdata" /
+            "0" / "00" / "LOSSY_PREVIEW_BLOCK.dng").is_file()
+    with pytest.raises(FileExistsError):
+        clone_tool.finalize_leakage_staging(private_root=root)
+
+
+def test_tampered_staging_cannot_be_finalized(tmp_path):
+    root, source = _smart_dng_clone_layout(tmp_path)
+    result = clone_tool.clone(private_root=root,
+                              source_name="SP_01_AUTO_RETRY_01",
+                              dest_name="SP_01_AUTO_LEAK_01")
+    dest = result.parent
+    staging = dest.with_name(dest.name + ".STAGING")
+    dest.rename(staging)
+    preview = (staging / "SP_01_AUTO_LEAK_01 Smart Previews.lrdata" /
+               "0" / "00" / "LOSSY_PREVIEW_BLOCK.dng")
+    preview.write_bytes(b"tampered staging contents")
+    with pytest.raises(ValueError, match="checksum mismatch"):
+        clone_tool.finalize_leakage_staging(private_root=root)
+    assert staging.is_dir()  # Forensic evidence must not be deleted.
+    assert not dest.exists()
+
+
+def test_no_existing_staging_no_finalization_or_copy(tmp_path):
+    root, _ = _smart_dng_clone_layout(tmp_path)
+    with pytest.raises(FileNotFoundError):
+        clone_tool.finalize_leakage_staging(private_root=root)
+    assert not (root / clone_tool.PARENT / "SP_01_AUTO_LEAK_01").exists()
+    assert not (root / clone_tool.PARENT / "SP_01_AUTO_LEAK_01.STAGING").exists()
+
+
+def test_staging_with_unexpected_file_is_blocked_without_cleanup(tmp_path):
+    root, _ = _smart_dng_clone_layout(tmp_path)
+    result = clone_tool.clone(private_root=root,
+                              source_name="SP_01_AUTO_RETRY_01",
+                              dest_name="SP_01_AUTO_LEAK_01")
+    dest = result.parent
+    staging = dest.with_name(dest.name + ".STAGING")
+    dest.rename(staging)
+    (staging / "unexpected.txt").write_text("not authorized")
+    with pytest.raises(ValueError, match="unexpected/missing staging"):
+        clone_tool.finalize_leakage_staging(private_root=root)
+    assert staging.exists() and not dest.exists()
