@@ -1,6 +1,6 @@
 # SP-01 — Catalog + Smart Preview Learning Research
 
-**2026-10-13 | Status: SP-01.01 contract only, implementation and automated verification NOT STARTED | ProGrapher Master v4.0 (Lightroom-First).**
+**2026-10-13 | Status: SP-01.01 research implementation committed; synthetic tests and real Lightroom SDK run PENDING | ProGrapher Master v4.0 (Lightroom-First).**
 
 ## Goal and scope
 
@@ -40,6 +40,16 @@ No customer-facing automation, AI accuracy, model training or catalog-only produ
 - Training eligibility remains **false** until photographer consent/finality, whole-event membership, exact identity, leakage audit and G1 are independently verified.
 
 **Source-only anti-leak test:** change photographer Develop in a disposable catalog copy without changing the Smart Preview, regenerate neutral input with identical neutral policy; normalized pixel output must be consistent within predeclared encode tolerance. Compare neutral images and include a negative test that accidentally exported **edited** preview is detected, or fail closed when not detectable. Do not use Lightroom's standard edited Preview as source input.
+
+## Implemented in SP-01 feature branch (NOT YET VERIFIED ON USER PC)
+
+- `backend/app/photographer/smart_preview_analysis.py`: fail-closed, source-only reader for a **previously exported neutral JPEG**; correct sRGB-to-linearized-display metrics; optional reuse of the existing local CLIP scene predictor; research outputs remain private, with an identity-free aggregate and no photographer target in model inputs. Does **not** claim the neutral JPEG was proven independent of Develop.
+- `backend/tests/test_sp01_smart_preview_analysis.py`: synthetic test suite for pixels, deterministic analysis, file immutability, no overwrite, privacy, research-root restrictions, scene unknown/abstention and static Lua research safety; Windows test proof pending.
+- `integrations/lightroom_classic/sp01/ProGrapherSmartPreviewResearch.lrdevplugin/`: research-only, one-photo exporter guarded to exact `SP_01_OFFLINE_PROOF.lrcat`. Reads master Develop separately and exports an already reset selected Virtual Copy only when physical RAW is offline. Does not perform Reset/create VC and is **not yet Lightroom-run**.
+- `integrations/lightroom_classic/sp01/README_HE.md`: Windows detached worktree tests and safe single-JPEG smoke instructions.
+- Note: published Lightroom SDK references `LrCatalog:createVirtualCopies()` and `LrDevelopController.resetAllDevelopAdjustments()`, but version-specific runtime behavior, reset defaults and safe headless operation are not proven; do not assume they solve product-scale automation. Adobe Reset uses configured defaults, not RAW byte reconstruction.
+
+**No code has been merged into main; the Windows test and SDK runtime evidence must precede any status promotion.**
 
 ## Next execution order
 
