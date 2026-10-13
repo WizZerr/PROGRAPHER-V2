@@ -44,7 +44,7 @@ def _success_result(tmp_path, *, result_overrides=None):
         + f"job_id={job_id}\n"
         + "master_uuid=master_A\n"
         + "target_Exposure2012=0.7\n"
-        + "full_develop_serialized_PRIVATE=synthetic\n",
+        + "full_develop_serialized_PRIVATE=" + ("synthetic" * 20) + "\n",
         encoding="utf-8",
     )
     result = {
