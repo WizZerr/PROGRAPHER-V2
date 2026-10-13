@@ -93,3 +93,57 @@ Write-Host "Private report: $out"
 - צימוד סופי בין Photo UUID, Develop/Crop והקלט טרם עבר בקרה מלאה. אין נתוני אימון מאושרים.
 
 **סיום Part התחלתי:** בדיקות סינתטיות + smoke ניתוח JPEG מקומי + review, לפני מיזוג GitHub.
+
+## 6. SP-01.03 — Full scene ranking + human ground truth (NEXT Windows test)
+
+בענף PR #4, הרצת SP-01 הקודמת על ה-JPEG שהופק מ-Smart Preview הצליחה, אך ה־CLIP דירג `CEREMONY` ראשון והחזיר `UNKNOWN`. הצלם אימת שזו תמונת זוגיות מבוימת לפני החופה: `PORTRAIT`. **יש להעריך את הדירוג — לא להתאים מיד Prompts על דוגמה יחידה.**
+
+לסנכרן בבטחה רק את ה-worktree המחקרי הקיים (לא checkout/reset/clean של תיקיית המקור):
+
+```powershell
+$ErrorActionPreference = "Stop"
+$repo = "C:\Users\Matann\Desktop\PROGRAPHER V2"
+$python = Join-Path $repo "backend\.venv\Scripts\python.exe"
+$review = Join-Path $env:TEMP "ProGrapher_SP01_PR4_Review"
+if (-not (Test-Path $review)) { throw "Prior detached research worktree missing" }
+if ((git -C $review status --porcelain)) { throw "Review worktree has local changes; stop" }
+git -C $repo fetch origin
+if ($LASTEXITCODE -ne 0) { throw "Fetch failed" }
+git -C $review switch --detach origin/feature/sp-01-smart-preview-learning-research
+if ($LASTEXITCODE -ne 0) { throw "Detached review switch failed" }
+$oldPythonPath = $env:PYTHONPATH
+$env:PYTHONPATH = Join-Path $review "backend"
+try {
+    & $python -m pytest -q -rs (Join-Path $review "backend\tests\test_sp01_smart_preview_ranked_scene.py")
+    if ($LASTEXITCODE -ne 0) { throw "SP-01 ranked diagnostic tests failed" }
+}
+finally { $env:PYTHONPATH = $oldPythonPath }
+```
+
+רק אחרי מעבר הבדיקות, על תמונת המחקר הקיימת בלבד:
+
+```powershell
+$research = Join-Path $env:USERPROFILE "Documents\ProGrapher_Research_Private"
+$jpeg = Join-Path $research "SP_01_Catalog_Test\SP_01_OFFLINE_PROOF\SP_01_OFFLINE_NEUTRAL_EXPORT\0H1A4577.jpg"
+$out = Join-Path $research ("SP_01_RANKED_" + (Get-Date -Format "yyyyMMdd_HHmmss"))
+$oldPythonPath = $env:PYTHONPATH
+$env:PYTHONPATH = Join-Path $review "backend"
+try {
+    & $python -m app.photographer.smart_preview_analysis \
+        --neutral-jpeg "$jpeg" \
+        --out-dir "$out" \
+        --consent-acknowledged \
+        --offline-smart-preview-confirmed \
+        --neutral-reset-and-srgb-confirmed \
+        --run-scene-ai \
+        --scene-diagnostics \
+        --human-scene PORTRAIT
+    if ($LASTEXITCODE -ne 0) { throw "SP-01 ranked scene run failed" }
+}
+finally { $env:PYTHONPATH = $oldPythonPath }
+$r = Get-Content (Join-Path $out "SP01_ANALYSIS_PRIVATE.json") -Raw | ConvertFrom-Json
+$r.scene.top_3 | Format-Table rank, label, relative_score -AutoSize
+$r.human_review_PRIVATE | Select-Object ground_truth_rank, top_1_matches_ground_truth, safe_abstention_on_wrong_top_1 | Format-List
+```
+
+הערה: בגוש PowerShell למעלה מחליפים כל `\` המשמש לסוף שורת פקודה ב־backtick `\x60` לפני הרצה, או משתמשים בפקודה בשורה אחת. אין להעלות את קובץ ה־`PRIVATE.json` ל־GitHub או לצ'אט. דירוגי 8 הסצנות וה־Ground Truth נשמרים רק בדוח הפרטי. תוצאת הרצת המודל תלויה בגרסת משקולות, transformers ו־torch; `use_fast=False` קבוע במסלול הזה.
