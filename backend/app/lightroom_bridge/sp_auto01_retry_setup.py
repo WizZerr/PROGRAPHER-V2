@@ -82,7 +82,13 @@ def clone(*, private_root: Path | None = None, source_name: str = SOURCE,
     if _fingerprint(original_cat) != _fingerprint(staging / (dest_name + ".lrcat")):
         raise ValueError("catalog bytes changed while cloning")
     # Ensure original RAW copies never get copied across.
-    if list(staging.rglob("*.CR3")) or list(staging.rglob("*.cr3")):
+    raw_extensions = {
+        ".cr2", ".cr3", ".nef", ".nrw", ".arw", ".srf", ".sr2",
+        ".dng", ".raf", ".orf", ".rw2", ".pef", ".iiq",
+        ".3fr", ".fff", ".rwl", ".erf", ".mos", ".k25", ".kdc",
+    }
+    if any(path.is_file() and path.suffix.casefold() in raw_extensions
+           for path in staging.rglob("*")):
         raise ValueError("RAW copy unexpectedly present in staging")
     os.replace(staging, dest)
     return dest / (dest_name + ".lrcat")
