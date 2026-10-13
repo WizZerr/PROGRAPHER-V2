@@ -226,39 +226,80 @@ local function run()
             error('SAFETY STOP: ambiguous virtual copy UUID')
         end
 
-        stage = 'develop_reset'
+        stage = 'develop_wait_ready'
         catalog:setSelectedPhotos(copy, {})
         LrApplicationView.switchToModule('develop')
-        local selectedCopy = false
-        for _ = 1, 25 do
+        local ready = false
+        for _ = 1, 48 do
             LrTasks.sleep(0.25)
             if LrApplicationView.getCurrentModuleName() == 'develop'
                 and catalog:getTargetPhoto() == copy then
-                selectedCopy = true
+                -- A switched UI module is not necessarily ready to modify its
+                -- current image. Demand a working Develop-controller readback.
+                local ok, currentExposure = LrTasks.pcall(
+                    LrDevelopController.getValue, 'Exposure'
+                )
+                if ok and type(currentExposure) == 'number'
+                    and currentExposure == currentExposure then
+                    ready = true
+                    break
+                end
+            end
+        end
+        if not ready then
+            error('SPAUTO_UI_NOT_READY_OR_SELECTION_MISMATCH')
+        end
+        if catalog:getTargetPhoto() ~= copy
+            or copy:getRawMetadata('masterPhoto') ~= master then
+            error('SPAUTO_MASTER_COPY_IDENTITY_CHANGED_BEFORE_RESET')
+        end
+        local copyBeforeReset = fingerprint(copy)
+        stage = 'develop_reset_command'
+        LrDevelopController.resetAllDevelopAdjustments()
+        stage = 'develop_reset_readback'
+        local changed, neutral, exposure = false, nil, nil
+        for _ = 1, 48 do
+            LrTasks.sleep(0.25)
+            if catalog:getTargetPhoto() ~= copy
+                or LrApplicationView.getCurrentModuleName() ~= 'develop' then
+                error('SPAUTO_SELECTION_OR_MODULE_CHANGED_DURING_RESET')
+            end
+            local currentFingerprint = fingerprint(copy)
+            if currentFingerprint ~= copyBeforeReset then
+                changed = true
+                neutral = copy:getDevelopSettings()
+                exposure = neutral and tonumber(neutral.Exposure2012)
                 break
             end
         end
-        if not selectedCopy then
-            error('SAFETY STOP: Develop current-photo guard failed; Reset NOT attempted')
+        if not changed then
+            error('SPAUTO_RESET_NO_DEVELOP_CHANGE_AFTER_12S')
         end
-        if catalog:getTargetPhoto() ~= copy or copy:getRawMetadata('masterPhoto') ~= master then
-            error('SAFETY STOP: current photo changed before Reset')
-        end
-        LrDevelopController.resetAllDevelopAdjustments()
-        LrTasks.sleep(1.5)
-        if catalog:getTargetPhoto() ~= copy then
-            error('SAFETY STOP: photo selection changed after Reset')
-        end
-        -- Explicitly restore full uncropped scene, on the verified copy ONLY.
+        -- Crop must be reset on the verified VC only, never on the master.
         if copy:getRawMetadata('isCropped') == true then
+            stage = 'develop_crop_reset'
             LrDevelopController.resetCrop()
-            LrTasks.sleep(0.7)
+            for _ = 1, 32 do
+                LrTasks.sleep(0.25)
+                if catalog:getTargetPhoto() ~= copy then
+                    error('SPAUTO_SELECTION_CHANGED_DURING_CROP_RESET')
+                end
+                if copy:getRawMetadata('isCropped') ~= true then break end
+            end
         end
-        local neutral = copy:getDevelopSettings()
-        local exposure = neutral and tonumber(neutral.Exposure2012)
-        if not exposure or math.abs(exposure) > 0.01
-            or copy:getRawMetadata('isCropped') == true then
-            error('SAFETY STOP: neutral reset readback failed')
+        stage = 'develop_verify_neutral'
+        neutral = copy:getDevelopSettings()
+        exposure = neutral and tonumber(neutral.Exposure2012)
+        if exposure == nil or exposure ~= exposure then
+            error('SPAUTO_RESET_EXPOSURE_READBACK_UNAVAILABLE')
+        end
+        if math.abs(exposure) > 0.01 then
+            -- A custom camera default or partially applied Reset may produce
+            -- nonzero Exposure; never silently accept this as neutral input.
+            error('SPAUTO_RESET_NONZERO_EXPOSURE_REQUIRES_BASELINE_POLICY')
+        end
+        if copy:getRawMetadata('isCropped') == true then
+            error('SPAUTO_RESET_CROP_STILL_ACTIVE')
         end
         if copy:checkPhotoAvailability() then
             error('SAFETY STOP: original RAW became available')
