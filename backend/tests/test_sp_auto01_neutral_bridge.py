@@ -168,6 +168,9 @@ def test_research_lua_auto_bridge_is_armed_only_for_exact_catalog():
     worker = (base / "AutoWorker.lua").read_text(encoding="utf-8")
     info = (base / "Info.lua").read_text(encoding="utf-8")
     assert "LrForceInitPlugin = true" in info
+    assert "LrLibraryMenuItems" in info
+    assert "file = 'Status.lua'" in info
+    assert (base / "Status.lua").is_file()
     assert "SP_01_OFFLINE_PROOF.lrcat" in worker
     assert "EXACTLY_ONE_MASTER_IN_DISPOSABLE_CATALOG" in worker
     assert "SP_01_OFFLINE_PROOF Smart Previews.lrdata" in worker
