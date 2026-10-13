@@ -144,7 +144,8 @@ def clone(*, private_root: Path | None = None, source_name: str = SOURCE,
           dest_name: str = DEST) -> Path:
     # Explicitly enumerated research-only copies. Never accept arbitrary names.
     allowed = {(SOURCE, DEST), ("SP_01_AUTO_RETRY_01", "SP_01_AUTO_E2E_01"),
-               ("SP_01_AUTO_RETRY_01", "SP_01_AUTO_LEAK_01")}
+               ("SP_01_AUTO_RETRY_01", "SP_01_AUTO_LEAK_01"),
+               ("SP_01_AUTO_RETRY_01", "SP_01_AUTO_LEAK_02")}
     if (source_name, dest_name) not in allowed:
         raise ValueError("unauthorized research source/destination pair")
     root = private_root or Path.home() / "Documents" / ROOT_NAME
@@ -196,14 +197,17 @@ def main() -> int:
     p.add_argument("--e2e-clone", action="store_true", help="Clone cleaned SP_01_AUTO_RETRY_01 to SP_01_AUTO_E2E_01")
     p.add_argument("--leakage-clone", action="store_true", help="Clone cleaned SP_01_AUTO_RETRY_01 to SP_01_AUTO_LEAK_01")
     p.add_argument("--finalize-leakage-staging", action="store_true", help="Verify and atomically finish existing SP03 staging; never recopy or delete")
+    p.add_argument("--crop-control-clone", action="store_true", help="Clone clean retry source to fresh SP03B crop-controlled test catalog")
     args = p.parse_args()
     if not args.research_consent:
         p.error("explicit local research consent required")
     if sum(bool(x) for x in (args.e2e_clone, args.leakage_clone,
-                              args.finalize_leakage_staging)) > 1:
+                              args.finalize_leakage_staging, args.crop_control_clone)) > 1:
         p.error("Choose one research clone/finalize mode only")
     try:
-        target = (finalize_leakage_staging()
+        target = (clone(source_name="SP_01_AUTO_RETRY_01", dest_name="SP_01_AUTO_LEAK_02")
+                  if args.crop_control_clone else
+                  finalize_leakage_staging()
                   if args.finalize_leakage_staging else
                   clone(source_name="SP_01_AUTO_RETRY_01", dest_name="SP_01_AUTO_LEAK_01")
                   if args.leakage_clone else
