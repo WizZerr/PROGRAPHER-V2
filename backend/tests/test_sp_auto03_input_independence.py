@@ -294,3 +294,22 @@ def test_staging_with_unexpected_file_is_blocked_without_cleanup(tmp_path):
     with pytest.raises(ValueError, match="unexpected/missing staging"):
         clone_tool.finalize_leakage_staging(private_root=root)
     assert staging.exists() and not dest.exists()
+
+
+def test_cropped_pre_reset_render_is_uncomparable_not_no_perturbation(tmp_path):
+    root, _, work, _ = _completed(tmp_path)
+    # Simulate a historically cropped VC: before-reset P dimensions differ,
+    # while both post-reset (uncropped) neutral renders match pixel-perfect.
+    preview = work / "exports" / "P" / "render.jpg"
+    with Image.open(preview) as img:
+        img.crop((8, 8, img.width - 8, img.height - 8)).save(
+            preview, format="JPEG", quality=95
+        )
+    ok, reason, report = sp03.verify(root_override=root)
+    assert ok is False
+    assert reason == "PERTURBATION_DIMENSIONS_MISMATCH_NOT_COMPARABLE"
+    assert report["perturbation_dimensions_match"] is False
+    assert report["counterfactual_perturbation_mean_absolute_rgb_difference_8bit"] is None
+    assert report["all_decoded_rgb_pixels_equal"] is True
+    assert report["mean_absolute_rgb_difference_8bit"] == 0
+    assert report["training_ready"] is False
