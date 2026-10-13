@@ -20,6 +20,7 @@ local workdir = LrPathUtils.child(folder, 'SP_03_BRIDGE')
 local exports = LrPathUtils.child(workdir, 'exports')
 local exportA = LrPathUtils.child(exports, 'A')
 local exportB = LrPathUtils.child(exports, 'B')
+local exportP = LrPathUtils.child(exports, 'P')
 local jobPath = LrPathUtils.child(workdir, 'job.txt')
 local resultPath = LrPathUtils.child(workdir, 'result.txt')
 local targetPath = LrPathUtils.child(workdir, 'master_target_PRIVATE.txt')
@@ -154,8 +155,10 @@ local function run()
         end
         if LrFileUtils.exists(exportA) ~= 'directory'
             or LrFileUtils.exists(exportB) ~= 'directory'
+            or LrFileUtils.exists(exportP) ~= 'directory'
             or not LrFileUtils.isEmptyDirectory(exportA)
-            or not LrFileUtils.isEmptyDirectory(exportB) then
+            or not LrFileUtils.isEmptyDirectory(exportB)
+            or not LrFileUtils.isEmptyDirectory(exportP) then
             error('SAFETY STOP: two fresh empty variant export folders required')
         end
 
@@ -291,6 +294,44 @@ local function run()
             error('SP03_MASTER_CHANGED_DURING_PERTURBATION')
         end
 
+        local function exportOne(copy, dest, which)
+            stage = 'export_'..which
+            local session = LrExportSession {
+                photosToExport = {copy},
+                exportSettings = {
+                    LR_exportServiceProvider = 'com.adobe.ag.export.file',
+                    LR_format = 'JPEG', LR_jpeg_quality = 1,
+                    LR_export_colorSpace = 'sRGB',
+                    LR_export_destinationType = 'specificFolder',
+                    LR_export_destinationPathPrefix = dest,
+                    LR_export_useSubfolder = false,
+                    LR_collisionHandling = 'skip',
+                    LR_renamingTokensOn = false, LR_size_doConstrain = false,
+                    LR_outputSharpeningOn = false, LR_useWatermark = false,
+                    LR_reimportExportedPhoto = false,
+                },
+            }
+            local jpeg, count = nil, 0
+            for _, rendition in session:renditions() do
+                local rendered, out = rendition:waitForRender()
+                if not rendered then error('SP03_JPEG_EXPORT_FAILED_'..which) end
+                jpeg, count = out, count + 1
+            end
+            if count ~= 1 or not jpeg or LrFileUtils.exists(jpeg) ~= 'file'
+                or norm(LrPathUtils.parent(jpeg)) ~= norm(dest) then
+                error('SP03_EXPORT_PATH_OR_COUNT_BAD_'..which)
+            end
+            local attrs = LrFileUtils.fileAttributes(jpeg)
+            if not attrs or not attrs.fileSize or attrs.fileSize < 1024 then
+                error('SP03_EXPORT_TOO_SMALL_'..which)
+            end
+            if fingerprint(master) ~= originalFingerprint then
+                error('SP03_MASTER_CHANGED_AFTER_EXPORT_'..which)
+            end
+
+            return jpeg
+        end
+
         local function resetExportOne(copy, dest, which)
             -- Reset only after 3 consecutive controller/photo readback matches.
             stage = 'develop_ready_'..which
@@ -360,42 +401,16 @@ local function run()
                 error('SP03_SOURCE_MASTER_CHANGED_OR_BECAME_AVAILABLE_'..which)
             end
 
-            stage = 'export_'..which
-            local session = LrExportSession {
-                photosToExport = {copy},
-                exportSettings = {
-                    LR_exportServiceProvider = 'com.adobe.ag.export.file',
-                    LR_format = 'JPEG', LR_jpeg_quality = 1,
-                    LR_export_colorSpace = 'sRGB',
-                    LR_export_destinationType = 'specificFolder',
-                    LR_export_destinationPathPrefix = dest,
-                    LR_export_useSubfolder = false,
-                    LR_collisionHandling = 'skip',
-                    LR_renamingTokensOn = false, LR_size_doConstrain = false,
-                    LR_outputSharpeningOn = false, LR_useWatermark = false,
-                    LR_reimportExportedPhoto = false,
-                },
-            }
-            local jpeg, count = nil, 0
-            for _, rendition in session:renditions() do
-                local rendered, out = rendition:waitForRender()
-                if not rendered then error('SP03_JPEG_EXPORT_FAILED_'..which) end
-                jpeg, count = out, count + 1
-            end
-            if count ~= 1 or not jpeg or LrFileUtils.exists(jpeg) ~= 'file'
-                or norm(LrPathUtils.parent(jpeg)) ~= norm(dest) then
-                error('SP03_EXPORT_PATH_OR_COUNT_BAD_'..which)
-            end
-            local attrs = LrFileUtils.fileAttributes(jpeg)
-            if not attrs or not attrs.fileSize or attrs.fileSize < 1024 then
-                error('SP03_EXPORT_TOO_SMALL_'..which)
-            end
-            if fingerprint(master) ~= originalFingerprint then
-                error('SP03_MASTER_CHANGED_AFTER_EXPORT_'..which)
-            end
+            local jpeg = exportOne(copy, dest, which)
             return postFingerprint, exposure, jpeg
         end
 
+        -- Confirm deliberately altered VC B actually renders different pixels
+        -- before reset. Python compares P to A/B after all three exports.
+        if fingerprint(copyB) ~= beforeB then
+            error('SP03_PERTURBATION_CHANGED_BEFORE_EXPORT')
+        end
+        local jpegPerturbed = exportOne(copyB, exportP, 'P')
         local neutralA, exposureA, jpegA = resetExportOne(copyA, exportA, 'A')
         local neutralB, exposureBReset, jpegB = resetExportOne(copyB, exportB, 'B')
         stage = 'full_develop_comparison'
@@ -405,7 +420,8 @@ local function run()
         if fingerprint(master) ~= originalFingerprint then
             error('SP03_MASTER_CHANGED_AT_FINAL_GATE')
         end
-        if LrFileUtils.exists(jpegA) ~= 'file' or LrFileUtils.exists(jpegB) ~= 'file' then
+        if LrFileUtils.exists(jpegA) ~= 'file' or LrFileUtils.exists(jpegB) ~= 'file'
+            or LrFileUtils.exists(jpegPerturbed) ~= 'file' then
             error('SP03_OUTPUT_DISAPPEARED')
         end
 
@@ -413,6 +429,7 @@ local function run()
         writeResult(kv({
             {'status','ok'}, {'job_id',job.job_id},
             {'jpeg_a',jpegA}, {'jpeg_b',jpegB},
+            {'jpeg_perturbed',jpegPerturbed},
             {'master_uuid',uuid}, {'copy_a_uuid',uuidA}, {'copy_b_uuid',uuidB},
             {'target_fingerprint_unchanged','true'},
             {'pre_reset_variants_distinct','true'},
