@@ -90,10 +90,11 @@ def prepare(*, root_override: Path | None = None) -> Path:
 
 
 def _is_valid_jpeg(path: Path, directory: Path) -> bool:
-    if (path.is_symlink() or not path.is_file() or
-        path.suffix.casefold() not in {".jpg", ".jpeg"} or
-        path.stat().st_size < 1024 or
-        path.resolve(strict=True).parent != directory.resolve(strict=True)):
+    if (directory.is_symlink() or directory.parent.is_symlink()
+        or path.is_symlink() or not path.is_file()
+        or path.suffix.casefold() not in {".jpg", ".jpeg"}
+        or path.stat().st_size < 1024
+        or path.resolve(strict=True).parent != directory.resolve(strict=True)):
         return False
     from PIL import Image
     with Image.open(path) as img:
