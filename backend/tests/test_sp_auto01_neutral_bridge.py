@@ -171,10 +171,12 @@ def test_research_lua_auto_bridge_is_armed_only_for_exact_catalog():
     assert "LrLibraryMenuItems" in info
     assert "file = 'Status.lua'" in info
     assert (base / "Status.lua").is_file()
-    assert "SP_01_AUTO_RETRY_01.lrcat" in worker
+    assert "SP_01_AUTO_E2E_01.lrcat" in worker
     assert "EXACTLY_ONE_MASTER_IN_DISPOSABLE_CATALOG" in worker
-    assert "SP_01_AUTO_RETRY_01 Smart Previews.lrdata" in worker
+    assert "SP_01_AUTO_E2E_01 Smart Previews.lrdata" in worker
     assert "catalog:getAllPhotos()" in worker
+    assert "#allPhotos ~= 1" in worker
+    assert "no Virtual Copies" in worker
     assert "catalog:createVirtualCopies(" in worker
     assert "LrDevelopController.resetAllDevelopAdjustments()" in worker
     assert "catalog:getTargetPhoto() ~= copy" in worker

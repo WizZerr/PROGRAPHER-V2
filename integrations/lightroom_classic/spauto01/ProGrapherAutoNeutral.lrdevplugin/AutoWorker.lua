@@ -1,5 +1,5 @@
 -- SP-AUTO-01 Lightroom Classic SDK auto worker — RESEARCH ONLY.
--- Only SP_01_AUTO_RETRY_01.lrcat in the user's research tree is permitted.
+-- Only SP_01_AUTO_E2E_01.lrcat in the user's research tree is permitted.
 -- Mutates ONLY its disposable catalog: creates one VC, resets that VC, exports.
 -- Never applies or resets Develop on the master. No customer catalog support.
 local LrApplication = import 'LrApplication'
@@ -13,9 +13,9 @@ local LrTasks = import 'LrTasks'
 local home = LrPathUtils.getStandardFilePath('home')
 local root = LrPathUtils.child(LrPathUtils.child(home, 'Documents'), 'ProGrapher_Research_Private')
 local study = LrPathUtils.child(root, 'SP_01_Catalog_Test')
-local folder = LrPathUtils.child(study, 'SP_01_AUTO_RETRY_01')
-local catalogPath = LrPathUtils.child(folder, 'SP_01_AUTO_RETRY_01.lrcat')
-local smartDir = LrPathUtils.child(folder, 'SP_01_AUTO_RETRY_01 Smart Previews.lrdata')
+local folder = LrPathUtils.child(study, 'SP_01_AUTO_E2E_01')
+local catalogPath = LrPathUtils.child(folder, 'SP_01_AUTO_E2E_01.lrcat')
+local smartDir = LrPathUtils.child(folder, 'SP_01_AUTO_E2E_01 Smart Previews.lrdata')
 local workdir = LrPathUtils.child(folder, 'SP_01_AUTO_BRIDGE')
 local exports = LrPathUtils.child(workdir, 'exports')
 local jobPath = LrPathUtils.child(workdir, 'job.txt')
@@ -155,8 +155,15 @@ local function run()
         end
 
         stage = 'find_master'
+        local allPhotos = catalog:getAllPhotos()
+        -- This run is deliberately FROM SCRATCH. The photographer confirmed
+        -- that every previous research VC was deleted before catalog cloning.
+        -- Abort if a stale VC was included; no implicit reuse or cleanup.
+        if #allPhotos ~= 1 then
+            error('SAFETY STOP: E2E catalog must contain exactly one master and no Virtual Copies')
+        end
         local masters = {}
-        for _, photo in ipairs(catalog:getAllPhotos()) do
+        for _, photo in ipairs(allPhotos) do
             if photo:getRawMetadata('isVirtualCopy') ~= true then
                 masters[#masters+1] = photo
             end
