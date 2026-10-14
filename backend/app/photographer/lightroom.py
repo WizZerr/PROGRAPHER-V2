@@ -204,10 +204,24 @@ def probe_catalog(path: str | Path) -> LightroomCatalogProbe:
             note="הקובץ אינו קטלוג Lightroom מסוג .lrcat.",
         )
 
+    # A busy/live Lightroom catalog is not a safe snapshot. Never read its
+    # WAL with immutable=1, and do not copy/rewrite/delete its sidecars.
+    sidecars = [
+        Path(str(catalog) + suffix) for suffix in ("-wal", "-shm", ".lock")
+    ]
+    if any(path.exists() for path in sidecars):
+        return LightroomCatalogProbe(
+            path=str(catalog.resolve()), exists=True, readable=False,
+            sqlite_valid=False, catalog_photo_records=None,
+            note="Lightroom catalog has WAL/SHM/lock files. Close Lightroom and select a finalized COPY."
+        )
+
     try:
-        uri = catalog.resolve().as_uri() + "?mode=ro"
+        uri = catalog.resolve().as_uri() + "?mode=ro&immutable=1"
         with sqlite3.connect(uri, uri=True) as db:
             db.execute("PRAGMA query_only = ON")
+            if db.execute("PRAGMA quick_check").fetchone()[0] != "ok":
+                raise sqlite3.DatabaseError("SQLite quick_check failed")
 
             row = db.execute(
                 """
@@ -222,7 +236,7 @@ def probe_catalog(path: str | Path) -> LightroomCatalogProbe:
                     path=str(catalog.resolve()),
                     exists=True,
                     readable=True,
-                    sqlite_valid=True,
+                    sqlite_valid=False,
                     catalog_photo_records=None,
                     note=(
                         "הקטלוג נפתח, אך מבנה Adobe_images לא זוהה. "

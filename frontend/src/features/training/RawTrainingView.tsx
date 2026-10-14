@@ -52,13 +52,13 @@ function MethodCard({ kind, onSelect }: { kind: RawMethod; onSelect: () => void 
   return (
     <button type="button" className={`${styles.choiceCard} ${catalog ? styles.recommended : ""}`} onClick={onSelect}
       aria-label={catalog ? "בחירת מקור עריכה: Lightroom Catalog" : "בחירת מקור עריכה: קובצי XMP"}>
-      <span className={styles.choiceTag} dir="ltr">{catalog ? "LRCAT" : "XMP"}</span>
+      <span className={styles.choiceTag} dir="ltr">{catalog ? "CATALOG" : "XMP"}</span>
       {catalog && <span className={styles.recommendation}><Icon name="star" size={16}/> מומלץ לחומר שבידך</span>}
       <span className={styles.choiceBody}>
         <span className={styles.choiceText}>
           <strong>{catalog ? <span dir="ltr">Lightroom Catalog</span> : "קובצי XMP"}</strong>
           <span>{catalog
-            ? "בחירת קטלוג Lightroom קיים המכיל את הוראות העריכה של הצלם, לצד קובצי RAW מקוריים."
+            ? "Lightroom Catalog יחד עם Smart Previews תואמות, ללא RAW מקוריים מהאירועים הישנים."
             : "בחירת קובצי XMP נלווים ל־RAW כדי לקרוא את הוראות העריכה השמורות בהם."}</span>
         </span>
         <span className={styles.choiceArt} aria-hidden="true">
@@ -67,9 +67,9 @@ function MethodCard({ kind, onSelect }: { kind: RawMethod; onSelect: () => void 
         </span>
       </span>
       <span className={styles.benefitRail}>
-        <span><Icon name={catalog ? "database" : "folder"} size={19}/>{catalog ? "קובץ ‎.lrcat" : "קובצי צד XMP"}</span>
+        <span><Icon name={catalog ? "database" : "folder"} size={19}/>{catalog ? "Catalog + Smart Previews" : "קובצי צד XMP"}</span>
         <span><Icon name="sliders" size={19}/>הגדרות עריכה קיימות</span>
-        <span><Icon name={catalog ? "layers" : "image"} size={19}/>לצד תמונות RAW</span>
+        <span><Icon name={catalog ? "layers" : "image"} size={19}/>ללא RAW היסטורי</span>
       </span>
       <span className={styles.cardBottom}>
         <span className={styles.roundArrow}><Icon name="arrow" size={24}/></span>
@@ -112,8 +112,8 @@ export default function RawTrainingView({
         </button>
         <div className={styles.heroCopy}>
           <span className={styles.kicker}>בניית הפרופיל</span>
-          <h1>למידה לפי <bdi>RAW</bdi></h1>
-          <p>מסלול RAW אחד. בוחרים מקור להוראות העריכה של Lightroom, ואז את הקבצים המתאימים.</p>
+          <h1>למידה מהיסטוריית <bdi>Lightroom</bdi></h1>
+          <p>בוחרים Lightroom Catalog ו־Smart Previews. קובצי RAW מקוריים נדרשים רק באירוע חדש.</p>
         </div>
         <div className={styles.heroArt} aria-hidden="true">
           <Image src="/training-raw-hero.png" alt="" width={500} height={249} unoptimized priority />
@@ -128,27 +128,27 @@ export default function RawTrainingView({
         <span className={`${styles.stepConnector} ${onStepTwo ? styles.stepConnectorDone : ""}`} aria-hidden="true" />
         <div className={`${styles.step} ${onStepTwo ? styles.activeStep : ""}`} aria-current={onStepTwo ? "step" : undefined}>
           <span className={styles.stepCircle}>2</span>
-          <span><strong>בחירת חומר</strong><small>בחירת קובצי RAW ללמידה</small></span>
+          <span><strong>בחירת חומר</strong><small>Catalog ו־Smart Previews</small></span>
         </div>
       </nav>
 
       <section className={styles.stage} aria-label={onStepTwo ? "בחירת חומר" : "בחירת מקור עריכות"}>
         <div className={styles.stageHeading}>
-          <h2>{onStepTwo ? method === "catalog" ? "בחר את ה־RAW וקטלוג Lightroom" : "בחר את ה־RAW וקובצי XMP" : "איך נקרא את עריכות Lightroom?"}</h2>
+          <h2>{onStepTwo ? method === "catalog" ? "בחר Lightroom Catalog ו־Smart Previews" : "מסלול XMP ישן — לא פעיל" : "איך נקרא את עריכות Lightroom?"}</h2>
           <p>{onStepTwo
             ? "בחר את החומר הקיים. בחירה ושמירה אינן מפעילות אימון AI או משנות את קובצי המקור."
-            : "יש לנו מסלול RAW אחד. כעת בוחרים מאיזה מקור נקרא את הגדרות העריכה שכבר קיימות."}</p>
+            : "מקור הלמידה הוא Lightroom Catalog עם Smart Previews תואמות."}</p>
         </div>
 
         {!onStepTwo ? (
           <div className={styles.choiceGrid}>
             <MethodCard kind="catalog" onSelect={() => onChooseMethod("catalog")}/>
-            <MethodCard kind="xmp" onSelect={() => onChooseMethod("xmp")}/>
+            {/* Historical XMP/RAW route is preserved in code but not offered as Stage 1 intake. */}
           </div>
         ) : (
           <div className={styles.materialStage}>
             <div className={styles.materialGrid}>
-              <MaterialCard label="תיקיית RAW מקור" value={sourceRoot} onClick={onChooseSource} busy={busy}/>
+              <MaterialCard label="Smart Previews (.lrdata)" value={sourceRoot} onClick={onChooseSource} busy={busy}/>
               <MaterialCard label={method === "catalog" ? "Lightroom Catalog (.lrcat)" : "תיקיית עריכות XMP"}
                 value={method === "catalog" ? catalogPath : editsRoot}
                 onClick={method === "catalog" ? onChooseCatalog : onChooseEdits} busy={busy}/>
@@ -158,7 +158,7 @@ export default function RawTrainingView({
               <button className={styles.ghostButton} type="button" onClick={onBack}>שנה מקור עריכה</button>
               {method === "catalog" ? (
                 <button className={styles.primaryButton} type="button" onClick={onSaveCatalog} disabled={!sourceReady || busy}>
-                  {catalogSaved ? "שמור שוב את הגדרת החומר" : "שמור הגדרת חומר"}
+                  {catalogSaved ? "בדוק שוב את המקורות" : "בדוק שמירת מקורות"}
                 </button>
               ) : (
                 <button className={styles.primaryButton} type="button" onClick={onCheckMaterial} disabled={!sourceReady || busy}>
@@ -168,8 +168,8 @@ export default function RawTrainingView({
             </div>
             {method === "catalog" && catalogSaved && (
               <div className={styles.result} role="status">
-                <Icon name="check" size={24}/>
-                <span><strong>נתיבי החומר נשמרו</strong><small>{catalogRecords === null ? "Lightroom Catalog נבחר" : `${catalogRecords.toLocaleString("he-IL")} רשומות בקטלוג`}. עדיין לא בוצע אימון Brain.</small></span>
+                <Icon name="info" size={24}/>
+                <span><strong>המקורות נבחרו — ממתינים לאימות מלא</strong><small>{catalogRecords === null ? "Lightroom Catalog נבחר" : `${catalogRecords.toLocaleString("he-IL")} רשומות בקטלוג`}. שיוך תמונות, תקינות Smart Previews וניטרליות קלט עדיין לא אומתו. אין דוגמאות מאושרות לאימון.</small></span>
                 <button type="button" onClick={onReturnProfile}>חזרה לפרופיל</button>
               </div>
             )}
@@ -182,7 +182,7 @@ export default function RawTrainingView({
             )}
           </div>
         )}
-        <p className={styles.truthNote}><Icon name="info" size={17}/> בחירת מקור העריכות מכינה את הנתונים. הלמידה עצמה תתחיל רק לאחר אימות החומר.</p>
+        <p className={styles.truthNote}><Icon name="info" size={17}/> בחירת המקורות אינה אימות התאמה או כשירות לאימון. ניתוח ולמידה מתחילים רק לאחר שערי איכות נפרדים.</p>
       </section>
     </main>
   );

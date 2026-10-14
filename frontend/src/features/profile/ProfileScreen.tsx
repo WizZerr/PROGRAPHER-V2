@@ -49,36 +49,35 @@ function catalogStatus(binding?: CatalogBinding): string {
 
 function rawStatus(
   profile: TestingProfile | null,
-  catalog?: CatalogBinding,
+  setup: PhotographerSetupOverview | null,
 ): { state: RouteState; label: string; source: string } {
-  if (profile?.usable_pairs && profile.usable_pairs > 0) {
+  const catalog = setup?.setup.catalog_path;
+  const previews = setup?.setup.smart_previews_path;
+  if (catalog && previews) {
     return {
-      state: "ready",
-      label: `${profile.usable_pairs.toLocaleString("he-IL")} זוגות RAW/XMP`,
-      source: "עריכות דרך XMP",
+      state: "pending",
+      label: "שני המקורות נבחרו · נדרש אימות",
+      source: "Lightroom Catalog + Smart Previews (שיוך תמונות טרם אומת)",
     };
   }
-
   if (catalog) {
     return {
-      state: "ready",
-      label: catalogStatus(catalog),
-      source: "עריכות דרך Lightroom Catalog",
+      state: "pending",
+      label: "Smart Previews חסרות",
+      source: "נבחר קטלוג, אך טרם נבחרו Smart Previews",
     };
   }
-
   if (profile) {
     return {
       state: "pending",
-      label: "נבדק · אין חומר שמיש",
-      source: "עריכות דרך XMP",
+      label: "נתוני מחקר ישנים · נדרשת קליטה חדשה",
+      source: "מסלול היסטורי פעיל: Catalog + Smart Previews בלבד",
     };
   }
-
   return {
     state: "idle",
     label: "לא הוגדר",
-    source: "XMP או Lightroom Catalog",
+    source: "Catalog + Smart Previews, ללא RAW היסטורי",
   };
 }
 
@@ -257,6 +256,7 @@ export default function ProfileScreen() {
 
   const [jpegProfile, setJpegProfile] = useState<TestingProfile | null>(null);
   const [rawProfile, setRawProfile] = useState<TestingProfile | null>(null);
+  const [rawSetup, setRawSetup] = useState<PhotographerSetupOverview | null>(null);
   const [catalogBindings, setCatalogBindings] = useState<
     Partial<Record<LearningMedia, CatalogBinding>>
   >({});
@@ -293,6 +293,7 @@ export default function ProfileScreen() {
       ]);
 
       applyOverview(setup);
+      setRawSetup(setup);
       setJpegProfile(jpeg);
       setRawProfile(raw);
       setCatalogBindings(loadCatalogBindings());
@@ -366,21 +367,18 @@ export default function ProfileScreen() {
   }
 
   const jpegCatalog = catalogBindings.jpeg;
-  const rawCatalog = catalogBindings.raw;
-  const rawLearning = rawStatus(rawProfile, rawCatalog);
+  const rawCatalog = Boolean(rawSetup?.setup.catalog_path);
+  const rawPreviews = Boolean(rawSetup?.setup.smart_previews_path);
+  const rawLearning = rawStatus(rawProfile, rawSetup);
 
   const jpegConfigured =
     Number(Boolean(jpegProfile)) + Number(Boolean(jpegCatalog));
-  const rawConfigured = Number(Boolean(rawProfile) || Boolean(rawCatalog));
-  const totalConfigured = jpegConfigured + rawConfigured;
+  const rawConfigured = Number(rawCatalog && rawPreviews);
 
   const profileStatus = useMemo(() => {
-    if (totalConfigured === 0) return "עדיין לא הוגדר";
-    if (jpegConfigured === 2 && rawConfigured === 1) {
-      return "כל מסלולי הלמידה הוגדרו";
-    }
-    return "בתהליך בנייה";
-  }, [jpegConfigured, rawConfigured, totalConfigured]);
+    if (rawConfigured === 1) return "מקורות הלמידה נבחרו · אימות התוכן עדיין פתוח";
+    return "קליטת Lightroom טרם הושלמה";
+  }, [rawConfigured]);
 
   return (
     <section className={styles.screen}>
@@ -392,8 +390,8 @@ export default function ProfileScreen() {
           <span className={styles.eyebrow}>הפרופיל שלי</span>
           <h1>סגנון העריכה של {profileOwnerLabel}</h1>
           <p>
-            כאן רואים את מצב הלמידה שלך. JPEG ו־RAW נשמרים בנפרד,
-            וכל מסלול מציג רק מידע שבאמת נמדד.
+            קליטת ההיסטוריה הפעילה משתמשת ב־Catalog ו־Smart Previews. מחקר JPEG הישן מוקפא;
+            בחירת מקורות אינה אישור אימון.
           </p>
         </div>
 
@@ -506,18 +504,19 @@ export default function ProfileScreen() {
             <div className={styles.paneIdentity}>
               <span className={styles.mediaMonogram}>J</span>
               <div>
-                <span className={styles.paneEyebrow}>JPEG LEARNING</span>
-                <h2>למידה לפי JPEG</h2>
-                <p>שני מנגנוני למידה עצמאיים לאותו workflow.</p>
+                <span className={styles.paneEyebrow}>LEGACY JPEG RESEARCH — PAUSED</span>
+                <h2>מחקר JPEG היסטורי — מוקפא</h2>
+                <p>נשמר לצורכי מחקר בלבד, ואינו מסלול הלמידה הפעיל.</p>
               </div>
             </div>
 
             <button
               className={styles.paneAction}
               type="button"
-              onClick={() => openLearning("jpeg")}
+              disabled
+              title="מחקר JPEG הוקפא לפי החלטת המוצר D-022"
             >
-              <span>{jpegConfigured > 0 ? "המשך הגדרה" : "התחל הגדרה"}</span>
+              <span>מוקפא</span>
               <span aria-hidden="true">←</span>
             </button>
           </header>
@@ -579,9 +578,9 @@ export default function ProfileScreen() {
             <div className={styles.paneIdentity}>
               <span className={styles.mediaMonogram}>R</span>
               <div>
-                <span className={styles.paneEyebrow}>RAW LEARNING</span>
-                <h2>למידה לפי RAW</h2>
-                <p>Brain אחד שמתבסס על החלטות Lightroom.</p>
+                <span className={styles.paneEyebrow}>LIGHTROOM LEARNING</span>
+                <h2>למידה מהיסטוריית Lightroom</h2>
+                <p>Catalog + Smart Previews. RAW מקוריים נדרשים רק באירוע חדש.</p>
               </div>
             </div>
 
@@ -602,13 +601,13 @@ export default function ProfileScreen() {
               </span>
               <div className={styles.capabilityMain}>
                 <div>
-                  <strong>RAW + Lightroom</strong>
+                  <strong>Catalog + Smart Previews</strong>
                   <span className={styles.capabilityNumber}>01</span>
                 </div>
                 <small>{rawLearning.source}</small>
               </div>
               <div className={styles.capabilityStatus}>
-                <span>RAW</span>
+                <span>LRCAT</span>
                 <StatusPill state={rawLearning.state}>
                   {rawLearning.label}
                 </StatusPill>
@@ -617,10 +616,8 @@ export default function ProfileScreen() {
           </div>
 
           <div className={styles.sourceStrip}>
-            <span className={styles.sourceLabel}>מקורות עריכה</span>
-            <span className={rawProfile ? styles.sourceActive : styles.sourceChip}>
-              XMP
-            </span>
+            <span className={styles.sourceLabel}>חומרי למידה</span>
+            <span className={rawPreviews ? styles.sourceActive : styles.sourceChip}>SMART PREVIEWS</span>
             <span className={rawCatalog ? styles.sourceActive : styles.sourceChip}>
               LRCAT
             </span>
@@ -633,7 +630,7 @@ export default function ProfileScreen() {
             </div>
             <div className={styles.footerNote}>
               <span className={styles.footerIcon}><VisualGlyph kind="chart" /></span>
-              <small>XMP ו־LRCAT הם מקורות לאותו Brain</small>
+              <small>קליטה בלבד; שיוך ונתוני אימון טרם אומתו</small>
             </div>
           </footer>
         </article>

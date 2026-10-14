@@ -18,6 +18,17 @@ class LightroomCatalogResponse(BaseModel):
     note: str
 
 
+class SmartPreviewsResponse(BaseModel):
+    path: str
+    exists: bool
+    readable: bool
+    asset_files: int
+    total_bytes: int
+    name_matches_catalog: bool
+    identity_verified: bool
+    note: str
+
+
 class EditsFolderResponse(BaseModel):
     path: str
     exists: bool
@@ -38,6 +49,7 @@ class PhotographerSetupResponse(BaseModel):
         "none",
     ] | None
     catalog_path: str | None
+    smart_previews_path: str | None
     edits_folder_path: str | None
     style_name: str | None
     preset_path: str | None
@@ -60,11 +72,16 @@ class PhotographerSetupOverviewResponse(BaseModel):
     discovered_presets: list[LightroomPresetResponse]
     setup: PhotographerSetupResponse
     selected_catalog: LightroomCatalogResponse | None
+    selected_smart_previews: SmartPreviewsResponse | None
     selected_edits_folder: EditsFolderResponse | None
     readiness_reasons: list[str]
 
 
 class SelectCatalogRequest(BaseModel):
+    path: str = Field(min_length=1)
+
+
+class SelectSmartPreviewsRequest(BaseModel):
     path: str = Field(min_length=1)
 
 

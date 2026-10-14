@@ -1,5 +1,7 @@
 # D-016 — Photographer Style Fidelity First
 
+> **D-022 historical-source amendment (2026-10-14):** historical learning uses Catalog + Smart Previews, with strictly validated source-neutral input features; historical original RAW is not required. RAW-source statements below describe earlier research and remain valid for new-event inference and original-RAW experiments. No historical Smart Preview input is trainable merely because it renders after Reset.
+
 Date: 2026-10-11
 Status: Product-owner direction confirmed in conversation. Research plan only; no training or quality gates approved.
 Authority: docs/MASTER_PLAN_SOURCE_OF_TRUTH.md

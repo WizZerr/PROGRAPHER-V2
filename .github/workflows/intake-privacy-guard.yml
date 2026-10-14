@@ -1,0 +1,20 @@
+name: Historical intake privacy guard
+
+on:
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  prevent-private-asset-commits:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Check tracked file paths for private photographer assets
+        run: python backend/tools/check_private_assets.py

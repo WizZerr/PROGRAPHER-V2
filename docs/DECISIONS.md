@@ -202,3 +202,8 @@ The Lua plugin is a minimal executor and must not contain proprietary learning a
 
 ### Decision identifier clarification
 `D_015_RAW_FIRST_SCOPE.md` and `D_016_PHOTOGRAPHER_FIDELITY_FIRST.md` are separate scope amendments and must be cited by pathname. This log already had other D-015 and D-016 headings and D-017 (Profile Learning UX). Those existing entries remain unchanged; v4 decisions use D-018–D-021.
+
+
+## D-022 — Historical learning is Catalog + Smart Previews (2026-10-14)
+
+**APPROVED PRODUCT INPUT CONTRACT; IMPLEMENTATION OPEN.** See [full decision](D_022_HISTORICAL_SMART_PREVIEWS_CONTRACT.md). Historical training requires Lightroom Classic .lrcat and matching Smart Previews.lrdata; **never require historical RAW**. RAW remains the source for NEW event editing. This narrows earlier D-015/D-016 historical RAW assumptions while preserving consent, finality, event splits, source-neutrality and zero-leakage requirements. Stage 1/2 and all ML Gates remain unverified. Windows scope is certified first; macOS is a separate final certification after Windows core completion.
