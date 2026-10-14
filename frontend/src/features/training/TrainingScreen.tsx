@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { open } from "@tauri-apps/plugin-dialog";
-import { selectLightroomCatalog } from "@/features/profile/profile.api";
+import { getPhotographerSetup, selectLightroomCatalog, selectSmartPreviews } from "@/features/profile/profile.api";
 import {
   createTestingProfile,
   getTestingProfile,
@@ -45,7 +45,7 @@ export default function TrainingScreen() {
   const media = entry?.media ?? null;
 
   const [method, setMethod] = useState<LearningMethod | null>(
-    entry?.method ?? null,
+    entry?.media === "raw" ? "catalog" : entry?.method ?? null,
   );
   const [profile, setProfile] = useState<TestingProfile | null>(null);
   const [sourceRoot, setSourceRoot] = useState("");
@@ -72,7 +72,7 @@ export default function TrainingScreen() {
         setEditsRoot(existing.edits_root);
       }
 
-      if (method === "catalog") {
+      if (method === "catalog" && media === "jpeg") {
         const binding = loadCatalogBindings()[media];
         if (binding) {
           setSourceRoot(binding.sourceRoot);
@@ -88,10 +88,31 @@ export default function TrainingScreen() {
     };
   }, [media, method]);
 
+  // Historical RAW learning is now Catalog + Smart Previews; backend SQLite
+  // owns this binding. Old raw localStorage entries are deliberately ignored.
+  useEffect(() => {
+    if (media !== "raw" || method !== "catalog") return;
+    let cancelled = false;
+    void getPhotographerSetup()
+      .then((result) => {
+        if (cancelled) return;
+        setCatalogPath(result.setup.catalog_path ?? "");
+        setSourceRoot(result.setup.smart_previews_path ?? "");
+        setCatalogRecords(result.selected_catalog?.catalog_photo_records ?? null);
+        // Selection is NOT a verified photo mapping or trainable dataset.
+        setCatalogSaved(false);
+      })
+      .catch((cause) => {
+        if (cancelled) return;
+        setError(cause instanceof Error ? cause.message : "לא ניתן לקרוא את הגדרות הקליטה.");
+      });
+    return () => { cancelled = true; };
+  }, [media, method]);
+
   function chooseMethod(nextMethod: LearningMethod) {
     if (!media) return;
 
-    setMethod(nextMethod);
+    setMethod(media === "raw" ? "catalog" : nextMethod);
     setError("");
     setCheckedNow(false);
 
@@ -104,7 +125,7 @@ export default function TrainingScreen() {
       return;
     }
 
-    const binding = loadCatalogBindings()[media];
+    const binding = media === "jpeg" ? loadCatalogBindings()[media] : undefined;
     setSourceRoot(binding?.sourceRoot ?? "");
     setEditsRoot("");
     setCatalogPath(binding?.catalogPath ?? "");
@@ -117,6 +138,10 @@ export default function TrainingScreen() {
     setCheckedNow(false);
 
     if (method) {
+      if (media === "raw") {
+        openView("profile");
+        return;
+      }
       setMethod(null);
       setSourceRoot("");
       setEditsRoot("");
@@ -139,7 +164,9 @@ export default function TrainingScreen() {
         target === "source"
           ? media === "jpeg"
             ? "בחר תיקיית JPEG מקור"
-            : "בחר תיקיית RAW מקור"
+            : method === "catalog"
+              ? "בחר תיקיית Smart Previews.lrdata"
+              : "בחר תיקיית RAW מקור"
           : media === "jpeg"
             ? "בחר תיקיית JPEG ערוך"
             : "בחר תיקיית XMP / עריכות Lightroom",
@@ -152,7 +179,19 @@ export default function TrainingScreen() {
     setCatalogSaved(false);
 
     if (target === "source") {
-      setSourceRoot(selected);
+      if (media === "raw" && method === "catalog") {
+        setBusy(true);
+        try {
+          const result = await selectSmartPreviews(selected);
+          setSourceRoot(result.setup.smart_previews_path ?? "");
+        } catch (cause) {
+          setError(cause instanceof Error ? cause.message : "תיקיית Smart Previews אינה תקינה.");
+        } finally {
+          setBusy(false);
+        }
+      } else {
+        setSourceRoot(selected);
+      }
     } else {
       setEditsRoot(selected);
     }
@@ -177,9 +216,21 @@ export default function TrainingScreen() {
     try {
       const result = await selectLightroomCatalog(selected);
       setCatalogPath(selected);
+      setSourceRoot(media === "raw" ? "" : sourceRoot);
       setCatalogRecords(
         result.selected_catalog?.catalog_photo_records ?? null,
       );
+      if (media === "raw") {
+        // Only attempt adjacent standard Lightroom naming; association remains
+        // unverified until the future photo-level mapping gate.
+        const candidate = selected.replace(/\.lrcat$/i, " Smart Previews.lrdata");
+        try {
+          const previews = await selectSmartPreviews(candidate);
+          setSourceRoot(previews.setup.smart_previews_path ?? "");
+        } catch {
+          // User can explicitly select the Smart Previews folder.
+        }
+      }
     } catch (cause) {
       setError(
         cause instanceof Error
@@ -217,16 +268,36 @@ export default function TrainingScreen() {
     }
   }
 
-  function saveCatalogMaterial() {
+  async function saveCatalogMaterial() {
     if (!media || method !== "catalog" || !sourceRoot || !catalogPath) return;
-
+    if (media === "raw") {
+      setBusy(true);
+      setError("");
+      try {
+        const result = await getPhotographerSetup();
+        if (result.setup.catalog_path !== catalogPath
+          || result.setup.smart_previews_path !== sourceRoot
+          || result.selected_smart_previews?.readable !== true
+          || result.selected_catalog?.readable !== true) {
+          throw new Error("שני המקורות אינם זמינים או טרם נשמרו כראוי.");
+        }
+        // Only the two source selections were persisted and inventoried.
+        // Never claim trainable pairs or a completed Stage 1.
+        setCatalogSaved(true);
+      } catch (cause) {
+        setError(cause instanceof Error ? cause.message : "אימות בחירת המקורות נכשל.");
+        setCatalogSaved(false);
+      } finally {
+        setBusy(false);
+      }
+      return;
+    }
     saveCatalogBinding(media, {
       sourceRoot,
       catalogPath,
       catalogPhotoRecords: catalogRecords,
       updatedAt: new Date().toISOString(),
     });
-
     setCatalogSaved(true);
   }
 
@@ -253,8 +324,8 @@ export default function TrainingScreen() {
     }
 
     return {
-      heading: "איך נקרא את עריכות Lightroom?",
-      copy: "זה עדיין מסלול RAW אחד. כאן בוחרים רק מאיפה לקרוא את העריכות.",
+      heading: "חיבור Catalog + Smart Previews",
+      copy: "היסטוריית הצלם נקלטת מהקטלוג ומ־Smart Previews; אין צורך ב־RAW ישנים.",
       first: {
         method: "xmp" as const,
         tag: "XMP",
@@ -265,7 +336,7 @@ export default function TrainingScreen() {
         method: "catalog" as const,
         tag: "LRCAT",
         title: "Lightroom Catalog",
-        copy: "RAW מקור יחד עם קטלוג Lightroom.",
+        copy: "Lightroom Catalog ו־Smart Previews תואמים, ללא RAW היסטורי.",
       },
     };
   }, [media]);
@@ -453,7 +524,7 @@ export default function TrainingScreen() {
               </span>
               <div>
                 <span className={styles.materialLabel}>
-                  {media === "jpeg" ? "JPEG מקור" : "RAW מקור"}
+                  {media === "jpeg" ? "JPEG מקור" : "Smart Previews"}
                 </span>
                 <strong>
                   {sourceRoot ? "תיקיית המקור נבחרה" : "בחר תיקיית מקור"}
@@ -535,7 +606,7 @@ export default function TrainingScreen() {
                 className={styles.primaryButton}
                 type="button"
                 disabled={!materialReady}
-                onClick={saveCatalogMaterial}
+                onClick={() => void saveCatalogMaterial()}
               >
                 {catalogSaved ? "החומר נשמר" : "שמור את החומר"}
               </button>
@@ -573,7 +644,7 @@ export default function TrainingScreen() {
                     : "Lightroom Catalog מוכן"}
                 </h3>
                 <p>
-                  המקור והקטלוג נשמרו. לא יוצג סטטוס אימון עד שקיים Brain
+                  נבחרו Catalog ו־Smart Previews; שיוך תמונות וניטרליות הקלט טרם אומתו. לא יוצג סטטוס אימון עד שקיים Brain
                   מאומן בפועל.
                 </p>
               </div>
