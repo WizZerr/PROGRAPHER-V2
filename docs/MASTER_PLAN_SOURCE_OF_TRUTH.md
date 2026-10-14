@@ -11,6 +11,8 @@
 
 ## 0. הצהרת המוצר שאסור לנו לסטות ממנה
 
+> **החלטת מוצר D-022 (14.10.2026):** למידה היסטורית רק מתוך Lightroom Classic Catalog + Smart Previews תואמות, ללא דרישה ל־RAW היסטורי. אירוע חדש נפתח מקובצי RAW מקוריים. דרישות ישנות להיסטוריית RAW במסמך זה מוחלפות על ידי [D-022](D_022_HISTORICAL_SMART_PREVIEWS_CONTRACT.md). שלבי הקליטה והלמידה עדיין OPEN עד בדיקות אמת. Windows-first; macOS certification after Windows core completion.
+
 **הצלם נשאר האמן. ProGrapher לומדת להיות העוזרת שלו.**
 
 צלם מקצועי מתקין את ProGrapher, מחבר פעם אחת את Lightroom Classic, ומאפשר לה ללמוד מהאירועים שהוא עצמו כבר ערך (בכפוף להרשאות ולבדיקות תקינות). כאשר הוא פותח אירוע RAW חדש, ProGrapher מנתחת את התמונות, חוזה לכל אחת עריכה אישית בהתאם לסגנונו ולתנאי הצילום, מבצעת את העריכות האפשריות דרך Lightroom, מציגה רק חריגים שדורשים שיקול דעת, ולאחר אישור מפיקה בלחיצה אחת את האירוע כקובצי JPEG באיכות מסירה.
@@ -82,7 +84,7 @@
 
 ### 3.2 אימון ראשוני
 
-הצלם בוחר **אירועים ערוכים קודמים** ב־Lightroom (או עותק קטלוג ייצוא מתאים) ותיקיות RAW מקוריות, מאשר שימוש ללמידה, ומקבל דוח קליטה: כמה תמונות זוהו; כמה מתאימות בוודאות; כמה ממתינות לבדיקה; מה חסר; מה נתמך ומה לא. אין בקשה לסווג אלפי תמונות ידנית. אימות אנושי ממוקד לאירוע, זהות, סופיות ואמביגואיטיות נשאר חובה כשלא ניתן להסיק אותם אוטומטית בביטחון.
+הצלם בוחר **אירועים ערוכים קודמים** ב־Lightroom (או עותק קטלוג ייצוא מתאים) ו־Smart Previews תואמות, ללא דרישה לקובצי RAW היסטוריים, מאשר שימוש ללמידה, ומקבל דוח קליטה: כמה תמונות זוהו; כמה מתאימות בוודאות; כמה ממתינות לבדיקה; מה חסר; מה נתמך ומה לא. אין בקשה לסווג אלפי תמונות ידנית. אימות אנושי ממוקד לאירוע, זהות, סופיות ואמביגואיטיות נשאר חובה כשלא ניתן להסיק אותם אוטומטית בביטחון.
 
 ### 3.3 אירוע חדש
 
@@ -149,15 +151,15 @@ PROGRAPHER DESKTOP  (Tauri + Next.js, Hebrew RTL)
 
 ### 5.1 קלטי מודל מותרי־שימוש
 
-רק RAW המקורי, embedded preview או preview מפותחת בשיטת source-only יציבה שניתן להפיק גם לאירוע חדש, EXIF/Camera, מאפייני פיקסלים לינאריים, הקשר אירוע ומאפייני סצנה שחושבו מהמקור. תצוגת מצלמה אינה זהה ל־Adobe Color; היא יכולה לשמש ל־Vision אם נבחנה אמפירית. אין חובה לשחזר Adobe Color בתוך מנוע המודל.
+בלמידה היסטורית המקורות המותרים הם Catalog + Smart Previews בלבד. מודל Vision רשאי לקבל רק מאפיינים שהוכחו כבלתי־תלויים בהחלטות העריכה הסופיות; Smart Previews עשויות להכיל עריכה, ולכן אינן input בטוח עד להוכחת source neutrality או פיתוח חלופה מאומתת ללא RAW היסטורי. באירוע חדש מנתחים RAW מקורי ומטא־דאטה מקוריים. תצוגת מצלמה אינה זהה ל־Adobe Color ויכולה לשמש ל־Vision רק אחרי אימות אמפירי. אין חובה לשחזר Adobe Color בתוך המודל.
 
 ### 5.2 מטרות למידה בלבד
 
 הגדרות Develop הסופיות המאומתות מתוך Lightroom Catalog/XMP, כולל פרופיל שנבחר במהלך העריכה, היסטוריית אישורים/תיקונים מאומתת, ותוצאות JPEG נבחרות לצורכי Evaluation כאשר נדרש (לא תנאי חובה לאימון RAW-first). **פרופיל Adobe שנמצא בקטלוג הסופי לא נכנס לתמונת ה־Vision מראש אם הוא חלק מהחלטת העריכה.**
 
-### 5.3 אימות זוגות RAW → Develop
+### 5.3 אימות זוגות Catalog + Smart Preview → Develop
 
-- זהות RAW: hash/source metadata/path mapping, לא רק שם קובץ.
+- זהות היסטורית: שיוך מאומת בין רשומת Catalog לבין Smart Preview תואמת וזיהוי מקור התצוגה לפי מנגנון שהוכח בגרסאות Lightroom הנתמכות; שם קובץ/UUID ללא אימות אינו מספיק. אין לדרוש RAW היסטורי.
 - התאמת רשומת Lightroom מדויקת, Virtual Copy ו־ProcessVersion לפי מקור אמת.
 - אישור שהעריכה נשמרה כסופית על ידי הצלם; לא מניחים שכל הערכים הסופיים שווים לשינויים היחסיים מנקודת הייבוא.
 - אירוע ו־source-group ידועים; הפרדה מוחלטת של Train / Validation / Locked Test ברמת אירוע.
@@ -171,6 +173,8 @@ PROGRAPHER DESKTOP  (Tauri + Next.js, Hebrew RTL)
 ---
 
 ## 6. מה נכנס לגרסה הראשונה — ומה לא
+
+**שלבי אימות:** קודם סוגרים את מסלול Windows המלא. macOS Apple Silicon תיבדק בנפרד בסיום; אין להציג Windows Verified כ־Cross-Platform Verified.
 
 | יכולת | Release 1 — התחייבות מותנית בהוכחה | מחוץ להבטחה הראשונה |
 |---|---|---|
@@ -197,7 +201,7 @@ PROGRAPHER DESKTOP  (Tauri + Next.js, Hebrew RTL)
 | **00 — Baseline & Adoption** | לאחד גרסאות ומסמכי אמת | `PG-00.LB01` רישום החלטה/היקף; `LB02` לשמר POC ולכייל רגרסיות; `LB03` לרשום SHA/גיבוי/מכשירים; G0 נשאר נפרד ולא נחתם אוטומטית. |
 | **01 — Contracts** | Release 1 + LightRoom capability matrix | `PG-01.LB01` חוזה מוצר מחודש; `LB02` schema EditIntent/AdobeRecipe; `LB03` פרוטוקול RAW ותוצאה + ספי QA. |
 | **02 — Platforms** | Windows + Apple Silicon | `PG-02.LB01` SDK compatibility matrix; `LB02` install/load/unload/restart על Windows; `LB03` smoke Mac עם גרסאות Adobe; `LB04` סביבת בדיקה מבודדת. |
-| **03 — Data Integrity** | מקור מדויק ו־Lightroom targets | `PG-03.LB01` hash↔catalog IDs; `LB02` finality/virtual-copy; `LB03` unsupported/consent/whole-event split. |
+| **03 — Data Integrity** | מקור מדויק ו־Lightroom targets | `PG-03.LB01` verified catalog↔Smart Preview IDs and fingerprints (no historical RAW); `LB02` finality/virtual-copy; `LB03` unsupported/consent/whole-event split. |
 | **04 — Lightroom Bridge** | POC → Adapter אמיתי | `PG-04.LB01` POC v0.2 regression; `LB02` plugin IPC & heartbeat; `LB03` recipe readback; `LB04` preview/export controls; `LB05` capabilities/abstain; `LB06` mask research isolated. |
 | **05 — Jobs & Persistence** | תורי אלפי תמונות | `PG-05.LB01` journal/idempotency; `LB02` chunks/batching; `LB03` cancel/resume/restart; `LB04` backup/restore, relink, error UX. |
 | **06 — Photographer Intake** | Dataset מאושר מאירועים קודמים | `PG-06.LB01` wizard קליטה; `LB02` identity/finality/human exceptions; `LB03` consent; `LB04` event split; G1. |
@@ -230,7 +234,7 @@ PROGRAPHER DESKTOP  (Tauri + Next.js, Hebrew RTL)
 
 ### WORK PACKAGE 03 — `DATA-01` — Photographer Dataset Gate
 
-**תוצר:** manifest פרטי מאומת ל־RAW↔Develop, עם consent, finality, event IDs, Train/Validation/Test, masks-unsupported. **Done:** לפחות כמה אירועים אמיתיים מוכנים ברמת אמת מוגדרת (אין סף תמונות קסום), ללא שימוש ב־Test להתאמת המודל. לפני זה מותר engineering בלבד ולא אימון production.
+**תוצר:** manifest פרטי מאומת ל־Catalog↔Smart Preview↔Develop, עם source-neutrality, consent, finality, event IDs, Train/Validation/Test, masks-unsupported; ללא RAW היסטורי. **Done:** לפחות כמה אירועים אמיתיים מוכנים ברמת אמת מוגדרת (אין סף תמונות קסום), ללא שימוש ב־Test להתאמת המודל. לפני זה מותר engineering בלבד ולא אימון production.
 
 ### WORK PACKAGE 04 — `BRAIN-01` — Global Editor Candidate
 
