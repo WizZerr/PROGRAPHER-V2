@@ -49,36 +49,35 @@ function catalogStatus(binding?: CatalogBinding): string {
 
 function rawStatus(
   profile: TestingProfile | null,
-  catalog?: CatalogBinding,
+  setup: PhotographerSetupOverview | null,
 ): { state: RouteState; label: string; source: string } {
-  if (profile?.usable_pairs && profile.usable_pairs > 0) {
+  const catalog = setup?.setup.catalog_path;
+  const previews = setup?.setup.smart_previews_path;
+  if (catalog && previews) {
     return {
-      state: "ready",
-      label: `${profile.usable_pairs.toLocaleString("he-IL")} זוגות RAW/XMP`,
-      source: "עריכות דרך XMP",
+      state: "pending",
+      label: "שני המקורות נבחרו · נדרש אימות",
+      source: "Lightroom Catalog + Smart Previews (שיוך תמונות טרם אומת)",
     };
   }
-
   if (catalog) {
     return {
-      state: "ready",
-      label: catalogStatus(catalog),
-      source: "עריכות דרך Lightroom Catalog",
+      state: "pending",
+      label: "Smart Previews חסרות",
+      source: "נבחר קטלוג, אך טרם נבחרו Smart Previews",
     };
   }
-
   if (profile) {
     return {
       state: "pending",
-      label: "נבדק · אין חומר שמיש",
-      source: "עריכות דרך XMP",
+      label: "נתוני מחקר ישנים · נדרשת קליטה חדשה",
+      source: "מסלול היסטורי פעיל: Catalog + Smart Previews בלבד",
     };
   }
-
   return {
     state: "idle",
     label: "לא הוגדר",
-    source: "XMP או Lightroom Catalog",
+    source: "Catalog + Smart Previews, ללא RAW היסטורי",
   };
 }
 
@@ -257,6 +256,7 @@ export default function ProfileScreen() {
 
   const [jpegProfile, setJpegProfile] = useState<TestingProfile | null>(null);
   const [rawProfile, setRawProfile] = useState<TestingProfile | null>(null);
+  const [rawSetup, setRawSetup] = useState<PhotographerSetupOverview | null>(null);
   const [catalogBindings, setCatalogBindings] = useState<
     Partial<Record<LearningMedia, CatalogBinding>>
   >({});
@@ -293,6 +293,7 @@ export default function ProfileScreen() {
       ]);
 
       applyOverview(setup);
+      setRawSetup(setup);
       setJpegProfile(jpeg);
       setRawProfile(raw);
       setCatalogBindings(loadCatalogBindings());
@@ -366,18 +367,19 @@ export default function ProfileScreen() {
   }
 
   const jpegCatalog = catalogBindings.jpeg;
-  const rawCatalog = catalogBindings.raw;
-  const rawLearning = rawStatus(rawProfile, rawCatalog);
+  const rawCatalog = Boolean(rawSetup?.setup.catalog_path);
+  const rawPreviews = Boolean(rawSetup?.setup.smart_previews_path);
+  const rawLearning = rawStatus(rawProfile, rawSetup);
 
   const jpegConfigured =
     Number(Boolean(jpegProfile)) + Number(Boolean(jpegCatalog));
-  const rawConfigured = Number(Boolean(rawProfile) || Boolean(rawCatalog));
+  const rawConfigured = Number(rawCatalog && rawPreviews);
   const totalConfigured = jpegConfigured + rawConfigured;
 
   const profileStatus = useMemo(() => {
     if (totalConfigured === 0) return "עדיין לא הוגדר";
     if (jpegConfigured === 2 && rawConfigured === 1) {
-      return "כל מסלולי הלמידה הוגדרו";
+      return "מקורות הלמידה נבחרו · אימות התוכן עדיין פתוח";
     }
     return "בתהליך בנייה";
   }, [jpegConfigured, rawConfigured, totalConfigured]);
