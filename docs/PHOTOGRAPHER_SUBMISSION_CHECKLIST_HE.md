@@ -1,5 +1,8 @@
 # ProGrapher — Photographer Submission Checklist
 
+> **ארכיון בדיקות JPEG בלבד — לא דרישת קליטה פעילה.** למסלול הנוכחי: `.lrcat` + `Smart Previews.lrdata` תואמות, ללא RAW היסטורי, כפי שהוחלט ב־[D-022](D_022_HISTORICAL_SMART_PREVIEWS_CONTRACT.md). בחירה מקומית ולא העלאת חומר אישי ל־GitHub. בדיקות הזהות, סופיות ותצוגה נקייה מעריכה עדיין פתוחות.
+
+
 Version: **1.0**
 
 לפני שמעבירים חומר ל-Intake:
