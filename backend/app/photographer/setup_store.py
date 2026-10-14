@@ -146,6 +146,7 @@ class PhotographerSetupStore:
                     singleton,
                     source_type,
                     catalog_path,
+                    smart_previews_path,
                     edits_folder_path,
                     style_name,
                     preset_path,
@@ -155,7 +156,7 @@ class PhotographerSetupStore:
                     updated_at
                 )
                 VALUES (
-                    1, NULL, NULL, NULL, NULL, NULL, NULL,
+                    1, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
                     'from_source', 'no_profile', ?
                 )
                 """,
