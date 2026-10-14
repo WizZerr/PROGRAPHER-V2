@@ -1,10 +1,14 @@
 # ProGrapher V2 — Execution Board v4.0
 
-**Updated:** 2026-10-12  
+**Updated:** 2026-10-14 (D-022 contract update, proposed; gates unchanged)  
 **Authority:** [MASTER_PLAN_SOURCE_OF_TRUTH.md](MASTER_PLAN_SOURCE_OF_TRUTH.md) — v4.0 Lightroom-First / Photographer-Fidelity / Event-First.  
 **Previous full board:** [archive/EXECUTION_BOARD_v3.1_2026-10-12.md](archive/EXECUTION_BOARD_v3.1_2026-10-12.md).
 
 This board is an execution view, never a second master plan. One active Part per lane; no research result is promoted to production quality without the proper Gate.
+
+## Product contract / current priority
+
+**D-022:** historical photographer learning = Lightroom Classic Catalog + matching Smart Previews; **NO original historical RAW requirement**. New event editing = original camera RAW. Stage 1 is OPEN; historical Smart Preview input-neutrality remains Stage 2 OPEN. Windows first; macOS Apple Silicon certification AFTER Windows core passes. [Acceptance Issue #9](https://github.com/WizZerr/PROGRAPHER-V2/issues/9).
 
 ## What has and has not passed
 
@@ -14,7 +18,7 @@ This board is an execution view, never a second master plan. One active Part per
 | **B0 Lightroom single-RAW Bridge** | **PASS, limited** | Original v0.2 (9,152,353-byte JPEG), plus newly integrated LB-01 user-verified on one Windows RAW (9,154,074-byte JPEG); no batch/mask proof |
 | Masking | RESEARCH INCOMPLETE | One Subject mask visible, local Exposure still 0.00; creation origin, local edit and masked export not proven |
 | Source RAW scene research | RESEARCH | Local CLIP on 12 original RAW inputs, one abstention; no calibrated or photographer-approved scene accuracy |
-| Photographer training dataset | BLOCKED | 5,208 RAW/catalog filename-only candidates, **0 validated training-ready examples** |
+| Photographer training dataset | BLOCKED | 5,208 legacy RAW/catalog filename-only candidates, **0 validated training-ready examples**; not a requirement for D-022 historical intake |
 | B1 unattended batch | NOT RUN | No unattended 10/100-photo pipeline, idempotence, source readback or resume evidence |
 | AI personalized edits | NOT TRAINED/VALIDATED | No authorized event-held-out photographer model and no G1–G3 |
 | Installer / Apple Silicon | NOT VERIFIED | Windows and Mac Lightroom version matrix, installation/update/recovery pending |
@@ -26,7 +30,8 @@ This board is an execution view, never a second master plan. One active Part per
 | Master docs adoption | **PG-00.LB01** | **DONE (docs only)** | v3.1 archived, v4 master/decisions/board/state/README aligned. No Gate advanced. |
 | Lightroom POC integration | **LB-01 / PG-04.LB01** | **RESEARCH INTEGRATION MERGED (PR #2); 16 LOCAL TESTS PASS** | 16 local synthetic pytest cases PASS (Windows, 0.50s, exit 0) on PR head 88c49a6; real Lightroom single RAW readbacks and 9,154,074-byte JPEG, unchanged RAW hash |
 | Autonomous Bridge queue | **LB-02** | PLANNED | Authenticated loopback, capability check, job ID, heartbeat and 10→100 RAW idempotent apply/readback/export/restart |
-| Photographer data | **DATA-01 / PG-03/06** | RESEARCH READY; G1 BLOCKED | Consent, true source identity, final edit state, source grouping and whole-event split |
+| Historical photographer intake | **INTAKE-01 / Issue #9** | OPEN | Catalog + matching Smart Previews, no historical RAW; all Windows E2E acceptance criteria and source integrity |
+| Photographer data | **DATA-01 / PG-03/06** | RESEARCH READY; G1 BLOCKED | Historical preview source-neutrality, consent, proven identity, final edit state, event grouping and whole-event split |
 | Personalized model | **BRAIN-01 / PG-07/08** | BLOCKED G1/G2 | Strong baseline, valid source-only features, held-out whole-event audit and confidence/abstain |
 | Event run | **EVT-01 / PG-09/11** | BLOCKED B1/G3 | Verified 100–300 photo pilot, then larger event, review, JPEG delivery and photographer time study |
 | Mac + installer | PG-02/15 | PLANNED | Mac smoke, SDK compat, single installer, signed updates and rollback |
@@ -71,4 +76,4 @@ This board is an execution view, never a second master plan. One active Part per
 5. Record SHA, test results, platform, assumptions and failure reason for each Part.
 6. Claims must match the narrowest evidence. A successful POC is not a production-ready feature.
 
-**NEXT:** Safely synchronize the Windows development worktree with merged `main` (preserve existing modified/untracked local files). Then begin LB-02 as a new reviewed Part while DATA-01 remains separate.
+**NEXT:** Review D-022 / INTAKE-01 contract alignment PR; complete Stage 1 in Windows with genuine Lightroom Catalog + Smart Previews and documented negative-path tests. Continue LB-02 as separate reviewed work only when appropriately scheduled; preserve all research worktrees. Mac certification is deferred until Windows core is complete.
