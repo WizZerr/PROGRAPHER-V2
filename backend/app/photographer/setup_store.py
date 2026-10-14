@@ -16,6 +16,7 @@ def _utc_now() -> str:
 class PhotographerSetup:
     source_type: str | None
     catalog_path: str | None
+    smart_previews_path: str | None
     edits_folder_path: str | None
     style_name: str | None
     preset_path: str | None
@@ -63,6 +64,7 @@ class PhotographerSetupStore:
                     singleton INTEGER PRIMARY KEY CHECK (singleton = 1),
                     source_type TEXT,
                     catalog_path TEXT,
+                    smart_previews_path TEXT,
                     edits_folder_path TEXT,
                     style_name TEXT,
                     preset_path TEXT,
@@ -76,6 +78,7 @@ class PhotographerSetupStore:
 
             # Safe migrations from earlier Phase 7 builds.
             self._ensure_column(db, "source_type", "TEXT")
+            self._ensure_column(db, "smart_previews_path", "TEXT")
             self._ensure_column(db, "edits_folder_path", "TEXT")
             self._ensure_column(db, "preset_path", "TEXT")
             self._ensure_column(
@@ -91,6 +94,7 @@ class PhotographerSetupStore:
                 SELECT
                     source_type,
                     catalog_path,
+                    smart_previews_path,
                     edits_folder_path,
                     style_name,
                     preset_path,
@@ -107,6 +111,7 @@ class PhotographerSetupStore:
             return PhotographerSetup(
                 source_type=None,
                 catalog_path=None,
+                smart_previews_path=None,
                 edits_folder_path=None,
                 style_name=None,
                 preset_path=None,
@@ -119,6 +124,7 @@ class PhotographerSetupStore:
         return PhotographerSetup(
             source_type=row["source_type"],
             catalog_path=row["catalog_path"],
+            smart_previews_path=row["smart_previews_path"],
             edits_folder_path=row["edits_folder_path"],
             style_name=row["style_name"],
             preset_path=row["preset_path"],
@@ -174,6 +180,7 @@ class PhotographerSetupStore:
                 SET
                     source_type = ?,
                     catalog_path = ?,
+                    smart_previews_path = NULL,
                     edits_folder_path = ?,
                     status = ?,
                     updated_at = ?
@@ -197,6 +204,21 @@ class PhotographerSetupStore:
             edits_folder_path=None,
             status="data_review",
         )
+
+    def save_smart_previews(self, preview_path: str) -> PhotographerSetup:
+        with self._connect() as db:
+            self._ensure_row(db)
+            row = db.execute(
+                "SELECT catalog_path, source_type FROM photographer_setup WHERE singleton = 1"
+            ).fetchone()
+            if row["source_type"] != "lightroom_catalog" or not row["catalog_path"]:
+                raise ValueError("Select a Lightroom Catalog before Smart Previews")
+            db.execute(
+                """UPDATE photographer_setup SET smart_previews_path = ?,
+                   status = 'data_review', updated_at = ? WHERE singleton = 1""",
+                (preview_path, _utc_now()),
+            )
+        return self.get()
 
     def save_edits_folder(self, folder_path: str) -> PhotographerSetup:
         return self._upsert_source(
