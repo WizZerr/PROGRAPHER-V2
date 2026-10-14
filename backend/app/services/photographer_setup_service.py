@@ -18,6 +18,10 @@ from app.photographer.presets import (
     discover_lightroom_presets,
     validate_preset,
 )
+from app.photographer.smart_preview_probe import (
+    SmartPreviewsProbe,
+    probe_smart_previews,
+)
 from app.photographer.setup_store import (
     PhotographerSetup,
     PhotographerSetupStore,
@@ -31,6 +35,7 @@ class PhotographerSetupOverview:
     discovered_presets: list[LightroomPreset]
     setup: PhotographerSetup
     selected_catalog: LightroomCatalogProbe | None
+    selected_smart_previews: SmartPreviewsProbe | None
     selected_edits_folder: EditsFolderProbe | None
     readiness_reasons: list[str]
 
@@ -41,10 +46,14 @@ def _readiness_reasons(setup: PhotographerSetup) -> list[str]:
     if setup.source_type in (None, "none"):
         reasons.append("אין כרגע מקור לעריכות אישיות.")
 
-    # Phase 7 must not claim readiness before Phase 8 proves valid pairs.
-    reasons.append(
-        "טרם נבדקו זוגות RAW ↔ עריכה סופית תקינים לפי זהות מקור."
-    )
+    if setup.source_type == "lightroom_catalog":
+        if not setup.smart_previews_path:
+            reasons.append("טרם נבחרה תיקיית Smart Previews תואמת.")
+        reasons.append(
+            "זהות התמונות, ניטרליות התצוגות והעריכה הסופית עדיין לא אומתו ללמידה."
+        )
+    else:
+        reasons.append("מקור העריכות עדיין לא אומת ככשיר ללמידה.")
 
     if (
         setup.color_profile_mode == "explicit"
@@ -66,6 +75,13 @@ def get_setup_overview(
         if setup.catalog_path
         else None
     )
+    selected_smart_previews = (
+        probe_smart_previews(
+            setup.smart_previews_path, catalog_path=setup.catalog_path,
+        )
+        if setup.smart_previews_path and setup.catalog_path
+        else None
+    )
     selected_edits_folder = (
         probe_edits_folder(setup.edits_folder_path)
         if setup.edits_folder_path
@@ -78,6 +94,7 @@ def get_setup_overview(
         discovered_presets=discover_lightroom_presets(),
         setup=setup,
         selected_catalog=selected_catalog,
+        selected_smart_previews=selected_smart_previews,
         selected_edits_folder=selected_edits_folder,
         readiness_reasons=_readiness_reasons(setup),
     )
@@ -94,6 +111,25 @@ def choose_catalog(
 
     setup_store = store or PhotographerSetupStore()
     setup_store.save_catalog(probe.path)
+    return get_setup_overview(setup_store)
+
+
+def choose_smart_previews(
+    preview_path: str,
+    store: PhotographerSetupStore | None = None,
+) -> PhotographerSetupOverview:
+    setup_store = store or PhotographerSetupStore()
+    setup = setup_store.get()
+    if setup.source_type != "lightroom_catalog" or not setup.catalog_path:
+        raise ValueError("יש לבחור תחילה Lightroom Catalog.")
+    catalog = probe_catalog(setup.catalog_path)
+    if not catalog.sqlite_valid or not catalog.readable:
+        raise ValueError("קטלוג Lightroom כבר אינו זמין או תקין.")
+    probe = probe_smart_previews(preview_path, catalog_path=setup.catalog_path)
+    if not probe.readable or probe.asset_files == 0:
+        raise ValueError(probe.note)
+    # Directory/name inventory only, NOT photo-level linkage or learning eligibility.
+    setup_store.save_smart_previews(probe.path)
     return get_setup_overview(setup_store)
 
 
