@@ -374,15 +374,11 @@ export default function ProfileScreen() {
   const jpegConfigured =
     Number(Boolean(jpegProfile)) + Number(Boolean(jpegCatalog));
   const rawConfigured = Number(rawCatalog && rawPreviews);
-  const totalConfigured = jpegConfigured + rawConfigured;
 
   const profileStatus = useMemo(() => {
-    if (totalConfigured === 0) return "עדיין לא הוגדר";
-    if (jpegConfigured === 2 && rawConfigured === 1) {
-      return "מקורות הלמידה נבחרו · אימות התוכן עדיין פתוח";
-    }
-    return "בתהליך בנייה";
-  }, [jpegConfigured, rawConfigured, totalConfigured]);
+    if (rawConfigured === 1) return "מקורות הלמידה נבחרו · אימות התוכן עדיין פתוח";
+    return "קליטת Lightroom טרם הושלמה";
+  }, [rawConfigured]);
 
   return (
     <section className={styles.screen}>
@@ -394,8 +390,8 @@ export default function ProfileScreen() {
           <span className={styles.eyebrow}>הפרופיל שלי</span>
           <h1>סגנון העריכה של {profileOwnerLabel}</h1>
           <p>
-            כאן רואים את מצב הלמידה שלך. JPEG ו־RAW נשמרים בנפרד,
-            וכל מסלול מציג רק מידע שבאמת נמדד.
+            קליטת ההיסטוריה הפעילה משתמשת ב־Catalog ו־Smart Previews. מחקר JPEG הישן מוקפא;
+            בחירת מקורות אינה אישור אימון.
           </p>
         </div>
 
@@ -508,18 +504,19 @@ export default function ProfileScreen() {
             <div className={styles.paneIdentity}>
               <span className={styles.mediaMonogram}>J</span>
               <div>
-                <span className={styles.paneEyebrow}>JPEG LEARNING</span>
-                <h2>למידה לפי JPEG</h2>
-                <p>שני מנגנוני למידה עצמאיים לאותו workflow.</p>
+                <span className={styles.paneEyebrow}>LEGACY JPEG RESEARCH — PAUSED</span>
+                <h2>מחקר JPEG היסטורי — מוקפא</h2>
+                <p>נשמר לצורכי מחקר בלבד, ואינו מסלול הלמידה הפעיל.</p>
               </div>
             </div>
 
             <button
               className={styles.paneAction}
               type="button"
-              onClick={() => openLearning("jpeg")}
+              disabled
+              title="מחקר JPEG הוקפא לפי החלטת המוצר D-022"
             >
-              <span>{jpegConfigured > 0 ? "המשך הגדרה" : "התחל הגדרה"}</span>
+              <span>מוקפא</span>
               <span aria-hidden="true">←</span>
             </button>
           </header>
