@@ -8,11 +8,14 @@ from app.schemas.photographer import (
     PhotographerSetupOverviewResponse,
     PhotographerSetupResponse,
     SelectCatalogRequest,
+    SelectSmartPreviewsRequest,
+    SmartPreviewsResponse,
     SelectEditsFolderRequest,
     StylePreferencesRequest,
 )
 from app.services.photographer_setup_service import (
     choose_catalog,
+    choose_smart_previews,
     choose_edits_folder,
     continue_without_source,
     get_setup_overview,
@@ -25,6 +28,7 @@ router = APIRouter(prefix="/api/photographer", tags=["photographer"])
 def _response(overview) -> PhotographerSetupOverviewResponse:
     selected_catalog = overview.selected_catalog
     selected_edits_folder = overview.selected_edits_folder
+    selected_smart_previews = overview.selected_smart_previews
 
     return PhotographerSetupOverviewResponse(
         lightroom=LightroomInstallationResponse(
@@ -43,6 +47,7 @@ def _response(overview) -> PhotographerSetupOverviewResponse:
         setup=PhotographerSetupResponse(
             source_type=overview.setup.source_type,
             catalog_path=overview.setup.catalog_path,
+            smart_previews_path=overview.setup.smart_previews_path,
             edits_folder_path=overview.setup.edits_folder_path,
             style_name=overview.setup.style_name,
             preset_path=overview.setup.preset_path,
@@ -62,6 +67,18 @@ def _response(overview) -> PhotographerSetupOverviewResponse:
             )
             if selected_catalog
             else None
+        ),
+        selected_smart_previews=(
+            SmartPreviewsResponse(
+                path=selected_smart_previews.path,
+                exists=selected_smart_previews.exists,
+                readable=selected_smart_previews.readable,
+                asset_files=selected_smart_previews.asset_files,
+                total_bytes=selected_smart_previews.total_bytes,
+                name_matches_catalog=selected_smart_previews.name_matches_catalog,
+                identity_verified=selected_smart_previews.identity_verified,
+                note=selected_smart_previews.note,
+            ) if selected_smart_previews else None
         ),
         selected_edits_folder=(
             EditsFolderResponse(
@@ -92,6 +109,22 @@ def select_catalog(
 ) -> PhotographerSetupOverviewResponse:
     try:
         return _response(choose_catalog(payload.path))
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            detail=str(exc),
+        ) from exc
+
+
+@router.post(
+    "/setup/smart-previews",
+    response_model=PhotographerSetupOverviewResponse,
+)
+def select_smart_previews(
+    payload: SelectSmartPreviewsRequest,
+) -> PhotographerSetupOverviewResponse:
+    try:
+        return _response(choose_smart_previews(payload.path))
     except ValueError as exc:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
