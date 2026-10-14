@@ -1,6 +1,6 @@
 # ProGrapher V2 — Project State v4.0
 
-**Updated:** 2026-10-12  
+**Updated:** 2026-10-14 (D-022 proposal branch; not yet merged to main)  
 **Single source of truth:** [MASTER_PLAN_SOURCE_OF_TRUTH.md](MASTER_PLAN_SOURCE_OF_TRUTH.md) v4.0.  
 **Execution board:** [EXECUTION_BOARD.md](EXECUTION_BOARD.md).  
 **Previous detailed snapshot:** [archive/PROJECT_STATE_v3.1_2026-10-12.md](archive/PROJECT_STATE_v3.1_2026-10-12.md).
@@ -14,7 +14,7 @@
 - Files `D_015_RAW_FIRST_SCOPE.md` and `D_016_PHOTOGRAPHER_FIDELITY_FIRST.md` are authoritative by pathname; their numeric prefixes collide with other DECISIONS.md historical headings.
 
 ## Adopted direction
-ProGrapher uses original RAW + verified photographer Lightroom Classic Develop targets to learn each photographer's choices. Source-only visual/technical inputs generate a versioned per-image editing recipe, reviewed and developed/exported by Lightroom Bridge. The Lightroom plugin is a minimal local executor and not the proprietary Brain. Windows x64 and Apple Silicon support, Hebrew RTL UX, customer-owned Lightroom license, safe event-level delivery, and local private data by default remain goals.
+**D-022 product-owner correction:** historical learning uses Lightroom Classic Catalog + matching Smart Previews, WITHOUT original historical RAW. This is a contract change awaiting implementation and real verification, NOT proof that source-neutral Smart Preview inputs work. **NEW events** use original camera RAW. ProGrapher uses verified photographer Lightroom Classic Develop targets to learn each photographer's choices. Source-only visual/technical inputs generate a versioned per-image editing recipe, reviewed and developed/exported by Lightroom Bridge. The Lightroom plugin is a minimal local executor and not the proprietary Brain. Windows x64 and Apple Silicon support, Hebrew RTL UX, customer-owned Lightroom license, safe event-level delivery, and local private data by default remain goals.
 
 Keep neutral EditIntent and exact AdobeDevelopRecipe separately; moving to another renderer will require calibration. Independent JPEG learning/Adobe-equivalent renderer work stays frozen/deferred rather than deleted.
 
@@ -38,11 +38,13 @@ Keep neutral EditIntent and exact AdobeDevelopRecipe separately; moving to anoth
 ## Open gates and risks
 - **G0 OPEN:** PG-00.02 and PG-00.05 remain unfinished.
 - **B0 PASS only for one Windows research RAW. B1 NOT RUN.**
-- **G1–G6 NOT PASSED; zero fully verified training-ready samples.**
+- **G1–G6 NOT PASSED; zero fully verified training-ready samples.** Historical RAW name-pair audit is legacy research, NOT a prerequisite for Stage 1 historical intake under D-022.
 - No unattended batch, end-to-end event JPEG workflow, Mac Bridge/installer test or measured quality/time savings.
 - v0.3.x local mask SDK experiment is paused; keep evidence separate from product status.
 
 ## Next
+**Stage 1 / Issue #9 is now the prioritized input-contract and Windows intake acceptance lane.** Correct active historical RAW requirements; validate genuine Smart Previews, safe Catalog association, persistent state and full Windows E2E. Preserve LB-02 and SP-AUTO draft research without marking them done. Defer macOS certification until Windows core is complete.
+
 **LB-01:** repository research integration is merged and mainline-verified. Preserve the Windows single-RAW evidence and perform safe developer-machine sync. Then **LB-02:** authenticated local queue/heartbeat/readback/export on 10→100 RAW, with idempotency/recovery. In parallel prepare **DATA-01** as consent/identity/finality/event-safe research, without unauthorized training.
 
 Do not promote any status merely because the master plan was updated.
