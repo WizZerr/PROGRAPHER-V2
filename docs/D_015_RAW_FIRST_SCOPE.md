@@ -1,5 +1,7 @@
 # D-015 — RAW-first learning scope / JPEG freeze
 
+> **Historical learning input superseded by [D-022](D_022_HISTORICAL_SMART_PREVIEWS_CONTRACT.md), 2026-10-14.** Historical learning now requires Lightroom Catalog + Smart Previews, NOT original historical RAW. The original text below is preserved for research provenance only; its §§Decision 1 and 4 RAW-byte requirements no longer govern historical intake. New-event RAW, no data leakage, consent/finality/event holdouts, source safety and JPEG freeze remain in force.
+
 **Date:** 2026-10-11
 **Status:** Product-owner approved direction; implementation and quality gates NOT approved/passed.
 **Authority:** docs/MASTER_PLAN_SOURCE_OF_TRUTH.md
