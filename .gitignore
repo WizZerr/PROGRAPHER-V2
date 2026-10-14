@@ -5,3 +5,33 @@
 /backend/vendor/huggingface/
 
 /backend/vendor/opencv_zoo/**/*.onnx
+
+# Photographer-owned media, Lightroom databases and private research assets.
+# This is an accidental-commit barrier; tracked files and git add -f need independent checks.
+*.lrcat
+*.lrcat-data/
+*.lrcat-wal
+*.lrcat-shm
+*.lrdata/
+*.cr2
+*.cr3
+*.nef
+*.arw
+*.dng
+*.raf
+*.rw2
+*.orf
+*.pef
+*.srw
+*.3fr
+*.iiq
+*.raw
+*.nrw
+*.erf
+*.kdc
+*.mos
+*.mrw
+*.xmp
+*PRIVATE*.json
+*private_manifest*.json
+private-research/
