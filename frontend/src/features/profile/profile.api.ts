@@ -22,6 +22,7 @@ export type PhotographerSetupOverview = {
   setup: {
     source_type: "lightroom_catalog" | "edits_folder" | "none" | null;
     catalog_path: string | null;
+    smart_previews_path: string | null;
     edits_folder_path: string | null;
     style_name: string | null;
     preset_path: string | null;
@@ -36,6 +37,16 @@ export type PhotographerSetupOverview = {
     readable: boolean;
     sqlite_valid: boolean;
     catalog_photo_records: number | null;
+    note: string;
+  } | null;
+  selected_smart_previews: {
+    path: string;
+    exists: boolean;
+    readable: boolean;
+    asset_files: number;
+    total_bytes: number;
+    name_matches_catalog: boolean;
+    identity_verified: boolean;
     note: string;
   } | null;
   selected_edits_folder: {
@@ -57,6 +68,18 @@ export async function selectLightroomCatalog(
 ): Promise<PhotographerSetupOverview> {
   return apiRequest<PhotographerSetupOverview>(
     "/api/photographer/setup/catalog",
+    {
+      method: "POST",
+      body: JSON.stringify({ path }),
+    },
+  );
+}
+
+export async function selectSmartPreviews(
+  path: string,
+): Promise<PhotographerSetupOverview> {
+  return apiRequest<PhotographerSetupOverview>(
+    "/api/photographer/setup/smart-previews",
     {
       method: "POST",
       body: JSON.stringify({ path }),
