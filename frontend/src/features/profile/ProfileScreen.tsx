@@ -581,9 +581,9 @@ export default function ProfileScreen() {
             <div className={styles.paneIdentity}>
               <span className={styles.mediaMonogram}>R</span>
               <div>
-                <span className={styles.paneEyebrow}>RAW LEARNING</span>
-                <h2>למידה לפי RAW</h2>
-                <p>Brain אחד שמתבסס על החלטות Lightroom.</p>
+                <span className={styles.paneEyebrow}>LIGHTROOM LEARNING</span>
+                <h2>למידה מהיסטוריית Lightroom</h2>
+                <p>Catalog + Smart Previews. RAW מקוריים נדרשים רק באירוע חדש.</p>
               </div>
             </div>
 
@@ -604,13 +604,13 @@ export default function ProfileScreen() {
               </span>
               <div className={styles.capabilityMain}>
                 <div>
-                  <strong>RAW + Lightroom</strong>
+                  <strong>Catalog + Smart Previews</strong>
                   <span className={styles.capabilityNumber}>01</span>
                 </div>
                 <small>{rawLearning.source}</small>
               </div>
               <div className={styles.capabilityStatus}>
-                <span>RAW</span>
+                <span>LRCAT</span>
                 <StatusPill state={rawLearning.state}>
                   {rawLearning.label}
                 </StatusPill>
@@ -619,10 +619,8 @@ export default function ProfileScreen() {
           </div>
 
           <div className={styles.sourceStrip}>
-            <span className={styles.sourceLabel}>מקורות עריכה</span>
-            <span className={rawProfile ? styles.sourceActive : styles.sourceChip}>
-              XMP
-            </span>
+            <span className={styles.sourceLabel}>חומרי למידה</span>
+            <span className={rawPreviews ? styles.sourceActive : styles.sourceChip}>SMART PREVIEWS</span>
             <span className={rawCatalog ? styles.sourceActive : styles.sourceChip}>
               LRCAT
             </span>
@@ -635,7 +633,7 @@ export default function ProfileScreen() {
             </div>
             <div className={styles.footerNote}>
               <span className={styles.footerIcon}><VisualGlyph kind="chart" /></span>
-              <small>XMP ו־LRCAT הם מקורות לאותו Brain</small>
+              <small>קליטה בלבד; שיוך ונתוני אימון טרם אומתו</small>
             </div>
           </footer>
         </article>
