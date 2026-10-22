@@ -31,6 +31,25 @@ export type LearningProfile = {
   catalogs: CatalogIntake[];
 };
 
+export type CatalogDiscoveryCandidate = {
+  catalog_path: string;
+  smart_previews_path: string | null;
+  preview_detection: "name_match_unverified" | "not_found";
+};
+
+export type CatalogDiscoveryResult = {
+  catalogs: CatalogDiscoveryCandidate[];
+  requires_selection: boolean;
+  note: string;
+};
+
+export async function discoverCatalogLocation(path: string): Promise<CatalogDiscoveryResult> {
+  return apiRequest<CatalogDiscoveryResult>("/api/learning-intake/discover", {
+    method: "POST",
+    body: JSON.stringify({ path }),
+  });
+}
+
 export async function listLearningProfiles(): Promise<LearningProfile[]> {
   const response = await apiRequest<{ profiles: LearningProfile[] }>("/api/learning-intake/profiles");
   return response.profiles;
