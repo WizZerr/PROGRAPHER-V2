@@ -241,3 +241,83 @@ def test_detection_override_respects_manual_preview_path(tmp_path: Path, monkeyp
     )
     assert result["catalogs"][0]["smart_previews_path"] == str(manual.resolve())
     assert result["training_ready_samples"] == 0
+
+def test_delete_profile_removes_only_its_local_metadata(tmp_path: Path, monkeypatch):
+    store = new_store(tmp_path, monkeypatch)
+    source_a = tmp_path / "Photographer A.lrcat"
+    source_b = tmp_path / "Photographer B.lrcat"
+    make_catalog(source_a)
+    make_catalog(source_b)
+    smart = tmp_path / "Photographer A Smart Previews.lrdata"
+    smart.mkdir()
+    marker = smart / "keep-sources-untouched.txt"
+    marker.write_text("must survive", encoding="utf-8")
+    raw = tmp_path / "RAW Library"
+    raw.mkdir()
+    raw_marker = raw / "original.CR3"
+    raw_marker.write_bytes(b"not-modified")
+    before_catalog = hashlib.sha256(source_a.read_bytes()).hexdigest()
+    before_raw = hashlib.sha256(raw_marker.read_bytes()).hexdigest()
+
+    a_id = store.create(
+        name="Photographer A", photography_type="wedding",
+        color_mode="color", consent=True,
+    )["profile_id"]
+    b_id = store.create(
+        name="Photographer B", photography_type="wedding",
+        color_mode="color", consent=True,
+    )["profile_id"]
+    store.attach_catalog(a_id, catalog_path=str(source_a), raw_fallback_path=str(raw))
+    store.attach_catalog(b_id, catalog_path=str(source_b))
+
+    store.delete(a_id)
+    with pytest.raises(LearningIntakeError, match="not found"):
+        store.get(a_id)
+    assert [p["profile_id"] for p in store.list()] == [b_id]
+    assert len(store.get(b_id)["catalogs"]) == 1
+    assert source_a.is_file() and source_b.is_file()
+    assert smart.is_dir() and marker.read_text(encoding="utf-8") == "must survive"
+    assert hashlib.sha256(source_a.read_bytes()).hexdigest() == before_catalog
+    assert hashlib.sha256(raw_marker.read_bytes()).hexdigest() == before_raw
+
+    with sqlite3.connect(store.db_path) as db:
+        assert db.execute(
+            "SELECT COUNT(*) FROM learning_intake_catalogs WHERE profile_id=?",
+            (a_id,),
+        ).fetchone()[0] == 0
+
+
+def test_delete_missing_profile_fails_without_affecting_others(tmp_path: Path, monkeypatch):
+    store = new_store(tmp_path, monkeypatch)
+    keep = store.create(
+        name="Keep", photography_type="wedding",
+        color_mode="black_white", consent=True,
+    )["profile_id"]
+    with pytest.raises(LearningIntakeError, match="not found"):
+        store.delete("nonexistent")
+    assert store.get(keep)["profile_id"] == keep
+
+
+HEADERS = {"X-ProGrapher-Secret": "pg-intake-delete-test-secret"}
+
+
+def test_delete_api_requires_auth_returns_json_and_404(tmp_path: Path, monkeypatch):
+    from fastapi.testclient import TestClient
+    from app.application import create_app
+
+    store = new_store(tmp_path, monkeypatch)
+    profile_id = store.create(
+        name="API", photography_type="wedding",
+        color_mode="color", consent=True,
+    )["profile_id"]
+    with TestClient(create_app()) as client:
+        assert client.delete(f"/api/learning-intake/profiles/{profile_id}").status_code == 401
+        deleted = client.delete(
+            f"/api/learning-intake/profiles/{profile_id}", headers=HEADERS,
+        )
+        assert deleted.status_code == 200
+        assert deleted.json() == {"deleted": True}
+        missing = client.delete(
+            f"/api/learning-intake/profiles/{profile_id}", headers=HEADERS,
+        )
+        assert missing.status_code == 404
