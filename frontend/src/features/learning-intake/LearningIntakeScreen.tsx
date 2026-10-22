@@ -6,7 +6,9 @@ import { useWorkspaceNav } from "@/features/workspace/workspace-nav";
 import {
   attachLearningCatalog,
   createLearningProfile,
+  discoverCatalogLocation,
   listLearningProfiles,
+  type CatalogDiscoveryCandidate,
   type ColorMode,
   type LearningProfile,
 } from "./learningIntake.api";
@@ -29,6 +31,8 @@ export default function LearningIntakeScreen() {
   const [catalogPath, setCatalogPath] = useState("");
   const [previewsPath, setPreviewsPath] = useState("");
   const [rawPath, setRawPath] = useState("");
+  const [foundCatalogs, setFoundCatalogs] = useState<CatalogDiscoveryCandidate[]>([]);
+  const [discoveryNotice, setDiscoveryNotice] = useState("");
   const [busy, setBusy] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -60,21 +64,57 @@ export default function LearningIntakeScreen() {
     } finally { setBusy(false); }
   }
 
-  async function choose(which: "catalog" | "previews" | "raw") {
+  function pickCatalog(candidate: CatalogDiscoveryCandidate) {
+    setCatalogPath(candidate.catalog_path);
+    setPreviewsPath(candidate.smart_previews_path ?? "");
+    setDiscoveryNotice(candidate.smart_previews_path
+      ? "Smart Previews אותרו ליד הקטלוג לפי שם התיקייה. ההתאמה לתמונות עדיין לא אומתה."
+      : "לא נמצאו Smart Previews תואמים ליד הקטלוג. אפשר להמשיך בסקירת קטלוג או לבחור מקור ידנית.");
+  }
+
+  async function choose(which: "folder" | "catalog" | "previews" | "raw") {
+    if (busy) return;
     const selected = await open(which === "catalog" ? {
       directory: false,
       multiple: false,
-      title: "בחר קטלוג Lightroom (.lrcat)",
+      title: "בחר קובץ Lightroom Catalog (.lrcat)",
       filters: [{ name: "Lightroom Catalog", extensions: ["lrcat"] }],
     } : {
       directory: true,
       multiple: false,
-      title: which === "previews" ? "בחר את תיקיית Smart Previews.lrdata" : "בחר תיקיית RAW מקורית (חלופה)",
+      title: which === "folder" ? "בחר תיקייה שמכילה קטלוג Lightroom"
+        : which === "previews" ? "בחר Smart Previews.lrdata במיקום אחר"
+        : "בחר תיקיית RAW מקורית (חלופה)",
     });
     if (!selected || Array.isArray(selected)) return;
     setError("");
-    if (which === "catalog") { setCatalogPath(selected); setPreviewsPath(""); setRawPath(""); }
-    if (which === "previews") setPreviewsPath(selected);
+
+    if (which === "folder" || which === "catalog") {
+      setBusy(true);
+      setFoundCatalogs([]);
+      setCatalogPath("");
+      setPreviewsPath("");
+      setRawPath("");
+      setDiscoveryNotice("");
+      try {
+        const result = await discoverCatalogLocation(selected);
+        setFoundCatalogs(result.catalogs);
+        if (result.catalogs.length === 1) {
+          pickCatalog(result.catalogs[0]);
+        } else {
+          setDiscoveryNotice(`נמצאו ${result.catalogs.length} קטלוגים. בחר את הקטלוג הרצוי — לא נבחר אחד אוטומטית.`);
+        }
+      } catch (cause) {
+        setError(cause instanceof Error ? cause.message : "לא ניתן לסרוק את תיקיית הקטלוג.");
+      } finally {
+        setBusy(false);
+      }
+      return;
+    }
+    if (which === "previews") {
+      setPreviewsPath(selected);
+      setDiscoveryNotice("Smart Previews נבחרו ידנית; טרם אומתה התאמה לתמונות הקטלוג.");
+    }
     if (which === "raw") setRawPath(selected);
   }
 
@@ -93,6 +133,8 @@ export default function LearningIntakeScreen() {
       setCatalogPath("");
       setPreviewsPath("");
       setRawPath("");
+      setFoundCatalogs([]);
+      setDiscoveryNotice("");
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "קריאת הקטלוג נכשלה.");
     } finally { setBusy(false); }
@@ -152,19 +194,41 @@ export default function LearningIntakeScreen() {
           <h2>{profile.name}</h2>
           <button className={styles.link} type="button" onClick={() => setProfile(null)}>החלף פרופיל</button>
         </div>
-        <p>הוסף קטלוג Lightroom אחד או יותר. Smart Previews הם המקור המועדף למאפייני תמונה; RAW הוא חלופה. ניתן להתחיל בסקירת קטלוג בלבד.</p>
-        <button className={styles.source} disabled={busy} type="button" onClick={() => void choose("catalog")}>
-          <span>חובה · Lightroom Catalog</span><strong dir="ltr">{catalogPath || "בחר קובץ .lrcat"}</strong>
+        <p>בחר את התיקייה שבה נמצא קטלוג Lightroom. המערכת תאתר קובצי .lrcat ואת תיקיית Smart Previews המתאימה לצד הקטלוג, אם היא קיימת. אין צורך לבחור את שניהם בנפרד.</p>
+        <button className={styles.source} disabled={busy} type="button" onClick={() => void choose("folder")}>
+          <span>בחירה מומלצת · תיקיית Lightroom</span><strong>{busy ? "סורק את התיקייה…" : "בחר תיקיית קטלוג"}</strong>
         </button>
-        <button className={styles.source} disabled={busy} type="button" onClick={() => void choose("previews")}>
-          <span>מומלץ · Smart Previews</span><strong dir="ltr">{previewsPath || "בחר תיקיית Smart Previews.lrdata"}</strong>
+        <button className={styles.link} disabled={busy} type="button" onClick={() => void choose("catalog")}>
+          או בחר קובץ ‎.lrcat ישירות
         </button>
-        <button className={styles.source} disabled={busy} type="button" onClick={() => void choose("raw")}>
-          <span>חלופה · RAW מקורי</span><strong dir="ltr">{rawPath || "בחר תיקיית RAW (אופציונלי)"}</strong>
-        </button>
-        {(previewsPath || rawPath) && <button className={styles.link} type="button" onClick={() => { setPreviewsPath(""); setRawPath(""); }}>
-          נקה בחירת מקור חזותי
-        </button>}
+        {foundCatalogs.length > 1 && <label className={styles.catalogChooser}>בתיקייה יש כמה קטלוגים — בחר את הנכון
+          <select value={catalogPath} disabled={busy}
+            onChange={(event) => {
+              const selectedCatalog = foundCatalogs.find((item) => item.catalog_path === event.target.value);
+              if (selectedCatalog) pickCatalog(selectedCatalog);
+            }}>
+            <option value="">בחר קטלוג מהרשימה</option>
+            {foundCatalogs.map((item) => <option key={item.catalog_path} value={item.catalog_path}>
+              {item.catalog_path.split(/[\\/]/).pop()}
+            </option>)}
+          </select>
+        </label>}
+        {catalogPath && <div className={styles.discovery}>
+          <strong>קטלוג שנבחר</strong><span dir="ltr">{catalogPath}</span>
+          <strong>Smart Previews</strong>
+          <span dir="ltr">{previewsPath || "לא אותרו לצד הקטלוג"}</span>
+          <small>{discoveryNotice}</small>
+        </div>}
+        <details className={styles.advanced}>
+          <summary>אפשרויות מתקדמות — מיקומים אחרים</summary>
+          <p>אם Smart Previews לא נמצאים ליד הקטלוג, אפשר לבחור אותם ידנית. RAW הוא חלופה כשאין Smart Previews מתאימים.</p>
+          <button className={styles.source} disabled={busy} type="button" onClick={() => void choose("previews")}>
+            <span>Smart Previews במיקום אחר</span><strong dir="ltr">{previewsPath || "בחר ידנית (אופציונלי)"}</strong>
+          </button>
+          <button className={styles.source} disabled={busy} type="button" onClick={() => void choose("raw")}>
+            <span>RAW מקורי</span><strong dir="ltr">{rawPath || "בחר תיקיית RAW (אופציונלי)"}</strong>
+          </button>
+        </details>
         <button className={styles.primary} disabled={!catalogPath || busy} type="button" onClick={() => void audit()}>
           {busy ? "יוצר עותק זמני ובודק קטלוג…" : "בדוק ושמור קטלוג"}
         </button>
