@@ -153,6 +153,10 @@ class LearningProfileStore:
                 raise LearningIntakeError("Cannot access Smart Previews folder.") from exc
             if not smart.name.casefold().endswith("smart previews.lrdata"):
                 raise LearningIntakeError("Choose a Lightroom Smart Previews.lrdata folder.")
+        if smart is None:
+            # Import here: discovery shares LearningIntakeError from this module.
+            from app.learning_intake.discovery import find_smart_previews
+            smart = find_smart_previews(catalog)
         if raw_fallback_path:
             try:
                 raw = _path(raw_fallback_path, directory=True)
