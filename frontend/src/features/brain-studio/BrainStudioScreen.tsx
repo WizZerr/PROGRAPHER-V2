@@ -169,7 +169,7 @@ export default function BrainStudioScreen() {
         <article className={styles.card}>
           <div className={styles.stageNum}>02 / אירוע שלא השתתף באימון</div>
           <h2>תיקיית מבחן B</h2>
-          <p>התיקייה חייבת להיות נפרדת מאימון A. הסריקה משתמשת בשירות האירועים הקיים ואינה עורכת קובצי מקור.</p>
+          <p>התיקייה חייבת להיות נפרדת מאימון A ולכלול תמונות שונות. הסריקה משתמשת בשירות האירועים הקיים ואינה עורכת קובצי מקור.</p>
           <button className={styles.pick} type="button" onClick={() => void choose("testing")} disabled={busy}>
             <span>RAW למבחן</span><strong>{testRoot || "בחר תיקייה"}</strong>
           </button>
@@ -180,7 +180,7 @@ export default function BrainStudioScreen() {
           <div className={styles.result}>
             <strong>מה נבדק כעת?</strong>
             <span>אותו חציון נשלח לכל תמונת RAW. כך אנחנו בודקים את החיבור בין בחירת תיקיות, יצירת פרופיל ומערכת הסקירה — לפני שילוב מודל החיזוי.</span>
-            <small>זה אינו אימון AI ואינו מוכיח חיזוי אישי לפי תוכן התמונה.</small>
+            <small>זה אינו אימון AI ואינו מוכיח חיזוי אישי לפי תוכן התמונה. אין עדיין בדיקת hash לזיהוי תמונות שהועתקו בין A ו־B.</small>
           </div>
         </article>
       </section>
