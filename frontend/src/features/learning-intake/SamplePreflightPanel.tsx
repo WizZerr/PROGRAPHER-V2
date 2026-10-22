@@ -99,9 +99,9 @@ export default function SamplePreflightPanel({ profile }: { profile: LearningPro
     </div>
     <div className={styles.automaticSource} aria-live="polite">
       <div className={styles.sourceTopline}>
-        <strong>Smart Previews · איתור אוטומטי</strong>
+        <strong>Smart Previews · מצב המקור בפרופיל</strong>
         <span className={smartPreviewsPath ? styles.detected : styles.notDetected}>
-          {smartPreviewsPath ? "התיקייה אותרה" : "לא אותרה תיקייה"}
+          {smartPreviewsPath ? "תיקייה שמורה בפרופיל" : "לא אותרה תיקייה"}
         </span>
       </div>
       {smartPreviewsPath ? (
@@ -109,7 +109,7 @@ export default function SamplePreflightPanel({ profile }: { profile: LearningPro
       ) : (
         <p>לא שמורה בפרופיל תיקיית Smart Previews לקטלוג הזה. אפשר לבדוק מחדש את קליטת הקטלוג לאיתור תיקייה סמוכה.</p>
       )}
-      <p className={styles.sourceCaveat}>איתור תיקייה בלבד: עדיין לא פענחנו את תמונות Smart Previews, לא קישרנו אותן למזהי Lightroom ולא השתמשנו בפיקסלים שלהן במדגם.</p>
+      <p className={styles.sourceCaveat}>הנתיב נשמר בזמן קליטת הקטלוג ואינו בדיקת קיום עדכנית של התיקייה. עדיין לא פענחנו את תמונות Smart Previews, לא קישרנו אותן למזהי Lightroom ולא השתמשנו בפיקסלים שלהן במדגם.</p>
     </div>
     <details className={styles.advanced}>
       <summary>{rawFolder ? "אפשרויות מתקדמות · בדיקת RAW ידנית פעילה" : "אפשרויות מתקדמות · בדיקת מועמד RAW ידנית"}</summary>
