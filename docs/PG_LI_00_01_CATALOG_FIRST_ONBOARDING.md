@@ -77,3 +77,11 @@ npm.cmd run tauri dev
 ```
 
 The previous 9/9 test run predates this amendment. **Run tests again on Windows; these updated results have not been verified yet.**
+
+## PG-LI-01 UX fix — saved catalog and profile deletion
+
+- The original "בדוק ושמור קטלוג" required a **new** selected catalog path even when the profile had an existing audited catalog. When exactly one saved catalog exists, the primary button now explicitly says "בדוק מחדש את הקטלוג השמור" and re-audits the original path, retaining saved Smart Preview and optional RAW metadata. Each saved catalog also has its own "בדוק מחדש" action to handle profiles with multiple catalogs.
+- This is a **re-audit**, not advancement to Stage 2. Stage 2 Reset/Import remains unimplemented and disabled for training.
+- Profiles can be deleted from the profile list or current profile, behind a clear second confirmation screen. `DELETE /api/learning-intake/profiles/{profile_id}` removes only `learning_intake_catalogs` metadata then the `learning_intake_profiles` row in the same local SQLite transaction. It never touches disk media, Lightroom's catalog or other profiles. API returns a JSON success response so the existing desktop `apiRequest()` handles it.
+- Tests verify deleted profile metadata removed, other profiles intact, catalog/RAW/Smart Preview files byte-for-byte retained, unknown IDs return 404, and delete requires engine authentication.
+- Pre-merge Windows checks: Python learning intake and setup tests, `npm.cmd run lint`, `npm.cmd run build`, interactive smoke with pre-existing saved catalog, multiple catalog selections, cancel delete and confirmed delete. Deletion should be tested only against a disposable **test profile**, not real photographer records. The original 13-pass + 1-skip run predates this change; do not claim these tests have passed yet.
