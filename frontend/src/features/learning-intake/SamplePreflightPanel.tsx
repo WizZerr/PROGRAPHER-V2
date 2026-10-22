@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { open } from "@tauri-apps/plugin-dialog";
 import {
   runSamplePreflight,
@@ -44,13 +44,6 @@ export default function SamplePreflightPanel({ profile }: { profile: LearningPro
   const [report, setReport] = useState<PreflightSampleReport | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
-
-  useEffect(() => {
-    const chosen = profile.catalogs.find((item) => item.catalog_path === catalogPath);
-    if (!chosen) {
-      setCatalogPath(profile.catalogs[0]?.catalog_path ?? "");
-    }
-  }, [profile, catalogPath]);
 
   async function chooseRaw() {
     if (busy) return;
@@ -125,3 +118,4 @@ export default function SamplePreflightPanel({ profile }: { profile: LearningPro
       <p className={styles.private}>כל פרטי המדגם מוצגים מתוך המנוע המקומי בלבד ולא נשמרים בדוח הציבורי או נשלחים ל־GitHub.</p>
     </div>}
   </section>;
+}
