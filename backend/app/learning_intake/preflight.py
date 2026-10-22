@@ -22,8 +22,8 @@ def _evenly_spaced(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
     """Deterministically shuffle a group to sample throughout the event."""
     if len(rows) < 2:
         return rows
-    # Interleave both ends of the group so a 16-image pilot does not examine
-    # only the first moments of a wedding. Stable across identical catalogs.
+    # Interleave both ends of the catalog-ID order to avoid inspecting
+    # only the first imported records. IDs are NOT verified capture chronology.
     result: list[dict[str, Any]] = []
     front, back = 0, len(rows) - 1
     while front <= back:
@@ -43,7 +43,7 @@ def choose_sample(records: list[dict[str, Any]], sample_size: int = 16) -> list[
         group_id = str(row.get("event_group_id") or "unclassified")
         groups[group_id].append(row)
     by_group = {
-        name: _evenly_spaced(sorted(items, key=lambda x: str(x.get("catalog_image_id"))))
+        name: _evenly_spaced(sorted(items, key=lambda x: int(x.get("catalog_image_id") or 0)))
         for name, items in sorted(groups.items())
     }
     selection: list[dict[str, Any]] = []
