@@ -84,3 +84,49 @@ export async function attachLearningCatalog(profileId: string, input: {
     { method: "POST", body: JSON.stringify(input) },
   );
 }
+
+
+export type SourceSample = {
+  catalog_image_id: number | string;
+  catalog_global_image_id: string | null;
+  filename: string;
+  capture_day: string;
+  candidate_group: string;
+  develop_parse_ok: boolean;
+  develop_fields: string[];
+  virtual_copy_candidate: boolean;
+  issues: string[];
+  source_match_status: string;
+  source_candidate_path: string | null;
+  source_sha256: string | null;
+  source_identity_verified: false;
+  photographer_finality_verified: false;
+  import_reset_baseline_verified: false;
+  event_identity_verified: false;
+  training_eligible: false;
+};
+
+export type PreflightSampleReport = {
+  schema: string;
+  status: string;
+  catalog_path: string;
+  sample_count: number;
+  sample_limit: number;
+  group_count_in_sample: number;
+  source_match_counts: Record<string, number>;
+  source_identity_verified_count: number;
+  finality_verified_count: number;
+  training_ready_samples: number;
+  records: SourceSample[];
+  warnings: string[];
+};
+
+export async function runSamplePreflight(
+  profileId: string,
+  input: { catalog_path: string; raw_folder: string | null; sample_size?: number },
+): Promise<PreflightSampleReport> {
+  return apiRequest<PreflightSampleReport>(
+    `/api/learning-intake/profiles/${encodeURIComponent(profileId)}/sample-preflight`,
+    { method: "POST", body: JSON.stringify(input) },
+  );
+}
