@@ -12,7 +12,7 @@ The Lightroom SDK offers `photo:getRawMetadata('smartPreviewInfo').smartPreviewP
 
 ## Capability A: DNG content probe (integrated, single click)
 
-Inside the saved Lightroom catalog's **אימות מדגם תמונות** panel, the photographer selects `בדוק תוכן Smart Previews` — no RAW folder selection.
+Inside the saved Lightroom catalog's **אימות מדגם תמונות** panel, the photographer selects the normal `בדוק מדגם + Smart Previews אוטומטית` action — no RAW folder selection. ProGrapher automatically runs the DNG probe after the catalog sample if a Smart Previews source is saved. A separate re-check action is available.
 
 - Local backend `smart_preview_probe.py` walks the saved Smart Previews folder read-only.
 - Max 100,000 file entries. Skips symlinks and Windows junctions; bounded read errors fail visibly.
