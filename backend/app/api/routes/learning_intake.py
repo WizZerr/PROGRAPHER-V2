@@ -6,8 +6,21 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
 from app.learning_intake.service import LearningIntakeError, LearningProfileStore
+from app.learning_intake.discovery import discover_catalogs
 
 router = APIRouter(prefix="/api/learning-intake", tags=["learning-intake"])
+
+
+class DiscoverCatalogLocation(BaseModel):
+    path: str = Field(min_length=1)
+
+
+@router.post("/discover")
+def discover_catalog_location(payload: DiscoverCatalogLocation) -> dict:
+    try:
+        return discover_catalogs(payload.path)
+    except LearningIntakeError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
 
 
 class CreateLearningProfile(BaseModel):
