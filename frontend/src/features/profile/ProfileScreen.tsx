@@ -308,6 +308,10 @@ export default function ProfileScreen() {
   }, [refresh]);
 
   function openLearning(media: LearningMedia) {
+    if (media === "raw") {
+      openView("learning-intake");
+      return;
+    }
     writeTrainingEntry({ media });
     openView("training");
   }
