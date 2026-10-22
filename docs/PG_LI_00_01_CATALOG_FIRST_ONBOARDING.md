@@ -85,3 +85,11 @@ The previous 9/9 test run predates this amendment. **Run tests again on Windows;
 - Profiles can be deleted from the profile list or current profile, behind a clear second confirmation screen. `DELETE /api/learning-intake/profiles/{profile_id}` removes only `learning_intake_catalogs` metadata then the `learning_intake_profiles` row in the same local SQLite transaction. It never touches disk media, Lightroom's catalog or other profiles. API returns a JSON success response so the existing desktop `apiRequest()` handles it.
 - Tests verify deleted profile metadata removed, other profiles intact, catalog/RAW/Smart Preview files byte-for-byte retained, unknown IDs return 404, and delete requires engine authentication.
 - Pre-merge Windows checks: Python learning intake and setup tests, `npm.cmd run lint`, `npm.cmd run build`, interactive smoke with pre-existing saved catalog, multiple catalog selections, cancel delete and confirmed delete. Deletion should be tested only against a disposable **test profile**, not real photographer records. The original 13-pass + 1-skip run predates this change; do not claim these tests have passed yet.
+
+## Windows API DELETE regression correction — 2026-10-22
+
+The initial delete API regression test used `new_store(tmp_path,...)` which persisted the fixture profile in `profiles.sqlite3`, while real API endpoints instantiate `LearningProfileStore()` at `PROGRAPHER_DATA_DIR/prographer.sqlite3`. The user correctly observed `15 passed, 1 skipped, 1 failed`, where DELETE returned 404 because the API was looking in a different SQLite file.
+
+Corrected test sets a dedicated `PROGRAPHER_DATA_DIR`, instantiates the same default `LearningProfileStore()` as the API, explicitly GETs the profile before deletion, then checks 401 without authentication, 200/JSON on delete, 404 for repeated deletion, and retention of a second profile.
+
+No production deletion implementation or user Lightroom/RAW files were changed for this fix. The corrected test still requires a fresh Windows run; expected after passing: 16 passed, 1 skipped.
