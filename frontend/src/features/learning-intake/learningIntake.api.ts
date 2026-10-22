@@ -55,6 +55,13 @@ export async function listLearningProfiles(): Promise<LearningProfile[]> {
   return response.profiles;
 }
 
+export async function deleteLearningProfile(profileId: string): Promise<void> {
+  await apiRequest<void>(
+    `/api/learning-intake/profiles/${encodeURIComponent(profileId)}`,
+    { method: "DELETE" },
+  );
+}
+
 export async function createLearningProfile(input: {
   name: string;
   photography_type: string;
