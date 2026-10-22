@@ -11,7 +11,7 @@ import {
 import styles from "./SamplePreflightPanel.module.css";
 
 const statusLabel: Record<string, string> = {
-  raw_folder_not_selected: "RAW לא נבחר · בדיקת קטלוג בלבד",
+  raw_folder_not_selected: "נבדקה רשומת הקטלוג בלבד · מקור חזותי טרם אומת",
   no_filename_candidate: "לא נמצא מועמד בשם תואם",
   missing_catalog_filename: "חסר שם קובץ בקטלוג",
   ambiguous_filename: "יותר מקובץ RAW מועמד אחד",
@@ -44,6 +44,8 @@ export default function SamplePreflightPanel({ profile }: { profile: LearningPro
   const [report, setReport] = useState<PreflightSampleReport | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const selectedCatalog = profile.catalogs.find((item) => item.catalog_path === catalogPath);
+  const smartPreviewsPath = selectedCatalog?.smart_previews_path ?? null;
 
   async function chooseRaw() {
     if (busy) return;
@@ -80,7 +82,7 @@ export default function SamplePreflightPanel({ profile }: { profile: LearningPro
       <div>
         <span className={styles.kicker}>PG-LI-02A · DATA-01 / LOCAL PREFLIGHT</span>
         <h2>אימות מדגם תמונות</h2>
-        <p>מדגם של עד 16 רשומות מתוך קבוצות אירוע שונות. אפשר לבדוק תחילה את הקטלוג בלבד, או לבחור תיקיית RAW כדי לחפש מועמדים ולהפיק טביעת SHA-256. אין עדיין אימות זהות מלא או אישור עריכה סופית.</p>
+        <p>בחר קטלוג מתוך הפרופיל. ProGrapher מציגה אוטומטית את מצב Smart Previews שנמצאו במהלך קליטתו ומפיקה מדגם של עד 16 רשומות. בשלב זה מדובר בבדיקת נתוני Lightroom בלבד — פענוח התמונות ואימות הקשר אליהן טרם הושלמו.</p>
       </div>
       <span className={styles.notReady}>אימון חסום עד אימות</span>
     </div>
@@ -91,16 +93,33 @@ export default function SamplePreflightPanel({ profile }: { profile: LearningPro
           {profile.catalogs.map((item) => <option key={item.catalog_path} value={item.catalog_path}>{item.catalog_path}</option>)}
         </select>
       </label>
-      <div className={styles.sourceControl}>
-        <span>RAW מקורי (לא חובה למדגם הראשוני)</span>
-        <button type="button" disabled={busy} onClick={() => void chooseRaw()}>{rawFolder ? "החלף תיקיית RAW" : "בחר תיקיית RAW"}</button>
-        {rawFolder && <button className={styles.clear} type="button" disabled={busy} onClick={() => { setRawFolder(""); setReport(null); }}>נקה בחירה</button>}
-        <small dir="ltr" title={rawFolder}>{rawFolder || "לא נבחר"}</small>
-      </div>
       <button className={styles.run} type="button" disabled={!catalogPath || busy} onClick={() => void run()}>
-        {busy ? "קורא עותק קטלוג ובודק מדגם…" : "הפעל בדיקת מדגם 16 תמונות"}
+        {busy ? "קורא עותק קטלוג ובודק מדגם…" : "בדוק מדגם של 16 רשומות"}
       </button>
     </div>
+    <div className={styles.automaticSource} aria-live="polite">
+      <div className={styles.sourceTopline}>
+        <strong>Smart Previews · איתור אוטומטי</strong>
+        <span className={smartPreviewsPath ? styles.detected : styles.notDetected}>
+          {smartPreviewsPath ? "התיקייה אותרה" : "לא אותרה תיקייה"}
+        </span>
+      </div>
+      {smartPreviewsPath ? (
+        <p dir="ltr" title={smartPreviewsPath} className={styles.sourcePath}>{smartPreviewsPath}</p>
+      ) : (
+        <p>לא שמורה בפרופיל תיקיית Smart Previews לקטלוג הזה. אפשר לבדוק מחדש את קליטת הקטלוג לאיתור תיקייה סמוכה.</p>
+      )}
+      <p className={styles.sourceCaveat}>איתור תיקייה בלבד: עדיין לא פענחנו את תמונות Smart Previews, לא קישרנו אותן למזהי Lightroom ולא השתמשנו בפיקסלים שלהן במדגם.</p>
+    </div>
+    <details className={styles.advanced}>
+      <summary>אפשרויות מתקדמות · בדיקת מועמד RAW ידנית</summary>
+      <p>למחקר בלבד, כשצריך לבדוק קובץ מקור בנפרד: אפשר לבחור תיקיית RAW לחיפוש לפי שם ולחישוב SHA-256. פעולה זו אינה נדרשת לבדיקה הראשית ולא מוכיחה התאמת תמונה ל־Lightroom.</p>
+      <div className={styles.sourceControl}>
+        <button type="button" disabled={busy} onClick={() => void chooseRaw()}>{rawFolder ? "החלף תיקיית RAW" : "בחר תיקיית RAW למחקר"}</button>
+        {rawFolder && <button className={styles.clear} type="button" disabled={busy} onClick={() => { setRawFolder(""); setReport(null); }}>נקה בחירה</button>}
+        <small dir="ltr" title={rawFolder}>{rawFolder || "לא נבחר RAW — מדגם הקטלוג אינו דורש אותו"}</small>
+      </div>
+    </details>
     {error && <p role="alert" className={styles.error}>{error}</p>}
     {report && <div className={styles.results}>
       <div className={styles.stats}>
@@ -109,7 +128,7 @@ export default function SamplePreflightPanel({ profile }: { profile: LearningPro
         <div><small>זהות מאומתת</small><strong>{report.source_identity_verified_count}</strong></div>
         <div><small>מוכנות לאימון</small><strong>{report.training_ready_samples}</strong></div>
       </div>
-      <p className={styles.notice}>הממצאים הם מועמדים בלבד. התאמה לפי שם וטביעת קובץ אינן מוכיחות שזה ה־RAW המקורי שרשומת Lightroom מתייחסת אליו. גם עריכה סופית ונקודת Import/Reset טרם אומתו.</p>
+      <p className={styles.notice}>זהו מדגם של רשומות קטלוג. Smart Previews טרם פוענחו. {rawFolder ? "גם מועמד RAW לפי שם ו־SHA-256 אינו מוכיח זהות מול Lightroom." : "לא נדרשה בחירת RAW."} עריכה סופית ונקודת Import/Reset טרם אומתו.</p>
       <div className={styles.rows}>
         {report.records.length > 0 ? report.records.map((item, index) =>
           <SampleRow key={`${item.catalog_image_id}-${index}`} sample={item}/>) :
