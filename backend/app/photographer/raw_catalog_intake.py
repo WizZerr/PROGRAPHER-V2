@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import argparse
 from collections import Counter
+from contextlib import closing
 from datetime import date, datetime, timezone
 import json
 import math
@@ -205,7 +206,9 @@ def inspect_catalog(catalog: str | Path, *, include_private: bool = False) -> tu
     records: list[dict[str, Any]] = []
     private_group_keys: list[tuple[Any, ...]] = []
     uri = path.as_uri() + "?mode=ro&immutable=1"
-    with sqlite3.connect(uri, uri=True) as db:
+    # sqlite3.Connection.__exit__ commits/rolls back but does not close.
+    # Windows keeps snapshot.lrcat locked until close(), so close explicitly.
+    with closing(sqlite3.connect(uri, uri=True)) as db:
         db.row_factory = sqlite3.Row
         db.execute("PRAGMA query_only=ON")
         if db.execute("PRAGMA quick_check").fetchone()[0] != "ok":
