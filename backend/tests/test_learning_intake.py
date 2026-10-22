@@ -148,3 +148,96 @@ def test_reject_fake_smart_previews_folder(tmp_path: Path, monkeypatch):
     with pytest.raises(LearningIntakeError, match="Smart Previews"):
         store.attach_catalog(profile_id, catalog_path=str(catalog), smart_previews_path=str(fake))
     assert store.get(profile_id)["catalogs"] == []
+
+def test_catalog_folder_autodetects_exact_sibling(tmp_path: Path, monkeypatch):
+    from app.learning_intake.discovery import discover_catalogs
+    store = new_store(tmp_path, monkeypatch)
+    catalog = tmp_path / "Wedding 2026.lrcat"
+    make_catalog(catalog)
+    matched = tmp_path / "Wedding 2026 Smart Previews.lrdata"
+    matched.mkdir()
+    (tmp_path / "Wedding 2026 Previews.lrdata").mkdir()
+    (tmp_path / "Other Smart Previews.lrdata").mkdir()
+
+    result = discover_catalogs(str(tmp_path))
+    assert result["requires_selection"] is False
+    assert result["catalogs"][0]["catalog_path"] == str(catalog.resolve())
+    assert result["catalogs"][0]["smart_previews_path"] == str(matched.resolve())
+    assert result["catalogs"][0]["preview_detection"] == "name_match_unverified"
+
+    profile_id = store.create(
+        name="Wedding", photography_type="wedding",
+        color_mode="color", consent=True,
+    )["profile_id"]
+    saved = store.attach_catalog(profile_id, catalog_path=str(catalog))
+    assert saved["catalogs"][0]["smart_previews_path"] == str(matched.resolve())
+    assert saved["catalogs"][0]["source_status"] == "smart_previews_unverified"
+    assert saved["training_ready_samples"] == 0
+
+
+def test_discovery_multiple_catalogs_requires_explicit_selection(tmp_path: Path):
+    from app.learning_intake.discovery import discover_catalogs
+    a, b = tmp_path / "A.lrcat", tmp_path / "B.lrcat"
+    make_catalog(a)
+    make_catalog(b)
+    (tmp_path / "B Smart Previews.lrdata").mkdir()
+    result = discover_catalogs(str(tmp_path))
+    assert result["requires_selection"] is True
+    assert [Path(i["catalog_path"]).name for i in result["catalogs"]] == [
+        "A.lrcat", "B.lrcat"
+    ]
+    assert result["catalogs"][0]["smart_previews_path"] is None
+    assert result["catalogs"][1]["smart_previews_path"] is not None
+
+
+def test_discovery_does_not_guess_wrong_preview_or_recurse(tmp_path: Path):
+    from app.learning_intake.discovery import discover_catalogs
+    catalog = tmp_path / "My Catalog.lrcat"
+    make_catalog(catalog)
+    (tmp_path / "Unrelated Smart Previews.lrdata").mkdir()
+    (tmp_path / "My Catalog Previews.lrdata").mkdir()
+    deeper = tmp_path / "Nested"
+    deeper.mkdir()
+    (deeper / "My Catalog Smart Previews.lrdata").mkdir()
+
+    result = discover_catalogs(str(catalog))
+    assert result["catalogs"][0]["preview_detection"] == "not_found"
+    assert result["catalogs"][0]["smart_previews_path"] is None
+
+
+def test_discovery_rejects_empty_dir_symlinks_and_preview_folder(tmp_path: Path):
+    from app.learning_intake.discovery import discover_catalogs
+    with pytest.raises(LearningIntakeError, match="No .lrcat"):
+        discover_catalogs(str(tmp_path))
+    cache = tmp_path / "Demo Smart Previews.lrdata"
+    cache.mkdir()
+    with pytest.raises(LearningIntakeError, match="catalog folder"):
+        discover_catalogs(str(cache))
+    bad_link = tmp_path / "linked.lrcat"
+    target = tmp_path / "Real.lrcat"
+    make_catalog(target)
+    try:
+        bad_link.symlink_to(target)
+    except OSError:
+        pytest.skip("Windows symlink creation requires permissions")
+    with pytest.raises(LearningIntakeError, match="Symbolic-link"):
+        discover_catalogs(str(bad_link))
+
+
+def test_detection_override_respects_manual_preview_path(tmp_path: Path, monkeypatch):
+    store = new_store(tmp_path, monkeypatch)
+    catalog = tmp_path / "A.lrcat"
+    make_catalog(catalog)
+    automatic = tmp_path / "A Smart Previews.lrdata"
+    automatic.mkdir()
+    manual = tmp_path / "Elsewhere Smart Previews.lrdata"
+    manual.mkdir()
+    profile_id = store.create(
+        name="Wedding", photography_type="wedding",
+        color_mode="color", consent=True,
+    )["profile_id"]
+    result = store.attach_catalog(
+        profile_id, catalog_path=str(catalog), smart_previews_path=str(manual),
+    )
+    assert result["catalogs"][0]["smart_previews_path"] == str(manual.resolve())
+    assert result["training_ready_samples"] == 0
