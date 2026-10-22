@@ -94,7 +94,7 @@ export default function SamplePreflightPanel({ profile }: { profile: LearningPro
         </select>
       </label>
       <button className={styles.run} type="button" disabled={!catalogPath || busy} onClick={() => void run()}>
-        {busy ? "קורא עותק קטלוג ובודק מדגם…" : "בדוק מדגם של 16 רשומות"}
+        {busy ? "קורא עותק קטלוג ובודק מדגם…" : rawFolder ? "בדוק מדגם + מועמדי RAW (מחקר)" : "בדוק מדגם של 16 רשומות"}
       </button>
     </div>
     <div className={styles.automaticSource} aria-live="polite">
@@ -112,7 +112,7 @@ export default function SamplePreflightPanel({ profile }: { profile: LearningPro
       <p className={styles.sourceCaveat}>איתור תיקייה בלבד: עדיין לא פענחנו את תמונות Smart Previews, לא קישרנו אותן למזהי Lightroom ולא השתמשנו בפיקסלים שלהן במדגם.</p>
     </div>
     <details className={styles.advanced}>
-      <summary>אפשרויות מתקדמות · בדיקת מועמד RAW ידנית</summary>
+      <summary>{rawFolder ? "אפשרויות מתקדמות · בדיקת RAW ידנית פעילה" : "אפשרויות מתקדמות · בדיקת מועמד RAW ידנית"}</summary>
       <p>למחקר בלבד, כשצריך לבדוק קובץ מקור בנפרד: אפשר לבחור תיקיית RAW לחיפוש לפי שם ולחישוב SHA-256. פעולה זו אינה נדרשת לבדיקה הראשית ולא מוכיחה התאמת תמונה ל־Lightroom.</p>
       <div className={styles.sourceControl}>
         <button type="button" disabled={busy} onClick={() => void chooseRaw()}>{rawFolder ? "החלף תיקיית RAW" : "בחר תיקיית RAW למחקר"}</button>
