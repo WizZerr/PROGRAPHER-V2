@@ -1,0 +1,56 @@
+# PG-LI-00/01 — Catalog-first profile onboarding
+
+**Branch:** `feature/pg-learning-onboarding-00-02`  
+**Baseline:** `main` at `712b552`  
+**Basis:** user-authored "ProGrapher — תהליך הלמידה מקצה לקצה" (2026-10-16), Stages 0–8.  
+**Status:** Draft implementation; Windows and full-repo regression tests required before merge. No personal Brain has been trained.
+
+## Contract: exactly what Stage 0–2 mean
+
+| Stage from user document | This Part | Completion / next gate |
+| --- | --- | --- |
+| 0: Profile input | **Implemented for review** | Name, photography type, color/B&W, consent, one or more catalogs, optional Smart Previews or RAW fallback; versioning/multi-user permissions still pending |
+| 1: Lightroom catalog reading | **Aggregate intake implemented for review** | SQLite consistent temporary backup; existing `inspect_catalog` summarizes RAW count, syntactically parsed Develop records and candidate groups. **Does not verify final edits, event labels, true source identity or Smart Preview pixels.** |
+| 2: Starting point / Reset vs Import | **Blocked, not implemented** | Need safe 16-image Lightroom Bridge sampling per photographer, verify all applicable fields/initial preset/profile/camera conditions and store evidence |
+| 3: Neutral rendering | **Not in scope** | Document describes rawpy + Adobe profiles and preferred Smart Previews; v4.0 GitHub plan keeps Lightroom Classic as definitive rendering engine and independent Adobe-equivalent JPEG renderer deferred. Research a source-only neutral feature preview with measured parity; don't substitute edited images. |
+| 4: Features | **Not in scope** | numpy, YuNet, SigLIP 2, metadata, WB and camera/LR context must be consistently computed at training and inference |
+| 5: Personalized learning | **Not in scope** | Per-slider Gradient Boosting candidates, fixed-value channels, persisted feature schema, train-only fitting and versioned artifacts |
+| 6: Validation | **Not in scope** | Whole-event holdout, photographer-specific presets, no data leakage and gate-controlled fallback |
+| 7: New-event edit | **Not in scope** | Recipe → supported Lightroom Bridge/sidecar → readback/verification/review/export. No direct SQLite writes. |
+| 8: Learning loop | **Not in scope** | Photographer-approved final corrections, frozen evaluations, model promotion/rollback |
+
+## Implementation
+
+- `backend/app/learning_intake/service.py`: local SQLite tables, profile creation, consent guard, multiple catalog attachment; atomic SQLite consistent snapshot using source `mode=ro` and destination in private app directory; existing `raw_catalog_intake.inspect_catalog` on the snapshot. Temporary snapshot is deleted after audit.
+- `backend/app/api/routes/learning_intake.py`: authenticated local engine endpoints under `/api/learning-intake` using existing middleware. No training APIs.
+- `frontend/src/features/learning-intake`: Hebrew RTL wizard with source selectors and truthful aggregate report.
+- `frontend/src/features/profile/ProfileScreen.tsx` RAW CTA enters catalog-first onboarding; previous JPEG flow preserved.
+- `backend/tests/test_learning_intake.py`: consent, catalog-only read, source integrity, persisted multiple catalogs, rejection, Smart Preview path labels.
+
+**Never claim:** "learned profile", "train-ready examples" or "Smart Preview decoded". An existing Smart Preview folder is recorded as `smart_previews_unverified`; RAW selection is `raw_fallback_unverified`; catalog-only is `catalog_only_limited`.
+
+**No private uploads:** catalog paths and local aggregate summaries remain in local SQLite. No catalog, RAW, Smart Preview DNG, per-photo manifest or captured screenshot belongs in this repository, PR, CI artifact or logs.
+
+## Security / technical limits
+
+- Catalog probe is read-only; SQLite online backup reads committed source state into a private temporary `snapshot.lrcat`. Backing up a catalog of several gigabytes needs comparable free disk space and may take time.
+- Intake reuses research parser with documented Adobe private-schema limitations; incompatibility must fail visibly. This is not yet an unattended/background durable job.
+- File-system and Lightroom sidecar races, live Lightroom edit changes, source-to-catalog identity matching and source duplication have NOT been verified. For research, use a backed-up Lightroom catalog or closed/exported copy.
+- No real DNG Smart Preview decode/parity test, original RAW signature validation, camera-scene AI, Reset versus Import baseline or approved model input.
+- No changes to Lightroom SDK plugin, model registry or existing `main` product behavior except launching the new onboarding screen from the RAW profile CTA after merge.
+
+## Review checklist
+
+1. `cd backend`; with the project virtual environment and dependencies, run `python -m pytest -q tests/test_learning_intake.py tests/test_photographer_setup.py tests/test_raw_catalog_intake.py` (last path only if present; otherwise adjust).
+2. `cd frontend && npm ci && npm run lint && npm run build`.
+3. In a Windows Tauri session open "יצירת פרופיל למידה", create one profile and choose multiple **backed-up** valid LRCAT files. Reopen app to verify persistence.
+4. Choose one `Smart Previews.lrdata` directory and/or RAW fallback. Verify status says **unverified**, no training starts and count remains zero.
+5. Check malformed schemas/invalid path: show helpful error and no stored fake-success record. Confirm original catalog SHA remains unchanged and temporary copy gets deleted.
+6. Validate that selecting RAW in existing "הפרופיל שלי" now navigates to the new flow; JPEG remains unchanged.
+7. Record local test/build results against an exact commit; do NOT describe CI as green if GitHub quota prevents its execution.
+
+## Next Part: PG-LI-02 — verified source/finality/baseline
+
+On a COPY and with photographer authorization, verify catalog records against original RAW or correctly parsed Smart Previews using stable image identities; confirm actual delivered/final Develop state; validate Import versus Reset via a safe Lightroom Bridge sample (as specified in user document) before generating training-ready examples. Store evidence in a versioned private manifest; never infer initial state or finality from mere catalog presence.
+
+This document describes the user's **learning flow**. The repository `docs/MASTER_PLAN_SOURCE_OF_TRUTH.md` remains the product/architecture execution source of truth. The old PG-BS-01 branch/PR uses RAW+XMP median baseline and should be superseded for this workflow, not merged.
