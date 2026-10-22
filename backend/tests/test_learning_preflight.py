@@ -163,3 +163,43 @@ def test_missing_and_uncertain_develop_never_become_training_eligible():
     assert "unsupported_local_edit_review_required" in sample["issues"]
     assert "unmapped_develop_fields" in sample["issues"]
     assert sample["training_eligible"] is False
+
+
+def test_sample_api_is_authenticated_and_keeps_zero_training_ready(tmp_path: Path, monkeypatch):
+    from fastapi.testclient import TestClient
+    from app.application import create_app
+
+    monkeypatch.setenv("PROGRAPHER_DATA_DIR", str(tmp_path / "private"))
+    monkeypatch.setenv("PROGRAPHER_ENGINE_SECRET", "li02-sample-test-secret")
+    catalog = tmp_path / "wedding.lrcat"
+    make_fixture(catalog, count=3)
+    store = LearningProfileStore()
+    profile_id = store.create(
+        name="Wedding", photography_type="wedding",
+        color_mode="color", consent=True,
+    )["profile_id"]
+    store.attach_catalog(profile_id, catalog_path=str(catalog))
+    path = f"/api/learning-intake/profiles/{profile_id}/sample-preflight"
+
+    with TestClient(create_app()) as client:
+        payload = {"catalog_path": str(catalog), "sample_size": 16}
+        assert client.post(path, json=payload).status_code == 401
+        response = client.post(
+            path, json=payload,
+            headers={"X-ProGrapher-Secret": "li02-sample-test-secret"},
+        )
+        assert response.status_code == 200, response.text
+        data = response.json()
+        assert data["sample_count"] == 3
+        assert data["training_ready_samples"] == 0
+        assert all(item["source_identity_verified"] is False for item in data["records"])
+        invalid = client.post(
+            path, json={"catalog_path": str(catalog), "sample_size": 17},
+            headers={"X-ProGrapher-Secret": "li02-sample-test-secret"},
+        )
+        assert invalid.status_code == 422
+        unrelated = client.post(
+            path, json={"catalog_path": str(tmp_path / "wrong.lrcat")},
+            headers={"X-ProGrapher-Secret": "li02-sample-test-secret"},
+        )
+        assert unrelated.status_code == 422
