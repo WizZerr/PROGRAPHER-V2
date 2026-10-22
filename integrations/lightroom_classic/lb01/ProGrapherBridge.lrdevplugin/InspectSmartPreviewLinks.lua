@@ -56,8 +56,8 @@ local function run()
     }
     if not destination then return end
     local lowered = destination:lower():gsub('/', '\\')
-    if lowered:find('%.lrdata', 1, true)
-       or lowered:find('%.lrcat', 1, true)
+    if lowered:find('.lrdata', 1, true)
+       or lowered:find('.lrcat', 1, true)
        or not lowered:match('%.json$') then
         error('Choose a .json file OUTSIDE Lightroom catalog and preview folders.')
     end
