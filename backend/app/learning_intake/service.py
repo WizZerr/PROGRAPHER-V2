@@ -10,6 +10,7 @@ import json
 import sqlite3
 import tempfile
 import uuid
+from contextlib import closing, contextmanager
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -69,11 +70,15 @@ class LearningProfileStore:
                 )
             """)
 
+    @contextmanager
     def _db(self):
-        db = sqlite3.connect(self.db_path, timeout=30)
-        db.row_factory = sqlite3.Row
-        db.execute("PRAGMA foreign_keys=ON")
-        return db
+        # The connection context manager commits but does not close its handle.
+        # A real close is required on Windows and avoids accumulating handles.
+        with closing(sqlite3.connect(self.db_path, timeout=30)) as db:
+            db.row_factory = sqlite3.Row
+            db.execute("PRAGMA foreign_keys=ON")
+            with db:
+                yield db
 
     def create(self, *, name: str, photography_type: str, color_mode: str, consent: bool) -> dict:
         name = name.strip()
@@ -167,8 +172,10 @@ class LearningProfileStore:
         with tempfile.TemporaryDirectory(prefix="pg-lrcat-", dir=private_dir) as work:
             snapshot = Path(work) / "snapshot.lrcat"
             try:
-                with sqlite3.connect(catalog.as_uri() + "?mode=ro", uri=True, timeout=15) as source:
-                    with sqlite3.connect(snapshot) as destination:
+                # Both backup handles must close before TemporaryDirectory unlinks
+                # snapshot.lrcat. A plain 'with sqlite3.connect' is insufficient.
+                with closing(sqlite3.connect(catalog.as_uri() + "?mode=ro", uri=True, timeout=15)) as source:
+                    with closing(sqlite3.connect(snapshot)) as destination:
                         source.backup(destination, pages=2048, sleep=0.05)
                 aggregate, private = inspect_catalog(snapshot, include_private=False)
                 assert private is None
