@@ -305,19 +305,39 @@ def test_delete_api_requires_auth_returns_json_and_404(tmp_path: Path, monkeypat
     from fastapi.testclient import TestClient
     from app.application import create_app
 
-    store = new_store(tmp_path, monkeypatch)
+    # The API creates its own LearningProfileStore() using user_data_dir().
+    # Exercise a real single database for setup + HTTP requests. Other tests
+    # deliberately inject a separate store.db_path ("profiles.sqlite3"),
+    # which is not the API's default "prographer.sqlite3".
+    monkeypatch.setenv("PROGRAPHER_DATA_DIR", str(tmp_path / "local-private"))
+    store = LearningProfileStore()
     profile_id = store.create(
         name="API", photography_type="wedding",
         color_mode="color", consent=True,
     )["profile_id"]
+    untouched_id = store.create(
+        name="Keep", photography_type="portraits",
+        color_mode="color", consent=True,
+    )["profile_id"]
     with TestClient(create_app()) as client:
-        assert client.delete(f"/api/learning-intake/profiles/{profile_id}").status_code == 401
-        deleted = client.delete(
-            f"/api/learning-intake/profiles/{profile_id}", headers=HEADERS,
-        )
-        assert deleted.status_code == 200
+        route = f"/api/learning-intake/profiles/{profile_id}"
+        assert client.delete(route).status_code == 401
+
+        # Prove the profile exists in the API's own database before deleting;
+        # a mismatch here must not masquerade as a delete-route failure.
+        exists = client.get(route, headers=HEADERS)
+        assert exists.status_code == 200, exists.text
+        assert exists.json()["profile_id"] == profile_id
+
+        deleted = client.delete(route, headers=HEADERS)
+        assert deleted.status_code == 200, deleted.text
         assert deleted.json() == {"deleted": True}
-        missing = client.delete(
-            f"/api/learning-intake/profiles/{profile_id}", headers=HEADERS,
-        )
+
+        missing = client.delete(route, headers=HEADERS)
         assert missing.status_code == 404
+        assert "not found" in missing.json()["detail"].lower()
+        assert client.get(route, headers=HEADERS).status_code == 404
+        assert client.get(
+            f"/api/learning-intake/profiles/{untouched_id}", headers=HEADERS,
+        ).status_code == 200
+    assert {p["profile_id"] for p in store.list()} == {untouched_id}
