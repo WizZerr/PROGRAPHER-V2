@@ -14,6 +14,7 @@ import {
   type ColorMode,
   type LearningProfile,
 } from "./learningIntake.api";
+import SamplePreflightPanel from "./SamplePreflightPanel";
 import styles from "./LearningIntakeScreen.module.css";
 
 const sourceLabels = {
@@ -324,5 +325,6 @@ export default function LearningIntakeScreen() {
         </div>
       </section>
     </div>}
+    {profile && profile.catalogs.length > 0 && <SamplePreflightPanel key={profile.profile_id} profile={profile}/>}
   </main>;
 }
