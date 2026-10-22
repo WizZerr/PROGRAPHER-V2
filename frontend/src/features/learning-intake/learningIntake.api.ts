@@ -130,3 +130,29 @@ export async function runSamplePreflight(
     { method: "POST", body: JSON.stringify(input) },
   );
 }
+
+export type SmartPreviewContentReport = {
+  schema: string;
+  status: "DNG_CONTENT_PILOT_ONLY" | "SMART_PREVIEWS_NOT_CONFIGURED";
+  source_kind: "smart_previews";
+  counts: Record<string, number>;
+  decode_attempts: number;
+  decode_status_counts: Record<string, number>;
+  decoded_samples: { state: string; width: number; height: number; preview_mean_luma: number }[];
+  catalog_photo_identity_verified: false;
+  photo_to_dng_link_verified: false;
+  source_only_neutral_parity_verified: false;
+  photographer_finality_verified: false;
+  training_ready_samples: 0;
+  warnings: string[];
+};
+
+export async function probeSmartPreviewContents(
+  profileId: string,
+  catalogPath: string,
+): Promise<SmartPreviewContentReport> {
+  return apiRequest<SmartPreviewContentReport>(
+    `/api/learning-intake/profiles/${encodeURIComponent(profileId)}/smart-preview-probe`,
+    { method: "POST", body: JSON.stringify({ catalog_path: catalogPath }) },
+  );
+}
