@@ -134,6 +134,29 @@ class LearningProfileStore:
             } for entry in catalogs],
         }
 
+    def delete(self, profile_id: str) -> None:
+        """Remove only this local onboarding profile and its stored metadata.
+
+        Source .lrcat, RAW, Smart Previews and other profiles are untouched.
+        Related rows are deleted first because existing SQLite installations
+        intentionally do not use ON DELETE CASCADE on this table.
+        """
+        with self._db() as db:
+            existing = db.execute(
+                "SELECT 1 FROM learning_intake_profiles WHERE profile_id = ?",
+                (profile_id,),
+            ).fetchone()
+            if existing is None:
+                raise LearningIntakeError("Learning profile was not found.")
+            db.execute(
+                "DELETE FROM learning_intake_catalogs WHERE profile_id = ?",
+                (profile_id,),
+            )
+            db.execute(
+                "DELETE FROM learning_intake_profiles WHERE profile_id = ?",
+                (profile_id,),
+            )
+
     def attach_catalog(
         self, profile_id: str, *, catalog_path: str,
         smart_previews_path: str | None = None, raw_fallback_path: str | None = None,
