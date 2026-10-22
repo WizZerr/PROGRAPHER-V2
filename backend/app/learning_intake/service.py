@@ -174,6 +174,42 @@ class LearningProfileStore:
                 (profile_id,),
             )
 
+    def probe_smart_previews(self, profile_id: str, *, catalog_path: str) -> dict:
+        """Read-only DNG content pilot on the Smart Previews path saved in profile."""
+        from app.learning_intake.smart_preview_probe import inspect_smart_previews
+
+        profile = self.get(profile_id)
+        catalog = next(
+            (entry for entry in profile["catalogs"] if entry["catalog_path"] == catalog_path),
+            None,
+        )
+        if catalog is None:
+            raise LearningIntakeError("Catalog is not linked to this profile.")
+        stored = catalog.get("smart_previews_path")
+        if not stored:
+            return {
+                "schema": "prographer.learning_intake.smart_preview_probe.v1",
+                "status": "SMART_PREVIEWS_NOT_CONFIGURED",
+                "source_kind": "smart_previews",
+                "counts": {},
+                "decode_attempts": 0,
+                "decode_status_counts": {},
+                "decoded_samples": [],
+                "catalog_photo_identity_verified": False,
+                "photo_to_dng_link_verified": False,
+                "source_only_neutral_parity_verified": False,
+                "photographer_finality_verified": False,
+                "training_ready_samples": 0,
+                "warnings": ["No Smart Previews folder is saved for this Lightroom catalog."],
+            }
+        try:
+            source = _path(stored, directory=True)
+        except (OSError, ValueError) as exc:
+            raise LearningIntakeError(
+                "Saved Smart Previews folder is missing. Re-audit the catalog location."
+            ) from exc
+        return inspect_smart_previews(source)
+
     def preview_sample(
         self, profile_id: str, *, catalog_path: str,
         raw_folder: str | None = None, sample_size: int = 16,
