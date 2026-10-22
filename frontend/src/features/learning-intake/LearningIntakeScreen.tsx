@@ -179,7 +179,7 @@ export default function LearningIntakeScreen() {
             <span>{sourceLabels[item.source_status]}</span>
             <div className={styles.metrics}>
               <div><small>רשומות RAW</small><b>{item.aggregate.catalog_raw_records.toLocaleString("he-IL")}</b></div>
-              <div><small>עריכות מפוענחות</small><b>{item.aggregate.parsed_raw_records.toLocaleString("he-IL")}</b></div>
+              <div><small>רשומות Develop מפוענחות (לא מאומתות)</small><b>{item.aggregate.parsed_raw_records.toLocaleString("he-IL")}</b></div>
               <div><small>קבוצות מועמדות</small><b>{item.aggregate.candidate_folder_day_groups.toLocaleString("he-IL")}</b></div>
               <div><small>מאומתות לאימון</small><b>0</b></div>
             </div>
