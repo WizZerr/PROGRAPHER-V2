@@ -40,6 +40,11 @@ class SmartPreviewProbeRequest(BaseModel):
     catalog_path: str = Field(min_length=1)
 
 
+class SmartPreviewSdkReviewRequest(BaseModel):
+    catalog_path: str = Field(min_length=1)
+    evidence_path: str = Field(min_length=1)
+
+
 class SamplePreflightRequest(BaseModel):
     catalog_path: str = Field(min_length=1)
     raw_folder: str | None = None
@@ -63,6 +68,17 @@ def get_profile(profile_id: str) -> dict:
 def create_profile(payload: CreateLearningProfile) -> dict:
     try:
         return LearningProfileStore().create(**payload.model_dump())
+    except LearningIntakeError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+@router.post("/profiles/{profile_id}/smart-preview-sdk-review")
+def review_smart_preview_sdk_links(profile_id: str, payload: SmartPreviewSdkReviewRequest) -> dict:
+    """Corroborate local SDK link evidence; never certify learning samples."""
+    try:
+        return LearningProfileStore().review_smart_preview_sdk_links(
+            profile_id, **payload.model_dump()
+        )
     except LearningIntakeError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
 
