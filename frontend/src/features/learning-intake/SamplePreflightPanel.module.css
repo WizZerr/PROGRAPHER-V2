@@ -45,3 +45,10 @@
 .advanced p{font-size:12px;line-height:1.7;color:#a9b9cc}
 .advanced .sourceControl{max-width:390px}
 @media(max-width:700px){.selectors{grid-template-columns:1fr}.run{grid-column:auto}}
+
+.previewProbe{margin-top:12px;max-width:320px;padding:11px 14px;border-radius:6px;border:1px solid #58748b;background:#243b51;color:#f0f5fa;cursor:pointer;font-size:12px;font-weight:600}
+.previewProbe:disabled{opacity:.45;cursor:not-allowed}
+.previewResults{margin-top:15px;padding:12px 14px;border:1px solid #435873;border-radius:6px;background:#111f2d;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:11px;color:#b6c9db;font-size:12px}
+.previewResults strong{font-weight:700;color:#f0f6fe;font-variant-numeric:tabular-nums}
+.previewResults p{grid-column:1/-1;margin:4px 0 0;font-size:11px;color:#d0b49c}
+@media(max-width:700px){.previewResults{grid-template-columns:1fr}}
