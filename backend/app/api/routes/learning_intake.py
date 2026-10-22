@@ -36,6 +36,10 @@ class AttachLearningCatalog(BaseModel):
     raw_fallback_path: str | None = None
 
 
+class SmartPreviewProbeRequest(BaseModel):
+    catalog_path: str = Field(min_length=1)
+
+
 class SamplePreflightRequest(BaseModel):
     catalog_path: str = Field(min_length=1)
     raw_folder: str | None = None
@@ -59,6 +63,17 @@ def get_profile(profile_id: str) -> dict:
 def create_profile(payload: CreateLearningProfile) -> dict:
     try:
         return LearningProfileStore().create(**payload.model_dump())
+    except LearningIntakeError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+@router.post("/profiles/{profile_id}/smart-preview-probe")
+def probe_smart_preview_contents(profile_id: str, payload: SmartPreviewProbeRequest) -> dict:
+    """Local authenticated DNG inventory/decode; does not certify Lightroom IDs."""
+    try:
+        return LearningProfileStore().probe_smart_previews(
+            profile_id, catalog_path=payload.catalog_path,
+        )
     except LearningIntakeError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
 
