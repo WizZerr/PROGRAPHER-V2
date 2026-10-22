@@ -49,3 +49,13 @@ In ProGrapher:
 ## Next: PG-LI-02B
 
 Implement an explicit controlled Lightroom Bridge research readback for **10–16 photographer-approved images**: exact source identity including catalog photo ID/version and source hash, *final delivered edit* confirmation, ambiguity resolution of Virtual Copies and event identity, controlled Import-versus-Reset baseline. Only after corroborated evidence should a versioned private per-image training manifest be allowed, and train/validation/test splits must remain whole-event.
+
+## Catalog-first UI correction — 2026-10-22
+
+A photographer should not be asked to select RAW on the primary learning screen. The previously prominent RAW chooser created confusion with the product's intended catalog→Smart Previews workflow.
+
+- The normal PG-LI-02A UI now shows the *saved* automatically-discovered Smart Previews sibling path for the selected Lightroom catalog, or a clear "not detected" state.
+- The primary action runs the already-supported **catalog metadata sample** directly without requesting RAW. It explicitly does **not** decode Smart Previews or use their pixels; discovery is not semantic/photo identity validation.
+- For separate debugging only, manual RAW folder scanning remains behind an expandable **advanced research** section and is visibly labeled when active. It is not a prerequisite for learning.
+- Do not claim that Smart Previews are analyzed yet. The next PG-LI-02B part must implement format-version-aware read-only Smart Preview indexing/decoding with reliable Lightroom image identity and validated input-only representation before the default sampler may genuinely use them.
+- Prior backend tests remain relevant and unchanged; this change is frontend-only. Gate: `npm.cmd run lint`, `npm.cmd run build`, then visually verify that default sample works without RAW and source status is shown accurately.
