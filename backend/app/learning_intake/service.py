@@ -210,6 +210,40 @@ class LearningProfileStore:
             ) from exc
         return inspect_smart_previews(source)
 
+    def review_smart_preview_sdk_links(
+        self, profile_id: str, *, catalog_path: str, evidence_path: str,
+    ) -> dict:
+        """Validate selected UUID→DNG paths from a manual read-only SDK pilot."""
+        from app.learning_intake.sdk_link_review import verify_link_export
+
+        profile = self.get(profile_id)
+        entry = next(
+            (item for item in profile["catalogs"] if item["catalog_path"] == catalog_path),
+            None,
+        )
+        if entry is None:
+            raise LearningIntakeError("Catalog is not linked to this profile.")
+        if not entry.get("smart_previews_path"):
+            raise LearningIntakeError("Profile has no Smart Preview directory.")
+        try:
+            catalog = _path(catalog_path, suffix=".lrcat")
+            source = _path(entry["smart_previews_path"], directory=True)
+            evidence = _path(evidence_path, suffix=".json")
+        except (OSError, ValueError) as exc:
+            raise LearningIntakeError("Catalog, Smart Previews or SDK evidence file unavailable.") from exc
+        # Never permit writing research output inside the Lightroom package.
+        if evidence.is_relative_to(source) or evidence == catalog:
+            raise LearningIntakeError("SDK research evidence must be outside Lightroom folders.")
+        _aggregate, private = _inspect_consistent_snapshot(catalog, include_private=True)
+        if not private:
+            raise LearningIntakeError("Private Lightroom catalog inventory unavailable.")
+        return verify_link_export(
+            evidence_path=evidence,
+            catalog_path=catalog,
+            preview_root=source,
+            catalog_records=private["records"],
+        )
+
     def preview_sample(
         self, profile_id: str, *, catalog_path: str,
         raw_folder: str | None = None, sample_size: int = 16,
