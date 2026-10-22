@@ -68,9 +68,18 @@ def _source_candidates(source_root: Path, wanted: set[str]) -> dict[str, list[Pa
     """Search bounded local directory, no symlink traversal or filename guesses."""
     found: dict[str, list[Path]] = defaultdict(list)
     visited = 0
-    for directory, subdirs, filenames in os.walk(source_root, followlinks=False):
+    def on_walk_error(_error: OSError) -> None:
+        raise LearningIntakeError("Cannot read all directories in the selected RAW root.")
+
+    for directory, subdirs, filenames in os.walk(
+        source_root, followlinks=False, onerror=on_walk_error
+    ):
         base = Path(directory)
-        subdirs[:] = sorted(d for d in subdirs if not (base / d).is_symlink())
+        # Windows directory junctions are also excluded (not only symlinks).
+        subdirs[:] = sorted(
+            d for d in subdirs
+            if not (base / d).is_symlink() and not (base / d).is_junction()
+        )
         for filename in sorted(filenames):
             entry = base / filename
             if entry.is_symlink():
