@@ -41,6 +41,23 @@ def _path(value: str, *, suffix: str | None = None, directory: bool = False) -> 
     return path
 
 
+def _inspect_consistent_snapshot(catalog: Path, *, include_private: bool = False):
+    """Audit a consistent copy; close handles and delete it on Windows."""
+    private_dir = user_data_dir() / "learning_intake"
+    private_dir.mkdir(parents=True, exist_ok=True)
+    with tempfile.TemporaryDirectory(prefix="pg-lrcat-", dir=private_dir) as work:
+        snapshot = Path(work) / "snapshot.lrcat"
+        try:
+            with closing(sqlite3.connect(catalog.as_uri() + "?mode=ro", uri=True, timeout=15)) as source:
+                with closing(sqlite3.connect(snapshot)) as dest:
+                    source.backup(dest, pages=2048, sleep=0.05)
+            return inspect_catalog(snapshot, include_private=include_private)
+        except (sqlite3.Error, CatalogIntakeError, OSError, ValueError) as exc:
+            raise LearningIntakeError(
+                "Catalog audit failed; no training performed. Use a closed, finalized Lightroom export if needed."
+            ) from exc
+
+
 class LearningProfileStore:
     def __init__(self, db_path: Path | None = None):
         self.db_path = db_path or (user_data_dir() / "prographer.sqlite3")
@@ -157,6 +174,40 @@ class LearningProfileStore:
                 (profile_id,),
             )
 
+    def preview_sample(
+        self, profile_id: str, *, catalog_path: str,
+        raw_folder: str | None = None, sample_size: int = 16,
+    ) -> dict:
+        """Review up to 16 local candidate rows; never persist filenames or IDs.
+
+        Fail closed if the catalog is not already linked to this profile.
+        Filename-only RAW candidates are NOT Lightroom identity matches.
+        """
+        from app.learning_intake.preflight import sample_preflight, MAX_SAMPLE
+
+        if not 1 <= sample_size <= MAX_SAMPLE:
+            raise LearningIntakeError("Sample size must be between 1 and 16.")
+        profile = self.get(profile_id)
+        if not any(item["catalog_path"] == catalog_path for item in profile["catalogs"]):
+            raise LearningIntakeError("Catalog is not linked to this learning profile.")
+        try:
+            catalog = _path(catalog_path, suffix=".lrcat")
+            root = _path(raw_folder, directory=True) if raw_folder else None
+        except (OSError, ValueError) as exc:
+            raise LearningIntakeError("Catalog or RAW folder is no longer accessible.") from exc
+
+        probe = probe_catalog(catalog)
+        if not probe.sqlite_valid or not probe.readable:
+            raise LearningIntakeError("Catalog cannot be read safely: " + probe.note)
+
+        _aggregate, private = _inspect_consistent_snapshot(catalog, include_private=True)
+        if private is None:
+            raise LearningIntakeError("Private research inventory unavailable.")
+        result = sample_preflight(private, raw_root=root, sample_size=sample_size)
+        # Per-photo evidence is transient; no manifests are written or uploaded.
+        result["catalog_path"] = str(catalog)
+        return result
+
     def attach_catalog(
         self, profile_id: str, *, catalog_path: str,
         smart_previews_path: str | None = None, raw_fallback_path: str | None = None,
@@ -192,24 +243,8 @@ class LearningProfileStore:
         if not probe.sqlite_valid or not probe.readable:
             raise LearningIntakeError("Lightroom catalog cannot be read safely: " + probe.note)
 
-        # A new backup, not an immutable read of a potentially live catalog:
-        # SQLite's online backup includes committed WAL records consistently.
-        private_dir = user_data_dir() / "learning_intake"
-        private_dir.mkdir(parents=True, exist_ok=True)
-        with tempfile.TemporaryDirectory(prefix="pg-lrcat-", dir=private_dir) as work:
-            snapshot = Path(work) / "snapshot.lrcat"
-            try:
-                # Both backup handles must close before TemporaryDirectory unlinks
-                # snapshot.lrcat. A plain 'with sqlite3.connect' is insufficient.
-                with closing(sqlite3.connect(catalog.as_uri() + "?mode=ro", uri=True, timeout=15)) as source:
-                    with closing(sqlite3.connect(snapshot)) as destination:
-                        source.backup(destination, pages=2048, sleep=0.05)
-                aggregate, private = inspect_catalog(snapshot, include_private=False)
-                assert private is None
-            except (sqlite3.Error, CatalogIntakeError, OSError, ValueError) as exc:
-                raise LearningIntakeError(
-                    "Catalog audit failed; no training performed. Export a closed, finalized catalog copy if required."
-                ) from exc
+        aggregate, private = _inspect_consistent_snapshot(catalog, include_private=False)
+        assert private is None
 
         # Deliberately keep only bounded, nonidentifying aggregates.
         totals = aggregate.get("totals", {})
