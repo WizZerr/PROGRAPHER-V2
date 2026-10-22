@@ -4,6 +4,8 @@ import { useState } from "react";
 import { open } from "@tauri-apps/plugin-dialog";
 import {
   runSamplePreflight,
+  probeSmartPreviewContents,
+  type SmartPreviewContentReport,
   type LearningProfile,
   type PreflightSampleReport,
   type SourceSample,
@@ -44,8 +46,26 @@ export default function SamplePreflightPanel({ profile }: { profile: LearningPro
   const [report, setReport] = useState<PreflightSampleReport | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [previewReport, setPreviewReport] = useState<SmartPreviewContentReport | null>(null);
+  const [previewBusy, setPreviewBusy] = useState(false);
+  const [previewError, setPreviewError] = useState("");
   const selectedCatalog = profile.catalogs.find((item) => item.catalog_path === catalogPath);
   const smartPreviewsPath = selectedCatalog?.smart_previews_path ?? null;
+
+  async function inspectSmartPreviewContents() {
+    if (!catalogPath || previewBusy || busy) return;
+    setPreviewBusy(true);
+    setPreviewError("");
+    setPreviewReport(null);
+    try {
+      const result = await probeSmartPreviewContents(profile.profile_id, catalogPath);
+      setPreviewReport(result);
+    } catch (cause) {
+      setPreviewError(cause instanceof Error ? cause.message : "בדיקת Smart Previews נכשלה.");
+    } finally {
+      setPreviewBusy(false);
+    }
+  }
 
   async function chooseRaw() {
     if (busy) return;
@@ -89,7 +109,13 @@ export default function SamplePreflightPanel({ profile }: { profile: LearningPro
     <div className={styles.selectors}>
       <label>קטלוג לבדיקה
         <select value={catalogPath} disabled={busy}
-          onChange={(event) => { setCatalogPath(event.target.value); setReport(null); setRawFolder(""); }}>
+          onChange={(event) => {
+            setCatalogPath(event.target.value);
+            setReport(null);
+            setPreviewReport(null);
+            setPreviewError("");
+            setRawFolder("");
+          }}>
           {profile.catalogs.map((item) => <option key={item.catalog_path} value={item.catalog_path}>{item.catalog_path}</option>)}
         </select>
       </label>
@@ -109,7 +135,19 @@ export default function SamplePreflightPanel({ profile }: { profile: LearningPro
       ) : (
         <p>לא שמורה בפרופיל תיקיית Smart Previews לקטלוג הזה. אפשר לבדוק מחדש את קליטת הקטלוג לאיתור תיקייה סמוכה.</p>
       )}
-      <p className={styles.sourceCaveat}>הנתיב נשמר בזמן קליטת הקטלוג ואינו בדיקת קיום עדכנית של התיקייה. עדיין לא פענחנו את תמונות Smart Previews, לא קישרנו אותן למזהי Lightroom ולא השתמשנו בפיקסלים שלהן במדגם.</p>
+      <p className={styles.sourceCaveat}>הנתיב נשמר בזמן קליטת הקטלוג, ואינו בדיקת קיום עדכנית. אפשר לבדוק את קובצי ה־DNG בפועל, אבל פענוח מוצלח עדיין אינו מאמת התאמה לרשומת Lightroom או נקודת התחלה ניטרלית.</p>
+      <button className={styles.previewProbe} type="button" onClick={() => void inspectSmartPreviewContents()}
+        disabled={!smartPreviewsPath || previewBusy || busy}>
+        {previewBusy ? "סורק ומנסה לפענח קובצי DNG…" : "בדוק תוכן Smart Previews"}
+      </button>
+      {previewError && <p role="alert" className={styles.error}>{previewError}</p>}
+      {previewReport && <div className={styles.previewResults} role="status">
+        <span>קובצי DNG בעלי חתימת TIFF: <strong>{previewReport.counts.dng_tiff_signature_candidates ?? 0}</strong></span>
+        <span>ניסיונות פענוח: <strong>{previewReport.decode_attempts}</strong></span>
+        <span>פוענחו באמצעות LibRaw: <strong>{previewReport.decode_status_counts.decoded_unverified ?? 0}</strong></span>
+        <span>קובצי DNG שלא פוענחו או אינם נתמכים: <strong>{(previewReport.decode_status_counts.unsupported_or_corrupt_dng ?? 0) + (previewReport.decode_status_counts.decoder_unavailable ?? 0)}</strong></span>
+        <p>הבדיקה מפענחת לכל היותר ארבעה קובצי DNG ומחשבת מדד בהירות זמני. היא אינה מציגה תמונות ערוכות, אינה משווה אותן ל־Lightroom ואינה מוסיפה אף דוגמה לאימון.</p>
+      </div>}
     </div>
     <details className={styles.advanced}>
       <summary>{rawFolder ? "אפשרויות מתקדמות · בדיקת RAW ידנית פעילה" : "אפשרויות מתקדמות · בדיקת מועמד RAW ידנית"}</summary>
