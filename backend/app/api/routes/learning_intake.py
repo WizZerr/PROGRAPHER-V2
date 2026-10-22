@@ -57,12 +57,14 @@ def create_profile(payload: CreateLearningProfile) -> dict:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
 
 
-@router.delete("/profiles/{profile_id}", status_code=204)
-def delete_profile(profile_id: str) -> None:
+@router.delete("/profiles/{profile_id}")
+def delete_profile(profile_id: str) -> dict:
     try:
         LearningProfileStore().delete(profile_id)
     except LearningIntakeError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
+    # apiRequest expects a JSON response. Do not return 204 No Content here.
+    return {"deleted": True}
 
 
 @router.post("/profiles/{profile_id}/catalogs")
