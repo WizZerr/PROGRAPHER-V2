@@ -211,7 +211,7 @@ export default function SamplePreflightPanel({ profile }: { profile: LearningPro
         <div><small>זהות מאומתת</small><strong>{report.source_identity_verified_count}</strong></div>
         <div><small>מוכנות לאימון</small><strong>{report.training_ready_samples}</strong></div>
       </div>
-      <p className={styles.notice}>זהו מדגם של רשומות קטלוג. Smart Previews טרם פוענחו. {rawFolder ? "גם מועמד RAW לפי שם ו־SHA-256 אינו מוכיח זהות מול Lightroom." : "לא נדרשה בחירת RAW."} עריכה סופית ונקודת Import/Reset טרם אומתו.</p>
+      <p className={styles.notice}>זהו מדגם מטא־דאטה של רשומות קטלוג; גם אם בדיקת ה־DNG נפרדת הצליחה, הפיקסלים שלה עדיין לא קושרו למדגם. {rawFolder ? "גם מועמד RAW לפי שם ו־SHA-256 אינו מוכיח זהות מול Lightroom." : "לא נדרשה בחירת RAW."} עריכה סופית ונקודת Import/Reset טרם אומתו.</p>
       <div className={styles.rows}>
         {report.records.length > 0 ? report.records.map((item, index) =>
           <SampleRow key={`${item.catalog_image_id}-${index}`} sample={item}/>) :
