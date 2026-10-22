@@ -12,6 +12,7 @@ const items: Array<{ id: WorkspaceView; label: string }> = [
   { id: "gallery", label: "גלריה" },
   { id: "darkroom", label: "חדר עריכה" },
   { id: "profile", label: "הפרופיל שלי" },
+  { id: "learning-intake", label: "יצירת פרופיל למידה" },
 ];
 
 function NavIcon({ view }: { view: WorkspaceView }) {
@@ -49,6 +50,13 @@ function NavIcon({ view }: { view: WorkspaceView }) {
           <path d="M5 5h14v14H5z" />
           <path d="M8 8h8M8 12h8M8 16h5" />
           <circle cx="15.5" cy="16" r="1.5" />
+        </svg>
+      );
+    case "learning-intake":
+      return (
+        <svg {...common}>
+          <circle cx="12" cy="9" r="3.5" />
+          <path d="M4.5 20c.5-4 3-6 7.5-6 4.1 0 6.6 2 7.5 6M18.5 4v5M16 6.5h5" />
         </svg>
       );
     case "profile":
