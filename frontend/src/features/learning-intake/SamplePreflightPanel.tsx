@@ -105,10 +105,12 @@ export default function SamplePreflightPanel({ profile }: { profile: LearningPro
   }
 
   async function run() {
-    if (!catalogPath || busy) return;
+    if (!catalogPath || busy || previewBusy) return;
     setBusy(true);
     setError("");
+    setPreviewError("");
     setReport(null);
+    setPreviewReport(null);
     try {
       const result = await runSamplePreflight(profile.profile_id, {
         catalog_path: catalogPath,
@@ -116,6 +118,16 @@ export default function SamplePreflightPanel({ profile }: { profile: LearningPro
         sample_size: 16,
       });
       setReport(result);
+      // The normal flow automatically checks actual DNG contents when the
+      // profile has a Smart Preview source. Decoder failures are visible but
+      // must NOT turn a valid catalog metadata sample into an error.
+      if (smartPreviewsPath) {
+        try {
+          setPreviewReport(await probeSmartPreviewContents(profile.profile_id, catalogPath));
+        } catch (cause) {
+          setPreviewError(cause instanceof Error ? cause.message : "בדיקת Smart Previews נכשלה.");
+        }
+      }
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "לא ניתן לבצע בדיקת מדגם.");
     } finally {
@@ -148,7 +160,7 @@ export default function SamplePreflightPanel({ profile }: { profile: LearningPro
         </select>
       </label>
       <button className={styles.run} type="button" disabled={!catalogPath || busy} onClick={() => void run()}>
-        {busy ? "קורא עותק קטלוג ובודק מדגם…" : rawFolder ? "בדוק מדגם + מועמדי RAW (מחקר)" : "בדוק מדגם של 16 רשומות"}
+        {busy ? "קורא עותק קטלוג ובודק מדגם…" : rawFolder ? "בדוק מדגם + מועמדי RAW (מחקר)" : "בדוק מדגם + Smart Previews אוטומטית"}
       </button>
     </div>
     <div className={styles.automaticSource} aria-live="polite">
@@ -163,7 +175,7 @@ export default function SamplePreflightPanel({ profile }: { profile: LearningPro
       ) : (
         <p>לא שמורה בפרופיל תיקיית Smart Previews לקטלוג הזה. אפשר לבדוק מחדש את קליטת הקטלוג לאיתור תיקייה סמוכה.</p>
       )}
-      <p className={styles.sourceCaveat}>הנתיב נשמר בזמן קליטת הקטלוג, ואינו בדיקת קיום עדכנית. אפשר לבדוק את קובצי ה־DNG בפועל, אבל פענוח מוצלח עדיין אינו מאמת התאמה לרשומת Lightroom או נקודת התחלה ניטרלית.</p>
+      <p className={styles.sourceCaveat}>הנתיב נשמר בזמן קליטת הקטלוג, ואינו בדיקת קיום עדכנית. בדיקת המדגם תנסה לקרוא אוטומטית את קובצי ה־DNG בפועל, אבל פענוח מוצלח עדיין אינו מאמת התאמה לרשומת Lightroom או נקודת התחלה ניטרלית.</p>
       <button className={styles.previewProbe} type="button" onClick={() => void inspectSmartPreviewContents()}
         disabled={!smartPreviewsPath || previewBusy || busy}>
         {previewBusy ? "סורק ומנסה לפענח קובצי DNG…" : "בדוק תוכן Smart Previews"}
