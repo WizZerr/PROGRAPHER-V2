@@ -36,6 +36,12 @@ class AttachLearningCatalog(BaseModel):
     raw_fallback_path: str | None = None
 
 
+class SamplePreflightRequest(BaseModel):
+    catalog_path: str = Field(min_length=1)
+    raw_folder: str | None = None
+    sample_size: int = Field(default=16, ge=1, le=16)
+
+
 @router.get("/profiles")
 def list_profiles() -> dict:
     return {"profiles": LearningProfileStore().list()}
@@ -53,6 +59,17 @@ def get_profile(profile_id: str) -> dict:
 def create_profile(payload: CreateLearningProfile) -> dict:
     try:
         return LearningProfileStore().create(**payload.model_dump())
+    except LearningIntakeError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+@router.post("/profiles/{profile_id}/sample-preflight")
+def sample_preflight(profile_id: str, payload: SamplePreflightRequest) -> dict:
+    """Transient private per-photo review. Not a dataset certification."""
+    try:
+        return LearningProfileStore().preview_sample(
+            profile_id, **payload.model_dump()
+        )
     except LearningIntakeError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
 
