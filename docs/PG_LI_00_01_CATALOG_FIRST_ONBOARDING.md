@@ -54,3 +54,26 @@
 On a COPY and with photographer authorization, verify catalog records against original RAW or correctly parsed Smart Previews using stable image identities; confirm actual delivered/final Develop state; validate Import versus Reset via a safe Lightroom Bridge sample (as specified in user document) before generating training-ready examples. Store evidence in a versioned private manifest; never infer initial state or finality from mere catalog presence.
 
 This document describes the user's **learning flow**. The repository `docs/MASTER_PLAN_SOURCE_OF_TRUTH.md` remains the product/architecture execution source of truth. The old PG-BS-01 branch/PR uses RAW+XMP median baseline and should be superseded for this workflow, not merged.
+
+## PG-LI-01 UX amendment — 2026-10-22
+
+The photographer now **chooses the containing Lightroom catalog folder** (or a .lrcat directly) and ProGrapher discovers immediate catalog files without recursion.
+
+- Exactly one .lrcat → select it; more than one → require explicit user selection, never choose "newest" arbitrarily.
+- Adjacent sibling with exact case-insensitive Lightroom naming `<catalog stem> Smart Previews.lrdata` → link as `smart_previews_unverified`. Ignore `Previews.lrdata`, other catalogs' Smart Previews, symlinks and unrelated caches.
+- Missing/renamed/moved Smart Previews → clearly state not found and show optional advanced manual selection/RAW fallback; never imply complete image coverage.
+- Save API independently performs the same discovery, so clients cannot silently omit known adjacent Smart Previews.
+- This is metadata/path **discovery only**, not the promised Smart Preview decode, index linkage, image count or training-ready validation. Those remain blocked until PG-LI-02/03.
+- Tests added for exact sibling, multi-catalog selection, unrelated cache isolation, folder errors, symlinks and manual override.
+
+Local check from project worktree:
+```powershell
+cd backend
+.\.venv\Scripts\python.exe -m pytest -q tests\test_learning_intake.py tests\test_photographer_setup.py
+cd ..\frontend
+npm.cmd run lint
+npm.cmd run build
+npm.cmd run tauri dev
+```
+
+The previous 9/9 test run predates this amendment. **Run tests again on Windows; these updated results have not been verified yet.**
