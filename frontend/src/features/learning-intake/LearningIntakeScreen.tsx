@@ -6,9 +6,11 @@ import { useWorkspaceNav } from "@/features/workspace/workspace-nav";
 import {
   attachLearningCatalog,
   createLearningProfile,
+  deleteLearningProfile,
   discoverCatalogLocation,
   listLearningProfiles,
   type CatalogDiscoveryCandidate,
+  type CatalogIntake,
   type ColorMode,
   type LearningProfile,
 } from "./learningIntake.api";
@@ -36,6 +38,8 @@ export default function LearningIntakeScreen() {
   const [busy, setBusy] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
+  const [deletePending, setDeletePending] = useState<LearningProfile | null>(null);
 
   useEffect(() => {
     let alive = true;
@@ -59,6 +63,7 @@ export default function LearningIntakeScreen() {
       });
       setProfiles((old) => [next, ...old]);
       setProfile(next);
+      setNotice("");
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "יצירת פרופיל הלמידה נכשלה.");
     } finally { setBusy(false); }
@@ -118,15 +123,24 @@ export default function LearningIntakeScreen() {
     if (which === "raw") setRawPath(selected);
   }
 
-  async function audit() {
-    if (!profile || !catalogPath || busy) return;
+  async function audit(savedCatalog?: CatalogIntake) {
+    if (!profile || busy) return;
+    // Existing catalogs are already linked to the profile. Re-audit without
+    // forcing photographers to reselect a folder just to enable a button.
+    const automatic = !catalogPath && !savedCatalog && profile.catalogs.length === 1
+      ? profile.catalogs[0]
+      : null;
+    const chosen = savedCatalog ?? automatic;
+    const path = chosen?.catalog_path ?? catalogPath;
+    if (!path) return;
     setError("");
+    setNotice("");
     setBusy(true);
     try {
       const next = await attachLearningCatalog(profile.profile_id, {
-        catalog_path: catalogPath,
-        smart_previews_path: previewsPath || null,
-        raw_fallback_path: rawPath || null,
+        catalog_path: path,
+        smart_previews_path: (chosen?.smart_previews_path ?? previewsPath) || null,
+        raw_fallback_path: (chosen?.raw_fallback_path ?? rawPath) || null,
       });
       setProfile(next);
       setProfiles((old) => old.map((p) => p.profile_id === next.profile_id ? next : p));
@@ -135,8 +149,44 @@ export default function LearningIntakeScreen() {
       setRawPath("");
       setFoundCatalogs([]);
       setDiscoveryNotice("");
+      setNotice("בדיקת הקטלוג הסתיימה, והדוח השמור עודכן. טרם הופעל אימון.");
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "קריאת הקטלוג נכשלה.");
+    } finally { setBusy(false); }
+  }
+
+  function selectProfile(item: LearningProfile) {
+    setProfile(item);
+    setCatalogPath("");
+    setPreviewsPath("");
+    setRawPath("");
+    setFoundCatalogs([]);
+    setDiscoveryNotice("");
+    setError("");
+    setNotice("");
+  }
+
+  async function confirmDelete() {
+    if (!deletePending || busy) return;
+    const toDelete = deletePending;
+    setBusy(true);
+    setError("");
+    try {
+      await deleteLearningProfile(toDelete.profile_id);
+      setProfiles((old) => old.filter((item) => item.profile_id !== toDelete.profile_id));
+      if (profile?.profile_id === toDelete.profile_id) {
+        setProfile(null);
+        setCatalogPath("");
+        setPreviewsPath("");
+        setRawPath("");
+        setFoundCatalogs([]);
+        setDiscoveryNotice("");
+      }
+      setDeletePending(null);
+      setNotice(`הפרופיל "${toDelete.name}" נמחק מ־ProGrapher. קובצי Lightroom והתמונות נשארו ללא שינוי.`);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "לא ניתן למחוק את הפרופיל.");
+      setDeletePending(null);
     } finally { setBusy(false); }
   }
 
@@ -153,6 +203,18 @@ export default function LearningIntakeScreen() {
       <span className={styles.step}>02 · נקודת התחלה — טרם אומתה</span>
     </div>
     {error && <div role="alert" className={styles.error}>{error}</div>}
+    {notice && <div role="status" className={styles.success}>{notice}</div>}
+    {deletePending && <div className={styles.modalBackdrop} role="presentation">
+      <section className={styles.modal} role="alertdialog" aria-modal="true" aria-labelledby="delete-heading" aria-describedby="delete-details">
+        <span className={styles.kicker}>מחיקת פרופיל</span>
+        <h2 id="delete-heading">למחוק את הפרופיל ״{deletePending.name}״?</h2>
+        <p id="delete-details">הפעולה תמחק את פרופיל הלמידה ואת רשומות הקטלוג המשויכות לו ממסד הנתונים המקומי של ProGrapher. הפעולה אינה מוחקת קובצי Lightroom, RAW או Smart Previews, ואי אפשר לבטל אותה מתוך התוכנה.</p>
+        <div className={styles.modalActions}>
+          <button className={styles.ghost} type="button" disabled={busy} onClick={() => setDeletePending(null)}>ביטול</button>
+          <button className={styles.danger} type="button" disabled={busy} onClick={() => void confirmDelete()}>{busy ? "מוחק פרופיל…" : "כן, מחק פרופיל"}</button>
+        </div>
+      </section>
+    </div>}
 
     {!profile ? <div className={styles.layout}>
       <section className={styles.panel}>
@@ -180,10 +242,13 @@ export default function LearningIntakeScreen() {
         <span className={styles.kicker}>פרופילים קיימים</span>
         <h2>המשך עבודה</h2>
         {loading ? <p>טוען פרופילים…</p> : profiles.length === 0 ? <p>עדיין אין פרופילים שמורים.</p> : profiles.map((item) =>
-          <button key={item.profile_id} className={styles.existing} onClick={() => setProfile(item)} type="button">
-            <strong>{item.name}</strong>
-            <span>{item.photography_type} · {item.color_mode === "color" ? "צבע" : "שחור־לבן"} · {item.catalogs.length} קטלוגים</span>
-          </button>,
+          <div key={item.profile_id} className={styles.profileEntry}>
+            <button className={styles.existing} onClick={() => selectProfile(item)} type="button" disabled={busy}>
+              <strong>{item.name}</strong>
+              <span>{item.photography_type} · {item.color_mode === "color" ? "צבע" : "שחור־לבן"} · {item.catalogs.length} קטלוגים</span>
+            </button>
+            <button className={styles.deleteLink} type="button" disabled={busy} onClick={() => setDeletePending(item)}>מחק פרופיל</button>
+          </div>,
         )}
         <p className={styles.note}>פרופיל חדש אינו Brain מאומן. כרגע אנחנו מסדרים את נתוני הלמידה.</p>
       </section>
@@ -192,7 +257,10 @@ export default function LearningIntakeScreen() {
         <span className={styles.kicker}>STEP 01 / CATALOG</span>
         <div className={styles.headline}>
           <h2>{profile.name}</h2>
-          <button className={styles.link} type="button" onClick={() => setProfile(null)}>החלף פרופיל</button>
+          <div className={styles.profileActions}>
+            <button className={styles.link} type="button" disabled={busy} onClick={() => { setProfile(null); setError(""); setNotice(""); }}>החלף פרופיל</button>
+            <button className={styles.deleteLink} type="button" disabled={busy} onClick={() => setDeletePending(profile)}>מחק פרופיל</button>
+          </div>
         </div>
         <p>בחר את התיקייה שבה נמצא קטלוג Lightroom. המערכת תאתר קובצי .lrcat ואת תיקיית Smart Previews המתאימה לצד הקטלוג, אם היא קיימת. אין צורך לבחור את שניהם בנפרד.</p>
         <button className={styles.source} disabled={busy} type="button" onClick={() => void choose("folder")}>
@@ -229,8 +297,8 @@ export default function LearningIntakeScreen() {
             <span>RAW מקורי</span><strong dir="ltr">{rawPath || "בחר תיקיית RAW (אופציונלי)"}</strong>
           </button>
         </details>
-        <button className={styles.primary} disabled={!catalogPath || busy} type="button" onClick={() => void audit()}>
-          {busy ? "יוצר עותק זמני ובודק קטלוג…" : "בדוק ושמור קטלוג"}
+        <button className={styles.primary} disabled={busy || (!catalogPath && profile.catalogs.length !== 1)} type="button" onClick={() => void audit()}>
+          {busy ? "יוצר עותק זמני ובודק קטלוג…" : catalogPath ? "בדוק ושמור קטלוג" : profile.catalogs.length === 1 ? "בדוק מחדש את הקטלוג השמור" : "בחר קטלוג כדי להמשיך"}
         </button>
         <p className={styles.note}>הבדיקה משתמשת בעותק SQLite זמני שנמחק בסיומה. אף קובץ RAW או קטלוג מקורי לא נערך. קטלוג גדול עשוי להצריך מקום פנוי בדיסק.</p>
       </section>
@@ -241,6 +309,7 @@ export default function LearningIntakeScreen() {
           profile.catalogs.map((item) => <article key={item.catalog_path} className={styles.catalog}>
             <strong dir="ltr" className={styles.catalogPath}>{item.catalog_path}</strong>
             <span>{sourceLabels[item.source_status]}</span>
+            <button className={styles.recheck} type="button" disabled={busy} onClick={() => void audit(item)}>בדוק מחדש את הקטלוג הזה</button>
             <div className={styles.metrics}>
               <div><small>רשומות RAW</small><b>{item.aggregate.catalog_raw_records.toLocaleString("he-IL")}</b></div>
               <div><small>רשומות Develop מפוענחות (לא מאומתות)</small><b>{item.aggregate.parsed_raw_records.toLocaleString("he-IL")}</b></div>
