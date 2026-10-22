@@ -80,3 +80,91 @@ def test_scoped_profile_smart_preview_probe_and_api_auth(tmp_path, monkeypatch):
         assert response.json()["decode_attempts"] == 0
         assert response.json()["training_ready_samples"] == 0
         assert not response.json()["photo_to_dng_link_verified"]
+
+
+def test_sdk_link_correlates_catalog_uuid_and_smart_dng_but_never_trains(tmp_path, monkeypatch):
+    from app.learning_intake.sdk_link_review import verify_link_export
+    monkeypatch.setenv("PROGRAPHER_DATA_DIR", str(tmp_path / "private"))
+    catalog = tmp_path / "Pilot.lrcat"
+    catalog_fixture(catalog)
+    smart = tmp_path / "Pilot Smart Previews.lrdata"
+    smart.mkdir()
+    dng = smart / "sdk-generated-name.dng"
+    dng.write_bytes(b"II*\x00" + b"synthetic")
+    evidence = tmp_path / "sdk-links.json"
+    evidence.write_text(json.dumps({
+        "schema": "prographer.lightroom.smart_preview_sdk_links.v1",
+        "catalog_path": str(catalog),
+        "records": [{
+            "photo_uuid": "p",
+            "smart_preview_path": str(dng),
+            "is_virtual_copy": False,
+        }],
+    }), encoding="utf-8")
+    store = LearningProfileStore()
+    owner = store.create(name="Test", photography_type="wedding",
+                         color_mode="color", consent=True)
+    store.attach_catalog(owner["profile_id"], catalog_path=str(catalog))
+    result = store.review_smart_preview_sdk_links(
+        owner["profile_id"], catalog_path=str(catalog), evidence_path=str(evidence)
+    )
+    assert result["sdk_path_catalog_uuid_correlated"] == 1
+    assert result["training_ready_samples"] == 0
+    assert result["source_raw_identity_verified"] is False
+    assert result["approved_finality_verified"] is False
+    assert result["records"][0]["training_eligible"] is False
+
+
+def test_sdk_link_rejects_foreign_paths_and_catalogs(tmp_path, monkeypatch):
+    monkeypatch.setenv("PROGRAPHER_DATA_DIR", str(tmp_path / "private"))
+    catalog = tmp_path / "Pilot.lrcat"
+    catalog_fixture(catalog)
+    smart = tmp_path / "Pilot Smart Previews.lrdata"
+    smart.mkdir()
+    foreign = tmp_path / "foreign.dng"
+    foreign.write_bytes(b"II*\x00" + b"synthetic")
+    evidence = tmp_path / "foreign.json"
+    data = {
+        "schema": "prographer.lightroom.smart_preview_sdk_links.v1",
+        "catalog_path": str(catalog),
+        "records": [{"photo_uuid": "p", "smart_preview_path": str(foreign)}],
+    }
+    evidence.write_text(json.dumps(data), encoding="utf-8")
+    store = LearningProfileStore()
+    owner = store.create(name="Test", photography_type="wedding",
+                         color_mode="color", consent=True)
+    store.attach_catalog(owner["profile_id"], catalog_path=str(catalog))
+    review = store.review_smart_preview_sdk_links(
+        owner["profile_id"], catalog_path=str(catalog), evidence_path=str(evidence)
+    )
+    assert review["status_counts"]["outside_selected_smart_preview_root"] == 1
+    assert review["sdk_path_catalog_uuid_correlated"] == 0
+    data["catalog_path"] = str(tmp_path / "Other.lrcat")
+    evidence.write_text(json.dumps(data), encoding="utf-8")
+    with pytest.raises(LearningIntakeError):
+        store.review_smart_preview_sdk_links(
+            owner["profile_id"], catalog_path=str(catalog), evidence_path=str(evidence)
+        )
+
+
+def test_sdk_link_duplicate_photo_uuid_fails_closed(tmp_path, monkeypatch):
+    monkeypatch.setenv("PROGRAPHER_DATA_DIR", str(tmp_path / "private"))
+    catalog = tmp_path / "Pilot.lrcat"
+    catalog_fixture(catalog)
+    smart = tmp_path / "Pilot Smart Previews.lrdata"
+    smart.mkdir()
+    evidence = tmp_path / "dupes.json"
+    row = {"photo_uuid": "p", "smart_preview_path": None}
+    evidence.write_text(json.dumps({
+        "schema": "prographer.lightroom.smart_preview_sdk_links.v1",
+        "catalog_path": str(catalog),
+        "records": [row, row],
+    }), encoding="utf-8")
+    store = LearningProfileStore()
+    owner = store.create(name="Test", photography_type="wedding",
+                         color_mode="color", consent=True)
+    store.attach_catalog(owner["profile_id"], catalog_path=str(catalog))
+    with pytest.raises(LearningIntakeError, match="Duplicate"):
+        store.review_smart_preview_sdk_links(
+            owner["profile_id"], catalog_path=str(catalog), evidence_path=str(evidence)
+        )
