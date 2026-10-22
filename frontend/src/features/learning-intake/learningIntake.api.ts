@@ -156,3 +156,36 @@ export async function probeSmartPreviewContents(
     { method: "POST", body: JSON.stringify({ catalog_path: catalogPath }) },
   );
 }
+
+export type SmartPreviewSdkLinkReview = {
+  schema: string;
+  status: "SDK_PATH_CORROBORATION_RESEARCH_ONLY";
+  selected_count: number;
+  sdk_path_catalog_uuid_correlated: number;
+  shared_preview_extra_links: number;
+  status_counts: Record<string, number>;
+  records: {
+    catalog_uuid: string;
+    status: string;
+    virtual_copy_requires_review: boolean;
+    final_edit_verified: false;
+    neutral_start_verified: false;
+    training_eligible: false;
+  }[];
+  source_raw_identity_verified: false;
+  approved_finality_verified: false;
+  neutral_start_verified: false;
+  training_ready_samples: 0;
+  warnings: string[];
+};
+
+export async function reviewSmartPreviewSdkLinks(
+  profileId: string, catalogPath: string, evidencePath: string,
+): Promise<SmartPreviewSdkLinkReview> {
+  return apiRequest<SmartPreviewSdkLinkReview>(
+    `/api/learning-intake/profiles/${encodeURIComponent(profileId)}/smart-preview-sdk-review`,
+    { method: "POST", body: JSON.stringify({
+      catalog_path: catalogPath, evidence_path: evidencePath,
+    }) },
+  );
+}
