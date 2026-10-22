@@ -5,7 +5,9 @@ import { open } from "@tauri-apps/plugin-dialog";
 import {
   runSamplePreflight,
   probeSmartPreviewContents,
+  reviewSmartPreviewSdkLinks,
   type SmartPreviewContentReport,
+  type SmartPreviewSdkLinkReview,
   type LearningProfile,
   type PreflightSampleReport,
   type SourceSample,
@@ -49,6 +51,9 @@ export default function SamplePreflightPanel({ profile }: { profile: LearningPro
   const [previewReport, setPreviewReport] = useState<SmartPreviewContentReport | null>(null);
   const [previewBusy, setPreviewBusy] = useState(false);
   const [previewError, setPreviewError] = useState("");
+  const [sdkReport, setSdkReport] = useState<SmartPreviewSdkLinkReview | null>(null);
+  const [sdkBusy, setSdkBusy] = useState(false);
+  const [sdkError, setSdkError] = useState("");
   const selectedCatalog = profile.catalogs.find((item) => item.catalog_path === catalogPath);
   const smartPreviewsPath = selectedCatalog?.smart_previews_path ?? null;
 
@@ -64,6 +69,27 @@ export default function SamplePreflightPanel({ profile }: { profile: LearningPro
       setPreviewError(cause instanceof Error ? cause.message : "בדיקת Smart Previews נכשלה.");
     } finally {
       setPreviewBusy(false);
+    }
+  }
+
+  async function chooseAndReviewSdkEvidence() {
+    if (!catalogPath || sdkBusy || busy || previewBusy) return;
+    const selected = await open({
+      directory: false,
+      multiple: false,
+      title: "בחר קובץ JSON שנוצר ב־Lightroom SDK (מחקר בלבד)",
+      filters: [{ name: "JSON Evidence", extensions: ["json"] }],
+    });
+    if (typeof selected !== "string") return;
+    setSdkBusy(true);
+    setSdkError("");
+    setSdkReport(null);
+    try {
+      setSdkReport(await reviewSmartPreviewSdkLinks(profile.profile_id, catalogPath, selected));
+    } catch (cause) {
+      setSdkError(cause instanceof Error ? cause.message : "בדיקת שיוך SDK נכשלה.");
+    } finally {
+      setSdkBusy(false);
     }
   }
 
@@ -114,6 +140,8 @@ export default function SamplePreflightPanel({ profile }: { profile: LearningPro
             setReport(null);
             setPreviewReport(null);
             setPreviewError("");
+            setSdkReport(null);
+            setSdkError("");
             setRawFolder("");
           }}>
           {profile.catalogs.map((item) => <option key={item.catalog_path} value={item.catalog_path}>{item.catalog_path}</option>)}
@@ -141,6 +169,23 @@ export default function SamplePreflightPanel({ profile }: { profile: LearningPro
         {previewBusy ? "סורק ומנסה לפענח קובצי DNG…" : "בדוק תוכן Smart Previews"}
       </button>
       {previewError && <p role="alert" className={styles.error}>{previewError}</p>}
+      <details className={styles.advanced}>
+        <summary>אימות שיוך תמונות באמצעות Lightroom SDK · מחקר מתקדם</summary>
+        <p>ב־Lightroom Classic בחר עד 16 תמונות מקטלוג המחקר והפעל Library → Plug-in Extras → ProGrapher Smart Preview Link Readback. שמור את קובץ ה־JSON מחוץ לתיקיות Lightroom, ואז בחר אותו כאן. אין שינוי בקטלוג או בעריכות.</p>
+        <button className={styles.previewProbe} type="button"
+          disabled={sdkBusy || busy || previewBusy || !smartPreviewsPath}
+          onClick={() => void chooseAndReviewSdkEvidence()}>
+          {sdkBusy ? "מאמת נתיבי SDK…" : "בחר דוח שיוך SDK מקומי"}
+        </button>
+        {sdkError && <p className={styles.error} role="alert">{sdkError}</p>}
+        {sdkReport && <div className={styles.previewResults} role="status">
+          <span>תמונות שנבחרו ב־Lightroom: <strong>{sdkReport.selected_count}</strong></span>
+          <span>נתיבי DNG עם UUID תואם בקטלוג: <strong>{sdkReport.sdk_path_catalog_uuid_correlated}</strong></span>
+          <span>קישורים שחולקים Preview: <strong>{sdkReport.shared_preview_extra_links}</strong></span>
+          <span>מאומתות ללמידה: <strong>{sdkReport.training_ready_samples}</strong></span>
+          <p>אלו קישורים שנבדקו מול דוח SDK מקומי, לא אישור זהות RAW, עריכה סופית או נקודת Import/Reset. המידע אינו נשמר בפרופיל.</p>
+        </div>}
+      </details>
       {previewReport && <div className={styles.previewResults} role="status">
         <span>קובצי DNG בעלי חתימת TIFF: <strong>{previewReport.counts.dng_tiff_signature_candidates ?? 0}</strong></span>
         <span>ניסיונות פענוח: <strong>{previewReport.decode_attempts}</strong></span>
