@@ -7,6 +7,9 @@ export type CatalogIntake = {
   raw_fallback_path: string | null;
   source_status: "smart_previews_unverified" | "raw_fallback_unverified" | "catalog_only_limited";
   audited_at: string;
+  /** Numeric summary of the last analysis (links, edits, style, expected savings); null until analysed. */
+  analysis: CatalogAnalysisSummary | null;
+  analyzed_at: string | null;
   aggregate: {
     schema: string;
     catalog_photo_records: number;
@@ -85,262 +88,63 @@ export async function attachLearningCatalog(profileId: string, input: {
   );
 }
 
-
-export type SourceSample = {
-  catalog_image_id: number | string;
-  catalog_global_image_id: string | null;
-  filename: string;
-  capture_day: string;
-  candidate_group: string;
-  develop_parse_ok: boolean;
-  develop_fields: string[];
-  virtual_copy_candidate: boolean;
-  issues: string[];
-  source_match_status: string;
-  source_candidate_path: string | null;
-  source_sha256: string | null;
-  source_identity_verified: false;
-  photographer_finality_verified: false;
-  import_reset_baseline_verified: false;
-  event_identity_verified: false;
-  training_eligible: false;
+export type StyleSlider = {
+  key: string;
+  /** fixed = same value on every photo (preset), per_photo = adjusted photo by photo, untouched = left at 0,
+   * rare = set on fewer than half of the photos. */
+  kind: "fixed" | "per_photo" | "untouched" | "rare";
+  median: number;
+  p10: number;
+  p90: number;
+  present: number;
 };
 
-export type PreflightSampleReport = {
+export type CatalogAnalysisSummary = {
   schema: string;
-  status: string;
-  catalog_path: string;
-  sample_count: number;
-  sample_limit: number;
-  group_count_in_sample: number;
-  source_match_counts: Record<string, number>;
-  source_identity_verified_count: number;
-  finality_verified_count: number;
-  training_ready_samples: number;
-  records: SourceSample[];
-  warnings: string[];
-};
-
-export async function runSamplePreflight(
-  profileId: string,
-  input: { catalog_path: string; raw_folder: string | null; sample_size?: number },
-): Promise<PreflightSampleReport> {
-  return apiRequest<PreflightSampleReport>(
-    `/api/learning-intake/profiles/${encodeURIComponent(profileId)}/sample-preflight`,
-    { method: "POST", body: JSON.stringify(input) },
-  );
-}
-
-export type SmartPreviewContentReport = {
-  schema: string;
-  status: "DNG_CONTENT_PILOT_ONLY" | "SMART_PREVIEWS_NOT_CONFIGURED";
-  source_kind: "smart_previews";
-  counts: Record<string, number>;
-  decode_attempts: number;
-  decode_status_counts: Record<string, number>;
-  decode_compression_counts?: Record<string, number>;
-  reset_render_counts?: Record<string, number>;
-  decoded_samples: {
-    state: string;
-    width: number;
-    height: number;
-    preview_mean_luma?: number;
-    preview_mean_linear?: number;
-    compression_code?: number;
-    opcodes_applied?: number;
-    opcodes_ignored?: number;
-    embedded_profile_present?: boolean;
-    /** Unedited "before" image as Lightroom shows it after Reset; in memory only, never saved. */
-    reset_render?: {
-      state: string;
-      width?: number;
-      height?: number;
-      mean_srgb_luma?: number;
-      calibration_stops?: number;
-      /** "adobe_color_xmp" (validated setup) or "smart_preview_profile" (fallback when Lightroom's file is absent). */
-      look_source?: "adobe_color_xmp" | "smart_preview_profile";
-      /** "applied" | "no_lens_metadata" | "lens_profile_not_found". */
-      lens_vignetting?: string;
-      thumbnail_jpeg_base64?: string;
-    };
-  }[];
-  catalog_photo_identity_verified: false;
-  photo_to_dng_link_verified: false;
-  source_only_neutral_parity_verified: false;
-  photographer_finality_verified: false;
-  training_ready_samples: 0;
-  warnings: string[];
-};
-
-export async function probeSmartPreviewContents(
-  profileId: string,
-  catalogPath: string,
-): Promise<SmartPreviewContentReport> {
-  return apiRequest<SmartPreviewContentReport>(
-    `/api/learning-intake/profiles/${encodeURIComponent(profileId)}/smart-preview-probe`,
-    { method: "POST", body: JSON.stringify({ catalog_path: catalogPath }) },
-  );
-}
-
-/** Stage 3: catalog photo -> Smart Preview DNG links (local, transient, never training-ready). */
-export type SmartPreviewLinkReport = {
-  schema: string;
-  status: "CATALOG_LINK_RESEARCH_ONLY";
-  dng_inventory: Record<string, number>;
-  catalog_raw_records: number;
-  smart_preview_files: number;
-  status_counts: Record<string, number>;
-  matched_by_counts: Record<string, number>;
-  virtual_copy_records: number;
-  records_sharing_a_preview: number;
-  orphan_smart_previews: number;
-  linked_name_verified: number;
-  samples: {
-    file_name: string;
-    capture_day: string | null;
-    link_status: string;
-    matched_by: string | null;
-    decode_state: string | null;
-    reset_render?: SmartPreviewContentReport["decoded_samples"][number]["reset_render"] | null;
-  }[];
-  photo_to_dng_link_verified: false;
-  photographer_finality_verified: false;
-  training_ready_samples: 0;
-  warnings: string[];
-};
-
-export async function linkSmartPreviews(
-  profileId: string,
-  catalogPath: string,
-): Promise<SmartPreviewLinkReport> {
-  return apiRequest<SmartPreviewLinkReport>(
-    `/api/learning-intake/profiles/${encodeURIComponent(profileId)}/smart-preview-links`,
-    { method: "POST", body: JSON.stringify({ catalog_path: catalogPath, sample_size: 4 }) },
-  );
-}
-
-/** Stage 4: before (Smart Preview) / after (Develop values) pairs; transient, never training-ready. */
-export type EditPairsReport = {
-  schema: string;
-  status: "BEFORE_AFTER_PAIRS_RESEARCH_ONLY";
-  catalog_raw_records: number;
-  pairs_for_review: number;
-  excluded_counts: Record<string, number>;
-  target_coverage: Record<string, { present: number; median?: number; p10?: number; p90?: number }>;
-  other_edit_counts: Record<string, number>;
-  folder_groups: {
-    folder_group: string;
-    pairs: number;
-    exposure_median: number | null;
-    temperature_mired_median: number | null;
-    tint_median: number | null;
-  }[];
-  targets: string[];
-  samples: {
-    file_name: string;
-    folder_group: string;
-    capture_day: string | null;
-    targets: Record<string, number>;
-    temperature_mired: number | null;
-    white_balance: string | null;
-    other_edits: Record<string, boolean>;
-    decode_state: string | null;
-    reset_render?: SmartPreviewContentReport["decoded_samples"][number]["reset_render"] | null;
-  }[];
-  photographer_finality_verified: false;
-  training_ready_samples: 0;
-  warnings: string[];
-};
-
-export async function buildEditPairs(profileId: string, catalogPath: string): Promise<EditPairsReport> {
-  return apiRequest<EditPairsReport>(
-    `/api/learning-intake/profiles/${encodeURIComponent(profileId)}/edit-pairs`,
-    { method: "POST", body: JSON.stringify({ catalog_path: catalogPath, sample_size: 4 }) },
-  );
-}
-
-export type BacktestScore = {
   photos: number;
-  untouched_pct?: number;
-  exposure_ok_pct?: number;
-  temperature_ok_pct?: number;
-  tint_ok_pct?: number;
-  exposure_mae?: number;
-  mired_mae?: number;
-  tint_mae?: number;
-};
-
-/** Stage 5: the research anchor method measured on this catalog; nothing stored or applied. */
-export type AnchorBacktestReport = {
-  schema: string;
-  status: "STYLE_MODEL_BACKTEST_RESEARCH_ONLY";
+  smart_preview_files: number;
+  linked: number;
+  link_status_counts: Record<string, number>;
   pairs: number;
-  photos_in_backtest: number;
-  excluded_counts: Record<string, number>;
-  as_shot_conversion_check: {
-    as_shot_photos: number;
-    median_abs_kelvin: number | null;
-    p90_abs_kelvin: number | null;
-    median_abs_tint: number | null;
-    p90_abs_tint: number | null;
+  pair_exclusions: Record<string, number>;
+  other_edit_counts: Record<string, number>;
+  folder_groups: number;
+  style: StyleSlider[];
+  backtest_exclusions: Record<string, number>;
+  savings: {
+    anchors: number;
+    photos: number;
+    proposed_photos?: number;
+    untouched_pct?: number;
+    no_correction_untouched_pct?: number;
+    exposure_ok_pct?: number;
+    temperature_ok_pct?: number;
+    tint_ok_pct?: number;
+    curve?: { anchors: number; untouched_pct: number }[];
   };
-  untouched_definition: { exposure: number; mired: number; tint: number };
-  anchors_requested: number;
-  anchors_used: number;
-  results: Record<string, BacktestScore>;
-  anchor_curve: ({ anchor_count: number } & Record<string, number>)[];
-  samples: {
-    file_name: string;
-    photographer: { exposure: number; temperature_k: number; tint: number; white_balance: string | null };
-    proposed: { exposure: number; temperature_k: number; tint: number };
-    untouched: boolean;
-    decode_state: string | null;
-    reset_render?: SmartPreviewContentReport["decoded_samples"][number]["reset_render"] | null;
-  }[];
-  model_stored: false;
-  applied_to_lightroom: false;
   training_ready_samples: 0;
-  warnings: string[];
 };
 
-export async function runAnchorBacktest(
-  profileId: string, catalogPath: string, anchors: number,
-): Promise<AnchorBacktestReport> {
-  return apiRequest<AnchorBacktestReport>(
-    `/api/learning-intake/profiles/${encodeURIComponent(profileId)}/anchor-backtest`,
-    { method: "POST", body: JSON.stringify({ catalog_path: catalogPath, anchors, sample_size: 4 }) },
-  );
-}
-
-export type SmartPreviewSdkLinkReview = {
-  schema: string;
-  status: "SDK_PATH_CORROBORATION_RESEARCH_ONLY";
-  selected_count: number;
-  sdk_path_catalog_uuid_correlated: number;
-  shared_preview_extra_links: number;
-  status_counts: Record<string, number>;
-  records: {
-    catalog_uuid: string;
-    status: string;
-    virtual_copy_requires_review: boolean;
-    final_edit_verified: false;
-    neutral_start_verified: false;
-    training_eligible: false;
-  }[];
-  source_raw_identity_verified: false;
-  approved_finality_verified: false;
-  neutral_start_verified: false;
-  training_ready_samples: 0;
-  warnings: string[];
+export type AnalysisSample = {
+  file_name: string;
+  photographer: { exposure: number; temperature_k: number; tint: number };
+  proposed: { exposure: number; temperature_k: number; tint: number };
+  untouched: boolean;
+  thumbnail_jpeg_base64: string | null;
+  width: number | null;
+  height: number | null;
 };
 
-export async function reviewSmartPreviewSdkLinks(
-  profileId: string, catalogPath: string, evidencePath: string,
-): Promise<SmartPreviewSdkLinkReview> {
-  return apiRequest<SmartPreviewSdkLinkReview>(
-    `/api/learning-intake/profiles/${encodeURIComponent(profileId)}/smart-preview-sdk-review`,
-    { method: "POST", body: JSON.stringify({
-      catalog_path: catalogPath, evidence_path: evidencePath,
-    }) },
+export type CatalogAnalysisResult = {
+  summary: CatalogAnalysisSummary;
+  /** Shown once after an analysis; never stored. */
+  samples: AnalysisSample[];
+  profile: LearningProfile;
+};
+
+export async function analyzeCatalog(profileId: string, catalogPath: string): Promise<CatalogAnalysisResult> {
+  return apiRequest<CatalogAnalysisResult>(
+    `/api/learning-intake/profiles/${encodeURIComponent(profileId)}/analyze`,
+    { method: "POST", body: JSON.stringify({ catalog_path: catalogPath }) },
   );
 }

@@ -86,6 +86,17 @@ class LearningProfileStore:
                     FOREIGN KEY (profile_id) REFERENCES learning_intake_profiles(profile_id)
                 )
             """)
+            # Numbers only (counts, style medians, savings); no file names, paths of photos or images.
+            db.execute("""
+                CREATE TABLE IF NOT EXISTS learning_intake_analysis (
+                    profile_id TEXT NOT NULL,
+                    catalog_path TEXT NOT NULL,
+                    summary_json TEXT NOT NULL,
+                    analyzed_at TEXT NOT NULL,
+                    PRIMARY KEY (profile_id, catalog_path),
+                    FOREIGN KEY (profile_id) REFERENCES learning_intake_profiles(profile_id)
+                )
+            """)
 
     @contextmanager
     def _db(self):
@@ -132,6 +143,9 @@ class LearningProfileStore:
                 "SELECT * FROM learning_intake_catalogs WHERE profile_id = ? ORDER BY audited_at, catalog_path",
                 (profile_id,),
             ).fetchall()
+            analyses = {r["catalog_path"]: r for r in db.execute(
+                "SELECT * FROM learning_intake_analysis WHERE profile_id = ?", (profile_id,),
+            )}
         return {
             "profile_id": row["profile_id"],
             "name": row["name"],
@@ -148,6 +162,10 @@ class LearningProfileStore:
                 "source_status": entry["source_status"],
                 "aggregate": json.loads(entry["aggregate_json"]),
                 "audited_at": entry["audited_at"],
+                "analysis": json.loads(analyses[entry["catalog_path"]]["summary_json"])
+                if entry["catalog_path"] in analyses else None,
+                "analyzed_at": analyses[entry["catalog_path"]]["analyzed_at"]
+                if entry["catalog_path"] in analyses else None,
             } for entry in catalogs],
         }
 
@@ -165,6 +183,10 @@ class LearningProfileStore:
             ).fetchone()
             if existing is None:
                 raise LearningIntakeError("Learning profile was not found.")
+            db.execute(
+                "DELETE FROM learning_intake_analysis WHERE profile_id = ?",
+                (profile_id,),
+            )
             db.execute(
                 "DELETE FROM learning_intake_catalogs WHERE profile_id = ?",
                 (profile_id,),
@@ -267,6 +289,22 @@ class LearningProfileStore:
             raise LearningIntakeError("Anchors must be between 5 and 500.")
         source, records = self._smart_preview_sources(profile_id, catalog_path, sample_size)
         return backtest_report(source, records, anchors=anchors, sample_size=sample_size)
+
+    def analyze_catalog(self, profile_id: str, *, catalog_path: str) -> dict:
+        """Photographer flow: link, read edits, describe the style and measure savings in one pass.
+        Stores the numeric summary with the profile; sample images are returned once and never stored."""
+        from app.learning_intake.catalog_analysis import analyze
+
+        source, records = self._smart_preview_sources(profile_id, catalog_path, 0)
+        result = analyze(source, records)
+        with self._db() as db:
+            db.execute("""
+                INSERT INTO learning_intake_analysis (profile_id, catalog_path, summary_json, analyzed_at)
+                VALUES (?,?,?,?)
+                ON CONFLICT(profile_id, catalog_path) DO UPDATE SET
+                    summary_json=excluded.summary_json, analyzed_at=excluded.analyzed_at
+            """, (profile_id, catalog_path, json.dumps(result["summary"], ensure_ascii=False, sort_keys=True), _now()))
+        return {**result, "profile": self.get(profile_id)}
 
     def _smart_preview_sources(self, profile_id: str, catalog_path: str, sample_size: int):
         """Smart Previews folder + private catalog RAW records for a catalog linked to this profile."""

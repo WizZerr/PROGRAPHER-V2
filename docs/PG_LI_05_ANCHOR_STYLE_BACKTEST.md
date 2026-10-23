@@ -39,3 +39,24 @@ For every "As Shot" photo the result is checked against the value Lightroom stor
 - This is an **in-event** measurement of the anchor workflow: the anchors come from the same event. It is **not** the G3 unseen-event generalisation test.
 - Edit finality and consent are still unverified. G1 is unchanged and `training_ready_samples` stays 0.
 - Anchor choice is by equal time runs. A real product would let the photographer choose the anchors, or pick them by scene similarity.
+
+## Photographer-facing flow (simplified screen)
+
+The learning screen now has three simple views. The research and diagnostic buttons are gone from the UI, but their API routes remain.
+
+1. **Profile:** name, photography type, colour mode and consent.
+2. **Add catalog:** the photographer picks a folder; the catalog and its Smart Previews are found automatically.
+   - **"הוסף ונתח"** first attaches the catalog.
+   - It then calls `POST /api/learning-intake/profiles/{id}/analyze`, which does PG-LI-03 to 05 in one pass.
+   - A checklist shows progress while it runs.
+3. **Profile summary:**
+   - Photos found, linked and with edits read.
+   - Expected savings ("with K edited photos, about X% of the rest need no change", plus the 15/50/100 curve).
+   - The photographer's style:
+     - fixed preset values;
+     - sliders adjusted per photo, with their range;
+     - sliders left untouched;
+     - rarely used sliders.
+   - Four sample before images with the photographer's and the proposed values.
+
+The numeric summary is stored per catalog in `learning_intake_analysis`. It holds counts, medians and percentages only: no file names, photo paths or images. It is shown again when the profile is reopened. The sample images are returned once and never stored. Deleting the profile deletes its summaries.

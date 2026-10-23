@@ -823,3 +823,57 @@ def test_anchor_backtest_api_end_to_end(tmp_path, monkeypatch, fresh_decoder, jp
     assert len(report["samples"]) == 2 and report["samples"][0]["reset_render"]["state"] == "reset_rendered_unverified"
     assert report["model_stored"] is False and report["training_ready_samples"] == 0
     assert str(smart) not in json.dumps(report)
+
+
+# ---- photographer flow: one-step analysis stored with the profile ----
+
+def test_analyze_catalog_one_step_summary_is_stored_without_images(tmp_path, monkeypatch, fresh_decoder,
+                                                                   jpegxl_codec, no_cached_look):
+    from fastapi.testclient import TestClient
+    from app.application import create_app
+    from app.learning_intake.white_balance import as_shot_temperature_tint, read_wb_tags
+    monkeypatch.setenv("PROGRAPHER_ENGINE_SECRET", "analyze-secret")
+    smart = tmp_path / "Event Smart Previews.lrdata"
+    (smart / "A").mkdir(parents=True)
+    photos = []
+    for i in range(10):
+        write_synthetic_smart_preview(smart / "A" / f"uuid{i}.dng", original_name=f"img{i}.cr3")
+        if i == 0:
+            shot_k, shot_tint = as_shot_temperature_tint(read_wb_tags(smart / "A" / "uuid0.dng"))
+        photos.append({"name": f"img{i}", "uuid": f"uuid{i}", "exposure": -0.3 if i < 5 else 0.1,
+                       "kelvin": round(shot_k), "tint": round(shot_tint), "wb": "As Shot"})
+    catalog = tmp_path / "Event.lrcat"
+    write_backtest_catalog(catalog, photos)
+    store = LearningProfileStore()
+    owner = store.create(name="Test", photography_type="wedding", color_mode="color", consent=True)
+    store.attach_catalog(owner["profile_id"], catalog_path=str(catalog))
+    endpoint = f"/api/learning-intake/profiles/{owner['profile_id']}/analyze"
+    headers = {"X-ProGrapher-Secret": "analyze-secret"}
+    with TestClient(create_app()) as client:
+        assert client.post(endpoint, json={"catalog_path": str(catalog)}).status_code == 401
+        response = client.post(endpoint, json={"catalog_path": str(catalog)}, headers=headers)
+        assert response.status_code == 200, response.text
+        result = response.json()
+        stored = client.get(f"/api/learning-intake/profiles/{owner['profile_id']}", headers=headers).json()
+    summary = result["summary"]
+    assert summary["photos"] == 10 and summary["linked"] == 10 and summary["pairs"] == 10
+    style = {s["key"]: s["kind"] for s in summary["style"]}
+    assert style["Exposure2012"] == "per_photo" and style["Tint"] == "fixed"
+    assert summary["savings"]["anchors"] == 2 and summary["savings"]["untouched_pct"] == 100.0
+    assert result["samples"] and result["samples"][0]["thumbnail_jpeg_base64"]
+    assert stored["catalogs"][0]["analysis"] == summary and stored["catalogs"][0]["analyzed_at"]
+    as_text = json.dumps(stored)
+    assert "img0" not in as_text and "thumbnail" not in as_text  # numbers only are stored
+    store.delete(owner["profile_id"])
+    with sqlite3.connect(store.db_path) as db:
+        assert db.execute("SELECT COUNT(*) FROM learning_intake_analysis").fetchone()[0] == 0
+
+
+def test_style_marks_sliders_used_on_few_photos_as_rare():
+    from app.learning_intake.catalog_analysis import _style
+    coverage = {"Blacks2012": {"present": 100, "median": -13, "p10": -13, "p90": -13},
+                "Dehaze": {"present": 1, "median": 19, "p10": 19, "p90": 19},
+                "Contrast2012": {"present": 100, "median": 0, "p10": 0, "p90": 0},
+                "Exposure2012": {"present": 100, "median": -0.3, "p10": -0.6, "p90": 0.0}}
+    kinds = {s["key"]: s["kind"] for s in _style(coverage, 100)}
+    assert kinds == {"Exposure2012": "per_photo", "Contrast2012": "untouched", "Blacks2012": "fixed", "Dehaze": "rare"}

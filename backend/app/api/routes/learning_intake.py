@@ -132,6 +132,15 @@ def run_anchor_backtest(profile_id: str, payload: AnchorBacktestRequest) -> dict
         raise HTTPException(status_code=422, detail=str(exc)) from exc
 
 
+@router.post("/profiles/{profile_id}/analyze")
+def analyze_catalog(profile_id: str, payload: SmartPreviewProbeRequest) -> dict:
+    """Photographer flow: one call from a linked catalog to its style summary and expected savings."""
+    try:
+        return LearningProfileStore().analyze_catalog(profile_id, catalog_path=payload.catalog_path)
+    except LearningIntakeError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
 @router.post("/profiles/{profile_id}/sample-preflight")
 def sample_preflight(profile_id: str, payload: SamplePreflightRequest) -> dict:
     """Transient private per-photo review. Not a dataset certification."""

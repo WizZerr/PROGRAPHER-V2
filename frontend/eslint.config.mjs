@@ -38,7 +38,7 @@ const eslintConfig = defineConfig([
     files: [
       "src/features/darkroom/JpegRenderedPreview.tsx",
       "src/features/review/CameraPreview.tsx",
-      "src/features/learning-intake/SamplePreflightPanel.tsx",
+      "src/features/learning-intake/LearningIntakeScreen.tsx",
     ],
     rules: {
       "@next/next/no-img-element": "off",

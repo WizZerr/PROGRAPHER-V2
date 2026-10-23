@@ -4,24 +4,120 @@ import { useEffect, useState } from "react";
 import { open } from "@tauri-apps/plugin-dialog";
 import { useWorkspaceNav } from "@/features/workspace/workspace-nav";
 import {
+  analyzeCatalog,
   attachLearningCatalog,
   createLearningProfile,
   deleteLearningProfile,
   discoverCatalogLocation,
   listLearningProfiles,
+  type AnalysisSample,
+  type CatalogAnalysisSummary,
   type CatalogDiscoveryCandidate,
   type CatalogIntake,
   type ColorMode,
   type LearningProfile,
+  type StyleSlider,
 } from "./learningIntake.api";
-import SamplePreflightPanel from "./SamplePreflightPanel";
 import styles from "./LearningIntakeScreen.module.css";
 
-const sourceLabels = {
-  smart_previews_unverified: "Smart Previews נבחרו · התאמה לתמונות עדיין לא אומתה",
-  raw_fallback_unverified: "תיקיית RAW נבחרה · התאמה לקטלוג עדיין לא אומתה",
-  catalog_only_limited: "קטלוג בלבד · ניתוח חזותי אינו זמין כרגע",
+const sliderName: Record<string, string> = {
+  Exposure2012: "חשיפה", Contrast2012: "ניגודיות", Highlights2012: "הבהרות", Shadows2012: "צללים",
+  Whites2012: "לבנים", Blacks2012: "שחורים", Texture: "טקסטורה", Clarity2012: "Clarity", Dehaze: "Dehaze",
+  Vibrance: "Vibrance", Saturation: "רוויה", Temperature: "טמפרטורה", Tint: "Tint",
 };
+
+type Phase = "idle" | "reading" | "analyzing";
+
+function fileName(path: string) {
+  return path.split(/[\\/]/).pop() ?? path;
+}
+
+function sliderValue(key: string, value: number) {
+  if (key === "Exposure2012") return `${value > 0 ? "+" : ""}${value.toFixed(2)}`;
+  if (key === "Temperature") return `${Math.round(value).toLocaleString("he-IL")}K`;
+  const rounded = Math.round(value);
+  return `${rounded > 0 ? "+" : ""}${rounded}`;
+}
+
+function Value({ k, v }: { k: string; v: number }) {
+  return <bdi dir="ltr">{sliderValue(k, v)}</bdi>;
+}
+
+function StyleLine({ title, sliders, range }: { title: string; sliders: StyleSlider[]; range?: boolean }) {
+  if (!sliders.length) return null;
+  return <div className={styles.styleLine}>
+    <span>{title}</span>
+    <div className={styles.chips}>{sliders.map((s) => <span key={s.key} className={styles.chip}>
+      {sliderName[s.key] ?? s.key}{" "}
+      {range ? <>(<Value k={s.key} v={s.p10}/> עד <Value k={s.key} v={s.p90}/>)</> : <Value k={s.key} v={s.median}/>}
+    </span>)}</div>
+  </div>;
+}
+
+function CatalogSummary({ catalog, summary, samples, busy, onReanalyze }: {
+  catalog: CatalogIntake;
+  summary: CatalogAnalysisSummary;
+  samples: AnalysisSample[];
+  busy: boolean;
+  onReanalyze: () => void;
+}) {
+  const fixed = summary.style.filter((s) => s.kind === "fixed");
+  const perPhoto = summary.style.filter((s) => s.kind === "per_photo");
+  const untouched = summary.style.filter((s) => s.kind === "untouched");
+  const rare = summary.style.filter((s) => s.kind === "rare");
+  const savings = summary.savings;
+  const missing = summary.photos - summary.linked;
+  return <section className={styles.summary}>
+    <div className={styles.summaryHead}>
+      <div>
+        <span className={styles.kicker} dir="ltr">{fileName(catalog.catalog_path)}</span>
+        <h2>למדנו את הסגנון שלך מ־{summary.pairs.toLocaleString("he-IL")} תמונות</h2>
+      </div>
+      <button className={styles.link} type="button" disabled={busy} onClick={onReanalyze}>נתח מחדש</button>
+    </div>
+    <ul className={styles.checklist}>
+      <li className={styles.done}>{summary.photos.toLocaleString("he-IL")} תמונות בקטלוג</li>
+      <li className={missing ? styles.partial : styles.done}>
+        {summary.linked.toLocaleString("he-IL")} תמונות מקוריות נמצאו{missing ? ` · ל־${missing.toLocaleString("he-IL")} אין Smart Preview` : ""}
+      </li>
+      <li className={styles.done}>{summary.pairs.toLocaleString("he-IL")} עריכות שלך נקראו</li>
+    </ul>
+
+    {savings.untouched_pct !== undefined && savings.proposed_photos !== undefined && <div className={styles.savings}>
+      <strong>{Math.round(savings.untouched_pct)}%</strong>
+      <p>אם תערוך {savings.anchors} תמונות, ProGrapher תציע עריכה ל־{savings.proposed_photos.toLocaleString("he-IL")} האחרות,
+        ובערך {Math.round(savings.untouched_pct)}% מהן לא תצטרך לגעת.
+        {savings.no_correction_untouched_pct !== undefined &&
+          <> לשם השוואה, בלי שום הצעה רק {Math.round(savings.no_correction_untouched_pct)}% מהתמונות לא דורשות שינוי.</>}</p>
+      {savings.curve && savings.curve.length > 1 && <small>
+        {savings.curve.map((c) => `${c.anchors} תמונות ערוכות: ${Math.round(c.untouched_pct)}%`).join(" · ")}
+      </small>}
+    </div>}
+
+    <div className={styles.style}>
+      <h3>הסגנון שלך</h3>
+      <StyleLine title="קבוע בכל תמונה" sliders={fixed}/>
+      <StyleLine title="אתה מתאים מתמונה לתמונה" sliders={perPhoto} range/>
+      {untouched.length > 0 && <p className={styles.muted}>לא נוגע: {untouched.map((s) => sliderName[s.key] ?? s.key).join(", ")}</p>}
+      {rare.length > 0 && <p className={styles.muted}>לפעמים: {rare.map((s) =>
+        `${sliderName[s.key] ?? s.key} (${s.present.toLocaleString("he-IL")} תמונות)`).join(", ")}</p>}
+    </div>
+
+    {samples.length > 0 && <div className={styles.samples}>
+      {samples.map((sample, index) => <figure key={index}>
+        {sample.thumbnail_jpeg_base64 && <img src={`data:image/jpeg;base64,${sample.thumbnail_jpeg_base64}`}
+          width={sample.width ?? undefined} height={sample.height ?? undefined} alt={`לפני עריכה: ${sample.file_name}`}
+          draggable={false}/>}
+        <figcaption>
+          <span dir="ltr">{sample.file_name}</span>
+          <span>שלך: <Value k="Exposure2012" v={sample.photographer.exposure}/> · <Value k="Temperature" v={sample.photographer.temperature_k}/></span>
+          <span>מוצע: <Value k="Exposure2012" v={sample.proposed.exposure}/> · <Value k="Temperature" v={sample.proposed.temperature_k}/>
+            {sample.untouched ? " ✓" : ""}</span>
+        </figcaption>
+      </figure>)}
+    </div>}
+  </section>;
+}
 
 export default function LearningIntakeScreen() {
   const openView = useWorkspaceNav();
@@ -31,16 +127,16 @@ export default function LearningIntakeScreen() {
   const [photographyType, setPhotographyType] = useState("חתונה");
   const [colorMode, setColorMode] = useState<ColorMode>("color");
   const [consent, setConsent] = useState(false);
-  const [catalogPath, setCatalogPath] = useState("");
-  const [previewsPath, setPreviewsPath] = useState("");
-  const [rawPath, setRawPath] = useState("");
-  const [foundCatalogs, setFoundCatalogs] = useState<CatalogDiscoveryCandidate[]>([]);
-  const [discoveryNotice, setDiscoveryNotice] = useState("");
+  const [found, setFound] = useState<CatalogDiscoveryCandidate[]>([]);
+  const [picked, setPicked] = useState<CatalogDiscoveryCandidate | null>(null);
+  const [adding, setAdding] = useState(false);
+  const [phase, setPhase] = useState<Phase>("idle");
+  const [samples, setSamples] = useState<Record<string, AnalysisSample[]>>({});
   const [busy, setBusy] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [notice, setNotice] = useState("");
   const [deletePending, setDeletePending] = useState<LearningProfile | null>(null);
+  const working = busy || phase !== "idle";
 
   useEffect(() => {
     let alive = true;
@@ -51,181 +147,148 @@ export default function LearningIntakeScreen() {
     return () => { alive = false; };
   }, []);
 
+  function show(next: LearningProfile) {
+    setProfile(next);
+    setProfiles((old) => old.some((p) => p.profile_id === next.profile_id)
+      ? old.map((p) => p.profile_id === next.profile_id ? next : p) : [next, ...old]);
+  }
+
+  function resetCatalogChoice() {
+    setFound([]);
+    setPicked(null);
+  }
+
   async function create() {
-    if (!name.trim() || !photographyType.trim() || !consent || busy) return;
+    if (!name.trim() || !photographyType.trim() || !consent || working) return;
     setError("");
     setBusy(true);
     try {
-      const next = await createLearningProfile({
-        name: name.trim(),
-        photography_type: photographyType.trim(),
-        color_mode: colorMode,
-        consent,
-      });
-      setProfiles((old) => [next, ...old]);
-      setProfile(next);
-      setNotice("");
+      show(await createLearningProfile({
+        name: name.trim(), photography_type: photographyType.trim(), color_mode: colorMode, consent,
+      }));
+      setAdding(true);
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "יצירת פרופיל הלמידה נכשלה.");
+      setError(cause instanceof Error ? cause.message : "יצירת הפרופיל נכשלה.");
     } finally { setBusy(false); }
   }
 
-  function pickCatalog(candidate: CatalogDiscoveryCandidate) {
-    setCatalogPath(candidate.catalog_path);
-    setPreviewsPath(candidate.smart_previews_path ?? "");
-    setDiscoveryNotice(candidate.smart_previews_path
-      ? "Smart Previews אותרו ליד הקטלוג לפי שם התיקייה. ההתאמה לתמונות עדיין לא אומתה."
-      : "לא נמצאו Smart Previews תואמים ליד הקטלוג. אפשר להמשיך בסקירת קטלוג או לבחור מקור ידנית.");
-  }
-
-  async function choose(which: "folder" | "catalog" | "previews" | "raw") {
-    if (busy) return;
-    const selected = await open(which === "catalog" ? {
-      directory: false,
-      multiple: false,
-      title: "בחר קובץ Lightroom Catalog (.lrcat)",
-      filters: [{ name: "Lightroom Catalog", extensions: ["lrcat"] }],
-    } : {
-      directory: true,
-      multiple: false,
-      title: which === "folder" ? "בחר תיקייה שמכילה קטלוג Lightroom"
-        : which === "previews" ? "בחר Smart Previews.lrdata במיקום אחר"
-        : "בחר תיקיית RAW מקורית (חלופה)",
-    });
+  async function chooseFolder() {
+    if (working) return;
+    const selected = await open({ directory: true, multiple: false, title: "בחר את התיקייה של קטלוג Lightroom" });
     if (!selected || Array.isArray(selected)) return;
     setError("");
-
-    if (which === "folder" || which === "catalog") {
-      setBusy(true);
-      setFoundCatalogs([]);
-      setCatalogPath("");
-      setPreviewsPath("");
-      setRawPath("");
-      setDiscoveryNotice("");
-      try {
-        const result = await discoverCatalogLocation(selected);
-        setFoundCatalogs(result.catalogs);
-        if (result.catalogs.length === 1) {
-          pickCatalog(result.catalogs[0]);
-        } else {
-          setDiscoveryNotice(`נמצאו ${result.catalogs.length} קטלוגים. בחר את הקטלוג הרצוי — לא נבחר אחד אוטומטית.`);
-        }
-      } catch (cause) {
-        setError(cause instanceof Error ? cause.message : "לא ניתן לסרוק את תיקיית הקטלוג.");
-      } finally {
-        setBusy(false);
-      }
-      return;
-    }
-    if (which === "previews") {
-      setPreviewsPath(selected);
-      setDiscoveryNotice("Smart Previews נבחרו ידנית; טרם אומתה התאמה לתמונות הקטלוג.");
-    }
-    if (which === "raw") setRawPath(selected);
-  }
-
-  async function audit(savedCatalog?: CatalogIntake) {
-    if (!profile || busy) return;
-    // Existing catalogs are already linked to the profile. Re-audit without
-    // forcing photographers to reselect a folder just to enable a button.
-    const automatic = !catalogPath && !savedCatalog && profile.catalogs.length === 1
-      ? profile.catalogs[0]
-      : null;
-    const chosen = savedCatalog ?? automatic;
-    const path = chosen?.catalog_path ?? catalogPath;
-    if (!path) return;
-    setError("");
-    setNotice("");
+    resetCatalogChoice();
     setBusy(true);
     try {
+      const result = await discoverCatalogLocation(selected);
+      setFound(result.catalogs);
+      if (result.catalogs.length === 1) setPicked(result.catalogs[0]);
+      if (!result.catalogs.length) setError("לא נמצא קטלוג Lightroom (.lrcat) בתיקייה הזו.");
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "לא ניתן לסרוק את התיקייה.");
+    } finally { setBusy(false); }
+  }
+
+  async function choosePreviews() {
+    if (working || !picked) return;
+    const selected = await open({ directory: true, multiple: false, title: "בחר את תיקיית Smart Previews.lrdata" });
+    if (!selected || Array.isArray(selected)) return;
+    setPicked({ ...picked, smart_previews_path: selected });
+  }
+
+  async function analyze(target: LearningProfile, catalogPath: string) {
+    setPhase("analyzing");
+    const result = await analyzeCatalog(target.profile_id, catalogPath);
+    setSamples((old) => ({ ...old, [catalogPath]: result.samples }));
+    show(result.profile);
+  }
+
+  async function addCatalog() {
+    if (!profile || !picked || working) return;
+    setError("");
+    setPhase("reading");
+    try {
       const next = await attachLearningCatalog(profile.profile_id, {
-        catalog_path: path,
-        smart_previews_path: (chosen?.smart_previews_path ?? previewsPath) || null,
-        raw_fallback_path: (chosen?.raw_fallback_path ?? rawPath) || null,
+        catalog_path: picked.catalog_path,
+        smart_previews_path: picked.smart_previews_path,
+        raw_fallback_path: null,
       });
-      setProfile(next);
-      setProfiles((old) => old.map((p) => p.profile_id === next.profile_id ? next : p));
-      setCatalogPath("");
-      setPreviewsPath("");
-      setRawPath("");
-      setFoundCatalogs([]);
-      setDiscoveryNotice("");
-      setNotice("בדיקת הקטלוג הסתיימה, והדוח השמור עודכן. טרם הופעל אימון.");
+      show(next);
+      if (picked.smart_previews_path) await analyze(next, picked.catalog_path);
+      setAdding(false);
+      resetCatalogChoice();
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "קריאת הקטלוג נכשלה.");
-    } finally { setBusy(false); }
+    } finally { setPhase("idle"); }
+  }
+
+  async function reanalyze(catalog: CatalogIntake) {
+    if (!profile || working) return;
+    setError("");
+    try {
+      await analyze(profile, catalog.catalog_path);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "הניתוח נכשל.");
+    } finally { setPhase("idle"); }
   }
 
   function selectProfile(item: LearningProfile) {
     setProfile(item);
-    setCatalogPath("");
-    setPreviewsPath("");
-    setRawPath("");
-    setFoundCatalogs([]);
-    setDiscoveryNotice("");
+    setAdding(item.catalogs.length === 0);
+    resetCatalogChoice();
     setError("");
-    setNotice("");
   }
 
   async function confirmDelete() {
-    if (!deletePending || busy) return;
+    if (!deletePending || working) return;
     const toDelete = deletePending;
     setBusy(true);
     setError("");
     try {
       await deleteLearningProfile(toDelete.profile_id);
       setProfiles((old) => old.filter((item) => item.profile_id !== toDelete.profile_id));
-      if (profile?.profile_id === toDelete.profile_id) {
-        setProfile(null);
-        setCatalogPath("");
-        setPreviewsPath("");
-        setRawPath("");
-        setFoundCatalogs([]);
-        setDiscoveryNotice("");
-      }
+      if (profile?.profile_id === toDelete.profile_id) setProfile(null);
       setDeletePending(null);
-      setNotice(`הפרופיל "${toDelete.name}" נמחק מ־ProGrapher. קובצי Lightroom והתמונות נשארו ללא שינוי.`);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "לא ניתן למחוק את הפרופיל.");
       setDeletePending(null);
     } finally { setBusy(false); }
   }
 
+  const progress = phase !== "idle" && <ul className={styles.checklist} aria-live="polite">
+    <li className={phase === "reading" ? styles.running : styles.done}>קורא את הקטלוג</li>
+    <li className={phase === "analyzing" ? styles.running : styles.waiting}>
+      מוצא את התמונות המקוריות, קורא את העריכות שלך ומחשב כמה זמן אפשר לחסוך
+    </li>
+    {phase === "analyzing" && <li className={styles.hint}>בקטלוג גדול זה לוקח דקה־שתיים.</li>}
+  </ul>;
+
   return <main className={styles.screen} dir="rtl">
     <header className={styles.header}>
-      <span className={styles.eyebrow}>PROGRAPHER / LEARNING · 00—02</span>
       <button className={styles.back} type="button" onClick={() => openView("profile")}>חזרה לפרופיל ←</button>
-      <h1>בניית פרופיל הלמידה</h1>
-      <p>מתחילים מהצלם והקטלוג, לא מסקריפטים. המידע נשמר במחשב שלך; בשלב הזה אין אימון AI או שינוי בעריכות.</p>
+      <h1>פרופיל הלמידה</h1>
+      <p>ProGrapher לומדת את הסגנון שלך מהעריכות שכבר עשית ב־Lightroom. הכול נשאר במחשב שלך, ושום דבר לא משתנה בקטלוג.</p>
     </header>
-    <div className={styles.steps}>
-      <span className={styles.stepActive}>00 · פרופיל</span>
-      <span className={profile ? styles.stepActive : styles.step}>01 · קטלוג ועריכות</span>
-      <span className={styles.step}>02 · נקודת התחלה — טרם אומתה</span>
-    </div>
     {error && <div role="alert" className={styles.error}>{error}</div>}
-    {notice && <div role="status" className={styles.success}>{notice}</div>}
     {deletePending && <div className={styles.modalBackdrop} role="presentation">
-      <section className={styles.modal} role="alertdialog" aria-modal="true" aria-labelledby="delete-heading" aria-describedby="delete-details">
-        <span className={styles.kicker}>מחיקת פרופיל</span>
+      <section className={styles.modal} role="alertdialog" aria-modal="true" aria-labelledby="delete-heading">
         <h2 id="delete-heading">למחוק את הפרופיל ״{deletePending.name}״?</h2>
-        <p id="delete-details">הפעולה תמחק את פרופיל הלמידה ואת רשומות הקטלוג המשויכות לו ממסד הנתונים המקומי של ProGrapher. הפעולה אינה מוחקת קובצי Lightroom, RAW או Smart Previews, ואי אפשר לבטל אותה מתוך התוכנה.</p>
+        <p>הפרופיל יימחק מ־ProGrapher בלבד. הקטלוג, קובצי ה־RAW וה־Smart Previews לא משתנים.</p>
         <div className={styles.modalActions}>
           <button className={styles.ghost} type="button" disabled={busy} onClick={() => setDeletePending(null)}>ביטול</button>
-          <button className={styles.danger} type="button" disabled={busy} onClick={() => void confirmDelete()}>{busy ? "מוחק פרופיל…" : "כן, מחק פרופיל"}</button>
+          <button className={styles.danger} type="button" disabled={busy} onClick={() => void confirmDelete()}>{busy ? "מוחק…" : "מחק פרופיל"}</button>
         </div>
       </section>
     </div>}
 
     {!profile ? <div className={styles.layout}>
       <section className={styles.panel}>
-        <span className={styles.kicker}>STEP 00</span>
-        <h2>פרופיל אישי חדש</h2>
+        <h2>פרופיל חדש</h2>
         <label>שם הפרופיל
-          <input value={name} onChange={(e) => setName(e.target.value)} maxLength={120} placeholder="לדוגמה: סגנון חתונות" />
+          <input value={name} onChange={(e) => setName(e.target.value)} maxLength={120} placeholder="לדוגמה: סגנון חתונות"/>
         </label>
         <label>סוג צילום
-          <input value={photographyType} maxLength={80} onChange={(e) => setPhotographyType(e.target.value)} placeholder="חתונה, אירועים, פורטרטים..." />
+          <input value={photographyType} maxLength={80} onChange={(e) => setPhotographyType(e.target.value)}/>
         </label>
         <label>סגנון צבע
           <select value={colorMode} onChange={(e) => setColorMode(e.target.value as ColorMode)}>
@@ -233,98 +296,74 @@ export default function LearningIntakeScreen() {
             <option value="black_white">שחור־לבן</option>
           </select>
         </label>
-        <label className={styles.consent}><input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} />
+        <label className={styles.consent}><input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)}/>
           <span>יש לי אישור להשתמש בקטלוגים ובתמונות לצורך למידת הפרופיל במחשב זה.</span>
         </label>
-        <button className={styles.primary} type="button" disabled={!name.trim() || !photographyType.trim() || !consent || busy}
+        <button className={styles.primary} type="button" disabled={!name.trim() || !photographyType.trim() || !consent || working}
           onClick={() => void create()}>{busy ? "שומר…" : "צור פרופיל והמשך"}</button>
       </section>
       <section className={styles.panel}>
-        <span className={styles.kicker}>פרופילים קיימים</span>
-        <h2>המשך עבודה</h2>
-        {loading ? <p>טוען פרופילים…</p> : profiles.length === 0 ? <p>עדיין אין פרופילים שמורים.</p> : profiles.map((item) =>
+        <h2>פרופילים קיימים</h2>
+        {loading ? <p>טוען…</p> : profiles.length === 0 ? <p>עדיין אין פרופילים.</p> : profiles.map((item) =>
           <div key={item.profile_id} className={styles.profileEntry}>
-            <button className={styles.existing} onClick={() => selectProfile(item)} type="button" disabled={busy}>
+            <button className={styles.existing} onClick={() => selectProfile(item)} type="button" disabled={working}>
               <strong>{item.name}</strong>
-              <span>{item.photography_type} · {item.color_mode === "color" ? "צבע" : "שחור־לבן"} · {item.catalogs.length} קטלוגים</span>
+              <span>{item.photography_type} · {item.catalogs.length === 1 ? "קטלוג אחד" : `${item.catalogs.length} קטלוגים`}</span>
             </button>
-            <button className={styles.deleteLink} type="button" disabled={busy} onClick={() => setDeletePending(item)}>מחק פרופיל</button>
-          </div>,
-        )}
-        <p className={styles.note}>פרופיל חדש אינו Brain מאומן. כרגע אנחנו מסדרים את נתוני הלמידה.</p>
+            <button className={styles.deleteLink} type="button" disabled={working} onClick={() => setDeletePending(item)}>מחק</button>
+          </div>)}
       </section>
-    </div> : <div className={styles.layout}>
-      <section className={styles.panel}>
-        <span className={styles.kicker}>STEP 01 / CATALOG</span>
-        <div className={styles.headline}>
-          <h2>{profile.name}</h2>
-          <div className={styles.profileActions}>
-            <button className={styles.link} type="button" disabled={busy} onClick={() => { setProfile(null); setError(""); setNotice(""); }}>החלף פרופיל</button>
-            <button className={styles.deleteLink} type="button" disabled={busy} onClick={() => setDeletePending(profile)}>מחק פרופיל</button>
-          </div>
+    </div> : <>
+      <div className={styles.profileBar}>
+        <h2>{profile.name}</h2>
+        <div className={styles.profileActions}>
+          {!adding && <button className={styles.link} type="button" disabled={working} onClick={() => setAdding(true)}>הוסף קטלוג</button>}
+          <button className={styles.link} type="button" disabled={working} onClick={() => { setProfile(null); setError(""); }}>החלף פרופיל</button>
+          <button className={styles.deleteLink} type="button" disabled={working} onClick={() => setDeletePending(profile)}>מחק פרופיל</button>
         </div>
-        <p>בחר את התיקייה שבה נמצא קטלוג Lightroom. המערכת תאתר קובצי .lrcat ואת תיקיית Smart Previews המתאימה לצד הקטלוג, אם היא קיימת. אין צורך לבחור את שניהם בנפרד.</p>
-        <button className={styles.source} disabled={busy} type="button" onClick={() => void choose("folder")}>
-          <span>בחירה מומלצת · תיקיית Lightroom</span><strong>{busy ? "סורק את התיקייה…" : "בחר תיקיית קטלוג"}</strong>
-        </button>
-        <button className={styles.link} disabled={busy} type="button" onClick={() => void choose("catalog")}>
-          או בחר קובץ ‎.lrcat ישירות
-        </button>
-        {foundCatalogs.length > 1 && <label className={styles.catalogChooser}>בתיקייה יש כמה קטלוגים — בחר את הנכון
-          <select value={catalogPath} disabled={busy}
-            onChange={(event) => {
-              const selectedCatalog = foundCatalogs.find((item) => item.catalog_path === event.target.value);
-              if (selectedCatalog) pickCatalog(selectedCatalog);
-            }}>
-            <option value="">בחר קטלוג מהרשימה</option>
-            {foundCatalogs.map((item) => <option key={item.catalog_path} value={item.catalog_path}>
-              {item.catalog_path.split(/[\\/]/).pop()}
-            </option>)}
+      </div>
+
+      {adding && <section className={styles.panel}>
+        <h2>{profile.catalogs.length ? "קטלוג נוסף" : "הוספת קטלוג"}</h2>
+        <p>בחר את התיקייה שבה נמצא קטלוג ה־Lightroom שלך. ProGrapher תמצא לבד את הקטלוג ואת ה־Smart Previews.</p>
+        {phase === "idle" && <button className={styles.source} disabled={working} type="button" onClick={() => void chooseFolder()}>
+          <strong>{busy ? "מחפש קטלוג…" : picked ? "בחר תיקייה אחרת" : "בחר תיקיית קטלוג"}</strong>
+        </button>}
+        {found.length > 1 && phase === "idle" && <label className={styles.catalogChooser}>נמצאו כמה קטלוגים, באיזה להשתמש?
+          <select value={picked?.catalog_path ?? ""} onChange={(event) =>
+            setPicked(found.find((item) => item.catalog_path === event.target.value) ?? null)}>
+            <option value="">בחר קטלוג</option>
+            {found.map((item) => <option key={item.catalog_path} value={item.catalog_path}>{fileName(item.catalog_path)}</option>)}
           </select>
         </label>}
-        {catalogPath && <div className={styles.discovery}>
-          <strong>קטלוג שנבחר</strong><span dir="ltr">{catalogPath}</span>
-          <strong>Smart Previews</strong>
-          <span dir="ltr">{previewsPath || "לא אותרו לצד הקטלוג"}</span>
-          <small>{discoveryNotice}</small>
-        </div>}
-        <details className={styles.advanced}>
-          <summary>אפשרויות מתקדמות — מיקומים אחרים</summary>
-          <p>אם Smart Previews לא נמצאים ליד הקטלוג, אפשר לבחור אותם ידנית. RAW הוא חלופה כשאין Smart Previews מתאימים.</p>
-          <button className={styles.source} disabled={busy} type="button" onClick={() => void choose("previews")}>
-            <span>Smart Previews במיקום אחר</span><strong dir="ltr">{previewsPath || "בחר ידנית (אופציונלי)"}</strong>
-          </button>
-          <button className={styles.source} disabled={busy} type="button" onClick={() => void choose("raw")}>
-            <span>RAW מקורי</span><strong dir="ltr">{rawPath || "בחר תיקיית RAW (אופציונלי)"}</strong>
-          </button>
-        </details>
-        <button className={styles.primary} disabled={busy || (!catalogPath && profile.catalogs.length !== 1)} type="button" onClick={() => void audit()}>
-          {busy ? "יוצר עותק זמני ובודק קטלוג…" : catalogPath ? "בדוק ושמור קטלוג" : profile.catalogs.length === 1 ? "בדוק מחדש את הקטלוג השמור" : "בחר קטלוג כדי להמשיך"}
-        </button>
-        <p className={styles.note}>הבדיקה משתמשת בעותק SQLite זמני שנמחק בסיומה. אף קובץ RAW או קטלוג מקורי לא נערך. קטלוג גדול עשוי להצריך מקום פנוי בדיסק.</p>
-      </section>
-      <section className={styles.panel}>
-        <span className={styles.kicker}>INTAKE REPORT</span>
-        <h2>מצב חומר הלמידה</h2>
-        {!profile.catalogs.length ? <p>לא נבדק קטלוג עדיין. אפשר להוסיף כמה קטלוגים לאותו פרופיל.</p> :
-          profile.catalogs.map((item) => <article key={item.catalog_path} className={styles.catalog}>
-            <strong dir="ltr" className={styles.catalogPath}>{item.catalog_path}</strong>
-            <span>{sourceLabels[item.source_status]}</span>
-            <button className={styles.recheck} type="button" disabled={busy} onClick={() => void audit(item)}>בדוק מחדש את הקטלוג הזה</button>
-            <div className={styles.metrics}>
-              <div><small>רשומות RAW</small><b>{item.aggregate.catalog_raw_records.toLocaleString("he-IL")}</b></div>
-              <div><small>רשומות Develop מפוענחות (לא מאומתות)</small><b>{item.aggregate.parsed_raw_records.toLocaleString("he-IL")}</b></div>
-              <div><small>קבוצות מועמדות</small><b>{item.aggregate.candidate_folder_day_groups.toLocaleString("he-IL")}</b></div>
-              <div><small>מאומתות לאימון</small><b>0</b></div>
-            </div>
-            {Object.keys(item.aggregate.exclusions).length > 0 && <small>חריגות: {Object.entries(item.aggregate.exclusions).map(([key,value]) => `${key}: ${value}`).join(" · ")}</small>}
-          </article>)}
-        <div className={styles.warning}>
-          <strong>שלב 02 — בדיקת Import מול Reset</strong>
-          <p>עוד לא הוכחנו מה הייתה נקודת ההתחלה לכל צלם. לא מאמנים מודל לפני אימות זהות RAW/Smart Preview, האירועים והעריכות הסופיות.</p>
-        </div>
-      </section>
-    </div>}
-    {profile && profile.catalogs.length > 0 && <SamplePreflightPanel key={profile.profile_id} profile={profile}/>}
+        {picked && <ul className={styles.checklist}>
+          <li className={styles.done}><span>קטלוג: </span><bdi dir="ltr">{fileName(picked.catalog_path)}</bdi></li>
+          <li className={picked.smart_previews_path ? styles.done : styles.partial}>
+            {picked.smart_previews_path ? "Smart Previews נמצאו" : "לא נמצאו Smart Previews ליד הקטלוג"}
+            {!picked.smart_previews_path && phase === "idle" &&
+              <button className={styles.link} type="button" onClick={() => void choosePreviews()}>בחר אותם ידנית</button>}
+          </li>
+        </ul>}
+        {progress}
+        {picked && phase === "idle" && <button className={styles.primary} type="button" disabled={working}
+          onClick={() => void addCatalog()}>הוסף ונתח</button>}
+        {profile.catalogs.length > 0 && phase === "idle" &&
+          <button className={styles.link} type="button" onClick={() => { setAdding(false); resetCatalogChoice(); }}>ביטול</button>}
+      </section>}
+
+      {!adding && phase !== "idle" && <section className={styles.panel}>{progress}</section>}
+
+      {profile.catalogs.map((catalog) => catalog.analysis
+        ? <CatalogSummary key={catalog.catalog_path} catalog={catalog} summary={catalog.analysis}
+            samples={samples[catalog.catalog_path] ?? []} busy={working} onReanalyze={() => void reanalyze(catalog)}/>
+        : <section key={catalog.catalog_path} className={styles.panel}>
+            <span className={styles.kicker} dir="ltr">{fileName(catalog.catalog_path)}</span>
+            <p>{catalog.smart_previews_path
+              ? "הקטלוג נוסף אבל עוד לא נותח."
+              : "לא נמצאו Smart Previews לקטלוג הזה. ב־Lightroom: Library ← Previews ← Build Smart Previews, ואז הוסף את הקטלוג שוב."}</p>
+            {catalog.smart_previews_path && <button className={styles.primary} type="button" disabled={working}
+              onClick={() => void reanalyze(catalog)}>נתח עכשיו</button>}
+          </section>)}
+    </>}
   </main>;
 }
