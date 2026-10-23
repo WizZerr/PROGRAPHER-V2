@@ -52,6 +52,23 @@ Then run Tauri using the previously separated test DATA_DIR and CACHE_DIR. In th
 - Clear error if JPEG XL codec unavailable, package checksum mismatch, or unsupported DNG opcodes
 - Zero training-ready samples; raw identity, Lightroom baseline and final photographer edits still unverified.
 
+## Review fixes (2026-10-23)
+
+- **SubIFD routing.** `dng_diagnostics` now follows SubIFDs (tag 330) written as TIFF type IFD (13) as well as LONG.
+  In a Lightroom Smart Preview the JPEG XL image (52546) sits in a SubIFD. Before this fix, a file that wrote 330 as type IFD
+  reported only the thumbnail's compression, was routed to LibRaw and failed as `unsupported_or_corrupt_dng`.
+  Whether Lightroom itself writes LONG or IFD is still to be confirmed on a real file.
+  Check with: `python -c "import tifffile; print(tifffile.TiffFile(r'<smart preview>.dng').pages[0].tags[330].dtype)"`.
+- **Real decode test.** `test_real_bundled_decoder_on_synthetic_jpegxl_smart_preview` runs the probe with nothing mocked,
+  on a synthetic Lightroom-layout Smart Preview: thumbnail IFD0, then a LinearRaw JPEG XL SubIFD, 3 cubic MapPolynomials and an embedded profile.
+  It checks the routing and the decode status. It also checks that the pinned tifffile/imagecodecs return the stored JPEG XL samples
+  unchanged: the layer-1 output must equal the hand-computed DNG-spec result. The test is skipped if the JPEG XL codec is unavailable.
+- **Cache integrity.** On every load, `decoder_vendor` now re-hashes the cached decoder files against the verified archive.
+  If a file was edited it rebuilds the cache, and it deletes cached bytecode before import.
+
+Still open: Lightroom Reset colour parity was measured with the author's local package versions, not with the pinned ones.
+To repeat it with the backend venv, run the author's `tools/validate_against_lightroom.py` on the camera-test catalog.
+
 ## Quality and product gates
 
 The supplied author reports Reset-parity against Lightroom, including an 80-photo held-out sample, but we **have not independently repeated that benchmark** on this catalog.

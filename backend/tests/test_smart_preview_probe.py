@@ -285,3 +285,117 @@ def test_bundle_integrity_rejects_tampered_archive(tmp_path, monkeypatch):
     monkeypatch.setattr(vendor, "ARCHIVE", fake)
     with pytest.raises(vendor.DecoderBundleError, match="checksum mismatch"):
         vendor.load_decoder_package()
+
+
+# ---- real (unmocked) bundled decoder on a synthetic Lightroom-style Smart Preview ----
+
+@pytest.fixture
+def fresh_decoder(tmp_path, monkeypatch):
+    """Isolated data dir and a clean import of the bundled decoder (other tests may have loaded it elsewhere)."""
+    import sys
+    monkeypatch.setenv("PROGRAPHER_DATA_DIR", str(tmp_path / "private_data"))
+    monkeypatch.setattr(sys, "path", list(sys.path))
+    for name in [m for m in sys.modules if m == "smart_preview_decoder" or m.startswith("smart_preview_decoder.")]:
+        monkeypatch.delitem(sys.modules, name)
+    yield
+
+
+SYNTHETIC_COEF = [(0.001027, 0.062436, 0.0, 0.936537), (0.001865, 0.062383, 0.0, 0.935752),
+                  (0.00079, 0.062451, 0.0, 0.936759)]  # cubic MapPolynomial per plane, as Lightroom writes
+
+
+def write_synthetic_smart_preview(path: Path, h: int = 120, w: int = 180):
+    """Lightroom layout: IFD0 = small RGB thumbnail whose SubIFD is the LinearRaw JPEG XL (52546) main image,
+    with OpcodeList2 and an embedded camera profile. No real photo involved."""
+    import struct
+    import numpy as np
+    tifffile = pytest.importorskip("tifffile")
+
+    def rat(vals, den=10000):
+        return [v for x in vals for v in (int(round(x * den)), den)]
+
+    rng = np.random.default_rng(0)
+    yy, xx = np.mgrid[0:h, 0:w] / max(h, w)
+    stored = (np.clip(np.stack([0.2 + 0.6 * xx, 0.3 + 0.5 * yy, 0.5 + 0.2 * xx * yy], -1)
+                      + rng.normal(0, 0.01, (h, w, 3)), 0, 1) * 65535).astype(np.uint16)
+    ops = struct.pack(">I", 3)
+    for plane, coef in enumerate(SYNTHETIC_COEF):
+        prm = struct.pack(">8I", 0, 0, h, w, plane, 1, 1, 1) + struct.pack(">I", 3) + struct.pack(">4d", *coef)
+        ops += struct.pack(">IIII", 8, 0x01030000, 0, len(prm)) + prm
+    matrix = [1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0]
+    dng_tags = [
+        (50721, "2i", 9, rat(matrix), True), (50722, "2i", 9, rat(matrix), True),
+        (50964, "2i", 9, rat([0.43, 0.39, 0.14, 0.18, 0.85, -0.03, 0.02, -0.25, 1.05]), True),
+        (50965, "2i", 9, rat([0.45, 0.29, 0.22, 0.21, 0.78, 0.01, 0.03, -0.12, 0.92]), True),
+        (50778, "H", 1, 17, True), (50779, "H", 1, 21, True),
+        (50728, "2I", 3, rat([0.536126, 1.0, 0.6396], 1000000), True),
+        (50730, "2i", 1, [136, 100], True), (50936, "s", 0, "Adobe Standard", True),
+    ]
+    main_tags = [(50717, "I", 3, [65535] * 3, True), (50714, "2I", 3, [0, 1] * 3, True),
+                 (51009, "B", 0, ops, True)]
+    with tifffile.TiffWriter(path) as tif:
+        tif.write(np.zeros((16, 24, 3), np.uint8), photometric="rgb", subifds=1, subfiletype=1,
+                  extratags=dng_tags, metadata=None)
+        tif.write(stored, photometric=34892, planarconfig="contig", compression="jpegxl_dng",
+                  extratags=main_tags, metadata=None)
+    return stored
+
+
+def test_dng_diagnostics_follow_subifds_written_as_ifd_type(tmp_path):
+    """SubIFDs (330) of TIFF type IFD (13) must be followed, or the JPEG XL image is never seen."""
+    import struct
+    from app.learning_intake.dng_diagnostics import inspect_dng_compression
+    file = tmp_path / "subifd-type13.dng"
+    ifd0 = 8
+    ifd1 = ifd0 + 2 + 2 * 12 + 4
+    payload = (b"II*\x00" + struct.pack("<I", ifd0) + struct.pack("<H", 2)
+               + struct.pack("<HHI", 259, 3, 1) + struct.pack("<H", 1) + b"\x00\x00"
+               + struct.pack("<HHI", 330, 13, 1) + struct.pack("<I", ifd1)
+               + struct.pack("<I", 0)
+               + struct.pack("<H", 1) + struct.pack("<HHI", 259, 3, 1) + struct.pack("<H", 52546) + b"\x00\x00"
+               + struct.pack("<I", 0))
+    file.write_bytes(payload)
+    assert inspect_dng_compression(file)["compression_codes"] == [1, 52546]
+
+
+def test_real_bundled_decoder_on_synthetic_jpegxl_smart_preview(tmp_path, fresh_decoder):
+    """End to end, nothing mocked: SubIFD routing -> bundled decoder -> layer-1 linear pixels.
+    Also checks the pinned tifffile/imagecodecs return the JPEG XL samples unchanged (the MapPolynomial must
+    act on the stored values; a codec that converted them would break Lightroom parity)."""
+    import numpy as np
+    imagecodecs = pytest.importorskip("imagecodecs")
+    if not getattr(getattr(imagecodecs, "JPEGXL", None), "available", False):
+        pytest.skip("imagecodecs without JPEG XL")
+    root = tmp_path / "Synthetic Smart Previews.lrdata"
+    (root / "0").mkdir(parents=True)
+    file = root / "0" / "PRIVATE-NAME-1234.dng"
+    stored = write_synthetic_smart_preview(file)
+
+    report = inspect_smart_previews(root, decode_limit=1)
+    assert report["decode_status_counts"] == {"jpegxl_dng_decoded_unverified": 1}
+    sample = report["decoded_samples"][0]
+    assert sample["compression_code"] == 52546
+    assert sample["opcodes_applied"] == 3 and sample["opcodes_ignored"] == 0
+    assert sample["embedded_profile_present"] is True
+    assert "PRIVATE-NAME" not in json.dumps(report) and str(root) not in json.dumps(report)
+    assert report["training_ready_samples"] == 0
+
+    from app.learning_intake.decoder_vendor import load_decoder_package
+    sp = load_decoder_package().decode_smart_preview(file, long_edge=None)
+    v = stored.astype(np.float64) / 65535.0
+    expected = np.stack([np.clip(sum(c * v[..., p] ** k for k, c in enumerate(SYNTHETIC_COEF[p])), 0, 1)
+                         for p in range(3)], -1)
+    assert sp.linear.shape == expected.shape
+    assert float(np.abs(sp.linear - expected).max()) < 1e-3
+    assert abs(sp.baseline_exposure - 1.36) < 1e-9
+
+
+def test_edited_decoder_cache_file_is_rebuilt_before_import(tmp_path, fresh_decoder):
+    import hashlib
+    from app.learning_intake import decoder_vendor as vendor
+    vendor.load_decoder_package()
+    cached = vendor._bundle_destination() / "smart_preview_decoder" / "dng.py"
+    original = hashlib.sha256(cached.read_bytes()).hexdigest()
+    cached.write_text("raise SystemExit('edited')\n", encoding="utf-8")
+    vendor.load_decoder_package()
+    assert hashlib.sha256(cached.read_bytes()).hexdigest() == original
