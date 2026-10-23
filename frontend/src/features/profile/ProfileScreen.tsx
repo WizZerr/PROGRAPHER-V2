@@ -486,7 +486,7 @@ export default function ProfileScreen() {
           </footer>
         </article>
 
-        <article className={`${styles.learningPane} ${styles.jpegPane}`} aria-disabled="true">
+        <article className={`${styles.learningPane} ${styles.jpegPane}`}>
           <header className={styles.paneHeader}>
             <div className={styles.paneIdentity}>
               <span className={styles.mediaMonogram}>J</span>

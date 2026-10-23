@@ -24,7 +24,8 @@ export default function AppShell({
   return (
     <div className={shellClass}>
       <Sidebar
-        activeView={activeView === "training" ? "profile" : activeView}
+        // Training and learning profiles are opened from My Profile, which has the sidebar entry.
+        activeView={activeView === "training" || activeView === "learning-intake" ? "profile" : activeView}
         onSelect={onSelect}
       />
       <div className={immersive ? `${styles.main} ${styles.mainImmersive}` : styles.main}>
