@@ -215,9 +215,14 @@ def inspect_catalog(catalog: str | Path, *, include_private: bool = False) -> tu
             raise CatalogIntakeError("catalog SQLite integrity check failed")
         _assert_schema(db)
         report_counts["catalog_photo_records"] = db.execute("SELECT COUNT(*) FROM Adobe_images").fetchone()[0]
+        # Pick flag (-1 rejected, 0 none, 1 picked) and star rating are optional: read them only if present.
+        image_columns = {r[1] for r in db.execute("PRAGMA table_info(Adobe_images)")}
+        flag_columns = ", ".join(
+            f"i.{name} {name}" if name in image_columns else f"NULL {name}" for name in ("pick", "rating")
+        )
         query = """
             SELECT i.id_local image_id, i.id_global global_image_id, i.fileFormat file_format,
-                   i.masterImage master_image, i.copyName copy_name,
+                   i.masterImage master_image, i.copyName copy_name, """ + flag_columns + """,
                    COALESCE(i.originalCaptureTime, i.captureTime) photo_time,
                    f.id_local file_id, f.id_global global_file_id, f.baseName base_name,
                    f.extension extension, f.folder folder_id,
@@ -343,6 +348,7 @@ def inspect_catalog(catalog: str | Path, *, include_private: bool = False) -> tu
                     "catalog_root_name": row["root_name"], "catalog_folder": row["folder_name"],
                     "capture_day": group_key[2], "event_group_id": None,
                     "virtual_copy_candidate": row["master_image"] is not None or bool(row["copy_name"]),
+                    "pick": row["pick"], "rating": row["rating"],
                     "develop": develop, "complex": complex_fields,
                     "unsupported_fields": sorted(set(present)-(NUMERIC | TEXT | BOOL | COMPLEX | COLOR_FIELDS)),
                     "color_semantics_validated": False,

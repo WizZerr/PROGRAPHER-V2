@@ -54,5 +54,8 @@
 .beforeImages{grid-column:1/-1;display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;margin-top:4px}
 .beforeImages figure{margin:0;display:grid;gap:5px}
 .beforeImages img{width:100%;height:auto;border-radius:4px;border:1px solid #435873;background:#0b1520}
-.beforeImages figcaption{font-size:11px;color:#8fa6bd}
+.beforeImages figcaption{font-size:11px;color:#8fa6bd;display:grid;gap:3px}
+.pairsTable{grid-column:1/-1;width:100%;border-collapse:collapse;font-size:11px;color:#b6c9db}
+.pairsTable th,.pairsTable td{padding:4px 6px;border-bottom:1px solid #2a3b50;text-align:start;font-variant-numeric:tabular-nums}
+.pairsTable th{color:#8fa6bd;font-weight:600}
 @media(max-width:700px){.previewResults{grid-template-columns:1fr}}

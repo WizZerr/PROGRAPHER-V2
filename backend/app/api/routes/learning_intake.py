@@ -108,6 +108,15 @@ def link_smart_previews(profile_id: str, payload: SmartPreviewLinkRequest) -> di
         raise HTTPException(status_code=422, detail=str(exc)) from exc
 
 
+@router.post("/profiles/{profile_id}/edit-pairs")
+def build_edit_pairs(profile_id: str, payload: SmartPreviewLinkRequest) -> dict:
+    """Stage 4: before/after pairs for review; local, transient, not training-ready."""
+    try:
+        return LearningProfileStore().edit_pairs(profile_id, **payload.model_dump())
+    except LearningIntakeError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
 @router.post("/profiles/{profile_id}/sample-preflight")
 def sample_preflight(profile_id: str, payload: SamplePreflightRequest) -> dict:
     """Transient private per-photo review. Not a dataset certification."""

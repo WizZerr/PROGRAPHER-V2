@@ -248,8 +248,20 @@ class LearningProfileStore:
         """Stage 3: link catalog RAW photos to their Smart Preview DNGs (read only, nothing stored)."""
         from app.learning_intake.smart_preview_link import link_report
 
+        source, records = self._smart_preview_sources(profile_id, catalog_path, sample_size)
+        return link_report(source, records, sample_size=sample_size)
+
+    def edit_pairs(self, profile_id: str, *, catalog_path: str, sample_size: int = 4) -> dict:
+        """Stage 4: before (linked Smart Preview) / after (Develop values) pairs, in memory, never stored."""
+        from app.learning_intake.edit_pairs import pairs_report
+
+        source, records = self._smart_preview_sources(profile_id, catalog_path, sample_size)
+        return pairs_report(source, records, sample_size=sample_size)
+
+    def _smart_preview_sources(self, profile_id: str, catalog_path: str, sample_size: int):
+        """Smart Previews folder + private catalog RAW records for a catalog linked to this profile."""
         if not 0 <= sample_size <= 4:
-            raise LearningIntakeError("Link sample size must be between 0 and 4.")
+            raise LearningIntakeError("Sample size must be between 0 and 4.")
         profile = self.get(profile_id)
         entry = next(
             (item for item in profile["catalogs"] if item["catalog_path"] == catalog_path),
@@ -267,7 +279,7 @@ class LearningProfileStore:
         _aggregate, private = _inspect_consistent_snapshot(catalog, include_private=True)
         if not private:
             raise LearningIntakeError("Private Lightroom catalog inventory unavailable.")
-        return link_report(source, private["records"], sample_size=sample_size)
+        return source, private["records"]
 
     def preview_sample(
         self, profile_id: str, *, catalog_path: str,

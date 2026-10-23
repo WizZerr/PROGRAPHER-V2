@@ -219,6 +219,46 @@ export async function linkSmartPreviews(
   );
 }
 
+/** Stage 4: before (Smart Preview) / after (Develop values) pairs; transient, never training-ready. */
+export type EditPairsReport = {
+  schema: string;
+  status: "BEFORE_AFTER_PAIRS_RESEARCH_ONLY";
+  catalog_raw_records: number;
+  pairs_for_review: number;
+  excluded_counts: Record<string, number>;
+  target_coverage: Record<string, { present: number; median?: number; p10?: number; p90?: number }>;
+  other_edit_counts: Record<string, number>;
+  folder_groups: {
+    folder_group: string;
+    pairs: number;
+    exposure_median: number | null;
+    temperature_mired_median: number | null;
+    tint_median: number | null;
+  }[];
+  targets: string[];
+  samples: {
+    file_name: string;
+    folder_group: string;
+    capture_day: string | null;
+    targets: Record<string, number>;
+    temperature_mired: number | null;
+    white_balance: string | null;
+    other_edits: Record<string, boolean>;
+    decode_state: string | null;
+    reset_render?: SmartPreviewContentReport["decoded_samples"][number]["reset_render"] | null;
+  }[];
+  photographer_finality_verified: false;
+  training_ready_samples: 0;
+  warnings: string[];
+};
+
+export async function buildEditPairs(profileId: string, catalogPath: string): Promise<EditPairsReport> {
+  return apiRequest<EditPairsReport>(
+    `/api/learning-intake/profiles/${encodeURIComponent(profileId)}/edit-pairs`,
+    { method: "POST", body: JSON.stringify({ catalog_path: catalogPath, sample_size: 4 }) },
+  );
+}
+
 export type SmartPreviewSdkLinkReview = {
   schema: string;
   status: "SDK_PATH_CORROBORATION_RESEARCH_ONLY";

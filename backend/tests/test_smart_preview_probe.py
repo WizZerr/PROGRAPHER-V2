@@ -626,3 +626,81 @@ def test_smart_preview_links_api_shows_named_before_image(tmp_path, monkeypatch,
     assert sample["reset_render"]["state"] == "reset_rendered_unverified"
     assert report["training_ready_samples"] == 0
     assert str(smart) not in json.dumps(report)
+
+
+# ---- stage 4: before / after pairs ----
+
+def test_build_pairs_keeps_only_clean_linked_edits():
+    from app.learning_intake.edit_pairs import build_pairs
+
+    def link(status="linked_name_verified", virtual=False, **rec):
+        base = {"file_stem": "img", "extension": "cr3", "catalog_root_name": "root", "catalog_folder": "shooter-a/",
+                "capture_day": "2026-08-26", "develop": {"Exposure2012": 0.3, "Temperature": 5000.0, "Tint": 4.0,
+                                                         "WhiteBalance": "Custom"},
+                "complex": {}, "parse_exclusion": None, "pick": 0.0, "rating": None}
+        base.update(rec)
+        return {"record": base, "dng": Path("x.dng"), "status": status, "virtual_copy_candidate": virtual}
+
+    links = [
+        link(file_stem="good1"),
+        link(file_stem="good2", catalog_folder="shooter-b/", develop={"Exposure2012": -0.5, "ConvertToGrayscale": True},
+             complex={"ToneCurvePV2012": {"decoded": True, "is_linear": False}}, opaque_edit_review_required=True),
+        link(file_stem="good3", develop={"Exposure2012": 0.5, "Temperature": 4000.0, "SaturationAdjustmentRed": -10.0,
+                                         "Sharpness": 40.0, "ColorGradeBlending": 50.0}),
+        link(file_stem="good4", catalog_folder="shooter-c/", develop={"Exposure2012": 0.1, "Sharpness": 40.0,
+                                                                      "ColorGradeBlending": 50.0}),
+        link(status="linked_name_mismatch"),
+        link(virtual=True),
+        link(parse_exclusion="missing_develop"),
+        link(pick=-1.0),
+        link(develop={"WhiteBalance": "As Shot"}),
+    ]
+    result = build_pairs(links)
+    assert result["pairs_for_review"] == 4
+    assert result["excluded_counts"] == {"link_not_verified": 1, "missing_develop": 1, "no_global_develop_values": 1,
+                                         "rejected_in_lightroom": 1, "virtual_copy_shares_master_preview": 1}
+    by_name = {p["file_name"]: p for p in result["pairs"]}
+    assert by_name["good1.cr3"]["temperature_mired"] == 200.0
+    assert "Dehaze" in by_name["good1.cr3"]["missing_targets"]  # absent stays absent, never zero
+    assert by_name["good2.cr3"]["other_edits"] == {"tone_curve": True, "color_adjustments": False,
+                                                   "local_or_opaque_edits": True, "black_and_white": True}
+    assert by_name["good3.cr3"]["other_edits"]["color_adjustments"] is True
+    assert by_name["good4.cr3"]["other_edits"]["color_adjustments"] is False  # sharpening / grading config only
+    groups = {g["folder_group"]: g for g in result["folder_groups"]}
+    assert groups["F01"]["pairs"] == 2 and groups["F01"]["exposure_median"] == 0.4  # shooter-a, largest first
+    assert groups["F01"]["temperature_mired_median"] == 225.0
+    assert groups["F02"]["pairs"] == 1 and groups["F02"]["exposure_median"] == -0.5
+    assert result["target_coverage"]["Exposure2012"]["present"] == 4
+    assert result["target_coverage"]["Dehaze"] == {"present": 0}
+    assert "shooter" not in json.dumps({k: v for k, v in result.items() if k != "pairs"})
+
+
+def test_edit_pairs_api_returns_before_image_with_photographer_values(tmp_path, monkeypatch, fresh_decoder,
+                                                                      jpegxl_codec, no_cached_look):
+    from fastapi.testclient import TestClient
+    from app.application import create_app
+    monkeypatch.setenv("PROGRAPHER_ENGINE_SECRET", "pairs-test-secret")
+    catalog = tmp_path / "Pilot.lrcat"
+    catalog_fixture(catalog)  # one RAW photo 'photo.cr3' with Exposure2012=0.3
+    smart = tmp_path / "Pilot Smart Previews.lrdata"
+    (smart / "P").mkdir(parents=True)
+    write_synthetic_smart_preview(smart / "P" / "p.dng", original_name="photo.cr3")
+    store = LearningProfileStore()
+    owner = store.create(name="Test", photography_type="wedding", color_mode="color", consent=True)
+    store.attach_catalog(owner["profile_id"], catalog_path=str(catalog))
+    endpoint = f"/api/learning-intake/profiles/{owner['profile_id']}/edit-pairs"
+    with TestClient(create_app()) as client:
+        assert client.post(endpoint, json={"catalog_path": str(catalog)}).status_code == 401
+        response = client.post(endpoint, json={"catalog_path": str(catalog)},
+                               headers={"X-ProGrapher-Secret": "pairs-test-secret"})
+    assert response.status_code == 200, response.text
+    report = response.json()
+    assert report["pairs_for_review"] == 1 and report["excluded_counts"] == {}
+    sample = report["samples"][0]
+    assert sample["file_name"] == "photo.cr3" and sample["targets"] == {"Exposure2012": 0.3}
+    assert sample["folder_group"] == "F01"
+    assert sample["reset_render"]["state"] == "reset_rendered_unverified"
+    assert report["folder_groups"] == [{"folder_group": "F01", "pairs": 1, "exposure_median": 0.3,
+                                        "temperature_mired_median": None, "tint_median": None}]
+    assert report["training_ready_samples"] == 0
+    assert str(smart) not in json.dumps(report) and "event" not in json.dumps(report["folder_groups"])

@@ -6,9 +6,11 @@ import {
   runSamplePreflight,
   probeSmartPreviewContents,
   linkSmartPreviews,
+  buildEditPairs,
   reviewSmartPreviewSdkLinks,
   type SmartPreviewContentReport,
   type SmartPreviewLinkReport,
+  type EditPairsReport,
   type SmartPreviewSdkLinkReview,
   type LearningProfile,
   type PreflightSampleReport,
@@ -34,6 +36,35 @@ const linkStatusLabel: Record<string, string> = {
   no_smart_preview: "אין Smart Preview",
   ambiguous_smart_preview: "יותר מ־DNG אחד באותו מזהה",
 };
+
+const targetLabel: Record<string, string> = {
+  Exposure2012: "חשיפה", Contrast2012: "ניגודיות", Highlights2012: "הבהרות", Shadows2012: "צללים",
+  Whites2012: "לבנים", Blacks2012: "שחורים", Texture: "טקסטורה", Clarity2012: "בהירות (Clarity)",
+  Dehaze: "Dehaze", Vibrance: "חיוניות", Saturation: "רוויה", Temperature: "טמפרטורה (K)", Tint: "גוון (Tint)",
+};
+
+const exclusionLabel: Record<string, string> = {
+  link_not_verified: "שיוך ל־Smart Preview לא אומת",
+  virtual_copy_shares_master_preview: "עותק וירטואלי (חולק תמונת לפני עם המקור)",
+  rejected_in_lightroom: "מסומנת Reject ב־Lightroom",
+  no_global_develop_values: "אין ערכי עריכה גלובליים",
+  missing_develop: "אין רשומת Develop",
+  develop_parse_failed: "רשומת Develop לא פוענחה",
+  ambiguous_develop_rows: "כמה רשומות Develop לאותה תמונה",
+  missing_source_catalog_link: "חסר קישור לקובץ בקטלוג",
+  unsupported_raw_extension: "סוג RAW לא נתמך",
+};
+
+const otherEditLabel: Record<string, string> = {
+  tone_curve: "עקומת טון", color_adjustments: "HSL / Color Grading", local_or_opaque_edits: "מסכות / תיקונים מקומיים",
+  black_and_white: "שחור־לבן",
+};
+
+function formatValue(key: string, value: number | null | undefined) {
+  if (value === null || value === undefined) return "—";
+  if (key === "Exposure2012") return value.toFixed(2);
+  return Number.isInteger(value) ? String(value) : value.toFixed(1);
+}
 
 function SampleRow({ sample }: { sample: SourceSample }) {
   return <div className={styles.sampleRow}>
@@ -64,6 +95,9 @@ export default function SamplePreflightPanel({ profile }: { profile: LearningPro
   const [linkReport, setLinkReport] = useState<SmartPreviewLinkReport | null>(null);
   const [linkBusy, setLinkBusy] = useState(false);
   const [linkError, setLinkError] = useState("");
+  const [pairsReport, setPairsReport] = useState<EditPairsReport | null>(null);
+  const [pairsBusy, setPairsBusy] = useState(false);
+  const [pairsError, setPairsError] = useState("");
   const [sdkReport, setSdkReport] = useState<SmartPreviewSdkLinkReview | null>(null);
   const [sdkBusy, setSdkBusy] = useState(false);
   const [sdkError, setSdkError] = useState("");
@@ -96,6 +130,20 @@ export default function SamplePreflightPanel({ profile }: { profile: LearningPro
       setLinkError(cause instanceof Error ? cause.message : "קישור Smart Previews לקטלוג נכשל.");
     } finally {
       setLinkBusy(false);
+    }
+  }
+
+  async function buildBeforeAfterPairs() {
+    if (!catalogPath || pairsBusy || busy) return;
+    setPairsBusy(true);
+    setPairsError("");
+    setPairsReport(null);
+    try {
+      setPairsReport(await buildEditPairs(profile.profile_id, catalogPath));
+    } catch (cause) {
+      setPairsError(cause instanceof Error ? cause.message : "בניית זוגות לפני/אחרי נכשלה.");
+    } finally {
+      setPairsBusy(false);
     }
   }
 
@@ -183,6 +231,8 @@ export default function SamplePreflightPanel({ profile }: { profile: LearningPro
             setSdkError("");
             setLinkReport(null);
             setLinkError("");
+            setPairsReport(null);
+            setPairsError("");
             setRawFolder("");
           }}>
           {profile.catalogs.map((item) => <option key={item.catalog_path} value={item.catalog_path}>{item.catalog_path}</option>)}
@@ -234,6 +284,50 @@ export default function SamplePreflightPanel({ profile }: { profile: LearningPro
           </figure>)}
         </div>}
         <p>השוו את התמונות לפי שם הקובץ מול Lightroom (במודול Develop, מקש \ מציג את מצב ה&quot;לפני&quot; בלי לשנות דבר). שיוך מאומת = המזהה בקטלוג הוא שם קובץ ה־DNG, ושם קובץ ה־RAW שנשמר בתוכו זהה לקטלוג. העריכות של הצלם לא נקראות כאן; שום דבר לא נשמר ואינו מאושר לאימון.</p>
+      </div>}
+      <button className={styles.previewProbe} type="button" onClick={() => void buildBeforeAfterPairs()}
+        disabled={!smartPreviewsPath || pairsBusy || linkBusy || busy || previewBusy}>
+        {pairsBusy ? "בונה זוגות לפני/אחרי…" : "בנה זוגות לפני / אחרי (שלב 4)"}
+      </button>
+      {pairsError && <p role="alert" className={styles.error}>{pairsError}</p>}
+      {pairsReport && <div className={styles.previewResults} role="status">
+        <span>תמונות RAW בקטלוג: <strong>{pairsReport.catalog_raw_records}</strong></span>
+        <span>זוגות לפני/אחרי לבדיקה: <strong>{pairsReport.pairs_for_review}</strong></span>
+        {Object.entries(pairsReport.excluded_counts).map(([reason, count]) =>
+          <span key={reason}>הוצאו · {exclusionLabel[reason] || reason}: <strong>{count}</strong></span>)}
+        {Object.entries(pairsReport.other_edit_counts).map(([kind, count]) =>
+          <span key={kind}>זוגות עם {otherEditLabel[kind] || kind}: <strong>{count}</strong></span>)}
+        <table className={styles.pairsTable}>
+          <thead><tr><th>ערך</th><th>קיים ב־</th><th>חציון</th><th>10%–90%</th></tr></thead>
+          <tbody>{pairsReport.targets.map((key) => {
+            const c = pairsReport.target_coverage[key];
+            return <tr key={key}><td>{targetLabel[key] || key}</td><td>{c?.present ?? 0}</td>
+              <td dir="ltr">{formatValue(key, c?.median)}</td>
+              <td dir="ltr">{c?.p10 !== undefined ? `${formatValue(key, c.p10)} … ${formatValue(key, c.p90)}` : "—"}</td></tr>;
+          })}</tbody>
+        </table>
+        <table className={styles.pairsTable}>
+          <thead><tr><th>קבוצת תיקייה</th><th>זוגות</th><th>חשיפה (חציון)</th><th>טמפ׳ mired (חציון)</th><th>Tint (חציון)</th></tr></thead>
+          <tbody>{pairsReport.folder_groups.map((group) => <tr key={group.folder_group}>
+            <td dir="ltr">{group.folder_group}</td><td>{group.pairs}</td>
+            <td dir="ltr">{formatValue("Exposure2012", group.exposure_median)}</td>
+            <td dir="ltr">{formatValue("mired", group.temperature_mired_median)}</td>
+            <td dir="ltr">{formatValue("Tint", group.tint_median)}</td></tr>)}</tbody>
+        </table>
+        {pairsReport.samples.length > 0 && <div className={styles.beforeImages}>
+          {pairsReport.samples.map((sample, index) => <figure key={index}>
+            {sample.reset_render?.thumbnail_jpeg_base64
+              ? <img src={`data:image/jpeg;base64,${sample.reset_render.thumbnail_jpeg_base64}`}
+                  width={sample.reset_render.width} height={sample.reset_render.height}
+                  alt={`לפני: ${sample.file_name}`} draggable={false}/>
+              : <p>לא נוצרה תמונת לפני ({sample.decode_state || "לא פוענח"})</p>}
+            <figcaption><span dir="ltr">{sample.file_name} · {sample.folder_group}</span>
+              <span>אחרי (מה שהצלם קבע): {Object.entries(sample.targets).map(([key, value]) =>
+                `${targetLabel[key] || key} ${formatValue(key, value)}`).join(" · ")}</span>
+            </figcaption>
+          </figure>)}
+        </div>}
+        <p>כל זוג = תמונת ה&quot;לפני&quot; מה־Smart Preview + ערכי העריכה של הצלם מהקטלוג. ערך שחסר בקטלוג מוצג כחסר ולא כאפס. קבוצות התיקיות מסומנות F01, F02… בלי שמות; הבדלים ביניהן מרמזים על צלמים או פריסטים שונים. לא נבדק אם העריכה סופית; שום דבר לא נשמר ואינו מאושר לאימון.</p>
       </div>}
       <details className={styles.advanced}>
         <summary>אימות שיוך תמונות באמצעות Lightroom SDK · מחקר מתקדם</summary>
