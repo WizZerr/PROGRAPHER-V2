@@ -330,12 +330,13 @@ export default function ProfileScreen() {
   const linkedCount = analysis?.linked ?? 0;
   const pairCount = analysis?.pairs ?? 0;
   const linkCoverage = photoCount > 0 ? Math.round(100 * linkedCount / photoCount) : 0;
-  const routeStatus: RouteState = analysis
+  const routeStatus: RouteState = linkedCount > 0
     ? "ready" : catalogCount > 0 ? "pending" : "idle";
   const profileStatus = learningLoading
     ? "טוען נתונים"
-    : analysis ? "ניתוח הסגנון הושלם"
-      : catalogCount > 0 ? "ממתין לניתוח הקטלוג"
+    : analysis && pairCount > 0 ? "ניתוח הסגנון הושלם"
+      : analysis ? "הניתוח הושלם ללא זוגות מתאימים"
+        : catalogCount > 0 ? "ממתין לניתוח הקטלוג"
         : learningProfiles.length > 0 ? "ממתין להוספת קטלוג"
           : "עדיין לא הוגדר";
 
@@ -373,7 +374,7 @@ export default function ProfileScreen() {
               <strong>{profileStatus}</strong>
             </div>
             <span
-              className={analysis ? styles.readyDot : styles.pendingDot}
+              className={analysis && pairCount > 0 ? styles.readyDot : styles.pendingDot}
               aria-hidden="true"
             />
           </div>
@@ -411,7 +412,7 @@ export default function ProfileScreen() {
             </div>
             <span className={styles.coverageDot} aria-hidden="true" />
           </div>
-          <div className={analysis ? styles.coverageItemReady : styles.coverageItem}>
+          <div className={pairCount > 0 ? styles.coverageItemReady : styles.coverageItem}>
             <span className={styles.coverageIcon}><VisualGlyph kind="chart" /></span>
             <div className={styles.coverageText}>
               <div><strong>03 · ניתוח סגנון</strong></div>
@@ -461,7 +462,7 @@ export default function ProfileScreen() {
               </div>
               <div className={styles.capabilityStatus}>
                 <span>ANALYSIS</span>
-                <StatusPill state={analysis ? "ready" : "idle"}>
+                <StatusPill state={pairCount > 0 ? "ready" : analysis ? "pending" : "idle"}>
                   {analysis ? `${pairCount.toLocaleString("he-IL")} זוגות נותחו` : "טרם נותח"}
                 </StatusPill>
               </div>
@@ -475,7 +476,7 @@ export default function ProfileScreen() {
           </div>
           <footer className={styles.paneFooter}>
             <div className={styles.footerMetric}>
-              <strong>{analysis ? "ניתוח בוצע" : "ממתין להגדרה"}</strong>
+              <strong>{pairCount > 0 ? "ניתוח בוצע" : analysis ? "לא נמצאו זוגות" : "ממתין להגדרה"}</strong>
               <small>{activeCatalog ? `פרופיל: ${activeCatalog.profile.name}` : `${learningProfiles.length} פרופילי למידה`}</small>
             </div>
             <div className={styles.footerNote}>
