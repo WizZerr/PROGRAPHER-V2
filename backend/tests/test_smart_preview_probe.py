@@ -399,3 +399,91 @@ def test_edited_decoder_cache_file_is_rebuilt_before_import(tmp_path, fresh_deco
     cached.write_text("raise SystemExit('edited')\n", encoding="utf-8")
     vendor.load_decoder_package()
     assert hashlib.sha256(cached.read_bytes()).hexdigest() == original
+
+
+# ---- layer 2-3: the unedited "before" image (Lightroom Reset look) ----
+
+def write_look_xmp(path: Path, dims=(36, 8, 16)):
+    """An Adobe-style profile .xmp holding a look table (crs:Table_: Adobe base85 of a zlib block). Neutral table."""
+    import struct
+    import zlib
+    import numpy as np
+    alphabet = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ.-:+=^!/*?`'|()[]{}@%$#"
+    table = np.tile(np.array([0.0, 1.0, 1.0], "<f4"), dims[0] * dims[1] * dims[2])
+    raw = struct.pack("<5I", 1, 1, *dims) + table.tobytes()
+    blob = struct.pack("<I", len(raw)) + zlib.compress(raw)
+    out = []
+    for i in range(0, len(blob), 4):
+        chunk = blob[i:i + 4]
+        v = struct.unpack("<I", chunk.ljust(4, b"\0"))[0]
+        digits = []
+        for _ in range(5):
+            digits.append(alphabet[v % 85])
+            v //= 85
+        out.append("".join(digits if len(chunk) == 4 else digits[:len(chunk) + 1]))
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(f'<x:xmpmeta><rdf:Description crs:Table_0123ABCD="{"".join(out)}"/></x:xmpmeta>', encoding="utf-8")
+
+
+@pytest.fixture
+def jpegxl_codec():
+    imagecodecs = pytest.importorskip("imagecodecs")
+    if not getattr(getattr(imagecodecs, "JPEGXL", None), "available", False):
+        pytest.skip("imagecodecs without JPEG XL")
+
+
+@pytest.fixture
+def no_cached_look(monkeypatch):
+    from app.learning_intake import smart_preview_render
+    monkeypatch.setattr(smart_preview_render, "_found_look", {})
+    monkeypatch.delenv("PROGRAPHER_ADOBE_COLOR_XMP", raising=False)
+    monkeypatch.setattr(smart_preview_render, "look_search_roots",
+                        lambda: [smart_preview_render.user_data_dir() / smart_preview_render.DROP_FOLDER])
+
+
+def test_before_image_rendered_from_the_drop_folder_look(tmp_path, fresh_decoder, jpegxl_codec, no_cached_look):
+    import base64
+    import io
+    from PIL import Image
+    from app.platform.paths import user_data_dir
+    write_look_xmp(user_data_dir() / "adobe_profiles" / "Adobe Color.xmp")
+    root = tmp_path / "Synthetic Smart Previews.lrdata"
+    root.mkdir()
+    write_synthetic_smart_preview(root / "PRIVATE-NAME-5678.dng", h=300, w=900)
+
+    report = inspect_smart_previews(root, decode_limit=1)
+    render = report["decoded_samples"][0]["reset_render"]
+    assert render["state"] == "reset_rendered_unverified"
+    assert report["reset_render_counts"] == {"reset_rendered_unverified": 1}
+    assert max(render["width"], render["height"]) == 512
+    assert render["lens_vignetting_applied"] is False
+    assert render["calibration_stops"] == -0.144
+    image = Image.open(io.BytesIO(base64.b64decode(render["thumbnail_jpeg_base64"])))
+    assert image.format == "JPEG" and image.size == (render["width"], render["height"])
+    assert 0.0 < render["mean_srgb_luma"] < 1.0
+    assert report["training_ready_samples"] == 0
+    assert "PRIVATE-NAME" not in json.dumps(report) and str(tmp_path) not in json.dumps(report)
+
+
+def test_before_image_reports_missing_adobe_color_look(tmp_path, fresh_decoder, jpegxl_codec, no_cached_look):
+    root = tmp_path / "Synthetic Smart Previews.lrdata"
+    root.mkdir()
+    write_synthetic_smart_preview(root / "a.dng")
+    report = inspect_smart_previews(root, decode_limit=1)
+    assert report["decode_status_counts"] == {"jpegxl_dng_decoded_unverified": 1}
+    assert report["decoded_samples"][0]["reset_render"] == {"state": "adobe_color_look_missing"}
+
+
+def test_adobe_color_look_env_override_and_bad_file(tmp_path, fresh_decoder, no_cached_look, monkeypatch):
+    from app.learning_intake.decoder_vendor import load_decoder_package
+    from app.learning_intake.smart_preview_render import find_adobe_color_look
+    decoder = load_decoder_package()
+    bad = tmp_path / "not-a-look.xmp"
+    bad.write_text("<x/>", encoding="utf-8")
+    monkeypatch.setenv("PROGRAPHER_ADOBE_COLOR_XMP", str(bad))
+    assert find_adobe_color_look(decoder) is None
+    good = tmp_path / "look.xmp"
+    write_look_xmp(good)
+    monkeypatch.setenv("PROGRAPHER_ADOBE_COLOR_XMP", str(good))
+    dims, table = find_adobe_color_look(decoder)
+    assert tuple(dims) == (36, 8, 16) and table.size == 36 * 8 * 16 * 3

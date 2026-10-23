@@ -102,7 +102,7 @@ def _decode_jpegxl_smart_preview(path: Path) -> dict[str, Any]:
         if (before.st_size, before.st_mtime_ns) != (after.st_size, after.st_mtime_ns):
             return {"state": "changed_during_decode", "compression_code": 52546}
         ignored = len(sp.opcodes_ignored)
-        return {
+        result = {
             "state": "jpegxl_dng_decoded_unverified" if ignored == 0
                      else "jpegxl_dng_unhandled_opcodes",
             "compression_code": int(sp.compression),
@@ -114,12 +114,28 @@ def _decode_jpegxl_smart_preview(path: Path) -> dict[str, Any]:
             # Linear pixel statistic only: not Lightroom Reset/sRGB brightness.
             "preview_mean_linear": round(float(np.mean(sparse)), 4),
         }
+        if ignored == 0:
+            result["reset_render"] = _reset_render(decoder, sp)
+        return result
     except decoder.SmartPreviewError:
         # Do not send third-party exception strings back to the user: some
         # decoder versions may accidentally include original image paths.
         return {"state": "jpegxl_dng_decode_error", "compression_code": 52546}
     except Exception:
         return {"state": "jpegxl_dng_decode_error", "compression_code": 52546}
+
+
+def _reset_render(decoder, sp) -> dict[str, Any]:
+    """The unedited "before" image as Lightroom shows it after Reset (layers 2-3), or why it is missing."""
+    from app.learning_intake.smart_preview_render import find_adobe_color_look, render_reset_preview
+    try:
+        look = find_adobe_color_look(decoder)
+        if look is None:
+            return {"state": "adobe_color_look_missing"}
+        return render_reset_preview(decoder, sp, look)
+    except Exception:
+        # Same rule as decoding: never echo decoder exception text (it could carry a private path).
+        return {"state": "reset_render_error"}
 
 
 def _decode_sample(path: Path) -> dict[str, Any]:
@@ -207,6 +223,7 @@ def inspect_smart_previews(root: Path, *, decode_limit: int = MAX_DECODE) -> dic
     outcomes = Counter(entry["state"] for entry in sample)
     compression_stats = Counter(str(entry["compression_code"]) for entry in sample
                                 if "compression_code" in entry)
+    render_stats = Counter(entry["reset_render"]["state"] for entry in sample if "reset_render" in entry)
     return {
         "schema": "prographer.learning_intake.smart_preview_probe.v1",
         "status": "DNG_CONTENT_PILOT_ONLY",
@@ -215,6 +232,7 @@ def inspect_smart_previews(root: Path, *, decode_limit: int = MAX_DECODE) -> dic
         "decode_attempts": len(sample),
         "decode_status_counts": dict(sorted(outcomes.items())),
         "decode_compression_counts": dict(sorted(compression_stats.items())),
+        "reset_render_counts": dict(sorted(render_stats.items())),
         "decoded_samples": [entry for entry in sample if entry["state"] in {
             "decoded_unverified", "jpegxl_dng_decoded_unverified"
         }],
@@ -228,7 +246,8 @@ def inspect_smart_previews(root: Path, *, decode_limit: int = MAX_DECODE) -> dic
             "A decoded Smart Preview is NOT a validated representation of the pre-edit RAW as seen by the photographer.",
             "This inspection does not apply Develop, read/write catalogs or store decoded images.",
             "JPEG XL is routed to the source decoder bundled in Git; codec wheels must be installed in the local Python environment.",
-            "A successful JPEG XL decode is camera-linear pixels only and has not passed Lightroom Reset parity.",
+            "The 'before' previews are rendered like Lightroom Reset (Adobe Color, As Shot) from the unedited Smart Preview; parity was benchmarked by the decoder author, not on this catalog, and lens vignetting is not applied.",
+            "Preview images are returned in memory for display only and are never written to disk.",
             "The Lightroom SDK smartPreviewInfo.smartPreviewPath readback is required for a trusted per-photo link.",
         ],
     }
