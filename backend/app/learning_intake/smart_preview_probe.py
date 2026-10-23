@@ -66,8 +66,67 @@ def _count_dng_files(root: Path) -> tuple[dict[str, int], list[Path]]:
     return dict(sorted(counts.items())), dng
 
 
+def _decode_jpegxl_smart_preview(path: Path) -> dict[str, Any]:
+    """Optional third-party JPEG XL DNG layer-1 decoder (no Adobe rendering).
+
+    The external package supplied for evaluation is NOT bundled or licensed
+    by this repository. A decoded image is NOT a validated training input.
+    """
+    try:
+        import numpy as np
+        import imagecodecs
+        from smart_preview_decoder import decode_smart_preview, SmartPreviewError
+    except ImportError:
+        return {"state": "jpegxl_decoder_dependency_missing", "compression_code": 52546}
+
+    if not getattr(getattr(imagecodecs, "JPEGXL", None), "available", False):
+        return {"state": "jpegxl_codec_unavailable", "compression_code": 52546}
+    try:
+        before = path.stat()
+        sp = decode_smart_preview(path, long_edge=1024)
+        pixels = np.asarray(sp.linear)
+        if (pixels.ndim != 3 or pixels.shape[2] != 3
+            or min(pixels.shape[:2]) < 1
+            or max(pixels.shape[:2]) > MAX_PIXEL_DIMENSION):
+            return {"state": "unsupported_pixel_layout", "compression_code": 52546}
+        sparse = pixels[::32, ::32, :]
+        if not np.isfinite(sparse).all():
+            return {"state": "invalid_pixels", "compression_code": 52546}
+        if float(np.min(sparse)) < -0.0001 or float(np.max(sparse)) > 1.0001:
+            return {"state": "invalid_pixel_range", "compression_code": 52546}
+        after = path.stat()
+        if (before.st_size, before.st_mtime_ns) != (after.st_size, after.st_mtime_ns):
+            return {"state": "changed_during_decode", "compression_code": 52546}
+        ignored = len(sp.opcodes_ignored)
+        return {
+            "state": "jpegxl_dng_decoded_unverified" if ignored == 0
+                     else "jpegxl_dng_unhandled_opcodes",
+            "compression_code": int(sp.compression),
+            "width": int(pixels.shape[1]),
+            "height": int(pixels.shape[0]),
+            "opcodes_applied": len(sp.opcodes_applied),
+            "opcodes_ignored": ignored,
+            "embedded_profile_present": sp.profile_name is not None,
+            # Linear pixel statistic only: not Lightroom Reset/sRGB brightness.
+            "preview_mean_linear": round(float(np.mean(sparse)), 4),
+        }
+    except SmartPreviewError:
+        # Do not send third-party exception strings back to the user: some
+        # decoder versions may accidentally include original image paths.
+        return {"state": "jpegxl_dng_decode_error", "compression_code": 52546}
+    except Exception:
+        return {"state": "jpegxl_dng_decode_error", "compression_code": 52546}
+
+
 def _decode_sample(path: Path) -> dict[str, Any]:
-    """Try to decode actual DNG pixel data with LibRaw; no image retained."""
+    """Route JPEG XL (52546) to optional DNG-specific decoder, others to LibRaw."""
+    from app.learning_intake.dng_diagnostics import inspect_dng_compression
+
+    diagnostic = inspect_dng_compression(path)
+    codes = diagnostic.get("compression_codes", [])
+    if 52546 in codes:
+        return _decode_jpegxl_smart_preview(path)
+
     try:
         import rawpy
         import numpy as np
@@ -142,6 +201,8 @@ def inspect_smart_previews(root: Path, *, decode_limit: int = MAX_DECODE) -> dic
         positions = [i * len(candidates) // target for i in range(target)]
         sample = [_decode_sample(candidates[p]) for p in positions]
     outcomes = Counter(entry["state"] for entry in sample)
+    compression_stats = Counter(str(entry["compression_code"]) for entry in sample
+                                if "compression_code" in entry)
     return {
         "schema": "prographer.learning_intake.smart_preview_probe.v1",
         "status": "DNG_CONTENT_PILOT_ONLY",
@@ -149,7 +210,10 @@ def inspect_smart_previews(root: Path, *, decode_limit: int = MAX_DECODE) -> dic
         "counts": counts,
         "decode_attempts": len(sample),
         "decode_status_counts": dict(sorted(outcomes.items())),
-        "decoded_samples": [entry for entry in sample if entry["state"] == "decoded_unverified"],
+        "decode_compression_counts": dict(sorted(compression_stats.items())),
+        "decoded_samples": [entry for entry in sample if entry["state"] in {
+            "decoded_unverified", "jpegxl_dng_decoded_unverified"
+        }],
         "catalog_photo_identity_verified": False,
         "photo_to_dng_link_verified": False,
         "source_only_neutral_parity_verified": False,
@@ -159,6 +223,8 @@ def inspect_smart_previews(root: Path, *, decode_limit: int = MAX_DECODE) -> dic
             "Actual DNG signatures and decode status are checked, but DNG-to-Lightroom photo identity is NOT verified.",
             "A decoded Smart Preview is NOT a validated representation of the pre-edit RAW as seen by the photographer.",
             "This inspection does not apply Develop, read/write catalogs or store decoded images.",
+            "JPEG XL is routed to the optional external DNG decoder; no author source or calibration artifact is bundled in ProGrapher.",
+            "A successful JPEG XL decode is camera-linear pixels only and has not passed Lightroom Reset parity.",
             "The Lightroom SDK smartPreviewInfo.smartPreviewPath readback is required for a trusted per-photo link.",
         ],
     }
