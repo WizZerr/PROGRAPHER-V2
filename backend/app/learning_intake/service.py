@@ -244,6 +244,31 @@ class LearningProfileStore:
             catalog_records=private["records"],
         )
 
+    def link_smart_previews(self, profile_id: str, *, catalog_path: str, sample_size: int = 4) -> dict:
+        """Stage 3: link catalog RAW photos to their Smart Preview DNGs (read only, nothing stored)."""
+        from app.learning_intake.smart_preview_link import link_report
+
+        if not 0 <= sample_size <= 4:
+            raise LearningIntakeError("Link sample size must be between 0 and 4.")
+        profile = self.get(profile_id)
+        entry = next(
+            (item for item in profile["catalogs"] if item["catalog_path"] == catalog_path),
+            None,
+        )
+        if entry is None:
+            raise LearningIntakeError("Catalog is not linked to this profile.")
+        if not entry.get("smart_previews_path"):
+            raise LearningIntakeError("Profile has no Smart Preview directory.")
+        try:
+            catalog = _path(catalog_path, suffix=".lrcat")
+            source = _path(entry["smart_previews_path"], directory=True)
+        except (OSError, ValueError) as exc:
+            raise LearningIntakeError("Catalog or Smart Previews folder unavailable.") from exc
+        _aggregate, private = _inspect_consistent_snapshot(catalog, include_private=True)
+        if not private:
+            raise LearningIntakeError("Private Lightroom catalog inventory unavailable.")
+        return link_report(source, private["records"], sample_size=sample_size)
+
     def preview_sample(
         self, profile_id: str, *, catalog_path: str,
         raw_folder: str | None = None, sample_size: int = 16,

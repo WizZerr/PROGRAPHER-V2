@@ -304,7 +304,7 @@ SYNTHETIC_COEF = [(0.001027, 0.062436, 0.0, 0.936537), (0.001865, 0.062383, 0.0,
                   (0.00079, 0.062451, 0.0, 0.936759)]  # cubic MapPolynomial per plane, as Lightroom writes
 
 
-def write_synthetic_smart_preview(path: Path, h: int = 120, w: int = 180):
+def write_synthetic_smart_preview(path: Path, h: int = 120, w: int = 180, original_name: str | None = None):
     """Lightroom layout: IFD0 = small RGB thumbnail whose SubIFD is the LinearRaw JPEG XL (52546) main image,
     with OpcodeList2 and an embedded camera profile. No real photo involved."""
     import struct
@@ -330,7 +330,7 @@ def write_synthetic_smart_preview(path: Path, h: int = 120, w: int = 180):
         (50778, "H", 1, 17, True), (50779, "H", 1, 21, True),
         (50728, "2I", 3, rat([0.536126, 1.0, 0.6396], 1000000), True),
         (50730, "2i", 1, [136, 100], True), (50936, "s", 0, "Adobe Standard", True),
-    ]
+    ] + ([(50827, "s", 0, original_name, True)] if original_name else [])
     main_tags = [(50717, "I", 3, [65535] * 3, True), (50714, "2I", 3, [0, 1] * 3, True),
                  (51009, "B", 0, ops, True)]
     with tifffile.TiffWriter(path) as tif:
@@ -537,3 +537,92 @@ def test_adobe_color_look_env_override_and_bad_file(tmp_path, fresh_decoder, no_
     monkeypatch.setenv("PROGRAPHER_ADOBE_COLOR_XMP", str(good))
     dims, table = find_adobe_color_look(decoder)
     assert tuple(dims) == (36, 8, 16) and table.size == 36 * 8 * 16 * 3
+
+
+# ---- stage 3: catalog photo -> Smart Preview DNG links ----
+
+def write_named_dng(path: Path, original_name: str | None, as_bytes: bool = False):
+    """Tiny TIFF carrying only OriginalRawFileName (Lightroom writes it as BYTE or ASCII)."""
+    import numpy as np
+    tifffile = pytest.importorskip("tifffile")
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tags = []
+    if original_name is not None:
+        data = original_name.encode() + b"\x00"
+        tags = [(50827, "B", len(data), data, False)] if as_bytes else [(50827, "s", 0, original_name, False)]
+    tifffile.imwrite(path, np.zeros((4, 4, 3), np.uint8), photometric="rgb", extratags=tags, metadata=None)
+
+
+def test_read_original_raw_file_name(tmp_path):
+    from app.learning_intake.dng_diagnostics import read_original_raw_file_name
+    write_named_dng(tmp_path / "a.dng", "0H1A3976.CR3")
+    write_named_dng(tmp_path / "b.dng", "DSC_0089.NEF", as_bytes=True)
+    write_named_dng(tmp_path / "c.dng", None)
+    (tmp_path / "d.dng").write_bytes(b"II*\x00" + b"\xff" * 12)
+    assert read_original_raw_file_name(tmp_path / "a.dng") == "0H1A3976.CR3"
+    assert read_original_raw_file_name(tmp_path / "b.dng") == "DSC_0089.NEF"
+    assert read_original_raw_file_name(tmp_path / "c.dng") is None
+    assert read_original_raw_file_name(tmp_path / "d.dng") is None
+
+
+def test_build_links_statuses(tmp_path):
+    from app.learning_intake.smart_preview_link import build_links
+    root = tmp_path / "Test Smart Previews.lrdata"
+    files = {
+        "A": ("A/AAAA-IMG.dng", "a.cr3"), "B": ("B/BBBB-IMG.dng", "renamed.cr3"),
+        "C": ("C/CCCC-FILE.dng", "c.cr3"), "N": ("N/NNNN-IMG.dng", None),
+        "D1": ("D/DUP.dng", "d.cr3"), "D2": ("E/DUP.dng", "d.cr3"), "O": ("O/ORPHAN.dng", "o.cr3"),
+    }
+    for rel, name in files.values():
+        write_named_dng(root / rel, name)
+    dngs = sorted(root.rglob("*.dng"))
+
+    def rec(image_id, file_id, stem, virtual=False):
+        return {"catalog_global_image_id": image_id, "catalog_global_file_id": file_id,
+                "file_stem": stem, "extension": "cr3", "virtual_copy_candidate": virtual}
+
+    records = [rec("aaaa-img", "x1", "a"), rec("BBBB-IMG", "x2", "b"),
+               rec("master-c", "CCCC-FILE", "c"), rec("vcopy-c", "CCCC-FILE", "c", virtual=True),
+               rec("NNNN-IMG", "x4", "n"), rec("DUP", "x5", "d"), rec("missing", "x6", "m")]
+    result = build_links(dngs, records)
+    status = {l["record"]["catalog_global_image_id"]: l["status"] for l in result["links"]}
+    assert status == {"aaaa-img": "linked_name_verified", "BBBB-IMG": "linked_name_mismatch",
+                      "master-c": "linked_name_verified", "vcopy-c": "linked_name_verified",
+                      "NNNN-IMG": "linked_name_unreadable", "DUP": "ambiguous_smart_preview",
+                      "missing": "no_smart_preview"}
+    assert result["matched_by_counts"] == {"file_uuid": 2, "image_uuid": 4}
+    assert result["virtual_copy_records"] == 1
+    assert result["records_sharing_a_preview"] == 2  # master and virtual copy: one 'before' image
+    assert result["orphan_smart_previews"] == 3  # ORPHAN.dng and the two ambiguous DUP.dng
+
+
+def test_smart_preview_links_api_shows_named_before_image(tmp_path, monkeypatch, fresh_decoder, jpegxl_codec,
+                                                          no_cached_look):
+    from fastapi.testclient import TestClient
+    from app.application import create_app
+    monkeypatch.setenv("PROGRAPHER_ENGINE_SECRET", "link-test-secret")
+    catalog = tmp_path / "Pilot.lrcat"
+    catalog_fixture(catalog)
+    smart = tmp_path / "Pilot Smart Previews.lrdata"
+    (smart / "P").mkdir(parents=True)
+    write_synthetic_smart_preview(smart / "P" / "p.dng", original_name="photo.cr3")  # Adobe_images.id_global 'p'
+    write_named_dng(smart / "Z" / "unrelated.dng", "other.cr3")
+    store = LearningProfileStore()
+    owner = store.create(name="Test", photography_type="wedding", color_mode="color", consent=True)
+    store.attach_catalog(owner["profile_id"], catalog_path=str(catalog))
+    endpoint = f"/api/learning-intake/profiles/{owner['profile_id']}/smart-preview-links"
+    with TestClient(create_app()) as client:
+        assert client.post(endpoint, json={"catalog_path": str(catalog)}).status_code == 401
+        response = client.post(endpoint, json={"catalog_path": str(catalog)},
+                               headers={"X-ProGrapher-Secret": "link-test-secret"})
+    assert response.status_code == 200, response.text
+    report = response.json()
+    assert report["catalog_raw_records"] == 1 and report["smart_preview_files"] == 2
+    assert report["linked_name_verified"] == 1 and report["orphan_smart_previews"] == 1
+    assert report["matched_by_counts"] == {"image_uuid": 1}
+    sample = report["samples"][0]
+    assert sample["file_name"] == "photo.cr3" and sample["link_status"] == "linked_name_verified"
+    assert sample["decode_state"] == "jpegxl_dng_decoded_unverified"
+    assert sample["reset_render"]["state"] == "reset_rendered_unverified"
+    assert report["training_ready_samples"] == 0
+    assert str(smart) not in json.dumps(report)

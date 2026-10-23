@@ -5,8 +5,10 @@ import { open } from "@tauri-apps/plugin-dialog";
 import {
   runSamplePreflight,
   probeSmartPreviewContents,
+  linkSmartPreviews,
   reviewSmartPreviewSdkLinks,
   type SmartPreviewContentReport,
+  type SmartPreviewLinkReport,
   type SmartPreviewSdkLinkReview,
   type LearningProfile,
   type PreflightSampleReport,
@@ -23,6 +25,14 @@ const statusLabel: Record<string, string> = {
   source_changed_during_read: "הקובץ השתנה בזמן הקריאה",
   source_unreadable: "אין הרשאת קריאה לקובץ",
   file_too_large_to_hash: "הקובץ גדול מדי לבדיקה הזו",
+};
+
+const linkStatusLabel: Record<string, string> = {
+  linked_name_verified: "קושרו ואומתו לפי שם הקובץ",
+  linked_name_mismatch: "קושרו, אך שם הקובץ בתוך ה־DNG שונה מהקטלוג",
+  linked_name_unreadable: "קושרו, אך לא נמצא שם קובץ בתוך ה־DNG",
+  no_smart_preview: "אין Smart Preview",
+  ambiguous_smart_preview: "יותר מ־DNG אחד באותו מזהה",
 };
 
 function SampleRow({ sample }: { sample: SourceSample }) {
@@ -51,6 +61,9 @@ export default function SamplePreflightPanel({ profile }: { profile: LearningPro
   const [previewReport, setPreviewReport] = useState<SmartPreviewContentReport | null>(null);
   const [previewBusy, setPreviewBusy] = useState(false);
   const [previewError, setPreviewError] = useState("");
+  const [linkReport, setLinkReport] = useState<SmartPreviewLinkReport | null>(null);
+  const [linkBusy, setLinkBusy] = useState(false);
+  const [linkError, setLinkError] = useState("");
   const [sdkReport, setSdkReport] = useState<SmartPreviewSdkLinkReview | null>(null);
   const [sdkBusy, setSdkBusy] = useState(false);
   const [sdkError, setSdkError] = useState("");
@@ -69,6 +82,20 @@ export default function SamplePreflightPanel({ profile }: { profile: LearningPro
       setPreviewError(cause instanceof Error ? cause.message : "בדיקת Smart Previews נכשלה.");
     } finally {
       setPreviewBusy(false);
+    }
+  }
+
+  async function linkSmartPreviewsToCatalog() {
+    if (!catalogPath || linkBusy || busy) return;
+    setLinkBusy(true);
+    setLinkError("");
+    setLinkReport(null);
+    try {
+      setLinkReport(await linkSmartPreviews(profile.profile_id, catalogPath));
+    } catch (cause) {
+      setLinkError(cause instanceof Error ? cause.message : "קישור Smart Previews לקטלוג נכשל.");
+    } finally {
+      setLinkBusy(false);
     }
   }
 
@@ -154,6 +181,8 @@ export default function SamplePreflightPanel({ profile }: { profile: LearningPro
             setPreviewError("");
             setSdkReport(null);
             setSdkError("");
+            setLinkReport(null);
+            setLinkError("");
             setRawFolder("");
           }}>
           {profile.catalogs.map((item) => <option key={item.catalog_path} value={item.catalog_path}>{item.catalog_path}</option>)}
@@ -181,6 +210,31 @@ export default function SamplePreflightPanel({ profile }: { profile: LearningPro
         {previewBusy ? "סורק ומנסה לפענח קובצי DNG…" : "בדוק תוכן Smart Previews"}
       </button>
       {previewError && <p role="alert" className={styles.error}>{previewError}</p>}
+      <button className={styles.previewProbe} type="button" onClick={() => void linkSmartPreviewsToCatalog()}
+        disabled={!smartPreviewsPath || linkBusy || busy || previewBusy}>
+        {linkBusy ? "קורא עותק קטלוג ומקשר קובצי DNG…" : "קשר Smart Previews לתמונות בקטלוג"}
+      </button>
+      {linkError && <p role="alert" className={styles.error}>{linkError}</p>}
+      {linkReport && <div className={styles.previewResults} role="status">
+        <span>תמונות RAW בקטלוג: <strong>{linkReport.catalog_raw_records}</strong></span>
+        <span>קובצי Smart Preview: <strong>{linkReport.smart_preview_files}</strong></span>
+        {Object.entries(linkReport.status_counts).map(([status, count]) =>
+          <span key={status}>{linkStatusLabel[status] || status}: <strong>{count}</strong></span>)}
+        <span>עותקים וירטואליים: <strong>{linkReport.virtual_copy_records}</strong></span>
+        <span>תמונות שחולקות Smart Preview: <strong>{linkReport.records_sharing_a_preview}</strong></span>
+        <span>Smart Previews בלי תמונה בקטלוג: <strong>{linkReport.orphan_smart_previews}</strong></span>
+        {linkReport.samples.length > 0 && <div className={styles.beforeImages}>
+          {linkReport.samples.map((sample, index) => <figure key={index}>
+            {sample.reset_render?.thumbnail_jpeg_base64
+              ? <img src={`data:image/jpeg;base64,${sample.reset_render.thumbnail_jpeg_base64}`}
+                  width={sample.reset_render.width} height={sample.reset_render.height}
+                  alt={`תמונת לפני של ${sample.file_name}`} draggable={false}/>
+              : <p>לא נוצרה תמונת לפני ({sample.decode_state || "לא פוענח"})</p>}
+            <figcaption dir="ltr">{sample.file_name}{sample.capture_day ? ` · ${sample.capture_day}` : ""}</figcaption>
+          </figure>)}
+        </div>}
+        <p>השוו את התמונות לפי שם הקובץ מול Lightroom (במודול Develop, מקש \ מציג את מצב ה&quot;לפני&quot; בלי לשנות דבר). שיוך מאומת = המזהה בקטלוג הוא שם קובץ ה־DNG, ושם קובץ ה־RAW שנשמר בתוכו זהה לקטלוג. העריכות של הצלם לא נקראות כאן; שום דבר לא נשמר ואינו מאושר לאימון.</p>
+      </div>}
       <details className={styles.advanced}>
         <summary>אימות שיוך תמונות באמצעות Lightroom SDK · מחקר מתקדם</summary>
         <p>ב־Lightroom Classic בחר עד 16 תמונות מקטלוג המחקר והפעל Library → Plug-in Extras → ProGrapher Smart Preview Link Readback. שמור את קובץ ה־JSON מחוץ לתיקיות Lightroom, ואז בחר אותו כאן. אין שינוי בקטלוג או בעריכות.</p>

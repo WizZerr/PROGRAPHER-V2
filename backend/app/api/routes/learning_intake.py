@@ -45,6 +45,11 @@ class SmartPreviewSdkReviewRequest(BaseModel):
     evidence_path: str = Field(min_length=1)
 
 
+class SmartPreviewLinkRequest(BaseModel):
+    catalog_path: str = Field(min_length=1)
+    sample_size: int = Field(default=4, ge=0, le=4)
+
+
 class SamplePreflightRequest(BaseModel):
     catalog_path: str = Field(min_length=1)
     raw_folder: str | None = None
@@ -90,6 +95,15 @@ def probe_smart_preview_contents(profile_id: str, payload: SmartPreviewProbeRequ
         return LearningProfileStore().probe_smart_previews(
             profile_id, catalog_path=payload.catalog_path,
         )
+    except LearningIntakeError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+@router.post("/profiles/{profile_id}/smart-preview-links")
+def link_smart_previews(profile_id: str, payload: SmartPreviewLinkRequest) -> dict:
+    """Stage 3: catalog photo -> Smart Preview DNG links; local, transient, not training-ready."""
+    try:
+        return LearningProfileStore().link_smart_previews(profile_id, **payload.model_dump())
     except LearningIntakeError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
 

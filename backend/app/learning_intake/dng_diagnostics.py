@@ -90,3 +90,51 @@ def inspect_dng_compression(path: Path) -> dict:
         }
     except (OSError, ValueError, struct.error, OverflowError):
         return {"state": "tiff_ifd_unreadable", "compression_codes": []}
+
+
+TAG_ORIGINAL_RAW_FILE_NAME = 50827
+MAX_NAME_BYTES = 1024
+
+
+def read_original_raw_file_name(path: Path) -> str | None:
+    """DNG OriginalRawFileName (tag 50827) from IFD0 only, bounded; None when absent or unreadable.
+
+    Lightroom writes the source RAW's file name into every Smart Preview, which lets a catalog link be
+    cross-checked without decoding pixels.
+    """
+    try:
+        size = path.stat().st_size
+        with path.open("rb") as stream:
+            def read_at(offset: int, length: int) -> bytes:
+                if offset < 0 or length < 1 or length > 16384 or offset + length > size:
+                    raise ValueError("offset out of bounds")
+                stream.seek(offset)
+                data = stream.read(length)
+                if len(data) != length:
+                    raise ValueError("short read")
+                return data
+
+            h = read_at(0, 8)
+            if h[:2] not in (b"II", b"MM"):
+                return None
+            endian = "<" if h[:2] == b"II" else ">"
+            if struct.unpack(endian + "H", h[2:4])[0] != 42:
+                return None
+            ifd0 = struct.unpack(endian + "I", h[4:8])[0]
+            count = struct.unpack(endian + "H", read_at(ifd0, 2))[0]
+            if count > MAX_ENTRIES_PER_IFD:
+                return None
+            raw = read_at(ifd0 + 2, count * 12) if count else b""
+            for index in range(count):
+                entry = raw[index * 12:(index + 1) * 12]
+                tag, kind, n = struct.unpack(endian + "HHI", entry[:8])
+                if tag != TAG_ORIGINAL_RAW_FILE_NAME:
+                    continue
+                if kind not in (1, 2) or not 1 <= n <= MAX_NAME_BYTES:
+                    return None
+                data = entry[8:8 + n] if n <= 4 else read_at(struct.unpack(endian + "I", entry[8:12])[0], n)
+                name = data.split(b"\x00", 1)[0].decode("utf-8", errors="replace").strip()
+                return name or None
+            return None
+    except (OSError, ValueError, struct.error, OverflowError):
+        return None

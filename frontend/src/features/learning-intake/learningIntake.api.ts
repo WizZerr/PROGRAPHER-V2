@@ -182,6 +182,43 @@ export async function probeSmartPreviewContents(
   );
 }
 
+/** Stage 3: catalog photo -> Smart Preview DNG links (local, transient, never training-ready). */
+export type SmartPreviewLinkReport = {
+  schema: string;
+  status: "CATALOG_LINK_RESEARCH_ONLY";
+  dng_inventory: Record<string, number>;
+  catalog_raw_records: number;
+  smart_preview_files: number;
+  status_counts: Record<string, number>;
+  matched_by_counts: Record<string, number>;
+  virtual_copy_records: number;
+  records_sharing_a_preview: number;
+  orphan_smart_previews: number;
+  linked_name_verified: number;
+  samples: {
+    file_name: string;
+    capture_day: string | null;
+    link_status: string;
+    matched_by: string | null;
+    decode_state: string | null;
+    reset_render?: SmartPreviewContentReport["decoded_samples"][number]["reset_render"] | null;
+  }[];
+  photo_to_dng_link_verified: false;
+  photographer_finality_verified: false;
+  training_ready_samples: 0;
+  warnings: string[];
+};
+
+export async function linkSmartPreviews(
+  profileId: string,
+  catalogPath: string,
+): Promise<SmartPreviewLinkReport> {
+  return apiRequest<SmartPreviewLinkReport>(
+    `/api/learning-intake/profiles/${encodeURIComponent(profileId)}/smart-preview-links`,
+    { method: "POST", body: JSON.stringify({ catalog_path: catalogPath, sample_size: 4 }) },
+  );
+}
+
 export type SmartPreviewSdkLinkReview = {
   schema: string;
   status: "SDK_PATH_CORROBORATION_RESEARCH_ONLY";
