@@ -139,6 +139,7 @@ export type SmartPreviewContentReport = {
   decode_attempts: number;
   decode_status_counts: Record<string, number>;
   decode_compression_counts?: Record<string, number>;
+  reset_render_counts?: Record<string, number>;
   decoded_samples: {
     state: string;
     width: number;
@@ -149,6 +150,16 @@ export type SmartPreviewContentReport = {
     opcodes_applied?: number;
     opcodes_ignored?: number;
     embedded_profile_present?: boolean;
+    /** Unedited "before" image as Lightroom shows it after Reset; in memory only, never saved. */
+    reset_render?: {
+      state: string;
+      width?: number;
+      height?: number;
+      mean_srgb_luma?: number;
+      calibration_stops?: number;
+      lens_vignetting_applied?: boolean;
+      thumbnail_jpeg_base64?: string;
+    };
   }[];
   catalog_photo_identity_verified: false;
   photo_to_dng_link_verified: false;

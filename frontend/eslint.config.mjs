@@ -32,11 +32,13 @@ const eslintConfig = defineConfig([
     },
   },
   {
-    // These two components render authenticated Blob/object URLs from the
-    // local engine; Next Image optimization is not applicable to that source.
+    // These components render authenticated Blob/object URLs or in-memory
+    // data URLs from the local engine; Next Image optimization is not
+    // applicable to that source.
     files: [
       "src/features/darkroom/JpegRenderedPreview.tsx",
       "src/features/review/CameraPreview.tsx",
+      "src/features/learning-intake/SamplePreflightPanel.tsx",
     ],
     rules: {
       "@next/next/no-img-element": "off",

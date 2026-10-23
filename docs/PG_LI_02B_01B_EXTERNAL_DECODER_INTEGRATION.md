@@ -69,6 +69,20 @@ Then run Tauri using the previously separated test DATA_DIR and CACHE_DIR. In th
 Still open: Lightroom Reset colour parity was measured with the author's local package versions, not with the pinned ones.
 To repeat it with the backend venv, run the author's `tools/validate_against_lightroom.py` on the camera-test catalog.
 
+## Layer 2-3: the unedited "before" image (2026-10-23)
+
+For every sample that decodes cleanly, the probe now also renders the Smart Preview the way Lightroom shows it after **Reset**, using the bundled `render_srgb`:
+- Adobe Color look, As Shot white balance, BaselineExposure plus the author's calibration (−0.144 stops), and the learned default tone curve.
+- The photographer's Develop settings are never read. The main Smart Preview image is the unedited sensor data. Its small embedded 256 px preview may show edits and is never used.
+- `app/learning_intake/smart_preview_render.py` produces a 512 px JPEG. It is held **in memory** and returned as base64 in `decoded_samples[].reset_render`, and the panel shows it as "לפני עריכה". It is never written to disk.
+- The render needs Adobe's `Adobe Color.xmp`, which is Adobe's file and is not bundled. It is looked up in this order:
+  1. `PROGRAPHER_ADOBE_COLOR_XMP`
+  2. `<data dir>/adobe_profiles/Adobe Color.xmp`
+  3. Adobe's CameraRaw settings and Lightroom install folders, as a bounded read-only walk
+- If the file is not found, the state is `adobe_color_look_missing`. Decoding still reports success.
+- Not applied yet: lens vignetting from `.lcp`. With lens corrections on, Lightroom's corners are a little brighter than this preview.
+- Parity: the author benchmarked the rendering against Lightroom's own Smart Preview exports (Delta E 2.51 on 80 held-out Canon R6 II photos, 0.94–4.11 on 7 cameras). It has **not** been re-measured on this catalog. `source_only_neutral_parity_verified` stays `false`, and no sample becomes training-ready.
+
 ## Quality and product gates
 
 The supplied author reports Reset-parity against Lightroom, including an 80-photo held-out sample, but we **have not independently repeated that benchmark** on this catalog.
