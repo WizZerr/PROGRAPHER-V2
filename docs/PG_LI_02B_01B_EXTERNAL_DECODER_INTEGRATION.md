@@ -1,71 +1,66 @@
-# PG-LI-02B.01b — External Smart Preview JPEG XL decoder integration (research)
+# PG-LI-02B.01b — Git-bundled Smart Preview JPEG XL decoder (research)
 
-**Source:** Author-supplied `smart_preview_decoder_v1.zip` (2026-10-23).  
-**Status:** OPTIONAL local adapter; full decoded-pixel tests and Lightroom parity still require the user's Windows environment.  
-**Do not redistribute the third-party module.** The supplied ZIP includes no LICENSE file; secure written permission / a clear license from its author before shipping or committing its code in a commercial product.
+**Branch:** `feature/pg-learning-onboarding-00-02`  
+**Scope:** Author-supplied decoder integrated into ProGrapher V2's local backend.  
+**Authorization:** The user expressly confirmed permission and lawful use in chat on 2026-10-23. This is not a replacement for documenting commercial redistribution terms with the rights holder before release.
 
-## Audit summary
+## Exactly what was imported
 
-The author's decoder is NOT just generic rawpy: it supports TIFF/DNG 1.7 LinearRaw with Compression=52546 JPEG XL, applies embedded MapPolynomial/other stage-2 opcodes, crops/orientation, and optionally renders a Lightroom-Reset-like sRGB image using an embedded camera profile, Adobe Color look and a measured tone calibration.
+The *seven unchanged decoder source/data files* supplied in `smart_preview_decoder_v1.zip` are committed as one reproducible, source-only archive:
+`backend/vendor/smart_preview_decoder_source.tar.xz`
 
-Reported research results (not independently reproduced here):
-- Canon R6 II 80 held-out wedding photos: ΔE 2.51 at **48 px** against Lightroom exported from Smart Preview; luminance difference −0.017 stops.
-- Six additional camera types were tested with 2–4 photos each; Fuji X-T50 ΔE 4.11.
-- Author admits empirical CALIBRATION_STOPS=−0.144 (unexplained), limited cross-camera/lens validation and no evidence the preview representation always equals photographer-approved pre-edit Import state.
+- Contains: `__init__.py`, `dng.py`, `profile.py`, `render.py`, `lens.py`, `metrics.py`, `data/tone_curve.json`.
+- Archive SHA-256: `0eddbb1b6dfa0806c8df5e8e2c0325fb39de84cd1a4e4d8d4de7eda2313e6c9b`.
+- Original developer's README, VALIDATION, research scripts and test fixture are not runtime dependencies; conclusions were summarized in this document and earlier PR notes. The source-only archive is a source distribution, not a proprietary compiled binary.
+- The tone curve and calibration code are included for provenance but **not invoked** by the primary DNG preflight. Only `decode_smart_preview(..., long_edge=1024).linear` is used to prove pixel extraction.
 
-The ZIP does NOT include real Smart Preview DNGs or Lightroom reference JPEGs. Synthetic tests exist and require `imagecodecs` with JPEGXL codec. The author source itself is not copied into this GitHub repository.
+## How it now works (no manual ZIP)
 
-## Integration design
+`app.learning_intake.decoder_vendor.load_decoder_package()` automatically:
+1. Finds the source archive checked out from Git.
+2. Validates its SHA-256 before extracting.
+3. Extracts only the seven allowlisted files to `PROGRAPHER_DATA_DIR/vendor_cache/` using a temporary staging directory and an integrity marker.
+4. Imports `smart_preview_decoder` from that local cache. It does **not** need a `Downloads` ZIP or separate installation command.
+5. If the archive is missing/altered, refuses to use it; originals remain untouched.
 
-- Our existing `dng_diagnostics.inspect_dng_compression` reads bounded TIFF metadata (not full pixels).
-- If a sampled DNG contains Compression=52546, route to an **optional** `smart_preview_decoder.decode_smart_preview`. Do **NOT** pass this DNG back into LibRaw, which already failed on the user's 4 pilot files.
-- Use **only layer 1** `sp.linear` for the capability probe, capped to a 1024-px long edge and checked for shape/finiteness/crop/range. A successful state means JPEG XL DNG pixels decoded — not visual correctness or approved input for AI.
-- If the module or codec isn't installed, show explicit local environment states instead of a generic corrupt-DNG error.
-- If unhandled DNG opcodes remain, report `jpegxl_dng_unhandled_opcodes`; never certify image parity.
-- The source remains profile-scoped, private and read-only. No native codec is bundled in distribution.
+`smart_preview_probe.py` identifies DNG JPEG XL Compression=52546 using bounded TIFF IFD metadata. This path routes to the bundled decoder instead of `rawpy`. Other compression tags still use the previous LibRaw research path.
 
-### Local developer installation on WINDOWS test worktree
+### Native Python dependencies
 
-Start PowerShell. Keep existing production ProGrapher closed, and use only the **separate** `PROGRAPHER-LEARNING-TEST` worktree and venv.
+`backend/requirements-lock.txt` now includes:
+- `imagecodecs==2026.10.10` (JPEG XL support available in the Windows CPython 3.12 wheel)
+- `tifffile==2026.9.20`
+
+**A Git pull does not automatically install Python dependencies into an existing virtualenv.** From the existing Windows test worktree after `git pull --ff-only`:
 
 ```powershell
-cd "C:\Users\Matann\Desktop\PROGRAPHER-LEARNING-TEST"
-git pull --ff-only
 cd backend
-
-# Requires access to the ORIGINAL ZIP on your PC:
-$zip = "C:\PATH\TO\smart_preview_decoder_v1.zip"
-
-# Research dependencies inside this test venv only; inspect wheel/version before production pinning.
-.\.venv\Scripts\python.exe -m pip install tifffile imagecodecs
-.\.venv\Scripts\python.exe tools\install_smart_preview_decoder_local.py --zip "$zip"
-
-.\.venv\Scripts\python.exe -c "import imagecodecs, smart_preview_decoder; print('JPEGXL available:', imagecodecs.JPEGXL.available); print('module:',smart_preview_decoder.__version__)"
+.\.venv\Scripts\python.exe -m pip install -r requirements-lock.txt
 .\.venv\Scripts\python.exe -m pytest -q tests\test_smart_preview_probe.py tests\test_learning_preflight.py tests\test_learning_intake.py
 cd ..\frontend
 npm.cmd run lint
 npm.cmd run build
 ```
 
-For upstream synthetic unit tests, extract the original ZIP into a separate private temp directory and run its `tests/test_decoder.py` with the same venv (do not commit the samples). Real-photo Lightroom parity requires separate, consented research exports and an approved color reference pipeline.
+Then run Tauri using the previously separated test DATA_DIR and CACHE_DIR. In the existing learning profile, choose **בדוק מדגם + Smart Previews אוטומטית**. The first probe automatically extracts the bundled decoder to local application cache.
 
-### Runtime / app
+### Expected output
 
-Launch Tauri with the same local test DATA_DIR + CACHE_DIR. The new JPEG XL module is imported directly from this test venv — no PYTHONPATH changes, no modified .lrcat, no RAW selection.
+- 3,184 DNG TIFF-signature candidates in the user-provided prior sample (not guaranteed across future catalogs)
+- Compression 52546 detected if the sample actually uses JPEG XL
+- At most four `jpegxl_dng_decoded_unverified` if real DNG decoding succeeds
+- Clear error if JPEG XL codec unavailable, package checksum mismatch, or unsupported DNG opcodes
+- Zero training-ready samples; raw identity, Lightroom baseline and final photographer edits still unverified.
 
-Click `בדוק מדגם + Smart Previews אוטומטית`. Expected after a successful codec/install on compatible source files:
-- 3,184 TIFF signature candidates (from prior research pilot)
-- JPEG XL (Compression 52546) samples
-- up to four `jpegxl_dng_decoded_unverified` rows if the external decoder supports the actual compression.
-- `training_ready_samples=0`, photo identity and Lightroom Reset parity still FALSE.
+## Quality and product gates
 
-If the module/codec is missing, the UI explains this. If there are ignored opcodes, it must not count as success.
+The supplied author reports Reset-parity against Lightroom, including an 80-photo held-out sample, but we **have not independently repeated that benchmark** on this catalog.
 
-## Gates still blocked
+Before training on this decoded data, we still must:
+1. Verify real JPEG XL DNG decoding on the user's machine, report bounded diagnostic status.
+2. Verify camera / lens / Adobe Color rendering and Lightroom Import-vs-Reset parity using controlled exports.
+3. Verify Lightroom UUID-to-DNG identity (including virtual copies) and approved finality of the Develop recipe.
+4. Hold out entire future events for validation and block data leakage.
+5. Validate native JPEG XL codec crash isolation and Windows/macOS packaging before commercial distribution.
 
-1. Confirm real JPEG XL DNG pixels on ≥4 consented research files.
-2. Compare decoded pixels or rendered output against Lightroom **Reset / Import** with exact profile, WB, lens/tonal defaults, not just a 48-px color metric.
-3. Verify Lightroom SDK UUID-to-DNG identity including Virtual Copies, finality, event grouping and original metadata.
-4. Compare broad held-out photos by camera, venue, lighting and photographer before approving source-only learning.
-5. Review legal usage/redistribution rights and pin Windows/macOS wheels; run decoding in an isolated worker to contain native JPEG XL crashes before commercial release.
-6. Do NOT promote this as model-ready data or copy calibration curve into the Brain until all gates pass.
+All operations in this Part are READ ONLY on Lightroom source paths. The automatic local cache contains *only the decoder's source code*, never photographer images.
