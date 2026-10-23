@@ -13,7 +13,9 @@ MAX_ENTRIES_PER_IFD = 1024
 MAX_SUBIFDS = 4
 TAG_COMPRESSION = 259
 TAG_SUBIFDS = 330
-TIFF_TYPES = {3: 2, 4: 4, 16: 8}
+# SHORT, LONG, IFD (13), LONG8, IFD8 (18). SubIFDs may legally be written as type IFD: tifffile does,
+# and without it the JPEG XL image in the SubIFD is never seen and the file is wrongly routed to LibRaw.
+TIFF_TYPES = {3: 2, 4: 4, 13: 4, 16: 8, 18: 8}
 
 
 def inspect_dng_compression(path: Path) -> dict:
@@ -60,7 +62,7 @@ def inspect_dng_compression(path: Path) -> dict:
                 bytecount = width * n
                 data = (entry[8:12][:bytecount] if bytecount <= 4
                         else read_at(u32(entry[8:12]), bytecount))
-                fmt = {3: "H", 4: "I", 16: "Q"}[kind]
+                fmt = {3: "H", 4: "I", 13: "I", 16: "Q", 18: "Q"}[kind]
                 return list(struct.unpack(endian + fmt * n, data))
 
             while queue and len(seen) < MAX_IFDS:
