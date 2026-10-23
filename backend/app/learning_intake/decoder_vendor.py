@@ -85,6 +85,31 @@ def _unpack_archive(target: Path) -> None:
             shutil.rmtree(stage_path, ignore_errors=True)
 
 
+def _member_digests() -> dict[str, str]:
+    """SHA-256 of every allowlisted member, read from the (already verified) archive."""
+    digests: dict[str, str] = {}
+    with tarfile.open(ARCHIVE, mode="r:xz") as archive:
+        for item in archive.getmembers():
+            source = archive.extractfile(item) if item.name in _ALLOWED and item.isfile() else None
+            if source is not None:
+                digests[item.name] = hashlib.sha256(source.read(MAX_EXPANDED_BYTES + 1)).hexdigest()
+    if set(digests) != _ALLOWED:
+        raise DecoderBundleError("Decoder source archive has unexpected files.")
+    return digests
+
+
+def _cache_matches_archive(target: Path) -> bool:
+    """The marker alone only proves extraction finished; re-hash the cached files on every load so an edited
+    cache file is never imported."""
+    for name, digest in _member_digests().items():
+        try:
+            if hashlib.sha256(target.joinpath(*name.split("/")).read_bytes()).hexdigest() != digest:
+                return False
+        except OSError:
+            return False
+    return True
+
+
 def load_decoder_package():
     """Return the authorized package imported from its verified local cache."""
     _verify_archive()
@@ -97,6 +122,15 @@ def load_decoder_package():
         _unpack_archive(target)
     if not marker.is_file() or marker.read_text(encoding="ascii") != DECODER_SHA256:
         raise DecoderBundleError("Decoder source extraction did not complete.")
+    if not _cache_matches_archive(target):
+        # The cache only ever holds a copy of the verified archive, so rebuilding it is safe.
+        shutil.rmtree(target, ignore_errors=True)
+        _unpack_archive(target)
+        if not _cache_matches_archive(target):
+            raise DecoderBundleError("Decoder cache does not match the bundled source.")
+    # Compiled bytecode is not covered by the hashes above: drop it so only the verified sources are imported.
+    shutil.rmtree(target / "smart_preview_decoder" / "__pycache__", ignore_errors=True)
+    shutil.rmtree(target / "smart_preview_decoder" / "data" / "__pycache__", ignore_errors=True)
     location = str(target)
     if location not in sys.path:
         sys.path.insert(0, location)
