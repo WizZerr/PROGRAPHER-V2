@@ -211,7 +211,8 @@ def test_jpegxl_route_uses_optional_source_only_decoder(tmp_path, monkeypatch):
     )
     imagecodecs = ModuleType("imagecodecs")
     imagecodecs.JPEGXL = SimpleNamespace(available=True)
-    monkeypatch.setitem(sys.modules, "smart_preview_decoder", module)
+    from app.learning_intake import decoder_vendor
+    monkeypatch.setattr(decoder_vendor, "load_decoder_package", lambda: module)
     monkeypatch.setitem(sys.modules, "imagecodecs", imagecodecs)
 
     result = _decode_sample(file)
@@ -240,7 +241,8 @@ def test_jpegxl_unsupported_opcode_does_not_count_as_decoded(tmp_path, monkeypat
     )
     imagecodecs = ModuleType("imagecodecs")
     imagecodecs.JPEGXL = SimpleNamespace(available=True)
-    monkeypatch.setitem(sys.modules, "smart_preview_decoder", module)
+    from app.learning_intake import decoder_vendor
+    monkeypatch.setattr(decoder_vendor, "load_decoder_package", lambda: module)
     monkeypatch.setitem(sys.modules, "imagecodecs", imagecodecs)
     result = _decode_jpegxl_smart_preview(file)
     assert result["state"] == "jpegxl_dng_unhandled_opcodes"
@@ -251,7 +253,35 @@ def test_missing_optional_decoder_dependency_is_explicit(tmp_path, monkeypatch):
     from app.learning_intake.smart_preview_probe import _decode_jpegxl_smart_preview
     file = tmp_path / "preview.dng"
     file.write_bytes(b"II*\x00")
-    monkeypatch.setitem(sys.modules, "smart_preview_decoder", None)
+    monkeypatch.setitem(sys.modules, "imagecodecs", None)
     result = _decode_jpegxl_smart_preview(file)
     assert result["state"] == "jpegxl_decoder_dependency_missing"
     assert result["compression_code"] == 52546
+
+
+def test_bundled_decoder_source_is_verified_and_loadable_without_user_zip(
+    tmp_path, monkeypatch,
+):
+    from app.learning_intake.decoder_vendor import (
+        ARCHIVE, DECODER_SHA256, load_decoder_package,
+    )
+    import hashlib
+
+    monkeypatch.setenv("PROGRAPHER_DATA_DIR", str(tmp_path / "private_data"))
+    assert ARCHIVE.is_file()
+    assert hashlib.sha256(ARCHIVE.read_bytes()).hexdigest() == DECODER_SHA256
+    imported = load_decoder_package()
+    assert imported.__version__ == "1.0.0"
+    assert callable(imported.decode_smart_preview)
+    assert (tmp_path / "private_data" / "vendor_cache").is_dir()
+    # Does not touch private source RAW, Lightroom catalog or DNG files.
+
+
+def test_bundle_integrity_rejects_tampered_archive(tmp_path, monkeypatch):
+    from app.learning_intake import decoder_vendor as vendor
+
+    fake = tmp_path / "tampered.tar.xz"
+    fake.write_bytes(b"changed source")
+    monkeypatch.setattr(vendor, "ARCHIVE", fake)
+    with pytest.raises(vendor.DecoderBundleError, match="checksum mismatch"):
+        vendor.load_decoder_package()
