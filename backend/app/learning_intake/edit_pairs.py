@@ -69,6 +69,7 @@ def build_pairs(links: list[dict]) -> dict[str, Any]:
             "file_name": f"{rec.get('file_stem')}.{rec.get('extension')}",
             "folder_key": (rec.get("catalog_root_name"), rec.get("catalog_folder")),
             "capture_day": rec.get("capture_day"),
+            "capture_time": rec.get("capture_time"),
             "targets": targets,
             "temperature_mired": round(1e6 / temperature, 1) if temperature and temperature > 0 else None,
             "white_balance": develop.get("WhiteBalance"),

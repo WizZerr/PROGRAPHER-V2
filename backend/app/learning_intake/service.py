@@ -258,6 +258,16 @@ class LearningProfileStore:
         source, records = self._smart_preview_sources(profile_id, catalog_path, sample_size)
         return pairs_report(source, records, sample_size=sample_size)
 
+    def anchor_backtest(self, profile_id: str, *, catalog_path: str, anchors: int = 100,
+                        sample_size: int = 4) -> dict:
+        """Stage 5: replay the research anchor method on this catalog's pairs (measurement only, nothing stored)."""
+        from app.learning_intake.anchor_backtest import backtest_report
+
+        if not 5 <= anchors <= 500:
+            raise LearningIntakeError("Anchors must be between 5 and 500.")
+        source, records = self._smart_preview_sources(profile_id, catalog_path, sample_size)
+        return backtest_report(source, records, anchors=anchors, sample_size=sample_size)
+
     def _smart_preview_sources(self, profile_id: str, catalog_path: str, sample_size: int):
         """Smart Previews folder + private catalog RAW records for a catalog linked to this profile."""
         if not 0 <= sample_size <= 4:

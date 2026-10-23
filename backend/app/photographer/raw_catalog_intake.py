@@ -347,6 +347,7 @@ def inspect_catalog(catalog: str | Path, *, include_private: bool = False) -> tu
                     "file_stem": row["base_name"], "extension": extension,
                     "catalog_root_name": row["root_name"], "catalog_folder": row["folder_name"],
                     "capture_day": group_key[2], "event_group_id": None,
+                    "capture_time": row["photo_time"] if isinstance(row["photo_time"], str) else None,
                     "virtual_copy_candidate": row["master_image"] is not None or bool(row["copy_name"]),
                     "pick": row["pick"], "rating": row["rating"],
                     "develop": develop, "complex": complex_fields,

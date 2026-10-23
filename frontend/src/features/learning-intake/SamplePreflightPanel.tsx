@@ -7,10 +7,12 @@ import {
   probeSmartPreviewContents,
   linkSmartPreviews,
   buildEditPairs,
+  runAnchorBacktest,
   reviewSmartPreviewSdkLinks,
   type SmartPreviewContentReport,
   type SmartPreviewLinkReport,
   type EditPairsReport,
+  type AnchorBacktestReport,
   type SmartPreviewSdkLinkReview,
   type LearningProfile,
   type PreflightSampleReport,
@@ -60,6 +62,18 @@ const otherEditLabel: Record<string, string> = {
   black_and_white: "שחור־לבן",
 };
 
+const methodLabel: Record<string, string> = {
+  anchors: "עוגנים (השיטה מהמחקר)",
+  global_median: "חציון קבוע לכל התמונות",
+  as_shot: "בלי תיקון (As Shot)",
+};
+
+const backtestExclusionLabel: Record<string, string> = {
+  black_and_white: "שחור־לבן (איזון לבן לא רלוונטי)",
+  missing_exposure_or_white_balance: "חסרה חשיפה או איזון לבן",
+  as_shot_unreadable: "לא ניתן לקרוא As Shot מה־Smart Preview",
+};
+
 function formatValue(key: string, value: number | null | undefined) {
   if (value === null || value === undefined) return "—";
   if (key === "Exposure2012") return value.toFixed(2);
@@ -98,6 +112,10 @@ export default function SamplePreflightPanel({ profile }: { profile: LearningPro
   const [pairsReport, setPairsReport] = useState<EditPairsReport | null>(null);
   const [pairsBusy, setPairsBusy] = useState(false);
   const [pairsError, setPairsError] = useState("");
+  const [backtestReport, setBacktestReport] = useState<AnchorBacktestReport | null>(null);
+  const [backtestBusy, setBacktestBusy] = useState(false);
+  const [backtestError, setBacktestError] = useState("");
+  const [anchorCount, setAnchorCount] = useState(100);
   const [sdkReport, setSdkReport] = useState<SmartPreviewSdkLinkReview | null>(null);
   const [sdkBusy, setSdkBusy] = useState(false);
   const [sdkError, setSdkError] = useState("");
@@ -144,6 +162,20 @@ export default function SamplePreflightPanel({ profile }: { profile: LearningPro
       setPairsError(cause instanceof Error ? cause.message : "בניית זוגות לפני/אחרי נכשלה.");
     } finally {
       setPairsBusy(false);
+    }
+  }
+
+  async function backtestStyleModel() {
+    if (!catalogPath || backtestBusy || busy) return;
+    setBacktestBusy(true);
+    setBacktestError("");
+    setBacktestReport(null);
+    try {
+      setBacktestReport(await runAnchorBacktest(profile.profile_id, catalogPath, anchorCount));
+    } catch (cause) {
+      setBacktestError(cause instanceof Error ? cause.message : "בדיקת מודל הסגנון נכשלה.");
+    } finally {
+      setBacktestBusy(false);
     }
   }
 
@@ -233,6 +265,8 @@ export default function SamplePreflightPanel({ profile }: { profile: LearningPro
             setLinkError("");
             setPairsReport(null);
             setPairsError("");
+            setBacktestReport(null);
+            setBacktestError("");
             setRawFolder("");
           }}>
           {profile.catalogs.map((item) => <option key={item.catalog_path} value={item.catalog_path}>{item.catalog_path}</option>)}
@@ -328,6 +362,56 @@ export default function SamplePreflightPanel({ profile }: { profile: LearningPro
           </figure>)}
         </div>}
         <p>כל זוג = תמונת ה&quot;לפני&quot; מה־Smart Preview + ערכי העריכה של הצלם מהקטלוג. ערך שחסר בקטלוג מוצג כחסר ולא כאפס. קבוצות התיקיות מסומנות F01, F02… בלי שמות; הבדלים ביניהן מרמזים על צלמים או פריסטים שונים. לא נבדק אם העריכה סופית; שום דבר לא נשמר ואינו מאושר לאימון.</p>
+      </div>}
+      <div className={styles.backtestControls}>
+        <label>תמונות עוגן שהצלם עורך
+          <input type="number" min={5} max={500} value={anchorCount} disabled={backtestBusy}
+            onChange={(event) => setAnchorCount(Math.min(500, Math.max(5, Number(event.target.value) || 5)))}/>
+        </label>
+        <button className={styles.previewProbe} type="button" onClick={() => void backtestStyleModel()}
+          disabled={!smartPreviewsPath || backtestBusy || pairsBusy || linkBusy || busy || previewBusy}>
+          {backtestBusy ? "מריץ את מודל הסגנון על הקטלוג…" : "בדוק את מודל הסגנון (שלב 5)"}
+        </button>
+      </div>
+      {backtestError && <p role="alert" className={styles.error}>{backtestError}</p>}
+      {backtestReport && <div className={styles.previewResults} role="status">
+        <span>זוגות: <strong>{backtestReport.pairs}</strong></span>
+        <span>תמונות בבדיקה: <strong>{backtestReport.photos_in_backtest}</strong></span>
+        <span>עוגנים בפועל: <strong>{backtestReport.anchors_used}</strong></span>
+        {Object.entries(backtestReport.excluded_counts).map(([reason, count]) =>
+          <span key={reason}>הוצאו · {backtestExclusionLabel[reason] || reason}: <strong>{count}</strong></span>)}
+        <span>בדיקת המרת As Shot מול Lightroom ({backtestReport.as_shot_conversion_check.as_shot_photos} תמונות):{" "}
+          <strong dir="ltr">±{backtestReport.as_shot_conversion_check.median_abs_kelvin ?? "—"}K · ±{backtestReport.as_shot_conversion_check.median_abs_tint ?? "—"} Tint</strong></span>
+        <table className={styles.pairsTable}>
+          <thead><tr><th>שיטה</th><th>בלי צורך בתיקון</th><th>חשיפה ±0.15</th><th>טמפ׳ ±5 mired</th><th>Tint ±2</th><th>שגיאת חשיפה ממוצעת</th></tr></thead>
+          <tbody>{Object.entries(backtestReport.results).map(([name, result]) => <tr key={name}>
+            <td>{methodLabel[name] || name}</td>
+            <td dir="ltr"><strong>{result.untouched_pct ?? "—"}%</strong></td>
+            <td dir="ltr">{result.exposure_ok_pct ?? "—"}%</td>
+            <td dir="ltr">{result.temperature_ok_pct ?? "—"}%</td>
+            <td dir="ltr">{result.tint_ok_pct ?? "—"}%</td>
+            <td dir="ltr">{result.exposure_mae ?? "—"}</td></tr>)}</tbody>
+        </table>
+        {backtestReport.anchor_curve.length > 0 && <table className={styles.pairsTable}>
+          <thead><tr><th>עוגנים</th>{Object.keys(methodLabel).map((name) => <th key={name}>{methodLabel[name]}</th>)}</tr></thead>
+          <tbody>{backtestReport.anchor_curve.map((row) => <tr key={row.anchors}>
+            <td>{row.anchors}</td>{Object.keys(methodLabel).map((name) => <td key={name} dir="ltr">{row[name]}%</td>)}</tr>)}</tbody>
+        </table>}
+        {backtestReport.samples.length > 0 && <div className={styles.beforeImages}>
+          {backtestReport.samples.map((sample, index) => <figure key={index}>
+            {sample.reset_render?.thumbnail_jpeg_base64
+              ? <img src={`data:image/jpeg;base64,${sample.reset_render.thumbnail_jpeg_base64}`}
+                  width={sample.reset_render.width} height={sample.reset_render.height}
+                  alt={`לפני: ${sample.file_name}`} draggable={false}/>
+              : <p>לא נוצרה תמונת לפני ({sample.decode_state || "לא פוענח"})</p>}
+            <figcaption><span dir="ltr">{sample.file_name}</span>
+              <span>הצלם: חשיפה {formatValue("Exposure2012", sample.photographer.exposure)} · {sample.photographer.temperature_k}K · Tint {sample.photographer.tint}</span>
+              <span>המודל: חשיפה {formatValue("Exposure2012", sample.proposed.exposure)} · {sample.proposed.temperature_k}K · Tint {sample.proposed.tint}</span>
+              <span>{sample.untouched ? "✓ בלי צורך בתיקון" : "דורש תיקון"}</span>
+            </figcaption>
+          </figure>)}
+        </div>}
+        <p>הצלם עורך מספר תמונות עוגן (כאן נלקחו העריכות האמיתיות שלו), והמודל מציע לכל שאר התמונות לפי העוגן הקרוב בזמן: חשיפה מועתקת, ואיזון לבן שעוקב אחרי השינוי של המצלמה. &quot;בלי צורך בתיקון&quot; = חשיפה עד ±0.15, טמפרטורה עד ±5 mired ו־Tint עד ±2 מהערך של הצלם. זו מדידה בלבד: שום מודל לא נשמר ושום דבר לא מוחל על Lightroom.</p>
       </div>}
       <details className={styles.advanced}>
         <summary>אימות שיוך תמונות באמצעות Lightroom SDK · מחקר מתקדם</summary>

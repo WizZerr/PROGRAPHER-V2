@@ -259,6 +259,59 @@ export async function buildEditPairs(profileId: string, catalogPath: string): Pr
   );
 }
 
+export type BacktestScore = {
+  photos: number;
+  untouched_pct?: number;
+  exposure_ok_pct?: number;
+  temperature_ok_pct?: number;
+  tint_ok_pct?: number;
+  exposure_mae?: number;
+  mired_mae?: number;
+  tint_mae?: number;
+};
+
+/** Stage 5: the research anchor method measured on this catalog; nothing stored or applied. */
+export type AnchorBacktestReport = {
+  schema: string;
+  status: "STYLE_MODEL_BACKTEST_RESEARCH_ONLY";
+  pairs: number;
+  photos_in_backtest: number;
+  excluded_counts: Record<string, number>;
+  as_shot_conversion_check: {
+    as_shot_photos: number;
+    median_abs_kelvin: number | null;
+    p90_abs_kelvin: number | null;
+    median_abs_tint: number | null;
+    p90_abs_tint: number | null;
+  };
+  untouched_definition: { exposure: number; mired: number; tint: number };
+  anchors_requested: number;
+  anchors_used: number;
+  results: Record<string, BacktestScore>;
+  anchor_curve: ({ anchors: number } & Record<string, number>)[];
+  samples: {
+    file_name: string;
+    photographer: { exposure: number; temperature_k: number; tint: number; white_balance: string | null };
+    proposed: { exposure: number; temperature_k: number; tint: number };
+    untouched: boolean;
+    decode_state: string | null;
+    reset_render?: SmartPreviewContentReport["decoded_samples"][number]["reset_render"] | null;
+  }[];
+  model_stored: false;
+  applied_to_lightroom: false;
+  training_ready_samples: 0;
+  warnings: string[];
+};
+
+export async function runAnchorBacktest(
+  profileId: string, catalogPath: string, anchors: number,
+): Promise<AnchorBacktestReport> {
+  return apiRequest<AnchorBacktestReport>(
+    `/api/learning-intake/profiles/${encodeURIComponent(profileId)}/anchor-backtest`,
+    { method: "POST", body: JSON.stringify({ catalog_path: catalogPath, anchors, sample_size: 4 }) },
+  );
+}
+
 export type SmartPreviewSdkLinkReview = {
   schema: string;
   status: "SDK_PATH_CORROBORATION_RESEARCH_ONLY";

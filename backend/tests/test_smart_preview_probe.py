@@ -704,3 +704,120 @@ def test_edit_pairs_api_returns_before_image_with_photographer_values(tmp_path, 
                                         "temperature_mired_median": None, "tint_median": None}]
     assert report["training_ready_samples"] == 0
     assert str(smart) not in json.dumps(report) and "event" not in json.dumps(report["folder_groups"])
+
+
+# ---- stage 5: anchor-method backtest ----
+
+def _planck_xy(kelvin: float) -> tuple[float, float]:
+    """Kim et al. cubic fit of the Planckian locus (independent of the Robertson table under test)."""
+    t = kelvin
+    x = (-3.0258469e9 / t**3 + 2.1070379e6 / t**2 + 0.2226347e3 / t + 0.240390 if t > 4000 else
+         -0.2661239e9 / t**3 - 0.2343589e6 / t**2 + 0.8776956e3 / t + 0.179910)
+    y = (3.0817580 * x**3 - 5.87338670 * x**2 + 3.75112997 * x - 0.37001483 if t > 4000 else
+         -0.9549476 * x**3 - 1.37418593 * x**2 + 2.09137015 * x - 0.16748867)
+    return x, y
+
+
+def test_xy_to_lightroom_temperature_and_tint():
+    from app.learning_intake.white_balance import xy_to_temperature_tint
+    for kelvin in (3000, 5000, 6500, 9000):
+        temperature, tint = xy_to_temperature_tint(*_planck_xy(kelvin))
+        assert abs(temperature - kelvin) < 0.004 * kelvin and abs(tint) < 1.0
+    temperature, tint = xy_to_temperature_tint(0.31271, 0.32902)  # D65: Lightroom shows about 6500 / +10
+    assert abs(temperature - 6504) < 15 and 8 < tint < 12
+
+
+def test_as_shot_neutral_to_temperature_and_tint():
+    from app.learning_intake.white_balance import as_shot_temperature_tint
+
+    def rat(values, den=10000):
+        return [v for x in values for v in (int(round(x * den)), den)]
+
+    x, y = _planck_xy(4200)
+    xyz = [x / y, 1.0, (1 - x - y) / y]
+    neutral = [v / xyz[1] for v in xyz]
+    identity = [1, 0, 0, 0, 1, 0, 0, 0, 1]
+    tags = {50721: rat(identity), 50722: rat(identity), 50778: 17, 50779: 21, 50728: rat(neutral, 1000000)}
+    temperature, tint = as_shot_temperature_tint(tags)
+    assert abs(temperature - 4200) < 25 and abs(tint) < 1.0
+    # A camera calibration that boosts red makes the same raw neutral read cooler (the sensor saw less red).
+    tags.update({50723: rat([1.1, 0, 0, 0, 1, 0, 0, 0, 1]), 50724: rat([1.1, 0, 0, 0, 1, 0, 0, 0, 1]),
+                 50931: "com.adobe", 50932: "com.adobe"})
+    assert as_shot_temperature_tint(tags)[0] > temperature + 100
+
+
+def test_anchor_method_beats_baselines_when_edits_follow_time_runs():
+    from app.learning_intake.anchor_backtest import predict, score
+    rows = []
+    for i in range(200):
+        run = i // 40  # five lighting situations in time order, each edited consistently
+        rows.append({"exposure": [-0.6, -0.2, 0.0, 0.3, -0.4][run], "d_mired": [-20, 0, 15, 5, -8][run],
+                     "d_tint": [4, 0, -3, 2, 6][run], "as_shot_k": 4000 + 10 * i, "as_shot_tint": i % 7})
+    run = predict(rows, 5)
+    results = {name: score(preds) for name, preds in run["methods"].items()}
+    assert results["anchors"]["untouched_pct"] == 100.0
+    assert results["global_median"]["untouched_pct"] < 50 and results["as_shot"]["untouched_pct"] < 50
+    assert results["anchors"]["photos"] == 195  # anchors themselves are not scored
+
+
+def write_backtest_catalog(path: Path, photos: list[dict]):
+    """Lightroom-like catalog with one folder of RAW photos carrying white balance edits."""
+    with sqlite3.connect(path) as db:
+        db.executescript("""
+        CREATE TABLE Adobe_images(id_local INTEGER PRIMARY KEY,id_global TEXT,rootFile INTEGER,fileFormat TEXT,captureTime TEXT,originalCaptureTime TEXT,masterImage INTEGER,copyName TEXT,pick REAL,rating REAL);
+        CREATE TABLE AgLibraryFile(id_local INTEGER PRIMARY KEY,id_global TEXT,baseName TEXT,extension TEXT,folder INTEGER);
+        CREATE TABLE AgLibraryFolder(id_local INTEGER PRIMARY KEY,rootFolder INTEGER,pathFromRoot TEXT);
+        CREATE TABLE AgLibraryRootFolder(id_local INTEGER PRIMARY KEY,name TEXT);
+        CREATE TABLE Adobe_imageDevelopSettings(id_local INTEGER PRIMARY KEY,image INTEGER,text TEXT,processVersion TEXT,whiteBalance TEXT,grayscale INTEGER);
+        """)
+        db.execute("INSERT INTO AgLibraryRootFolder VALUES(1,'test')")
+        db.execute("INSERT INTO AgLibraryFolder VALUES(2,1,'event')")
+        for i, photo in enumerate(photos):
+            db.execute("INSERT INTO AgLibraryFile VALUES(?,?,?,?,2)", (100 + i, f"file{i}", photo["name"], "cr3"))
+            db.execute("INSERT INTO Adobe_images VALUES(?,?,?,'RAW',?,NULL,NULL,NULL,0,NULL)",
+                       (10 + i, photo["uuid"], 100 + i, f"2026-09-20T12:{i:02d}:00"))
+            text = (f's={{ Exposure2012={photo["exposure"]}, Temperature={photo["kelvin"]}, Tint={photo["tint"]}, '
+                    f'WhiteBalance="{photo["wb"]}" }}')
+            db.execute("INSERT INTO Adobe_imageDevelopSettings VALUES(?,?,?,'15.4',?,0)",
+                       (1000 + i, 10 + i, text, photo["wb"]))
+
+
+def test_anchor_backtest_api_end_to_end(tmp_path, monkeypatch, fresh_decoder, jpegxl_codec, no_cached_look):
+    from fastapi.testclient import TestClient
+    from app.application import create_app
+    from app.learning_intake.white_balance import as_shot_temperature_tint, read_wb_tags
+    monkeypatch.setenv("PROGRAPHER_ENGINE_SECRET", "backtest-secret")
+    smart = tmp_path / "Event Smart Previews.lrdata"
+    (smart / "A").mkdir(parents=True)
+    first = smart / "A" / "uuid0.dng"
+    write_synthetic_smart_preview(first, original_name="img0.cr3")
+    shot_k, shot_tint = as_shot_temperature_tint(read_wb_tags(first))
+    photos = []
+    for i in range(12):
+        name, uuid = f"img{i}", f"uuid{i}"
+        if i:
+            write_synthetic_smart_preview(smart / "A" / f"{uuid}.dng", original_name=f"{name}.cr3")
+        warm = i >= 6  # second half of the event: the photographer warmed the image and lowered exposure
+        photos.append({"name": name, "uuid": uuid, "exposure": -0.5 if warm else 0.2,
+                       "kelvin": round(1e6 / (1e6 / shot_k - 20)) if warm else round(shot_k),
+                       "tint": round(shot_tint) + (5 if warm else 0), "wb": "Custom" if warm else "As Shot"})
+    catalog = tmp_path / "Event.lrcat"
+    write_backtest_catalog(catalog, photos)
+    store = LearningProfileStore()
+    owner = store.create(name="Test", photography_type="wedding", color_mode="color", consent=True)
+    store.attach_catalog(owner["profile_id"], catalog_path=str(catalog))
+    endpoint = f"/api/learning-intake/profiles/{owner['profile_id']}/anchor-backtest"
+    with TestClient(create_app()) as client:
+        assert client.post(endpoint, json={"catalog_path": str(catalog)}).status_code == 401
+        response = client.post(endpoint, json={"catalog_path": str(catalog), "anchors": 5, "sample_size": 2},
+                               headers={"X-ProGrapher-Secret": "backtest-secret"})
+    assert response.status_code == 200, response.text
+    report = response.json()
+    assert report["photos_in_backtest"] == 12 and report["anchors_used"] == 2
+    assert report["as_shot_conversion_check"]["as_shot_photos"] == 6
+    assert report["as_shot_conversion_check"]["median_abs_kelvin"] <= 1.0
+    assert report["results"]["anchors"]["untouched_pct"] == 100.0
+    assert report["results"]["as_shot"]["untouched_pct"] < 100.0
+    assert len(report["samples"]) == 2 and report["samples"][0]["reset_render"]["state"] == "reset_rendered_unverified"
+    assert report["model_stored"] is False and report["training_ready_samples"] == 0
+    assert str(smart) not in json.dumps(report)

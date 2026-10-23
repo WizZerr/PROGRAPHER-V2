@@ -50,6 +50,12 @@ class SmartPreviewLinkRequest(BaseModel):
     sample_size: int = Field(default=4, ge=0, le=4)
 
 
+class AnchorBacktestRequest(BaseModel):
+    catalog_path: str = Field(min_length=1)
+    anchors: int = Field(default=100, ge=5, le=500)
+    sample_size: int = Field(default=4, ge=0, le=4)
+
+
 class SamplePreflightRequest(BaseModel):
     catalog_path: str = Field(min_length=1)
     raw_folder: str | None = None
@@ -113,6 +119,15 @@ def build_edit_pairs(profile_id: str, payload: SmartPreviewLinkRequest) -> dict:
     """Stage 4: before/after pairs for review; local, transient, not training-ready."""
     try:
         return LearningProfileStore().edit_pairs(profile_id, **payload.model_dump())
+    except LearningIntakeError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+@router.post("/profiles/{profile_id}/anchor-backtest")
+def run_anchor_backtest(profile_id: str, payload: AnchorBacktestRequest) -> dict:
+    """Stage 5: measure the anchor style method on this catalog; nothing stored or applied."""
+    try:
+        return LearningProfileStore().anchor_backtest(profile_id, **payload.model_dump())
     except LearningIntakeError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
 
