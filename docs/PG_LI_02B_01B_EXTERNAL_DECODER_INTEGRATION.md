@@ -79,8 +79,8 @@ For every sample that decodes cleanly, the probe now also renders the Smart Prev
   1. `PROGRAPHER_ADOBE_COLOR_XMP`
   2. `<data dir>/adobe_profiles/Adobe Color.xmp`
   3. Adobe's CameraRaw settings and Lightroom install folders, as a bounded read-only walk
-- If the file is not found, the state is `adobe_color_look_missing`. Decoding still reports success.
-- Not applied yet: lens vignetting from `.lcp`. With lens corrections on, Lightroom's corners are a little brighter than this preview.
+- If the file is not found, the render falls back to the look table embedded in the Smart Preview's own profile and reports `look_source: "smart_preview_profile"`. In the author's benchmark this fallback was nearly as close to Lightroom: 3.57% pixel error versus 3.48% with Adobe Color.
+- Lens vignetting is applied when the Smart Preview's EXIF (`LensModel`, `FocalLength`, `FNumber`) matches an Adobe RAW lens profile (`.lcp`) installed with Lightroom under `Adobe/CameraRaw/LensProfiles`. This matches Lightroom with lens profile corrections on, which is the setup of the Canon benchmark. The result is reported as `lens_vignetting: applied | no_lens_metadata | lens_profile_not_found`. Distortion is not applied. The lens name is never returned.
 - Parity: the author benchmarked the rendering against Lightroom's own Smart Preview exports (Delta E 2.51 on 80 held-out Canon R6 II photos, 0.94–4.11 on 7 cameras). It has **not** been re-measured on this catalog. `source_only_neutral_parity_verified` stays `false`, and no sample becomes training-ready.
 
 ## Quality and product gates

@@ -115,7 +115,7 @@ def _decode_jpegxl_smart_preview(path: Path) -> dict[str, Any]:
             "preview_mean_linear": round(float(np.mean(sparse)), 4),
         }
         if ignored == 0:
-            result["reset_render"] = _reset_render(decoder, sp)
+            result["reset_render"] = _reset_render(decoder, sp, path)
         return result
     except decoder.SmartPreviewError:
         # Do not send third-party exception strings back to the user: some
@@ -125,14 +125,11 @@ def _decode_jpegxl_smart_preview(path: Path) -> dict[str, Any]:
         return {"state": "jpegxl_dng_decode_error", "compression_code": 52546}
 
 
-def _reset_render(decoder, sp) -> dict[str, Any]:
-    """The unedited "before" image as Lightroom shows it after Reset (layers 2-3), or why it is missing."""
-    from app.learning_intake.smart_preview_render import find_adobe_color_look, render_reset_preview
+def _reset_render(decoder, sp, path: Path) -> dict[str, Any]:
+    """The unedited "before" image as Lightroom shows it after Reset (layers 2-3), or why it failed."""
+    from app.learning_intake.smart_preview_render import render_reset_preview
     try:
-        look = find_adobe_color_look(decoder)
-        if look is None:
-            return {"state": "adobe_color_look_missing"}
-        return render_reset_preview(decoder, sp, look)
+        return render_reset_preview(decoder, sp, path)
     except Exception:
         # Same rule as decoding: never echo decoder exception text (it could carry a private path).
         return {"state": "reset_render_error"}
@@ -246,7 +243,7 @@ def inspect_smart_previews(root: Path, *, decode_limit: int = MAX_DECODE) -> dic
             "A decoded Smart Preview is NOT a validated representation of the pre-edit RAW as seen by the photographer.",
             "This inspection does not apply Develop, read/write catalogs or store decoded images.",
             "JPEG XL is routed to the source decoder bundled in Git; codec wheels must be installed in the local Python environment.",
-            "The 'before' previews are rendered like Lightroom Reset (Adobe Color, As Shot) from the unedited Smart Preview; parity was benchmarked by the decoder author, not on this catalog, and lens vignetting is not applied.",
+            "The 'before' previews are rendered like Lightroom Reset (Adobe Color, As Shot) from the unedited Smart Preview; parity was benchmarked by the decoder author, not on this catalog, and lens vignetting is applied only when Adobe has a RAW lens profile for the lens.",
             "Preview images are returned in memory for display only and are never written to disk.",
             "The Lightroom SDK smartPreviewInfo.smartPreviewPath readback is required for a trusted per-photo link.",
         ],

@@ -6,10 +6,14 @@ The author benchmarked this rendering against Lightroom's own Smart Preview expo
 Canon R6 II photos, 0.94-4.11 on 7 cameras); it has NOT been re-measured on this catalog, so it stays research-only
 and never makes a sample training-ready.
 
-Needs Adobe's "Adobe Color.xmp" look table, which ships with Lightroom / Camera Raw (Adobe's file, not bundled).
+Look: Adobe's "Adobe Color.xmp" look table, which ships with Lightroom / Camera Raw (Adobe's file, not bundled).
 Looked up in this order: PROGRAPHER_ADOBE_COLOR_XMP, <data dir>/adobe_profiles/, then Adobe's settings and
-Lightroom install folders (bounded, read-only walk).
-Lens vignetting correction is not applied: Lightroom's default lens profile darkens corners less than this preview.
+Lightroom install folders (bounded, read-only walk). If it is not found, the look table embedded in the Smart
+Preview's own profile is used instead (author's benchmark: 3.57% vs 3.48% pixel error, i.e. nearly the same).
+
+Lens: when the Smart Preview's EXIF names a lens that has an Adobe RAW lens profile (.lcp, installed with Lightroom),
+its light-falloff (vignetting) correction is applied, as Lightroom does with lens profile corrections on (the
+common wedding setup, and the setup of the Canon R6 II benchmark). Distortion is not applied.
 """
 from __future__ import annotations
 
@@ -29,9 +33,12 @@ LOOK_FILENAME = "adobe color.xmp"
 DROP_FOLDER = "adobe_profiles"
 MAX_SEARCH_ENTRIES = 50_000
 MAX_LOOK_BYTES = 2 * 1024 * 1024
+LENS_ROOT_PARTS = ("Adobe", "CameraRaw", "LensProfiles")
+MAX_LENS_FILES = 100_000
 THUMBNAIL_EDGE = 512
 MISS_RETRY_SECONDS = 60  # one probe renders up to 4 samples: search the disk once, not four times
 _found_look: dict[str, Any] = {}
+_lens_files: dict[str, list[Path]] = {}
 
 
 def look_search_roots() -> list[Path]:
@@ -91,6 +98,94 @@ def find_adobe_color_look(decoder) -> tuple | None:
     return None
 
 
+def lens_search_roots() -> list[Path]:
+    if platform.system() == "Windows":
+        return [Path(os.environ[e]).joinpath(*LENS_ROOT_PARTS) for e in ("PROGRAMDATA", "APPDATA") if os.getenv(e)]
+    if platform.system() == "Darwin":
+        return [Path("/Library/Application Support").joinpath(*LENS_ROOT_PARTS),
+                (Path.home() / "Library" / "Application Support").joinpath(*LENS_ROOT_PARTS)]
+    return []
+
+
+def _norm(text: str | None) -> str:
+    return "".join(ch for ch in (text or "").casefold() if ch.isalnum())
+
+
+def _raw_lens_profiles() -> list[Path]:
+    """Every Adobe RAW lens profile file (names only, listed once per process)."""
+    if "files" not in _lens_files:
+        files: list[Path] = []
+        for root in lens_search_roots():
+            if not root.is_dir():
+                continue
+            for folder, _dirs, names in os.walk(root, followlinks=False, onerror=lambda _e: None):
+                files += [Path(folder) / n for n in names
+                          if n.casefold().endswith(".lcp") and "raw" in n.casefold()]
+                if len(files) > MAX_LENS_FILES:
+                    break
+        _lens_files["files"] = files
+    return _lens_files["files"]
+
+
+def lens_exif(path: Path) -> tuple[str, float, float] | None:
+    """(lens model, focal length mm, f-number) from the Smart Preview's own EXIF, or None."""
+    import tifffile
+
+    def number(value) -> float | None:
+        try:
+            v = [float(x) for x in (value if isinstance(value, (tuple, list)) else [value])]
+            return v[0] / v[1] if len(v) == 2 and v[1] else v[0]
+        except (TypeError, ValueError, IndexError):
+            return None
+
+    try:
+        with tifffile.TiffFile(str(path)) as tif:
+            tag = tif.pages[0].tags.get(34665)
+            exif = tag.value if tag is not None and isinstance(tag.value, dict) else {}
+    except Exception:  # noqa: BLE001
+        return None
+    model = str(exif.get("LensModel") or "").strip()
+    focal, fnum = number(exif.get("FocalLength")), number(exif.get("FNumber"))
+    if not model or not focal or not fnum or focal <= 0 or fnum <= 0:
+        return None
+    return model, focal, fnum
+
+
+def find_lens_entries(decoder, lens_model: str) -> list[dict] | None:
+    """Vignetting entries of the Adobe RAW profile for this lens, or None. Adobe names the files
+    '<camera> (<maker> <lens>) - RAW.lcp'; candidates are matched on the name, then confirmed on the Lens field."""
+    import importlib
+
+    want = _norm(lens_model)
+    if len(want) < 4:
+        return None
+    lens_mod = importlib.import_module(decoder.__name__ + ".lens")
+    for path in sorted((p for p in _raw_lens_profiles() if want in _norm(p.stem)), key=lambda p: len(p.stem)):
+        try:
+            name, entries = lens_mod.read_lcp(path)
+        except Exception:  # noqa: BLE001
+            continue
+        if entries and _norm(name).endswith(want):
+            return entries
+    return None
+
+
+def lens_vignetting_gain(decoder, path: Path, shape: tuple[int, int]):
+    """(gain map or None, status) for the upright image shape."""
+    import importlib
+
+    exif = lens_exif(path)
+    if exif is None:
+        return None, "no_lens_metadata"
+    entries = find_lens_entries(decoder, exif[0])
+    if entries is None:
+        return None, "lens_profile_not_found"
+    h, w = shape
+    small = (max(8, round(64 * h / max(h, w))), max(8, round(64 * w / max(h, w))))
+    lens_mod = importlib.import_module(decoder.__name__ + ".lens")
+    return lens_mod.vignette_gain(entries, exif[1], exif[2], small), "applied"
+
+
 def _downscale(linear, edge: int):
     import numpy as np
     from PIL import Image
@@ -104,14 +199,16 @@ def _downscale(linear, edge: int):
                                 .resize(size, Image.BILINEAR)) for c in range(3)], axis=-1)
 
 
-def render_reset_preview(decoder, sp, look) -> dict[str, Any]:
+def render_reset_preview(decoder, sp, path: Path) -> dict[str, Any]:
     """Reset-look sRGB preview of an already decoded Smart Preview, as a small in-memory JPEG (never written to
-    disk) plus its mean brightness. No path or file name is returned."""
+    disk) plus its mean brightness. No path, file or lens name is returned."""
     import numpy as np
     from PIL import Image
 
+    look = find_adobe_color_look(decoder)
     small = dataclasses.replace(sp, linear=_downscale(sp.linear, THUMBNAIL_EDGE))
-    image = decoder.render_srgb(small, look=look)
+    gain, lens_status = lens_vignetting_gain(decoder, path, small.linear.shape[:2])
+    image = decoder.render_srgb(small, look=look, vignette_gain=gain)
     if image.ndim != 3 or image.shape[2] != 3 or image.dtype != np.uint8:
         return {"state": "reset_render_invalid_output"}
     lin = np.where(image / 255.0 <= 0.04045, image / 255.0 / 12.92, ((image / 255.0 + 0.055) / 1.055) ** 2.4)
@@ -123,6 +220,8 @@ def render_reset_preview(decoder, sp, look) -> dict[str, Any]:
         "height": int(image.shape[0]),
         "mean_srgb_luma": round(float(np.mean(lin @ np.array([0.2126, 0.7152, 0.0722]))), 4),
         "calibration_stops": float(getattr(decoder, "CALIBRATION_STOPS", 0.0)),
-        "lens_vignetting_applied": False,
+        # "adobe_color_xmp" = the validated setup; "smart_preview_profile" = fallback when Lightroom's file is absent
+        "look_source": "adobe_color_xmp" if look is not None else "smart_preview_profile",
+        "lens_vignetting": lens_status,
         "thumbnail_jpeg_base64": base64.b64encode(buffer.getvalue()).decode("ascii"),
     }

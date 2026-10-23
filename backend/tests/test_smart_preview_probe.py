@@ -433,12 +433,15 @@ def jpegxl_codec():
 
 
 @pytest.fixture
-def no_cached_look(monkeypatch):
+def no_cached_look(tmp_path, monkeypatch):
+    """No Adobe file of the machine running the tests is used: look only in the test data dir, lenses in tmp."""
     from app.learning_intake import smart_preview_render
     monkeypatch.setattr(smart_preview_render, "_found_look", {})
+    monkeypatch.setattr(smart_preview_render, "_lens_files", {})
     monkeypatch.delenv("PROGRAPHER_ADOBE_COLOR_XMP", raising=False)
     monkeypatch.setattr(smart_preview_render, "look_search_roots",
                         lambda: [smart_preview_render.user_data_dir() / smart_preview_render.DROP_FOLDER])
+    monkeypatch.setattr(smart_preview_render, "lens_search_roots", lambda: [tmp_path / "LensProfiles"])
 
 
 def test_before_image_rendered_from_the_drop_folder_look(tmp_path, fresh_decoder, jpegxl_codec, no_cached_look):
@@ -456,7 +459,8 @@ def test_before_image_rendered_from_the_drop_folder_look(tmp_path, fresh_decoder
     assert render["state"] == "reset_rendered_unverified"
     assert report["reset_render_counts"] == {"reset_rendered_unverified": 1}
     assert max(render["width"], render["height"]) == 512
-    assert render["lens_vignetting_applied"] is False
+    assert render["look_source"] == "adobe_color_xmp"
+    assert render["lens_vignetting"] == "no_lens_metadata"
     assert render["calibration_stops"] == -0.144
     image = Image.open(io.BytesIO(base64.b64decode(render["thumbnail_jpeg_base64"])))
     assert image.format == "JPEG" and image.size == (render["width"], render["height"])
@@ -465,13 +469,59 @@ def test_before_image_rendered_from_the_drop_folder_look(tmp_path, fresh_decoder
     assert "PRIVATE-NAME" not in json.dumps(report) and str(tmp_path) not in json.dumps(report)
 
 
-def test_before_image_reports_missing_adobe_color_look(tmp_path, fresh_decoder, jpegxl_codec, no_cached_look):
+def test_before_image_falls_back_to_the_smart_preview_look(tmp_path, fresh_decoder, jpegxl_codec, no_cached_look):
+    """A customer whose Lightroom keeps Adobe Color somewhere unexpected still gets a 'before' image."""
     root = tmp_path / "Synthetic Smart Previews.lrdata"
     root.mkdir()
     write_synthetic_smart_preview(root / "a.dng")
     report = inspect_smart_previews(root, decode_limit=1)
     assert report["decode_status_counts"] == {"jpegxl_dng_decoded_unverified": 1}
-    assert report["decoded_samples"][0]["reset_render"] == {"state": "adobe_color_look_missing"}
+    render = report["decoded_samples"][0]["reset_render"]
+    assert render["state"] == "reset_rendered_unverified"
+    assert render["look_source"] == "smart_preview_profile"
+
+
+def write_lcp(path: Path, lens: str, k1: float = -0.8):
+    """Minimal Adobe lens profile with one vignetting model (strong falloff, so the correction is visible)."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(
+        '<x:xmpmeta xmlns:x="adobe:ns:meta/"><rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">'
+        '<rdf:Description xmlns:photoshop="http://ns.adobe.com/photoshop/1.0/" '
+        'xmlns:stCamera="http://ns.adobe.com/photoshop/1.0/camera-profile"><photoshop:CameraProfiles><rdf:Seq>'
+        f'<rdf:li stCamera:Lens="{lens}" stCamera:FocalLength="50" stCamera:ApertureValue="2">'
+        '<stCamera:PerspectiveModel stCamera:FocalLengthX="1.0">'
+        f'<stCamera:VignetteModel stCamera:VignetteModelParam1="{k1}" stCamera:VignetteModelParam2="0" '
+        'stCamera:VignetteModelParam3="0"/></stCamera:PerspectiveModel></rdf:li>'
+        '</rdf:Seq></photoshop:CameraProfiles></rdf:Description></rdf:RDF></x:xmpmeta>', encoding="utf-8")
+
+
+def test_before_image_applies_adobe_lens_vignetting(tmp_path, fresh_decoder, jpegxl_codec, no_cached_look,
+                                                    monkeypatch):
+    import base64
+    import io
+    import numpy as np
+    from PIL import Image
+    from app.learning_intake import smart_preview_render
+    write_lcp(tmp_path / "LensProfiles" / "1.0" / "Test" / "Test Camera (Test Lens 50mm F2) - RAW.lcp",
+              "Test Lens 50mm F2")
+    root = tmp_path / "Synthetic Smart Previews.lrdata"
+    root.mkdir()
+    write_synthetic_smart_preview(root / "a.dng", h=200, w=300)
+
+    def edge_vs_centre(report):
+        img = np.asarray(Image.open(io.BytesIO(base64.b64decode(
+            report["decoded_samples"][0]["reset_render"]["thumbnail_jpeg_base64"]))), dtype=float)
+        h, w = img.shape[:2]
+        return img[:h // 8].mean() + img[-h // 8:].mean(), report["decoded_samples"][0]["reset_render"]
+
+    monkeypatch.setattr(smart_preview_render, "lens_exif", lambda _p: ("Other Lens 85mm", 50.0, 2.0))
+    plain, render = edge_vs_centre(inspect_smart_previews(root, decode_limit=1))
+    assert render["lens_vignetting"] == "lens_profile_not_found"
+    monkeypatch.setattr(smart_preview_render, "lens_exif", lambda _p: ("Test Lens 50mm F2", 50.0, 2.0))
+    corrected, render = edge_vs_centre(inspect_smart_previews(root, decode_limit=1))
+    assert render["lens_vignetting"] == "applied"
+    assert corrected > plain + 5  # light falloff corrected: the top and bottom rows get brighter
+    assert "Test Lens" not in json.dumps(render)
 
 
 def test_adobe_color_look_env_override_and_bad_file(tmp_path, fresh_decoder, no_cached_look, monkeypatch):

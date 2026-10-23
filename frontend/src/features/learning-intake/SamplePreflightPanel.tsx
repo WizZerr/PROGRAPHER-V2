@@ -209,7 +209,7 @@ export default function SamplePreflightPanel({ profile }: { profile: LearningPro
         {(previewReport.decode_status_counts.jpegxl_codec_unavailable ?? 0) > 0 && <p className={styles.decoderWarning}>ספריית imagecodecs קיימת אך תמיכת JPEG XL אינה זמינה. יש צורך בגרסה הכוללת את ה־codec.</p>}
         {(previewReport.decode_status_counts.jpegxl_dng_decode_error ?? 0) > 0 && <p className={styles.decoderWarning}>מפענח JPEG XL הופעל אך נכשל. נדרשת בדיקה על קובצי המחקר; לא הוכח שקובצי ה־DNG פגומים.</p>}
         {(previewReport.decode_status_counts.jpegxl_dng_unhandled_opcodes ?? 0) > 0 && <p className={styles.decoderWarning}>פוענחו פיקסלים אך נמצאו Opcode שאינם מטופלים. התמונה אינה מועמדת ללמידה.</p>}
-        {(previewReport.reset_render_counts?.adobe_color_look_missing ?? 0) > 0 && <p className={styles.decoderWarning}>תמונות ה&quot;לפני&quot; לא הוצגו: לא נמצא הקובץ Adobe Color.xmp של Lightroom. העתק אותו לתיקייה adobe_profiles בתוך תיקיית הנתונים של ProGrapher (או הגדר PROGRAPHER_ADOBE_COLOR_XMP) והרץ שוב.</p>}
+        {previewReport.decoded_samples.some((sample) => sample.reset_render?.look_source === "smart_preview_profile") && <p className={styles.decoderWarning}>הקובץ Adobe Color.xmp של Lightroom לא נמצא במחשב, ולכן תמונות ה&quot;לפני&quot; רונדרו עם טבלת המראה שבתוך ה־Smart Preview (קרוב מאוד, אך לא ההגדרה שנבדקה). אפשר להעתיק את הקובץ לתיקייה adobe_profiles בתוך תיקיית הנתונים של ProGrapher.</p>}
         {(previewReport.reset_render_counts?.reset_render_error ?? 0) > 0 && <p className={styles.decoderWarning}>הפענוח הצליח אך הרינדור לתמונת &quot;לפני&quot; נכשל באחד הקבצים.</p>}
         {previewReport.decoded_samples.some((sample) => sample.reset_render?.thumbnail_jpeg_base64) && <div className={styles.beforeImages}>
           {previewReport.decoded_samples.map((sample, index) => sample.reset_render?.thumbnail_jpeg_base64 &&
@@ -217,10 +217,10 @@ export default function SamplePreflightPanel({ profile }: { profile: LearningPro
               <img src={`data:image/jpeg;base64,${sample.reset_render.thumbnail_jpeg_base64}`}
                 width={sample.reset_render.width} height={sample.reset_render.height}
                 alt={`תמונת לפני ${index + 1} מתוך המדגם`} draggable={false}/>
-              <figcaption>לפני עריכה · Reset (Adobe Color, As Shot)</figcaption>
+              <figcaption>לפני עריכה · Reset (Adobe Color, As Shot){sample.reset_render.lens_vignetting === "applied" ? " · כולל תיקון וינייט של העדשה" : " · בלי תיקון עדשה"}</figcaption>
             </figure>)}
         </div>}
-        <p>תמונות ה&quot;לפני&quot; מרונדרות מה־Smart Preview הלא ערוך כמו Lightroom אחרי Reset, בלי תיקון וינייט של העדשה. ההתאמה ל־Lightroom נמדדה במחקר ולא על הקטלוג הזה; התמונות מוצגות מהזיכרון בלבד, לא נשמרות, ואינן מאושרות לאימון.</p>
+        <p>תמונות ה&quot;לפני&quot; מרונדרות מה־Smart Preview הלא ערוך כמו Lightroom אחרי Reset, עם תיקון וינייט כשקיים פרופיל עדשה של Adobe. ההתאמה ל־Lightroom נמדדה במחקר ולא על הקטלוג הזה; התמונות מוצגות מהזיכרון בלבד, לא נשמרות, ואינן מאושרות לאימון.</p>
       </div>}
     </div>
     <details className={styles.advanced}>

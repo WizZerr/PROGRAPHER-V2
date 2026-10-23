@@ -157,7 +157,10 @@ export type SmartPreviewContentReport = {
       height?: number;
       mean_srgb_luma?: number;
       calibration_stops?: number;
-      lens_vignetting_applied?: boolean;
+      /** "adobe_color_xmp" (validated setup) or "smart_preview_profile" (fallback when Lightroom's file is absent). */
+      look_source?: "adobe_color_xmp" | "smart_preview_profile";
+      /** "applied" | "no_lens_metadata" | "lens_profile_not_found". */
+      lens_vignetting?: string;
       thumbnail_jpeg_base64?: string;
     };
   }[];
