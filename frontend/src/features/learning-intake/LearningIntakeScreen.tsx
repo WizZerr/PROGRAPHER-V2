@@ -100,7 +100,7 @@ function CatalogSummary({ catalog, summary, samples, busy, onReanalyze }: {
       <StyleLine title="אתה מתאים מתמונה לתמונה" sliders={perPhoto} range/>
       {untouched.length > 0 && <p className={styles.muted}>לא נוגע: {untouched.map((s) => sliderName[s.key] ?? s.key).join(", ")}</p>}
       {rare.length > 0 && <p className={styles.muted}>לפעמים: {rare.map((s) =>
-        `${sliderName[s.key] ?? s.key} (${s.present.toLocaleString("he-IL")} תמונות)`).join(", ")}</p>}
+        `${sliderName[s.key] ?? s.key} (${s.present === 1 ? "בתמונה אחת" : `ב־${s.present.toLocaleString("he-IL")} תמונות`})`).join(", ")}</p>}
     </div>
 
     {samples.length > 0 && <div className={styles.samples}>
