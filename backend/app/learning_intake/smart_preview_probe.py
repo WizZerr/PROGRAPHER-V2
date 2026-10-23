@@ -69,21 +69,25 @@ def _count_dng_files(root: Path) -> tuple[dict[str, int], list[Path]]:
 def _decode_jpegxl_smart_preview(path: Path) -> dict[str, Any]:
     """Optional third-party JPEG XL DNG layer-1 decoder (no Adobe rendering).
 
-    The external package supplied for evaluation is NOT bundled or licensed
-    by this repository. A decoded image is NOT a validated training input.
+    The authorized third-party source archive is bundled in backend/vendor/.
+    A decoded image is NOT a validated training input.
     """
     try:
         import numpy as np
         import imagecodecs
-        from smart_preview_decoder import decode_smart_preview, SmartPreviewError
     except ImportError:
         return {"state": "jpegxl_decoder_dependency_missing", "compression_code": 52546}
 
     if not getattr(getattr(imagecodecs, "JPEGXL", None), "available", False):
         return {"state": "jpegxl_codec_unavailable", "compression_code": 52546}
     try:
+        from app.learning_intake.decoder_vendor import load_decoder_package, DecoderBundleError
+        decoder = load_decoder_package()
+    except (ImportError, DecoderBundleError, OSError):
+        return {"state": "jpegxl_decoder_bundle_error", "compression_code": 52546}
+    try:
         before = path.stat()
-        sp = decode_smart_preview(path, long_edge=1024)
+        sp = decoder.decode_smart_preview(path, long_edge=1024)
         pixels = np.asarray(sp.linear)
         if (pixels.ndim != 3 or pixels.shape[2] != 3
             or min(pixels.shape[:2]) < 1
@@ -110,7 +114,7 @@ def _decode_jpegxl_smart_preview(path: Path) -> dict[str, Any]:
             # Linear pixel statistic only: not Lightroom Reset/sRGB brightness.
             "preview_mean_linear": round(float(np.mean(sparse)), 4),
         }
-    except SmartPreviewError:
+    except decoder.SmartPreviewError:
         # Do not send third-party exception strings back to the user: some
         # decoder versions may accidentally include original image paths.
         return {"state": "jpegxl_dng_decode_error", "compression_code": 52546}
@@ -223,7 +227,7 @@ def inspect_smart_previews(root: Path, *, decode_limit: int = MAX_DECODE) -> dic
             "Actual DNG signatures and decode status are checked, but DNG-to-Lightroom photo identity is NOT verified.",
             "A decoded Smart Preview is NOT a validated representation of the pre-edit RAW as seen by the photographer.",
             "This inspection does not apply Develop, read/write catalogs or store decoded images.",
-            "JPEG XL is routed to the optional external DNG decoder; no author source or calibration artifact is bundled in ProGrapher.",
+            "JPEG XL is routed to the source decoder bundled in Git; codec wheels must be installed in the local Python environment.",
             "A successful JPEG XL decode is camera-linear pixels only and has not passed Lightroom Reset parity.",
             "The Lightroom SDK smartPreviewInfo.smartPreviewPath readback is required for a trusted per-photo link.",
         ],
