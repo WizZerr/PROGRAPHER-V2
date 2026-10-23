@@ -138,7 +138,18 @@ export type SmartPreviewContentReport = {
   counts: Record<string, number>;
   decode_attempts: number;
   decode_status_counts: Record<string, number>;
-  decoded_samples: { state: string; width: number; height: number; preview_mean_luma: number }[];
+  decode_compression_counts?: Record<string, number>;
+  decoded_samples: {
+    state: string;
+    width: number;
+    height: number;
+    preview_mean_luma?: number;
+    preview_mean_linear?: number;
+    compression_code?: number;
+    opcodes_applied?: number;
+    opcodes_ignored?: number;
+    embedded_profile_present?: boolean;
+  }[];
   catalog_photo_identity_verified: false;
   photo_to_dng_link_verified: false;
   source_only_neutral_parity_verified: false;
