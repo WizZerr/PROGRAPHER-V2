@@ -168,3 +168,90 @@ def test_sdk_link_duplicate_photo_uuid_fails_closed(tmp_path, monkeypatch):
         store.review_smart_preview_sdk_links(
             owner["profile_id"], catalog_path=str(catalog), evidence_path=str(evidence)
         )
+
+
+def test_dng_diagnostics_detect_jpegxl_tag_without_decompressing(tmp_path):
+    import struct
+    from app.learning_intake.dng_diagnostics import inspect_dng_compression
+    file = tmp_path / "private-raw.dng"
+    # One classic TIFF IFD, with Compression=52546 stored directly in value.
+    payload = (
+        b"II*\x00" + struct.pack("<I", 8)
+        + struct.pack("<H", 1)
+        + struct.pack("<HHI", 259, 3, 1)
+        + struct.pack("<H", 52546) + b"\x00\x00"
+        + struct.pack("<I", 0)
+    )
+    file.write_bytes(payload)
+    result = inspect_dng_compression(file)
+    assert result["state"] == "tiff_ifd_read"
+    assert result["compression_codes"] == [52546]
+
+
+def test_jpegxl_route_uses_optional_source_only_decoder(tmp_path, monkeypatch):
+    import sys
+    from types import SimpleNamespace, ModuleType
+    import numpy as np
+    from app.learning_intake.smart_preview_probe import _decode_sample
+    from app.learning_intake import dng_diagnostics
+
+    file = tmp_path / "real_photo_private.dng"
+    file.write_bytes(b"II*\x00" + b"temporary placeholder")
+
+    monkeypatch.setattr(dng_diagnostics, "inspect_dng_compression",
+                        lambda _path: {"state": "tiff_ifd_read", "compression_codes": [52546]})
+    module = ModuleType("smart_preview_decoder")
+    class SmartPreviewError(Exception):
+        pass
+    module.SmartPreviewError = SmartPreviewError
+    module.decode_smart_preview = lambda path, long_edge: SimpleNamespace(
+        linear=np.full((40, 60, 3), 0.3, dtype=np.float32),
+        compression=52546, opcodes_applied=["MapPolynomial"] * 3,
+        opcodes_ignored=[], profile_name="Adobe Standard",
+    )
+    imagecodecs = ModuleType("imagecodecs")
+    imagecodecs.JPEGXL = SimpleNamespace(available=True)
+    monkeypatch.setitem(sys.modules, "smart_preview_decoder", module)
+    monkeypatch.setitem(sys.modules, "imagecodecs", imagecodecs)
+
+    result = _decode_sample(file)
+    assert result["state"] == "jpegxl_dng_decoded_unverified"
+    assert result["compression_code"] == 52546
+    assert result["opcodes_applied"] == 3
+    assert result["opcodes_ignored"] == 0
+    assert result["width"] == 60 and result["height"] == 40
+    assert "real_photo_private" not in str(result)
+
+
+def test_jpegxl_unsupported_opcode_does_not_count_as_decoded(tmp_path, monkeypatch):
+    import sys
+    from types import SimpleNamespace, ModuleType
+    import numpy as np
+    from app.learning_intake.smart_preview_probe import _decode_jpegxl_smart_preview
+
+    file = tmp_path / "unsupported-opcode.dng"
+    file.write_bytes(b"II*\x00" + b"test")
+    module = ModuleType("smart_preview_decoder")
+    module.SmartPreviewError = RuntimeError
+    module.decode_smart_preview = lambda path, long_edge: SimpleNamespace(
+        linear=np.ones((8, 8, 3), dtype=np.float32) * 0.5,
+        compression=52546, opcodes_applied=["MapPolynomial"],
+        opcodes_ignored=["UnrecognizedWarp"], profile_name=None,
+    )
+    imagecodecs = ModuleType("imagecodecs")
+    imagecodecs.JPEGXL = SimpleNamespace(available=True)
+    monkeypatch.setitem(sys.modules, "smart_preview_decoder", module)
+    monkeypatch.setitem(sys.modules, "imagecodecs", imagecodecs)
+    result = _decode_jpegxl_smart_preview(file)
+    assert result["state"] == "jpegxl_dng_unhandled_opcodes"
+
+
+def test_missing_optional_decoder_dependency_is_explicit(tmp_path, monkeypatch):
+    import sys
+    from app.learning_intake.smart_preview_probe import _decode_jpegxl_smart_preview
+    file = tmp_path / "preview.dng"
+    file.write_bytes(b"II*\x00")
+    monkeypatch.setitem(sys.modules, "smart_preview_decoder", None)
+    result = _decode_jpegxl_smart_preview(file)
+    assert result["state"] == "jpegxl_decoder_dependency_missing"
+    assert result["compression_code"] == 52546
