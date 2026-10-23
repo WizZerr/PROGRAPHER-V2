@@ -9,6 +9,7 @@ import GalleryScreen from "@/features/gallery/GalleryScreen";
 import DarkroomScreen from "@/features/darkroom/DarkroomScreen";
 import ProfileScreen from "@/features/profile/ProfileScreen";
 import TrainingScreen from "@/features/training/TrainingScreen";
+import LearningIntakeScreen from "@/features/learning-intake/LearningIntakeScreen";
 import { TestingNavProvider } from "@/features/testing/TestingNav";
 import { WorkspaceNavProvider } from "./workspace-nav";
 import type { WorkspaceView } from "./workspace.types";
@@ -23,6 +24,8 @@ function ActiveScreen({ view }: { view: WorkspaceView }) {
       return <ProfileScreen />;
     case "training":
       return <TrainingScreen />;
+    case "learning-intake":
+      return <LearningIntakeScreen />;
     case "dashboard":
     default:
       return <DashboardScreen />;

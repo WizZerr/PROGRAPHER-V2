@@ -51,6 +51,13 @@ function NavIcon({ view }: { view: WorkspaceView }) {
           <circle cx="15.5" cy="16" r="1.5" />
         </svg>
       );
+    case "learning-intake":
+      return (
+        <svg {...common}>
+          <circle cx="12" cy="9" r="3.5" />
+          <path d="M4.5 20c.5-4 3-6 7.5-6 4.1 0 6.6 2 7.5 6M18.5 4v5M16 6.5h5" />
+        </svg>
+      );
     case "profile":
       return (
         <svg {...common}>

@@ -1279,3 +1279,58 @@
     flex: 1;
   }
 }
+
+
+/* Lightroom is the active learning route. JPEG remains visible but fully paused. */
+.jpegPane {
+  opacity: 0.52;
+  filter: saturate(0.12);
+  border-color: rgba(103, 116, 138, 0.28);
+  background: linear-gradient(180deg, rgba(13, 18, 26, 0.92), rgba(8, 12, 18, 0.96));
+}
+
+.jpegPane .paneAction,
+.jpegPane .paneAction:hover {
+  cursor: not-allowed;
+  border-color: rgba(115, 129, 151, 0.22);
+  background: rgba(45, 55, 69, 0.22);
+  color: #c3c9d2;
+  box-shadow: none;
+}
+
+.jpegPane .capabilityRow {
+  border-color: rgba(100, 114, 135, 0.17);
+}
+
+.jpegPane .mediaMonogram {
+  border-color: rgba(115, 129, 151, 0.2);
+  background: rgba(50, 57, 67, 0.2);
+}
+
+.rawPane .paneIdentity h2 {
+  font-size: clamp(24px, 2.1vw, 32px);
+}
+
+.rawPane .capabilityMain strong {
+  font-size: clamp(14px, 1.25vw, 18px);
+}
+
+.rawPane .capabilityStatus {
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.coverageValue strong {
+  font-size: clamp(28px, 2.5vw, 44px);
+}
+
+@container profile (max-width: 1180px) {
+  .rawPane .capabilityRow {
+    grid-template-columns: 40px minmax(0, 1fr);
+  }
+
+  .rawPane .capabilityStatus {
+    grid-column: 2;
+    justify-content: flex-start;
+  }
+}
