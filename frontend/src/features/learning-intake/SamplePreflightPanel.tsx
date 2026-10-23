@@ -201,9 +201,14 @@ export default function SamplePreflightPanel({ profile }: { profile: LearningPro
       {previewReport && <div className={styles.previewResults} role="status">
         <span>קובצי DNG בעלי חתימת TIFF: <strong>{previewReport.counts.dng_tiff_signature_candidates ?? 0}</strong></span>
         <span>ניסיונות פענוח: <strong>{previewReport.decode_attempts}</strong></span>
-        <span>פוענחו באמצעות LibRaw: <strong>{previewReport.decode_status_counts.decoded_unverified ?? 0}</strong></span>
-        <span>קובצי DNG שלא פוענחו או אינם נתמכים: <strong>{(previewReport.decode_status_counts.unsupported_or_corrupt_dng ?? 0) + (previewReport.decode_status_counts.decoder_unavailable ?? 0)}</strong></span>
-        <p>הבדיקה מפענחת לכל היותר ארבעה קובצי DNG ומחשבת מדד בהירות זמני. היא אינה מציגה תמונות ערוכות, אינה משווה אותן ל־Lightroom ואינה מוסיפה אף דוגמה לאימון.</p>
+        <span>פוענחו בהצלחה ברמת DNG: <strong>{(previewReport.decode_status_counts.jpegxl_dng_decoded_unverified ?? 0) + (previewReport.decode_status_counts.decoded_unverified ?? 0)}</strong></span>
+        <span>לא פוענחו / דורשים טיפול: <strong>{previewReport.decode_attempts - (previewReport.decode_status_counts.jpegxl_dng_decoded_unverified ?? 0) - (previewReport.decode_status_counts.decoded_unverified ?? 0)}</strong></span>
+        {(previewReport.decode_compression_counts?.["52546"] ?? 0) > 0 && <span>JPEG XL (דחיסה 52546) במדגם: <strong>{previewReport.decode_compression_counts?.["52546"]}</strong></span>}
+        {(previewReport.decode_status_counts.jpegxl_decoder_dependency_missing ?? 0) > 0 && <p className={styles.decoderWarning}>זוהתה דחיסת JPEG XL, אבל חבילת המפענח המקומית או אחת מהספריות שלה אינה מותקנת בסביבת Python של ProGrapher.</p>}
+        {(previewReport.decode_status_counts.jpegxl_codec_unavailable ?? 0) > 0 && <p className={styles.decoderWarning}>ספריית imagecodecs קיימת אך תמיכת JPEG XL אינה זמינה. יש צורך בגרסה הכוללת את ה־codec.</p>}
+        {(previewReport.decode_status_counts.jpegxl_dng_decode_error ?? 0) > 0 && <p className={styles.decoderWarning}>מפענח JPEG XL הופעל אך נכשל. נדרשת בדיקה על קובצי המחקר; לא הוכח שקובצי ה־DNG פגומים.</p>}
+        {(previewReport.decode_status_counts.jpegxl_dng_unhandled_opcodes ?? 0) > 0 && <p className={styles.decoderWarning}>פוענחו פיקסלים אך נמצאו Opcode שאינם מטופלים. התמונה אינה מועמדת ללמידה.</p>}
+        <p>בדיקת ה־JPEG XL קוראת פיקסלים ליניאריים בלבד; אין עדיין התאמה מאומתת ל־Lightroom Reset, לקטלוג או לעריכת הצלם. תוצאות המדגם אינן מאושרות לאימון.</p>
       </div>}
     </div>
     <details className={styles.advanced}>
