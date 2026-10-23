@@ -12,7 +12,6 @@ const items: Array<{ id: WorkspaceView; label: string }> = [
   { id: "gallery", label: "גלריה" },
   { id: "darkroom", label: "חדר עריכה" },
   { id: "profile", label: "הפרופיל שלי" },
-  { id: "learning-intake", label: "יצירת פרופיל למידה" },
 ];
 
 function NavIcon({ view }: { view: WorkspaceView }) {
