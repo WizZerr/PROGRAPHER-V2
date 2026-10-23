@@ -818,6 +818,8 @@ def test_anchor_backtest_api_end_to_end(tmp_path, monkeypatch, fresh_decoder, jp
     assert report["as_shot_conversion_check"]["median_abs_kelvin"] <= 1.0
     assert report["results"]["anchors"]["untouched_pct"] == 100.0
     assert report["results"]["as_shot"]["untouched_pct"] < 100.0
+    assert [row["anchor_count"] for row in report["anchor_curve"]] == [2]  # the count, not the method's score
+    assert report["anchor_curve"][0]["anchors"] == 100.0
     assert len(report["samples"]) == 2 and report["samples"][0]["reset_render"]["state"] == "reset_rendered_unverified"
     assert report["model_stored"] is False and report["training_ready_samples"] == 0
     assert str(smart) not in json.dumps(report)

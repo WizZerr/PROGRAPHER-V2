@@ -394,8 +394,8 @@ export default function SamplePreflightPanel({ profile }: { profile: LearningPro
         </table>
         {backtestReport.anchor_curve.length > 0 && <table className={styles.pairsTable}>
           <thead><tr><th>עוגנים</th>{Object.keys(methodLabel).map((name) => <th key={name}>{methodLabel[name]}</th>)}</tr></thead>
-          <tbody>{backtestReport.anchor_curve.map((row) => <tr key={row.anchors}>
-            <td>{row.anchors}</td>{Object.keys(methodLabel).map((name) => <td key={name} dir="ltr">{row[name]}%</td>)}</tr>)}</tbody>
+          <tbody>{backtestReport.anchor_curve.map((row) => <tr key={row.anchor_count}>
+            <td>{row.anchor_count}</td>{Object.keys(methodLabel).map((name) => <td key={name} dir="ltr">{row[name]}%</td>)}</tr>)}</tbody>
         </table>}
         {backtestReport.samples.length > 0 && <div className={styles.beforeImages}>
           {backtestReport.samples.map((sample, index) => <figure key={index}>

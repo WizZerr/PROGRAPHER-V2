@@ -160,7 +160,8 @@ def backtest_report(preview_root, records: list[dict], *, anchors: int = 100, sa
     result["results"] = {name: score(preds) for name, preds in run["methods"].items()}
     for k in sorted({*ANCHOR_CURVE, usable_k}):
         if 1 <= k <= len(rows) // 5:
-            result["anchor_curve"].append({"anchors": k, **{
+            # "anchor_count", not "anchors": that is also the name of the anchor method's column
+            result["anchor_curve"].append({"anchor_count": k, **{
                 name: score(preds)["untouched_pct"] for name, preds in predict(rows, k)["methods"].items()}})
     preds = run["methods"]["anchors"]
     for p in [preds[i * len(preds) // sample_size] for i in range(min(sample_size, len(preds)))] if sample_size else []:

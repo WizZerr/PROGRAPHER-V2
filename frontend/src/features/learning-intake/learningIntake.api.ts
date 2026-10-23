@@ -288,7 +288,7 @@ export type AnchorBacktestReport = {
   anchors_requested: number;
   anchors_used: number;
   results: Record<string, BacktestScore>;
-  anchor_curve: ({ anchors: number } & Record<string, number>)[];
+  anchor_curve: ({ anchor_count: number } & Record<string, number>)[];
   samples: {
     file_name: string;
     photographer: { exposure: number; temperature_k: number; tint: number; white_balance: string | null };
