@@ -35,7 +35,7 @@ POC reference archives saved privately; SHA-256 of archived zips for provenance:
 3. Output ONLY under `RAW_Parity_Test/BRIDGE_LB01/exports/`. No export to RAW folder root and no source/XMP mutation API.
 4. One unique job ID; `prepared -> ok/error`; no silent reruns; manual review before clearing evidence. Python checks original RAW SHA-256 before/after and rendered JPEG magic/size.
 5. Lua SDK cannot verify SHA-256: original hashing is performed by the Python preflight and postflight. Race-time substitution and hostile local filesystem manipulation are not solved; **do not market or deploy this POC to customers.**
-6. Test catalog contents can be changed by `applyDevelopSettings()`; use backed-up test copies only. No writes directly to a Lightroom `.lrcat` SQLite database.
+6. Test catalog contents can be changed by `applyDevelopSettings()`; use backed-up test copies only. No writes directly to a Lightroom `.lrcat` SQLite database by this POC (event delivery by direct catalog write is LB-02 / D-022).
 7. This is a **manual** plugin menu action. Actual unattended job ingestion, IPC auth, retries, batch/export and recovery belong to LB-02, not LB-01.
 
 ## Definition of Done and status

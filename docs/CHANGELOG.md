@@ -19,3 +19,8 @@
 - Added immutable J1 Candidate artifacts and explicit locked-Test audit tooling.
 - Exercised the synthetic real-folder smoke chain end-to-end; results remain engineering evidence only and do not establish real photographer quality.
 - PR #1 remains in QA / merge-gate status.
+
+## LB-02 direct catalog write — 2026-10-26
+- Added `catalog_writer`: writes per-photo global sliders (incl. Custom white balance) into a closed Lightroom Classic catalog with a new digest, historySettingsID and a "ProGrapher" History step; backup/restore, validation, single transaction, photographer-edit protection.
+- Verified on a 25-photo test catalog (5 camera makers): values, digest recompute, thumbnails, History step and crops all as Lightroom's own edits; 0.02 s write.
+- Decision D-022 supersedes the earlier no-direct-write rule for event delivery under these safety conditions.
