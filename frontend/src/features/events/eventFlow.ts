@@ -30,7 +30,7 @@ export type EventJob = {
   kind: "anchors" | "complete" | "undo";
   status: JobStatus;
   event_id: string;
-  progress: { done: number; total: number };
+  progress: { done: number; total: number; phase?: string | null };
   error: string | null;
   plan: Record<string, unknown> & { blocking?: Blocking[] } | null;
   result: Record<string, unknown> | null;
@@ -54,6 +54,33 @@ export function canRetry(job: EventJob | null): boolean {
   if (!job) return false;
   if (["outdated", "interrupted", "cancelled"].includes(job.status)) return true;
   return job.status === "failed" && job.result?.nothing_written === true;
+}
+
+/** What a running job is doing, with its progress. */
+export function progressText(job: EventJob): string {
+  const { done, total, phase } = job.progress;
+  const count = total ? ` ${done.toLocaleString("he-IL")} / ${total.toLocaleString("he-IL")}` : "";
+  if (isActive(job.status) && phase === "learning") return `לומד את הסגנון מהפרופיל…${count}`;
+  if (isActive(job.status) && phase === "measuring") return `מנתח את תמונות האירוע…${count}`;
+  return `${statusText(job.status)}${count}`;
+}
+
+const EXPOSURE_REASON: Record<string, string> = {
+  no_smart_previews: "אין Smart Previews לתמונות האירוע",
+  face_model_missing: "קובץ זיהוי הפנים לא מותקן",
+  decoder_unavailable: "פענוח ה-Smart Previews לא זמין",
+  profile_has_no_face_style: "בפרופיל אין מספיק תמונות עם פנים",
+  too_few_faces_in_event: "נמצאו מעט מדי פנים באירוע",
+};
+
+/** How the exposure of an automatic plan was decided. */
+export function exposureText(exposure: { mode?: string; reason?: string | null; level?: number; faces?: number }): string {
+  if (exposure.mode === "faces") {
+    return `חשיפה לכל תמונה לפי הפנים בה (נמצאו פנים ב-${(exposure.faces ?? 0).toLocaleString("he-IL")} תמונות).`;
+  }
+  const why = EXPOSURE_REASON[exposure.reason ?? ""] ?? "";
+  const level = typeof exposure.level === "number" ? ` (${exposure.level > 0 ? "+" : ""}${exposure.level})` : "";
+  return `חשיפה אחידה לפי הפרופיל${level}${why ? `, כי ${why}` : ""}.`;
 }
 
 export function statusText(status: JobStatus): string {
@@ -89,7 +116,7 @@ const SKIP_TEXT: Record<string, string> = {
   white_balance_unknown: "איזון הלבן של המצלמה לא ידוע",
   already_up_to_date: "כבר בערכים האלה",
   nothing_to_write: "אין מה לשנות",
-  edited_by_photographer: "ערכת אותן בעצמך",
+  edited_by_photographer: "כבר ערוכות (לא נוגעים)",
   changed_after_prographer: "ערכת אותן אחרי ProGrapher",
 };
 
@@ -98,6 +125,7 @@ export function skipText(reason: string): string {
 }
 
 export function blockingText(block: Blocking): string {
+  if (block.reason === "nothing_to_write") return "אין מה לכתוב: כל התמונות באירוע כבר ערוכות או כבר בערכים האלה.";
   if (block.reason === "too_few_edited_anchors") {
     return `ערכת ${block.edited ?? 0} מתוך ${block.required ?? 0} התמונות הנדרשות לפחות. ערוך עוד תמונות מה-Collection ובדוק שוב.`;
   }
@@ -138,7 +166,7 @@ export function percent(share: number): string {
 export type SavedEvent = {
   catalogPath: string;
   folderKeys: string[];
-  anchorsJob: string | null;
+  profileId: string | null;
   completeJob: string | null;
   undoJob: string | null;
 };
@@ -151,7 +179,7 @@ export function parseSaved(raw: string | null): SavedEvent | null {
     return {
       catalogPath: value.catalogPath,
       folderKeys: value.folderKeys.filter((k): k is string => typeof k === "string"),
-      anchorsJob: typeof value.anchorsJob === "string" ? value.anchorsJob : null,
+      profileId: typeof value.profileId === "string" ? value.profileId : null,
       completeJob: typeof value.completeJob === "string" ? value.completeJob : null,
       undoJob: typeof value.undoJob === "string" ? value.undoJob : null,
     };

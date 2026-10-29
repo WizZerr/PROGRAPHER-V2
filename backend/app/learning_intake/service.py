@@ -98,6 +98,16 @@ class LearningProfileStore:
                 )
             """)
 
+            # The editing style carried into new events (app/event_edit/style.py): numbers only.
+            db.execute("""
+                CREATE TABLE IF NOT EXISTS learning_intake_style (
+                    profile_id TEXT PRIMARY KEY,
+                    style_json TEXT NOT NULL,
+                    learned_at TEXT NOT NULL,
+                    FOREIGN KEY (profile_id) REFERENCES learning_intake_profiles(profile_id)
+                )
+            """)
+
     @contextmanager
     def _db(self):
         # The connection context manager commits but does not close its handle.
@@ -185,6 +195,10 @@ class LearningProfileStore:
                 raise LearningIntakeError("Learning profile was not found.")
             db.execute(
                 "DELETE FROM learning_intake_analysis WHERE profile_id = ?",
+                (profile_id,),
+            )
+            db.execute(
+                "DELETE FROM learning_intake_style WHERE profile_id = ?",
                 (profile_id,),
             )
             db.execute(
@@ -305,6 +319,44 @@ class LearningProfileStore:
                     summary_json=excluded.summary_json, analyzed_at=excluded.analyzed_at
             """, (profile_id, catalog_path, json.dumps(result["summary"], ensure_ascii=False, sort_keys=True), _now()))
         return {**result, "profile": self.get(profile_id)}
+
+    def get_style(self, profile_id: str) -> dict | None:
+        self.get(profile_id)
+        with self._db() as db:
+            row = db.execute("SELECT style_json, learned_at FROM learning_intake_style WHERE profile_id = ?",
+                             (profile_id,)).fetchone()
+        return {**json.loads(row["style_json"]), "learned_at": row["learned_at"]} if row else None
+
+    def save_style(self, profile_id: str, style: dict) -> dict:
+        self.get(profile_id)
+        with self._db() as db:
+            db.execute("""
+                INSERT INTO learning_intake_style (profile_id, style_json, learned_at) VALUES (?,?,?)
+                ON CONFLICT(profile_id) DO UPDATE SET style_json=excluded.style_json, learned_at=excluded.learned_at
+            """, (profile_id, json.dumps(style, sort_keys=True), _now()))
+        return self.get_style(profile_id)
+
+    def learn_style(self, profile_id: str, progress=None) -> dict:
+        """Learn the event-editing style from every catalog of the profile that has Smart Previews, and store it."""
+        from app.event_edit import exposure_target as et, style as event_style
+        from app.learning_intake.edit_pairs import build_pairs
+        from app.learning_intake.smart_preview_link import build_links
+        from app.learning_intake.smart_preview_probe import _count_dng_files
+
+        pairs: list[dict] = []
+        for entry in self.get(profile_id)["catalogs"]:
+            if not entry.get("smart_previews_path"):
+                continue
+            try:
+                source, records = self._smart_preview_sources(profile_id, entry["catalog_path"], 0)
+            except LearningIntakeError:
+                continue
+            _counts, dngs = _count_dng_files(source)
+            pairs += build_pairs(build_links(dngs, records)["links"])["pairs"]
+        if not pairs:
+            raise LearningIntakeError("No edited photos with Smart Previews in this profile to learn from.")
+        measure, curve, _reason = et.face_measurer()
+        return self.save_style(profile_id, event_style.learn(pairs, measure, curve, progress))
 
     def _smart_preview_sources(self, profile_id: str, catalog_path: str, sample_size: int):
         """Smart Previews folder + private catalog RAW records for a catalog linked to this profile."""

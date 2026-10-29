@@ -2,6 +2,28 @@
 
 **Branch:** `feature/pg-learning-onboarding-00-02`. **Depends on:** LB-02 (`catalog_writer`, D-022).
 
+## Automatic editing (default, as Imagen does)
+
+**Owner decision (after the safety round):** adding an event edits **the whole event automatically** from the learning profile. No anchors are needed.
+
+**Endpoint:** `POST /api/event-edit/plan/auto {catalog_path, folder_keys, profile_id}`. It is a dry run like every other plan, with the same confirm / undo / scope / lock / job safety described below.
+
+**The style (`style.py`)** is learnt once per profile from its catalogs' before/after pairs and stored with the profile, numbers only (`learning_intake_style`). It holds:
+- **Base sliders:** the median of each base slider over the editor's photos.
+- **Exposure:** the face target method (`target_face_lightness`, `slope`) from up to 400 photos with faces. The profile's median exposure is kept as the fallback.
+- **White balance:** As Shot, kept.
+
+**For each event photo the photographer has not edited:**
+- Base sliders come from the profile.
+- Exposure: the face target method on the event's own Smart Previews (level solved for the event, plus the per-photo rule), or the profile's typical level when there are no Smart Previews, no face model, or too few faces.
+- White balance is left As Shot.
+
+The dry run says which exposure mode was used and why.
+
+**Expected quality (wedding A, a shooter the model had not seen):** about 15% of photos exactly as the editor would leave them (strict limits), and about 25% more within a small fix. The exposure level is close; per-photo exposure is about 0.25 stop off. It improves with more edited events, which is the plan.
+
+**Anchors** (the flow below) remain in the backend as an optional "refine" path and are no longer in the screen.
+
 ## Flow and safety (P0/P1 safety round)
 
 Every catalog change is a **job**: a dry run first, then an explicit confirmation. Lightroom must be closed for every step.

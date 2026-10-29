@@ -152,3 +152,26 @@ def measure_face(decoder, sp, look, detector, curve: dict) -> dict[str, Any]:
         return {}
     rgb = core.mean(axis=0)
     return {"face_rgb": rgb, "face_stops": float(np.log2(max(float(rgb @ LUMA), 1e-6)))}
+
+
+def face_measurer(long_edge: int = 640):
+    """(measure(dng_path) -> {"face_rgb", "face_stops"} | {} | None, curve, reason). measure is None (with a reason)
+    when the face model, OpenCV or the Smart Preview decoder is unavailable; a photo that cannot be read gives None."""
+    detector = load_face_detector()
+    if detector is None:
+        return None, None, "face_model_missing"
+    try:
+        from app.learning_intake.decoder_vendor import load_decoder_package
+        from app.learning_intake.smart_preview_render import find_adobe_color_look
+
+        decoder = load_decoder_package()
+    except Exception:  # noqa: BLE001
+        return None, None, "decoder_unavailable"
+    look, curve = find_adobe_color_look(decoder), decoder.load_tone_curve()
+
+    def measure(path) -> dict | None:
+        try:
+            return measure_face(decoder, decoder.decode_smart_preview(path, long_edge=long_edge), look, detector, curve)
+        except Exception:  # noqa: BLE001  (one unreadable Smart Preview must not stop the rest)
+            return None
+    return measure, curve, None

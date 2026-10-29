@@ -44,6 +44,8 @@ def _db() -> sqlite3.Connection:
     db = sqlite3.connect(folder / "jobs.sqlite", timeout=10)
     db.row_factory = sqlite3.Row
     db.executescript(SCHEMA)
+    if "phase" not in {r[1] for r in db.execute("PRAGMA table_info(jobs)")}:
+        db.execute("ALTER TABLE jobs ADD COLUMN phase TEXT")  # what a long dry run is doing (learning, measuring)
     return db
 
 

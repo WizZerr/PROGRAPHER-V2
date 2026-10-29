@@ -30,6 +30,11 @@ class CompletionPlanRequest(ScopeRequest):
     automatic_exposure: bool = False
 
 
+class AutomaticPlanRequest(ScopeRequest):
+    profile_id: str = Field(min_length=1)
+    relearn: bool = False
+
+
 class UndoPlanRequest(BaseModel):
     job_id: str = Field(min_length=1)
 
@@ -67,6 +72,13 @@ def plan_completion(payload: CompletionPlanRequest) -> dict:
     """Dry run: what completing the event would write, skip and why. Nothing is written."""
     return _call(service.plan_completion, payload.catalog_path, payload.folder_keys,
                  fill_unanchored=payload.fill_unanchored, automatic_exposure=payload.automatic_exposure)
+
+
+@router.post("/plan/auto")
+def plan_automatic(payload: AutomaticPlanRequest) -> dict:
+    """Dry run: edit the whole event automatically from a learning profile's style. Nothing is written."""
+    return _call(service.plan_automatic, payload.catalog_path, payload.folder_keys, payload.profile_id,
+                 relearn=payload.relearn)
 
 
 @router.post("/plan/undo")

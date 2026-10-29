@@ -5,6 +5,8 @@ import {
   blockingText,
   canConfirm,
   canRetry,
+  exposureText,
+  progressText,
   isActive,
   parseSaved,
   skipLines,
@@ -63,7 +65,16 @@ test("saved state is validated before use", () => {
   assert.equal(parseSaved(null), null);
   assert.equal(parseSaved("not json"), null);
   assert.equal(parseSaved(JSON.stringify({ folderKeys: [] })), null);
-  assert.deepEqual(parseSaved(JSON.stringify({ catalogPath: "C:/a.lrcat", folderKeys: ["k", 3], anchorsJob: 5 })), {
-    catalogPath: "C:/a.lrcat", folderKeys: ["k"], anchorsJob: null, completeJob: null, undoJob: null,
+  assert.deepEqual(parseSaved(JSON.stringify({ catalogPath: "C:/a.lrcat", folderKeys: ["k", 3], profileId: 5 })), {
+    catalogPath: "C:/a.lrcat", folderKeys: ["k"], profileId: null, completeJob: null, undoJob: null,
   });
+});
+
+test("automatic plans explain how exposure was decided and what is running", () => {
+  assert.match(exposureText({ mode: "faces", faces: 1200 }), /לפי הפנים/);
+  assert.equal(exposureText({ mode: "profile_level", reason: "no_smart_previews", level: -0.35 }),
+    "חשיפה אחידה לפי הפרופיל (-0.35), כי אין Smart Previews לתמונות האירוע.");
+  const running = { ...job("planning"), progress: { done: 40, total: 400, phase: "learning" } };
+  assert.match(progressText(running), /לומד את הסגנון מהפרופיל/);
+  assert.match(progressText({ ...running, progress: { done: 5, total: 9, phase: "measuring" } }), /מנתח/);
 });

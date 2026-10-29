@@ -463,7 +463,7 @@ export default function EventsScreen() {
             <h3 id="new-event-title">איפה התמונות?</h3>
             <button type="button" className={styles.chooserOption} onClick={() => void chooseCatalog()}>
               <strong>קטלוג Lightroom Classic</strong>
-              <span>ProGrapher בוחר תמונות לעריכה, ואחרי שתערוך אותן משלים את שאר האירוע ישר בקטלוג.</span>
+              <span>ProGrapher עורך את כל האירוע לפי הפרופיל שלך וכותב את העריכות ישר לקטלוג.</span>
             </button>
             <button type="button" className={styles.chooserOption} onClick={() => void chooseFolder()}>
               <strong>תיקייה</strong>

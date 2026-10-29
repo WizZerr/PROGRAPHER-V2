@@ -231,3 +231,20 @@
     align-items: stretch;
   }
 }
+
+.profilePick {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--pg-text-secondary);
+  font-size: 14px;
+}
+
+.profilePick select {
+  padding: 6px 10px;
+  border: 1px solid #344154;
+  border-radius: 6px;
+  background: #0a121d;
+  color: var(--pg-text);
+  font: inherit;
+}

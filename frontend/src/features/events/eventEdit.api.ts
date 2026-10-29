@@ -10,17 +10,14 @@ export function listCatalogFolders(
   });
 }
 
-export function planAnchors(catalogPath: string, folderKeys: string[]): Promise<EventJob> {
-  return apiRequest("/api/event-edit/plan/anchors", {
+export function planAutomatic(
+  catalogPath: string,
+  folderKeys: string[],
+  profileId: string,
+): Promise<EventJob> {
+  return apiRequest("/api/event-edit/plan/auto", {
     method: "POST",
-    body: JSON.stringify({ catalog_path: catalogPath, folder_keys: folderKeys }),
-  });
-}
-
-export function planCompletion(catalogPath: string, folderKeys: string[]): Promise<EventJob> {
-  return apiRequest("/api/event-edit/plan/complete", {
-    method: "POST",
-    body: JSON.stringify({ catalog_path: catalogPath, folder_keys: folderKeys }),
+    body: JSON.stringify({ catalog_path: catalogPath, folder_keys: folderKeys, profile_id: profileId }),
   });
 }
 

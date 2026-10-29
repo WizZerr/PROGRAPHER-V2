@@ -121,7 +121,7 @@ def _public(job: dict[str, Any]) -> dict[str, Any]:
     plan = {k: v for k, v in (job.get("plan") or {}).items() if k not in hidden}
     result = {k: v for k, v in (job.get("result") or {}).items() if k not in ("written_images",)}
     return {"job_id": job["job_id"], "kind": job["kind"], "status": job["status"], "event_id": job["event_id"],
-            "progress": {"done": job["progress_done"], "total": job["progress_total"]},
+            "progress": {"done": job["progress_done"], "total": job["progress_total"], "phase": job.get("phase")},
             "error": job.get("error"), "plan": plan or None, "result": result or None,
             "parent_job": job.get("parent_job")}
 
@@ -376,6 +376,125 @@ def plan_completion(catalog_path: str | Path, folder_keys: list[str], *, fill_un
                  "before": {str(k): v for k, v in before.items()},
                  "expected": {str(k): v for k, v in expected.items()}}, fp)
     return _start("complete", catalog, folder_keys, work, wait)
+
+
+def plan_automatic(catalog_path: str | Path, folder_keys: list[str], profile_id: str, *, relearn: bool = False,
+                   wait: bool = False) -> dict[str, Any]:
+    """Dry run of editing the whole event automatically from a learning profile's style (as Imagen does): base
+    sliders from the profile, exposure by the face "target" method (or the profile's level), white balance As Shot.
+    Photos the photographer already edited are left alone. Nothing is written."""
+    from app.event_edit import exposure_target as et
+    from app.learning_intake.service import LearningIntakeError, LearningProfileStore
+
+    catalog = _catalog(catalog_path)
+    if not folder_keys:
+        raise EventEditError("יש לבחור את תיקיות האירוע")
+    store = LearningProfileStore()
+    try:
+        store.get(profile_id)
+    except LearningIntakeError as exc:
+        raise EventEditError("פרופיל הלמידה לא נמצא") from exc
+
+    def work(job_id: str):
+        eid = event_id(catalog, folder_keys)
+        style = None if relearn else store.get_style(profile_id)
+        if style is None:
+            jobs.update(job_id, phase="learning", progress_done=0, progress_total=0)
+            try:
+                style = store.learn_style(profile_id, progress=lambda d, t: jobs.update(
+                    job_id, progress_done=d, progress_total=t))
+            except LearningIntakeError as exc:
+                raise EventEditError("אין בפרופיל תמונות ערוכות עם Smart Previews ללמוד מהן") from exc
+        db = open_readonly(catalog)
+        try:
+            images = scope_images(db, folder_keys)
+            if not images:
+                raise EventEditError("אין תמונות בתיקיות שנבחרו")
+            photos = read_photos(db, images)
+            targets = [p for p in photos if not p.edited_by_photographer]
+            exposures, exposure = _event_exposures(catalog, db, targets, style, job_id)
+            edits_all = {}
+            for photo in targets:
+                values = {k: v for k, v in style["base"].items()}
+                values["Exposure2012"] = round(min(max(exposures[photo.image], -5.0), 5.0), 2)
+                edits_all[photo.image] = values
+            ids = list(edits_all)
+            texts = _column(db, "SELECT image, COALESCE(text, '') FROM Adobe_imageDevelopSettings WHERE image IN ({})", ids)
+            raw_ext = {i: (e or "").lower() not in writer.NON_RAW for i, e in _column(
+                db, "SELECT i.id_local, f.extension FROM Adobe_images i JOIN AgLibraryFile f ON f.id_local = i.rootFile "
+                    "WHERE i.id_local IN ({})", ids).items()}
+            edits, skipped = {}, {p.image: "edited_by_photographer" for p in photos if p.edited_by_photographer}
+            for image, values in edits_all.items():
+                changed = _changed_only(texts.get(image, ""), values, raw_ext.get(image, True))
+                if changed:
+                    edits[image] = changed
+                else:
+                    skipped[image] = "already_up_to_date"
+            before = writer.develop_state(db, list(edits))
+            expected = {image: {k: writer._lua(v) for k, v in
+                                writer.normalize_edit(values, is_raw=raw_ext.get(image, True)).items()}
+                        for image, values in edits.items()}
+            fp = fingerprint(db, images)
+        finally:
+            db.close()
+        reasons: dict[str, int] = {}
+        for reason in skipped.values():
+            reasons[reason] = reasons.get(reason, 0) + 1
+        warnings = []
+        if exposure["mode"] != "faces":
+            warnings.append({"reason": "exposure_from_profile_level", "detail": exposure.get("reason")})
+        return ({"event_id": eid, "mode": "automatic", "profile_id": profile_id, "photos": len(photos),
+                 "will_write": len(edits), "skipped": reasons, "sliders": sorted({k for v in edits.values() for k in v}),
+                 "exposure": exposure, "white_balance": "as_shot",
+                 "style": {"photos": style.get("photos"), "faces": style.get("faces"),
+                           "learned_at": style.get("learned_at"), "base": style.get("base")},
+                 "warnings": warnings, "blocking": [] if edits else [{"reason": "nothing_to_write"}],
+                 "backup_folder": str(catalog.parent / BACKUP_FOLDER), "fp_collection": None,
+                 "images": sorted(images), "edits": {str(k): v for k, v in edits.items()},
+                 "history_ids": {str(k): str(uuid.uuid4()).upper() for k in edits},
+                 "before": {str(k): v for k, v in before.items()},
+                 "expected": {str(k): v for k, v in expected.items()}}, fp)
+    return _start("complete", catalog, folder_keys, work, wait)
+
+
+def _event_exposures(catalog: Path, db: sqlite3.Connection, targets: list[Photo], style: dict, job_id: str
+                     ) -> tuple[dict[int, float], dict[str, Any]]:
+    """Exposure for every target photo: the face "target" method on this event's Smart Previews when possible,
+    otherwise the profile's typical level."""
+    from app.event_edit import exposure_target as et
+
+    level = float(style.get("exposure_level") or 0.0)
+    fallback = {p.image: level for p in targets}
+    if not style.get("exposure_style"):
+        return fallback, {"mode": "profile_level", "reason": "profile_has_no_face_style", "level": level}
+    previews = catalog.with_name(f"{catalog.stem} Smart Previews.lrdata")
+    if not previews.is_dir():
+        return fallback, {"mode": "profile_level", "reason": "no_smart_previews", "level": level}
+    measure, curve, reason = et.face_measurer(long_edge=480)
+    if measure is None:
+        return fallback, {"mode": "profile_level", "reason": reason, "level": level}
+    uuid_of = _column(db, "SELECT id_local, id_global FROM Adobe_images WHERE id_local IN ({})", [p.image for p in targets])
+    dngs = {p.stem.upper(): p for p in previews.rglob("*.dng")}
+    jobs.update(job_id, phase="measuring", progress_done=0, progress_total=len(targets))
+    measured: dict[int, dict] = {}
+    for n, photo in enumerate(targets, start=1):
+        path = dngs.get((uuid_of.get(photo.image) or "").upper())
+        if path is not None:
+            m = measure(path)
+            if m is not None:
+                measured[photo.image] = m
+        if n % 25 == 0 or n == len(targets):
+            jobs.update(job_id, progress_done=n)
+    exposure_style = et.ExposureStyle(**style["exposure_style"])
+    solved = et.solve_level(list(measured.values()), exposure_style, curve)
+    if solved is None:
+        return fallback, {"mode": "profile_level", "reason": "too_few_faces_in_event", "level": level,
+                          "measured": len(measured)}
+    autos = et.automatic_exposures(measured, exposure_style, curve)
+    event_level = solved[0]
+    faces = sum(1 for m in measured.values() if m.get("face_rgb") is not None)
+    return ({p.image: autos.get(p.image, event_level) for p in targets},
+            {"mode": "faces", "level": round(event_level, 2), "faces": faces, "measured": len(measured)})
 
 
 def _undo_entries(job: dict[str, Any]) -> list[dict[str, Any]]:
