@@ -40,7 +40,8 @@ def test_anchor_edit_is_copied_to_its_moment():
     # the anchor moved 1e6/3800 - 1e6/4000 = +13.16 mired and +3 tint from its As Shot: same change on 4200 K / 1
     assert values["Temperature"] == round(1e6 / (1e6 / 4200 + (1e6 / 3800 - 1e6 / 4000)))
     assert values["Tint"] == 4
-    assert 2 not in result["edits"] and result["summary"]["from_anchor"] == 2
+    assert 2 not in result["edits"] and result["summary"]["from_anchor"] == 1
+    assert result["skipped"] == {1: "light_differs_from_anchor"}  # 5000 K vs the anchor's 4000 K: 50 mired
 
 
 def test_anchor_left_as_shot_keeps_white_balance():
@@ -58,7 +59,7 @@ def test_moments_without_anchor_use_automatic_exposure_and_event_base():
     lone, faceless = _photo(3, 500), _photo(4, 900)
     moments = brain.make_moments([a1, a2, lone, faceless])
     auto = {3: 0.45}
-    result = brain.complete_event(moments, [a1, a2], auto_exposure=lambda p: auto.get(p.image))
+    result = brain.complete_event(moments, [a1, a2], auto_exposure=lambda p: auto.get(p.image), fill_unanchored=True)
     assert result["edits"][3] == {"Clarity2012": -18, "Exposure2012": 0.45}
     assert result["edits"][4]["Exposure2012"] == pytest.approx(0.4)  # no automatic value: the anchors' median
     assert result["summary"]["automatic"] == 1 and result["summary"]["event_level"] == 1
@@ -68,7 +69,7 @@ def test_unedited_anchor_and_photographer_edits_are_respected():
     anchor = _photo(1, 0, Exposure2012=0.9)  # photographer has not edited it yet
     mine = _photo(2, 1, Exposure2012=-1.0)
     mine.edited_by_photographer = True
-    result = brain.complete_event([[anchor, mine, _photo(3, 2)]], [anchor])
+    result = brain.complete_event([[anchor, mine, _photo(3, 2)]], [anchor], fill_unanchored=True)
     assert 2 not in result["edits"] and result["summary"]["skipped_edited"] == 1
     assert result["edits"].get(3, {}).get("Exposure2012") is None  # nothing to copy, no automatic model given
     assert result["summary"]["anchors_edited"] == 0 and result["summary"]["no_exposure"] == 2
@@ -90,3 +91,45 @@ def test_exposure_target_recovers_a_darker_shooter():
     exposures = et.automatic_exposures(darker, style, curve)
     assert exposures[999] == pytest.approx(0.30, abs=0.01)
     assert statistics.median(exposures.values()) == pytest.approx(0.30, abs=0.02)
+
+
+def test_without_an_edited_anchor_photos_are_skipped_by_default():
+    a = _photo(1, 0, Exposure2012=0.5)
+    a.edited_by_photographer = True
+    moments = brain.make_moments([a, _photo(2, 1), _photo(3, 500)])
+    result = brain.complete_event(moments, [a])
+    assert set(result["edits"]) == {2}
+    assert result["skipped"] == {3: "no_edited_anchor_in_moment"}
+
+
+def test_light_change_inside_a_moment_is_not_copied():
+    a = _photo(1, 0, kelvin=5000.0, Exposure2012=0.5)
+    a.edited_by_photographer = True
+    drift = _photo(2, 1, kelvin=4300.0)  # 1e6/4300 - 1e6/5000 = 32.6 mired, beyond the 15 mired limit
+    result = brain.complete_event([[a, drift]], [a])
+    assert result["skipped"] == {2: "light_differs_from_anchor"}
+
+
+def test_one_edited_anchor_in_a_3000_photo_event_is_blocked():
+    photos = [_photo(i, i * 30.0) for i in range(3000)]  # 30 s apart: every photo its own moment
+    moments = brain.make_moments(photos)
+    anchors = brain.choose_anchors(moments, brain.default_anchor_count(3000))
+    anchors[0].edited_by_photographer = True
+    anchors[0].develop["Exposure2012"] = 0.8
+    report = brain.assess_anchors(moments, anchors)
+    assert not report["ok"] and report["blocking"][0]["reason"] == "too_few_edited_anchors"
+    assert report["required_edited"] == 20 and report["anchors_edited"] == 1
+    # even without the gate, nothing outside the anchor's own moment would be written
+    result = brain.complete_event(moments, anchors)
+    assert result["edits"] == {}
+    assert result["summary"]["skipped"] == {"no_edited_anchor_in_moment": 2999}
+
+
+def test_light_coverage_reports_bins_without_an_example():
+    warm = [_photo(i, i, kelvin=3000.0) for i in range(5)]
+    day = [_photo(100 + i, 1000 + i, kelvin=5500.0) for i in range(5)]
+    moments = brain.make_moments(warm + day)
+    anchors = brain.choose_anchors(moments, 2)
+    next(a for a in anchors if a.as_shot_kelvin == 5500.0).edited_by_photographer = True
+    report = brain.assess_anchors(moments, anchors)
+    assert report["light_bins_without_example"] == ["0-3200K"] and report["covered_share"] == 0.5

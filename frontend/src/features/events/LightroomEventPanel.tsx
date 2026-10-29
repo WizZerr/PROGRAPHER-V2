@@ -1,34 +1,43 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
-  chooseAnchors,
-  completeEvent,
-  undoEventStep,
-  type AnchorPlan,
-  type AutomaticExposure,
-  type CompleteResult,
+  cancelEventJob,
+  confirmEventJob,
+  getEventJob,
+  listCatalogFolders,
+  planAnchors,
+  planCompletion,
+  planUndo,
 } from "./eventEdit.api";
+import {
+  blockingText,
+  canConfirm,
+  canRetry,
+  isActive,
+  parseSaved,
+  percent,
+  skipLines,
+  sliderList,
+  statusText,
+  type EventFolder,
+  type EventJob,
+  type SavedEvent,
+} from "./eventFlow";
 import styles from "./LightroomEventPanel.module.css";
 
-const STORAGE_KEY = "pg.lightroomEvent";
+const STORAGE_KEY = "pg.lightroomEvent.v2";
+const POLL_MS = 400;
 
-type Saved = {
-  catalogPath: string;
-  plan: AnchorPlan | null;
-  result: CompleteResult | null;
-};
-
-export function loadSavedLightroomEvent(): Saved | null {
+export function loadSavedLightroomEvent(): SavedEvent | null {
   try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
-    return raw ? (JSON.parse(raw) as Saved) : null;
+    return parseSaved(window.localStorage.getItem(STORAGE_KEY));
   } catch {
     return null;
   }
 }
 
-function save(state: Saved | null) {
+function store(state: SavedEvent | null) {
   try {
     if (state) window.localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
     else window.localStorage.removeItem(STORAGE_KEY);
@@ -37,74 +46,174 @@ function save(state: Saved | null) {
   }
 }
 
-function fileName(path: string): string {
-  return path.split(/[\\/]/).pop() || path;
-}
+const n = (value: unknown) => Number(value ?? 0).toLocaleString("he-IL");
+const fileName = (path: string) => path.split(/[\\/]/).pop() || path;
 
-function automaticText(auto: AutomaticExposure): string {
-  if (auto.state === "on") return `חשיפה אוטומטית: פעילה (${auto.photos ?? 0} תמונות).`;
-  switch (auto.reason) {
-    case "face_model_missing":
-      return "חשיפה אוטומטית כבויה: קובץ זיהוי הפנים לא מותקן. תמונות בלי עוגן קיבלו את החשיפה הממוצעת של העוגנים.";
-    case "no_smart_previews":
-      return "חשיפה אוטומטית כבויה: אין Smart Previews ליד הקטלוג. תמונות בלי עוגן קיבלו את החשיפה הממוצעת של העוגנים.";
-    case "too_few_anchor_faces":
-      return "חשיפה אוטומטית כבויה: פחות מ-20 עוגנים ערוכים עם פנים. תמונות בלי עוגן קיבלו את החשיפה הממוצעת של העוגנים.";
-    case "decoder_unavailable":
-      return "חשיפה אוטומטית כבויה: פענוח ה-Smart Previews לא זמין. תמונות בלי עוגן קיבלו את החשיפה הממוצעת של העוגנים.";
-    default:
-      return "חשיפה אוטומטית כבויה.";
-  }
-}
-
-const n = (value: number) => value.toLocaleString("he-IL");
+type Slot = "anchorsJob" | "completeJob" | "undoJob";
 
 export default function LightroomEventPanel({
   catalogPath,
-  initial,
+  saved,
   onClose,
 }: {
   catalogPath: string;
-  initial: Saved | null;
+  saved: SavedEvent | null;
   onClose: () => void;
 }) {
-  const [plan, setPlan] = useState<AnchorPlan | null>(initial?.plan ?? null);
-  const [result, setResult] = useState<CompleteResult | null>(initial?.result ?? null);
-  const [busy, setBusy] = useState<"" | "anchors" | "complete" | "undo">("");
+  const [state, setState] = useState<SavedEvent>(
+    saved && saved.catalogPath === catalogPath
+      ? saved
+      : { catalogPath, folderKeys: [], anchorsJob: null, completeJob: null, undoJob: null },
+  );
+  const [folders, setFolders] = useState<EventFolder[] | null>(null);
+  const [chosen, setChosen] = useState<string[]>([]);
+  const [jobsById, setJobs] = useState<Record<string, EventJob>>({});
+  const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
-  const [message, setMessage] = useState("");
+  const alive = useRef(true);
 
-  function remember(nextPlan: AnchorPlan | null, nextResult: CompleteResult | null) {
-    setPlan(nextPlan);
-    setResult(nextResult);
-    save({ catalogPath, plan: nextPlan, result: nextResult });
-  }
+  useEffect(() => {
+    alive.current = true;
+    return () => {
+      alive.current = false;
+    };
+  }, []);
 
-  async function run(kind: "anchors" | "complete" | "undo") {
-    setBusy(kind);
-    setError("");
-    setMessage("");
+  const update = useCallback((next: SavedEvent) => {
+    setState(next);
+    store(next);
+  }, []);
+
+  const polling = useRef(new Set<string>());
+
+  // One polling loop per job at a time; returns the job once it is no longer active.
+  const follow = useCallback(async (jobId: string): Promise<EventJob | null> => {
+    if (polling.current.has(jobId)) return null;
+    polling.current.add(jobId);
     try {
-      if (kind === "anchors") {
-        remember(await chooseAnchors(catalogPath), null);
-      } else if (kind === "complete") {
-        remember(plan, await completeEvent(catalogPath));
-      } else if (result?.backup) {
-        await undoEventStep(catalogPath, result.backup);
-        remember(plan, null);
-        setMessage("הקטלוג הוחזר בדיוק למצב שלפני ההשלמה.");
+      for (;;) {
+        const job = await getEventJob(jobId);
+        if (!alive.current) return job;
+        setJobs((all) => ({ ...all, [jobId]: job }));
+        if (!isActive(job.status)) return job;
+        await new Promise((resolve) => window.setTimeout(resolve, POLL_MS));
       }
+    } finally {
+      polling.current.delete(jobId);
+    }
+  }, []);
+
+  useEffect(() => {
+    for (const id of [state.anchorsJob, state.completeJob, state.undoJob]) {
+      if (id && !jobsById[id]) void follow(id).catch(() => undefined);
+    }
+  }, [state, jobsById, follow]);
+
+  useEffect(() => {
+    if (state.folderKeys.length || folders) return;
+    listCatalogFolders(catalogPath)
+      .then((result) => alive.current && setFolders(result.folders))
+      .catch((cause) => setError(cause instanceof Error ? cause.message : "לא ניתן לקרוא את הקטלוג."));
+  }, [catalogPath, state.folderKeys.length, folders]);
+
+  async function act(work: () => Promise<void>) {
+    setBusy(true);
+    setError("");
+    try {
+      await work();
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "הפעולה נכשלה.");
     } finally {
-      setBusy("");
+      setBusy(false);
     }
   }
 
+  const startPlan = (slot: Slot, plan: () => Promise<EventJob>) =>
+    act(async () => {
+      const job = await plan();
+      const next = { ...state, [slot]: job.job_id, ...(slot !== "undoJob" ? { undoJob: null } : {}) };
+      update(next);
+      await follow(job.job_id);
+    });
+
+  const confirm = (job: EventJob) =>
+    act(async () => {
+      await confirmEventJob(job.job_id);
+      const done = await follow(job.job_id);
+      if (done?.kind === "undo" && done.status === "completed" && done.parent_job) await follow(done.parent_job);
+    });
+
+  const cancel = (slot: Slot, job: EventJob) =>
+    act(async () => {
+      await cancelEventJob(job.job_id);
+      update({ ...state, [slot]: null });
+    });
+
   function close() {
-    save(null);
+    store(null);
     onClose();
   }
+
+  const anchors = state.anchorsJob ? jobsById[state.anchorsJob] : null;
+  const complete = state.completeJob ? jobsById[state.completeJob] : null;
+  const undo = state.undoJob ? jobsById[state.undoJob] : null;
+  const anchorsDone = anchors?.status === "completed";
+  const chosenFolders = (folders ?? []).filter((f) => state.folderKeys.includes(f.key));
+
+  function planButtons(slot: Slot, job: EventJob, confirmLabel: string) {
+    return (
+      <div className={styles.actions}>
+        {canConfirm(job) ? (
+          <button type="button" className={styles.primary} onClick={() => void confirm(job)} disabled={busy}>
+            {confirmLabel}
+          </button>
+        ) : null}
+        <button type="button" className={styles.secondary} onClick={() => void cancel(slot, job)} disabled={busy}>
+          בטל
+        </button>
+      </div>
+    );
+  }
+
+  function progress(job: EventJob) {
+    return (
+      <span className={styles.status}>
+        {statusText(job.status)}
+        {job.progress.total ? ` ${n(job.progress.done)} / ${n(job.progress.total)}` : ""}
+      </span>
+    );
+  }
+
+  function failure(job: EventJob, retry: "anchors" | "complete") {
+    if (!canRetry(job)) {
+      return (
+        <span className={styles.warn}>
+          {statusText(job.status)} {job.error ?? ""} אל תכתוב שוב לפני שתבדוק את הקטלוג מול הגיבוי בתיקייה
+          &quot;ProGrapher Backups&quot; שליד הקטלוג.
+        </span>
+      );
+    }
+    return (
+      <>
+        <span className={styles.warn}>
+          {statusText(job.status)} {job.error ?? ""}
+        </span>
+        <div className={styles.actions}>
+          <button
+            type="button"
+            className={styles.secondary}
+            onClick={retry === "anchors" ? plannedAnchors : plannedComplete}
+            disabled={busy}
+          >
+            בדוק שוב
+          </button>
+        </div>
+      </>
+    );
+  }
+
+  const plannedAnchors = () => void startPlan("anchorsJob", () => planAnchors(catalogPath, state.folderKeys));
+  const plannedComplete = () => void startPlan("completeJob", () => planCompletion(catalogPath, state.folderKeys));
 
   return (
     <section className={styles.panel} aria-label="אירוע מ-Lightroom">
@@ -113,89 +222,234 @@ export default function LightroomEventPanel({
           <span className={styles.eyebrow}>אירוע מקטלוג Lightroom</span>
           <h3 title={catalogPath}>{fileName(catalogPath)}</h3>
         </div>
-        <button type="button" className={styles.close} onClick={close} disabled={!!busy}>
+        <button type="button" className={styles.close} onClick={close} disabled={busy}>
           סגור
         </button>
       </header>
 
       <p className={styles.note}>
-        בכל שלב Lightroom צריך להיות סגור. לפני כל שינוי ProGrapher שומר גיבוי של הקטלוג.
+        בכל שלב Lightroom צריך להיות סגור. כל שינוי מתחיל בבדיקה שלא כותבת דבר, ונכתב רק אחרי שתאשר. לפני כל
+        כתיבה נשמר גיבוי.
       </p>
 
-      <ol className={styles.steps}>
-        <li className={plan ? styles.done : styles.current}>
-          <div>
-            <strong>1. בחירת תמונות לעריכה</strong>
-            {plan ? (
-              <span>
-                סומנו {n(plan.anchors)} תמונות מתוך {n(plan.photos)} ({n(plan.moments)} רגעים). ב-Lightroom הן
-                ב-Collection בשם &quot;{plan.collection}&quot; ועם תווית סגולה.
-              </span>
-            ) : (
-              <span>ProGrapher מחלק את האירוע לרגעים ובוחר תמונה אחת מכל רגע מרכזי.</span>
-            )}
-          </div>
-          <button
-            type="button"
-            className={plan ? styles.secondary : styles.primary}
-            onClick={() => void run("anchors")}
-            disabled={!!busy}
-          >
-            {busy === "anchors" ? "בוחר…" : plan ? "בחר מחדש" : "בחר תמונות לעריכה"}
-          </button>
-        </li>
-
-        <li className={!plan ? styles.waiting : result ? styles.done : styles.current}>
-          <div>
-            <strong>2. עריכה ב-Lightroom</strong>
-            <span>
-              פתח את הקטלוג ב-Lightroom, ערוך את התמונות ב-Collection &quot;ProGrapher - Edit these&quot; כמו
-              שאתה עורך תמיד, וסגור את Lightroom.
-            </span>
-          </div>
-        </li>
-
-        <li className={!plan ? styles.waiting : result ? styles.done : styles.current}>
-          <div>
-            <strong>3. השלמת האירוע</strong>
-            {busy === "complete" ? (
-              <span>ProGrapher משלים את האירוע. עם חשיפה אוטומטית זה יכול לקחת כמה דקות.</span>
-            ) : result ? (
-              <span>
-                נכתבו {n(result.written)} תמונות: {n(result.from_anchor)} לפי העוגן של הרגע שלהן,{" "}
-                {n(result.automatic)} בחשיפה אוטומטית, {n(result.event_level)} לפי ממוצע העוגנים. תמונות שערכת
-                בעצמך ({n(result.skipped_edited)}) לא שונו. בכל תמונה מופיע ב-History שלב &quot;ProGrapher&quot;.
-                <br />
-                {automaticText(result.automatic_exposure)}
-              </span>
-            ) : (
-              <span>ProGrapher קורא את העוגנים שערכת וכותב את שאר התמונות ישר לקטלוג.</span>
-            )}
-          </div>
-          {result ? (
-            <button
-              type="button"
-              className={styles.undo}
-              onClick={() => void run("undo")}
-              disabled={!!busy || !result.backup}
-            >
-              {busy === "undo" ? "מחזיר…" : "בטל"}
-            </button>
+      {!state.folderKeys.length ? (
+        <div className={styles.scope}>
+          <strong>אילו תיקיות שייכות לאירוע הזה?</strong>
+          <span>ProGrapher יעבוד רק על התמונות בתיקיות שתבחר. שאר הקטלוג לא ייקרא ולא ישתנה.</span>
+          {folders === null ? (
+            <span className={styles.status}>קורא את רשימת התיקיות…</span>
           ) : (
+            <ul className={styles.folderList}>
+              {folders.map((folder) => (
+                <li key={folder.key}>
+                  <label>
+                    <input
+                      type="checkbox"
+                      checked={chosen.includes(folder.key)}
+                      onChange={(event) =>
+                        setChosen((keys) =>
+                          event.target.checked ? [...keys, folder.key] : keys.filter((k) => k !== folder.key),
+                        )
+                      }
+                    />
+                    <bdi dir="ltr">{folder.label}</bdi>
+                    <span>
+                      {n(folder.photos)} תמונות · {folder.first}
+                      {folder.last !== folder.first ? ` – ${folder.last}` : ""}
+                    </span>
+                  </label>
+                </li>
+              ))}
+            </ul>
+          )}
+          <div className={styles.actions}>
             <button
               type="button"
               className={styles.primary}
-              onClick={() => void run("complete")}
-              disabled={!!busy || !plan}
+              disabled={!chosen.length}
+              onClick={() => update({ ...state, folderKeys: chosen })}
             >
-              {busy === "complete" ? "משלים…" : "השלם את האירוע"}
+              המשך עם {chosen.length} תיקיות
             </button>
-          )}
-        </li>
-      </ol>
+          </div>
+        </div>
+      ) : (
+        <ol className={styles.steps}>
+          <li className={anchorsDone ? styles.done : styles.current}>
+            <div className={styles.body}>
+              <strong>1. בחירת תמונות לעריכה</strong>
+              {!anchors ? (
+                <span>ProGrapher מחלק את האירוע לרגעים ובוחר תמונה אחת מכל רגע מרכזי. קודם תראה מה ייעשה.</span>
+              ) : isActive(anchors.status) ? (
+                progress(anchors)
+              ) : anchors.status === "planned" ? (
+                <>
+                  <span>
+                    יסומנו {n(anchors.plan?.anchor_count)} תמונות מתוך {n(anchors.plan?.photos)} ({n(anchors.plan?.moments)}{" "}
+                    רגעים) ב-Collection &quot;{String(anchors.plan?.collection_name ?? "")}&quot;. תווית סגולה תתווסף ל-
+                    {n(anchors.plan?.to_label)} מהן; תוויות שכבר שמת לא ישתנו. גיבוי יישמר ב-
+                    <bdi dir="ltr">{String(anchors.plan?.backup_folder ?? "")}</bdi>.
+                  </span>
+                  {planButtons("anchorsJob", anchors, "אשר וסמן ב-Lightroom")}
+                </>
+              ) : anchors.status === "completed" ? (
+                <span>
+                  סומנו {n(anchors.result?.marked)} תמונות ב-Collection &quot;{String(anchors.result?.collection_name ?? "")}
+                  &quot;.
+                </span>
+              ) : (
+                failure(anchors, "anchors")
+              )}
+            </div>
+            {!anchors || anchors.status === "completed" || anchors.status === "cancelled" ? (
+              <div className={styles.actions}>
+                <button
+                  type="button"
+                  className={anchors ? styles.secondary : styles.primary}
+                  onClick={plannedAnchors}
+                  disabled={busy}
+                >
+                  {anchors ? "בחר מחדש" : "בדוק אילו תמונות לסמן"}
+                </button>
+                {anchorsDone && !complete ? (
+                  <button
+                    type="button"
+                    className={styles.undo}
+                    onClick={() => void startPlan("undoJob", () => planUndo(anchors.job_id))}
+                    disabled={busy}
+                  >
+                    בטל סימון
+                  </button>
+                ) : null}
+              </div>
+            ) : null}
+          </li>
 
-      {message ? <div className={styles.info}>{message}</div> : null}
+          <li className={!anchorsDone ? styles.waiting : complete?.status === "completed" ? styles.done : styles.current}>
+            <div className={styles.body}>
+              <strong>2. עריכה ב-Lightroom</strong>
+              <span>
+                פתח את הקטלוג ב-Lightroom, ערוך את התמונות ב-Collection שסומן כמו שאתה עורך תמיד, וסגור את Lightroom.
+              </span>
+            </div>
+          </li>
+
+          <li className={!anchorsDone ? styles.waiting : complete?.status === "completed" ? styles.done : styles.current}>
+            <div className={styles.body}>
+              <strong>3. השלמת האירוע</strong>
+              {!complete ? (
+                <span>קודם בדיקה: מה ייכתב, מה ידולג ולמה. שום דבר לא נכתב עד שתאשר.</span>
+              ) : isActive(complete.status) ? (
+                progress(complete)
+              ) : complete.status === "planned" ? (
+                <CompletionSummary job={complete} />
+              ) : complete.status === "completed" || complete.status === "undone" || complete.status === "partially_undone" ? (
+                <span>
+                  נכתבו {n(complete.result?.written)} תמונות, ובכל אחת מופיע ב-History שלב &quot;ProGrapher&quot;.{" "}
+                  {complete.status !== "completed" ? statusText(complete.status) : ""}
+                </span>
+              ) : (
+                failure(complete, "complete")
+              )}
+              {complete?.status === "planned" ? planButtons("completeJob", complete, "אשר וכתוב לקטלוג") : null}
+            </div>
+            {anchorsDone && (!complete || ["completed", "cancelled", "undone", "partially_undone"].includes(complete.status)) ? (
+              <div className={styles.actions}>
+                <button type="button" className={complete ? styles.secondary : styles.primary} onClick={plannedComplete} disabled={busy}>
+                  {complete ? "בדוק שוב" : "בדוק לפני השלמה"}
+                </button>
+                {complete?.status === "completed" ? (
+                  <button
+                    type="button"
+                    className={styles.undo}
+                    onClick={() => void startPlan("undoJob", () => planUndo(complete.job_id))}
+                    disabled={busy}
+                  >
+                    בדוק ביטול
+                  </button>
+                ) : null}
+              </div>
+            ) : null}
+          </li>
+        </ol>
+      )}
+
+      {undo ? (
+        <div className={styles.undoBox}>
+          <strong>ביטול</strong>
+          {isActive(undo.status) ? (
+            progress(undo)
+          ) : undo.status === "planned" ? (
+            <>
+              {undo.plan?.kind === "unmark" ? (
+                <span>
+                  {undo.plan?.collection_removable
+                    ? `ה-Collection "${String(undo.plan?.collection_name ?? "")}" יימחק`
+                    : "ה-Collection השתנה מאז ש-ProGrapher יצר אותו ולכן יישאר"}
+                  , ויוסרו {n(undo.plan?.labels_to_clear)} תוויות סגולות ש-ProGrapher הוסיף.
+                </span>
+              ) : (
+                <span>
+                  יוחזרו {n(undo.plan?.will_revert)} תמונות למצב שלפני ProGrapher.
+                  {skipLines(undo.plan?.kept as Record<string, number> | undefined).map((line) => ` ${line} – יישארו כמו שהן.`)}
+                </span>
+              )}
+              {planButtons("undoJob", undo, "אשר ביטול")}
+            </>
+          ) : undo.status === "completed" ? (
+            <span>
+              {undo.result?.reverted !== undefined
+                ? `הוחזרו ${n(undo.result?.reverted)} תמונות; ${n(undo.result?.kept)} נשארו כי ערכת אותן אחרי ProGrapher.`
+                : "הסימון בוטל."}
+            </span>
+          ) : (
+            <span className={styles.warn}>
+              {statusText(undo.status)} {undo.error ?? ""}
+            </span>
+          )}
+        </div>
+      ) : null}
+
+      {chosenFolders.length ? (
+        <p className={styles.note}>
+          האירוע: {chosenFolders.map((f) => f.label).join(", ")}
+        </p>
+      ) : null}
       {error ? <div className={styles.error}>{error}</div> : null}
     </section>
+  );
+}
+
+function CompletionSummary({ job }: { job: EventJob }) {
+  const plan = job.plan ?? {};
+  const assessment = (plan.assessment ?? {}) as Record<string, unknown>;
+  const blocking = (plan.blocking ?? []) as { reason: string; edited?: number; required?: number }[];
+  const lightGaps = (assessment.light_bins_without_example ?? []) as string[];
+  return (
+    <ul className={styles.summary}>
+      <li>
+        ייכתבו: <b>{n(plan.will_write)}</b> תמונות
+        {Array.isArray(plan.sliders) && plan.sliders.length ? ` (${sliderList(plan.sliders as string[])})` : ""}
+      </li>
+      {skipLines(plan.skipped as Record<string, number> | undefined).map((line) => (
+        <li key={line}>ידולגו – {line}</li>
+      ))}
+      <li>
+        תמונות שערכת: {n(assessment.anchors_edited)} (נדרשות לפחות {n(assessment.required_edited)}). רגעים עם תמונה
+        ערוכה: {n(assessment.moments_with_edited_anchor)} מתוך {n(assessment.moments)}, כלומר{" "}
+        {percent(Number(assessment.covered_share ?? 0))} מתמונות האירוע.
+      </li>
+      {lightGaps.length ? (
+        <li className={styles.warn}>אין תמונה ערוכה בתנאי אור: {lightGaps.join(", ")}. התמונות שם ידולגו.</li>
+      ) : null}
+      <li>
+        גיבוי יישמר ב-<bdi dir="ltr">{String(plan.backup_folder ?? "")}</bdi>
+      </li>
+      {blocking.map((block) => (
+        <li key={block.reason} className={styles.warn}>
+          {blockingText(block)}
+        </li>
+      ))}
+    </ul>
   );
 }

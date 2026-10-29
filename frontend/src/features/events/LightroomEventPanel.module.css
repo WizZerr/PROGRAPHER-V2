@@ -54,7 +54,7 @@
   list-style: none;
 }
 
-.steps li {
+.steps > li {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -65,7 +65,7 @@
   background: rgba(10, 16, 26, 0.6);
 }
 
-.steps li > div {
+.steps > li > div {
   display: grid;
   gap: 4px;
   min-width: 0;
@@ -76,6 +76,79 @@
 }
 
 .steps span {
+  color: var(--pg-text-secondary);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.body {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.status {
+  color: #8fd7ff !important;
+}
+
+.warn {
+  color: #f1c76a !important;
+}
+
+.scope,
+.undoBox {
+  display: grid;
+  gap: 10px;
+  padding: 14px 16px;
+  border: 1px solid #243046;
+  border-radius: 10px;
+  background: rgba(10, 16, 26, 0.6);
+}
+
+.scope > span,
+.undoBox > span {
+  color: var(--pg-text-secondary);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.folderList {
+  display: grid;
+  gap: 6px;
+  max-height: 260px;
+  margin: 0;
+  padding: 0;
+  overflow: auto;
+  list-style: none;
+}
+
+.folderList label {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: #0d141f;
+  cursor: pointer;
+}
+
+.folderList label span {
+  color: var(--pg-text-muted);
+  font-size: 13px;
+}
+
+.summary {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding-inline-start: 18px;
   color: var(--pg-text-secondary);
   font-size: 14px;
   line-height: 1.6;
@@ -153,7 +226,7 @@
 }
 
 @media (max-width: 720px) {
-  .steps li {
+  .steps > li {
     flex-direction: column;
     align-items: stretch;
   }

@@ -1,29 +1,41 @@
-"""Event flow v1 on a Lightroom Classic catalog (Lightroom closed):
+"""Event flow v1 on a Lightroom Classic catalog, safe by construction:
 
-  1. plan_anchors(catalog)  -> cuts the event into moments, puts the anchors in the collection
-                               "ProGrapher - Edit these" and gives them a purple label (labels the photographer set
-                               are kept). The photographer edits those photos in Lightroom, then closes it.
-  2. complete(catalog)      -> reads the edited anchors and writes every other photo (catalog_writer, with backup and
-                               a "ProGrapher" History step). Photos the photographer edited are never changed.
-  3. undo(catalog, backup)  -> puts the catalog back exactly as it was before step 2 (or step 1).
+  folders(catalog)                  -> the catalog's folders, to choose the EVENT (scope). Nothing works without one.
+  plan_anchors / plan_completion / plan_undo
+                                    -> DRY RUN in a job: reads the catalog without changing a byte (SQLite immutable
+                                       mode), stores the plan and a fingerprint of the event's state, returns what
+                                       would change. Nothing is written.
+  confirm(job_id)                   -> the only way to change a catalog: re-checks inside the write transaction that
+                                       the event is exactly as in the dry run (else "outdated", nothing written), then
+                                       writes through catalog_writer (ProGrapher lock, Lightroom closed, backup, one
+                                       transaction, photos outside the event refused).
+  get_job / cancel                  -> progress and recovery of jobs (app/event_edit/jobs.py).
 
-Reads the catalog read-only for planning; every write goes through catalog_writer's safety (docs/LB_02...).
+Undo is selective: only photos still exactly as ProGrapher left them are put back; anything edited since is kept.
+Only the latest completion of an event can be undone. Backups are never deleted.
 """
 from __future__ import annotations
 
 import sqlite3
-import time
+import uuid
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any
 
-from app.event_edit import brain
+from app.event_edit import brain, jobs
 from app.event_edit.brain import Photo
+from app.event_edit.scope import ScopeError, event_id, fingerprint, list_folders, open_readonly, scope_images
 from app.lightroom_bridge import catalog_writer as writer
+
+BACKUP_FOLDER = "ProGrapher Backups"
 
 
 class EventEditError(ValueError):
-    """The event cannot be processed; nothing was changed."""
+    """The request cannot be carried out; nothing was changed."""
+
+
+class PlanOutdated(writer.CatalogWriteError):
+    """The catalog changed since the dry run."""
 
 
 def _catalog(path: str | Path) -> Path:
@@ -32,7 +44,7 @@ def _catalog(path: str | Path) -> Path:
         raise EventEditError("יש לבחור קובץ קטלוג של Lightroom (.lrcat)")
     if writer.catalog_in_use(catalog):
         raise EventEditError("הקטלוג פתוח ב-Lightroom. סגור את Lightroom ונסה שוב.")
-    return catalog
+    return catalog.resolve()
 
 
 def _seconds(value: Any) -> float | None:
@@ -67,21 +79,20 @@ def _as_shot(develop: dict, history_texts: list[str]) -> tuple[float | None, flo
     return None, None
 
 
-def read_event(catalog: Path) -> list[Photo]:
-    """Every photo (virtual copies excluded) with its capture time, sliders, As Shot and whether it was edited."""
-    db = sqlite3.connect(f"file:{catalog}?mode=ro", uri=True)
-    try:
-        rows = db.execute("""SELECT i.id_local, COALESCE(i.originalCaptureTime, i.captureTime), s.text
-                             FROM Adobe_images i JOIN Adobe_imageDevelopSettings s ON s.image = i.id_local
-                             WHERE i.masterImage IS NULL""").fetchall()
-        steps: dict[int, list[tuple[float, str, Any]]] = {}
+def read_photos(db: sqlite3.Connection, images: set[int]) -> list[Photo]:
+    """The event's photos with capture time, sliders, As Shot and whether the photographer edited them."""
+    ordered = sorted(images)
+    rows, steps = [], {}
+    for start in range(0, len(ordered), 500):
+        chunk = ordered[start:start + 500]
+        marks = ",".join("?" * len(chunk))
+        rows += db.execute(f"""SELECT i.id_local, COALESCE(i.originalCaptureTime, i.captureTime), s.text
+                               FROM Adobe_images i JOIN Adobe_imageDevelopSettings s ON s.image = i.id_local
+                               WHERE i.id_local IN ({marks})""", chunk).fetchall()
         for image, created, name, blob in db.execute(
-                "SELECT image, dateCreated, name, text FROM Adobe_libraryImageDevelopHistoryStep"):
+                f"SELECT image, dateCreated, name, text FROM Adobe_libraryImageDevelopHistoryStep "
+                f"WHERE image IN ({marks})", chunk):
             steps.setdefault(image, []).append((created or 0.0, name or "", blob))
-    except sqlite3.Error as exc:
-        raise EventEditError("מבנה הקטלוג לא נתמך") from exc
-    finally:
-        db.close()
     photos = []
     for image, taken, text in rows:
         develop = _numbers(text or "")
@@ -94,39 +105,465 @@ def read_event(catalog: Path) -> list[Photo]:
     return photos
 
 
-def anchor_ids(catalog: Path) -> list[int]:
-    db = sqlite3.connect(f"file:{catalog}?mode=ro", uri=True)
+def folders(catalog_path: str | Path) -> dict[str, Any]:
+    catalog = _catalog(catalog_path)
     try:
-        return [r[0] for r in db.execute(
-            "SELECT ci.image FROM AgLibraryCollectionImage ci JOIN AgLibraryCollection c ON c.id_local = ci.collection "
-            "WHERE c.name = ? AND c.parent IS NULL", (writer.ANCHOR_COLLECTION,))]
-    except sqlite3.Error:
-        return []
+        return {"catalog": str(catalog), "folders": list_folders(catalog)}
+    except ScopeError as exc:
+        raise EventEditError("מבנה הקטלוג לא נתמך") from exc
+
+
+# --- jobs ------------------------------------------------------------------------------------------------------------
+
+def _public(job: dict[str, Any]) -> dict[str, Any]:
+    hidden = ("edits", "history_ids", "before", "entries", "expected", "images", "expected_members", "labelled",
+              "anchors")
+    plan = {k: v for k, v in (job.get("plan") or {}).items() if k not in hidden}
+    result = {k: v for k, v in (job.get("result") or {}).items() if k not in ("written_images",)}
+    return {"job_id": job["job_id"], "kind": job["kind"], "status": job["status"], "event_id": job["event_id"],
+            "progress": {"done": job["progress_done"], "total": job["progress_total"]},
+            "error": job.get("error"), "plan": plan or None, "result": result or None,
+            "parent_job": job.get("parent_job")}
+
+
+def _start(kind: str, catalog: Path, scope: list[str], work, wait: bool, parent: str | None = None) -> dict:
+    job_id = jobs.create(kind, event_id(catalog, scope), catalog, scope, parent)
+
+    def planning() -> None:
+        if not jobs.transition(job_id, ("pending",), "planning"):
+            return
+        try:
+            plan, fp = work(job_id)
+            jobs.finish_planning(job_id, status="planned", plan=plan, fingerprint=fp)
+        except (EventEditError, ScopeError, writer.CatalogWriteError, sqlite3.Error) as exc:
+            jobs.finish_planning(job_id, status="failed", error=str(exc), result={"nothing_written": True})
+        except Exception as exc:  # noqa: BLE001  (report, never crash the engine)
+            jobs.finish_planning(job_id, status="failed", error=f"שגיאה לא צפויה בתכנון: {type(exc).__name__}",
+                                 result={"nothing_written": True})
+    jobs.run(job_id, planning, wait)
+    return get_job(job_id)
+
+
+def get_job(job_id: str) -> dict[str, Any]:
+    job = jobs.get(job_id)
+    if job is None:
+        raise EventEditError("הפעולה לא נמצאה")
+    if job["status"] in jobs.ACTIVE and not jobs.is_running(job_id):
+        _recover(job)
+        job = jobs.get(job_id)
+    return _public(job)
+
+
+def cancel(job_id: str) -> dict[str, Any]:
+    if not jobs.transition(job_id, ("pending", "planning", "planned"), "cancelled"):
+        raise EventEditError("אי אפשר לבטל: הפעולה כבר בכתיבה או הסתיימה")
+    return get_job(job_id)
+
+
+def _recover(job: dict[str, Any]) -> None:
+    """A job left active by a crash. Writes are a single transaction: check the catalog for what happened."""
+    jid = job["job_id"]
+    if job["status"] in ("pending", "planning", "queued"):
+        jobs.update(jid, status="interrupted", error="הפעולה נקטעה לפני כתיבה. לא נכתב דבר; אפשר לתכנן מחדש.",
+                    result={"nothing_written": True})
+        return
+    plan, catalog = job["plan"] or {}, jobs.path(job)
+    try:
+        done, partial = _verify_written(job, plan, catalog)
+    except (sqlite3.Error, OSError, KeyError, ValueError):
+        jobs.update(jid, status="failed", result={"nothing_written": False},
+                    error="לא ניתן לבדוק מה נכתב לפני הקריסה. אל תכתוב שוב; בדוק את הקטלוג מול הגיבוי.")
+        return
+    if done:
+        written = [int(k) for k in plan.get("edits", {})] if job["kind"] == "complete" else []
+        jobs.update(jid, status="completed", result={"recovered": True, "written_images": written})
+        if job["kind"] == "undo":
+            _after_undo(job, plan, recovered=True)
+    elif partial:
+        jobs.update(jid, status="failed", result={"nothing_written": False},
+                    error="מצב לא עקבי אחרי קריסה. אל תכתוב שוב; בדוק את הקטלוג מול הגיבוי.")
+    else:
+        jobs.update(jid, status="failed", result={"nothing_written": True},
+                    error="הפעולה נקטעה. לא נכתב דבר; אפשר לתכנן מחדש.")
+
+
+def _verify_written(job: dict[str, Any], plan: dict[str, Any], catalog: Path) -> tuple[bool, bool]:
+    db = open_readonly(catalog)
+    try:
+        if job["kind"] == "complete":
+            ids = set(plan.get("history_ids", {}).values())
+            found = {r[0] for r in db.execute(
+                "SELECT id_global FROM Adobe_libraryImageDevelopHistoryStep WHERE name = ?", (writer.STEP_NAME,))} & ids
+            return bool(ids) and found == ids, bool(found) and found != ids
+        if job["kind"] == "anchors":
+            name = plan.get("collection_name") or ""
+            rows = db.execute("SELECT id_local, name FROM AgLibraryCollection WHERE name = ? OR name LIKE ?",
+                              (name, name + " (%)")).fetchall()
+            match = [r for r in rows if sorted(writer.collection_members(db, r[0])) == sorted(plan.get("anchors", []))]
+            if match:
+                jobs.save_event(plan["event_id"], catalog, job["scope"], collection_id=match[0][0],
+                                collection_name=match[0][1], anchors=plan["anchors"])
+            return bool(match), False
+        if plan.get("kind") == "unmark":
+            gone = db.execute("SELECT 1 FROM AgLibraryCollection WHERE id_local = ?", (plan["collection_id"],)).fetchone() is None
+            labels = dict(db.execute(f"SELECT id_local, COALESCE(colorLabels, '') FROM Adobe_images WHERE id_local IN "
+                                     f"({','.join('?' * len(plan['labelled']))})", plan["labelled"]).fetchall()) \
+                if plan["labelled"] else {}
+            still = [i for i in plan.get("labels_planned", []) if labels.get(i) == writer.ANCHOR_LABEL]
+            collection_ok = gone or not plan["collection_removable"]
+            done = collection_ok and not still
+            return done, not done and (gone or len(still) < len(plan.get("labels_planned", [])))
+        entries = plan.get("entries", [])
+        if not entries:
+            return True, False
+        state = writer.develop_state(db, [e["image"] for e in entries])
+        back = [e for e in entries if state.get(e["image"], {}).get("historySettingsID") == e["before"]["historySettingsID"]]
+        return len(back) == len(entries), 0 < len(back) < len(entries)
     finally:
         db.close()
 
 
-def plan_anchors(catalog_path: str | Path, anchor_count: int | None = None) -> dict[str, Any]:
+def _after_undo(job: dict[str, Any], plan: dict[str, Any], *, recovered: bool = False,
+                out: dict[str, Any] | None = None) -> None:
+    """Bring the undone job and the event record in line with what the undo did."""
+    catalog = jobs.path(job)
+    if plan.get("kind") == "unmark":
+        removed = out["collection_removed"] if out else plan["collection_removable"]
+        kept = out["labels_kept"] if out else sorted(set(plan["labelled"]) - set(plan.get("labels_planned", [])))
+        if removed:
+            jobs.update(plan["target_job"], status="undone")
+            jobs.save_event(plan["event_id"], catalog, job["scope"], collection_id=None, collection_name=None,
+                            anchors=[], labelled=kept)
+        else:  # the collection stays (the photographer changed it): the marking is still in place
+            jobs.save_event(plan["event_id"], catalog, job["scope"], labelled=kept)
+        return
+    kept_any = bool(out["kept"]) if out else plan.get("kept")
+    jobs.update(plan["target_job"], status="partially_undone" if kept_any else "undone")
+
+
+# --- dry runs ----------------------------------------------------------------------------------------------------
+
+def _column(db: sqlite3.Connection, query: str, ids: list[int]) -> dict:
+    """{id: value} for a two-column query over `ids`, in chunks (only the event's photos are read)."""
+    out: dict = {}
+    for start in range(0, len(ids), 500):
+        chunk = ids[start:start + 500]
+        out.update(db.execute(query.format(",".join("?" * len(chunk))), chunk).fetchall())
+    return out
+
+
+def _owned_collection(db: sqlite3.Connection, event: dict | None) -> int | None:
+    """The event's ProGrapher collection, only while it exists under the name ProGrapher gave it."""
+    if not event or event.get("collection_id") is None:
+        return None
+    row = db.execute("SELECT name FROM AgLibraryCollection WHERE id_local = ?", (event["collection_id"],)).fetchone()
+    return event["collection_id"] if row and row[0] == event.get("collection_name") else None
+
+
+def plan_anchors(catalog_path: str | Path, folder_keys: list[str], anchor_count: int | None = None,
+                 wait: bool = False) -> dict[str, Any]:
     catalog = _catalog(catalog_path)
-    photos = read_event(catalog)
-    if not photos:
-        raise EventEditError("אין תמונות בקטלוג")
-    moments = brain.make_moments(photos)
-    count = anchor_count or brain.default_anchor_count(len(photos))
-    anchors = brain.choose_anchors(moments, count)
+    if not folder_keys:
+        raise EventEditError("יש לבחור את תיקיות האירוע")
+
+    def work(job_id: str):
+        eid = event_id(catalog, folder_keys)
+        db = open_readonly(catalog)
+        try:
+            images = scope_images(db, folder_keys)
+            if not images:
+                raise EventEditError("אין תמונות בתיקיות שנבחרו")
+            photos = read_photos(db, images)
+            moments = brain.make_moments(photos)
+            count = anchor_count or brain.default_anchor_count(len(photos))
+            anchors = [a.image for a in brain.choose_anchors(moments, count)]
+            event = jobs.get_event(eid)
+            owned = _owned_collection(db, event)
+            reuse = owned is not None and sorted(writer.collection_members(db, owned)) == sorted(event["anchors"])
+            labels = _column(db, "SELECT id_local, COALESCE(colorLabels, '') FROM Adobe_images WHERE id_local IN ({})",
+                             anchors)
+            fp = fingerprint(db, images, owned)
+        finally:
+            db.close()
+        name = (event or {}).get("collection_name") if reuse else f"{writer.ANCHOR_COLLECTION} [{eid[:6]}]"
+        blocking = [] if anchors else [{"reason": "no_anchors"}]
+        return ({"event_id": eid, "photos": len(photos), "moments": len(moments), "anchors": anchors,
+                 "anchor_count": len(anchors), "to_label": sum(1 for a in anchors if not labels.get(a)),
+                 "label": writer.ANCHOR_LABEL, "collection_name": name, "reuse_collection": reuse,
+                 "owned_collection": owned if reuse else None, "fp_collection": owned, "images": sorted(images),
+                 "backup_folder": str(catalog.parent / BACKUP_FOLDER), "blocking": blocking}, fp)
+    return _start("anchors", catalog, folder_keys, work, wait)
+
+
+def _changed_only(text: str, values: dict, is_raw: bool) -> dict:
+    """Keep only the sliders whose value differs from the photo's current one (Temperature/Tint stay together)."""
     try:
-        marked = writer.mark_photos(catalog, [a.image for a in anchors])
-    except writer.CatalogWriteError as exc:
-        raise EventEditError(str(exc)) from exc
-    covered = sum(len(m) for m in moments if any(p.image in set(marked["marked"]) for p in m))
-    return {"photos": len(photos), "moments": len(moments), "anchors": len(marked["marked"]),
-            "photos_in_anchored_moments": covered, "collection": writer.ANCHOR_COLLECTION,
-            "label": writer.ANCHOR_LABEL, "labelled": len(marked["labelled"]), "backup": marked["backup"]}
+        current = writer.read_settings(text)
+        wanted = writer.normalize_edit(values, is_raw=is_raw)
+    except ValueError:
+        return dict(values)
+    differs = {k for k, v in wanted.items() if current.get(k) != writer._lua(v)}
+    if differs & {"Temperature", "Tint", "WhiteBalance", "CustomTemperature", "CustomTint"}:
+        differs |= {"Temperature", "Tint"}
+    return {k: v for k, v in values.items() if k in differs}
 
 
-def _automatic_exposure(catalog: Path, photos: list[Photo], anchors: list[Photo], targets: list[Photo],
-                        progress: Callable[[int, int], None] | None) -> tuple[dict[int, float], dict[str, Any]]:
-    """Target-method exposure for `targets`, calibrated on the edited anchors of this event."""
+def plan_completion(catalog_path: str | Path, folder_keys: list[str], *, fill_unanchored: bool = False,
+                    automatic_exposure: bool = False, wait: bool = False) -> dict[str, Any]:
+    catalog = _catalog(catalog_path)
+    if not folder_keys:
+        raise EventEditError("יש לבחור את תיקיות האירוע")
+
+    def work(job_id: str):
+        eid = event_id(catalog, folder_keys)
+        event = jobs.get_event(eid)
+        db = open_readonly(catalog)
+        try:
+            images = scope_images(db, folder_keys)
+            owned = _owned_collection(db, event)
+            if owned is None:
+                raise EventEditError("קודם צריך לבחור תמונות לעריכה לאירוע הזה")
+            # the anchors ProGrapher recorded (not whatever the collection holds now): removing photos from the
+            # collection must not lower the bar of the evidence gate
+            anchor_ids = set(event.get("anchors", [])) & images
+            photos = read_photos(db, images)
+            moments = brain.make_moments(photos)
+            anchors = [p for p in photos if p.image in anchor_ids]
+            assessment = brain.assess_anchors(moments, anchors)
+            autos: dict[int, float] = {}
+            auto_status = {"state": "off", "reason": "disabled"}
+            if fill_unanchored and automatic_exposure:
+                autos, auto_status = _automatic_exposure(catalog, db, anchors, moments, job_id)
+            result = brain.complete_event(moments, anchors, auto_exposure=lambda p: autos.get(p.image),
+                                          fill_unanchored=fill_unanchored)
+            wanted = list(result["edits"])
+            texts = _column(db, "SELECT image, COALESCE(text, '') FROM Adobe_imageDevelopSettings WHERE image IN ({})",
+                            wanted)
+            raw_ext = {i: (e or "").lower() not in writer.NON_RAW for i, e in _column(
+                db, "SELECT i.id_local, f.extension FROM Adobe_images i JOIN AgLibraryFile f ON f.id_local = i.rootFile "
+                    "WHERE i.id_local IN ({})", wanted).items()}
+            edits, skipped = {}, dict(result["skipped"])
+            for image, values in result["edits"].items():
+                changed = _changed_only(texts.get(image, ""), values, raw_ext.get(image, True))
+                if changed:
+                    edits[image] = changed
+                else:
+                    skipped[image] = "already_up_to_date"
+            before = writer.develop_state(db, list(edits))
+            expected = {image: {k: writer._lua(v) for k, v in
+                                writer.normalize_edit(values, is_raw=raw_ext.get(image, True)).items()}
+                        for image, values in edits.items()}
+            fp = fingerprint(db, images, owned)
+        finally:
+            db.close()
+        reasons: dict[str, int] = {}
+        for reason in skipped.values():
+            reasons[reason] = reasons.get(reason, 0) + 1
+        warnings = []
+        if assessment["light_bins_without_example"]:
+            warnings.append({"reason": "light_without_example", "bins": assessment["light_bins_without_example"]})
+        if assessment["covered_share"] < 0.5:
+            warnings.append({"reason": "low_coverage", "covered_share": assessment["covered_share"]})
+        sliders = sorted({k for v in edits.values() for k in v})
+        return ({"event_id": eid, "assessment": assessment, "will_write": len(edits), "skipped": reasons,
+                 "skipped_edited": result["summary"]["skipped_edited"], "from_anchor": result["summary"]["from_anchor"],
+                 "automatic": result["summary"]["automatic"], "event_level": result["summary"]["event_level"],
+                 "sliders": sliders, "warnings": warnings, "blocking": assessment["blocking"],
+                 "automatic_exposure": auto_status, "fill_unanchored": fill_unanchored,
+                 "backup_folder": str(catalog.parent / BACKUP_FOLDER), "fp_collection": owned,
+                 "images": sorted(images), "edits": {str(k): v for k, v in edits.items()},
+                 "history_ids": {str(k): str(uuid.uuid4()).upper() for k in edits},
+                 "before": {str(k): v for k, v in before.items()},
+                 "expected": {str(k): v for k, v in expected.items()}}, fp)
+    return _start("complete", catalog, folder_keys, work, wait)
+
+
+def _undo_entries(job: dict[str, Any]) -> list[dict[str, Any]]:
+    """What a completion wrote, per photo: the History step id, the values as stored, the state before."""
+    plan = job["plan"] or {}
+    written = set((job.get("result") or {}).get("written_images", []))
+    return [{"image": int(k), "history_id": plan["history_ids"][k], "values": plan["expected"][k],
+             "before": plan["before"][k]}
+            for k in plan.get("edits", {}) if int(k) in written and k in plan.get("before", {})]
+
+
+def _plan_unmark(target: dict[str, Any], wait: bool) -> dict[str, Any]:
+    """Undo of choosing anchors: only the latest marking of the event, and only before any completion used it."""
+    later = [j for j in jobs.jobs_for_event(target["event_id"], "anchors") + jobs.jobs_for_event(target["event_id"], "complete")
+             if j["created"] > target["created"] and j["status"] in ("completed", "queued", "writing", "partially_undone")]
+    if later:
+        raise EventEditError("אחרי בחירת התמונות הזו כבר בוצעה פעולה נוספת באירוע; אפשר לבטל רק את הפעולה האחרונה.")
+    catalog = _catalog(target["catalog"])
+    event = jobs.get_event(target["event_id"]) or {}
+    if event.get("collection_id") is None:
+        raise EventEditError("לא נמצא ה-Collection של האירוע")
+
+    def work(_job_id: str):
+        db = open_readonly(catalog)
+        try:
+            members = sorted(writer.collection_members(db, event["collection_id"]))
+            images = set(event.get("anchors", [])) | set(event.get("labelled", []))
+            labels = _column(db, "SELECT id_local, COALESCE(colorLabels, '') FROM Adobe_images WHERE id_local IN ({})",
+                             sorted(images))
+            fp = fingerprint(db, images, event["collection_id"])
+        finally:
+            db.close()
+        intact = members == sorted(event.get("anchors", []))
+        ours = [i for i in event.get("labelled", []) if labels.get(i) == writer.ANCHOR_LABEL]
+        return ({"event_id": target["event_id"], "target_job": target["job_id"], "kind": "unmark",
+                 "collection_name": event.get("collection_name"), "collection_id": event["collection_id"],
+                 "collection_removable": intact, "expected_members": event.get("anchors", []),
+                 "labels_to_clear": len(ours), "labelled": event.get("labelled", []), "labels_planned": ours,
+                 "images": sorted(images), "fp_collection": event["collection_id"],
+                 "backup_folder": str(catalog.parent / BACKUP_FOLDER), "blocking": []}, fp)
+    return _start("undo", catalog, target["scope"], work, wait, parent=target["job_id"])
+
+
+def plan_undo(job_id: str, wait: bool = False) -> dict[str, Any]:
+    target = jobs.get(job_id)
+    if target is not None and target["kind"] == "anchors" and target["status"] == "completed":
+        return _plan_unmark(target, wait)
+    if target is None or target["kind"] != "complete":
+        raise EventEditError("אפשר לבטל רק השלמת אירוע או בחירת תמונות")
+    if target["status"] != "completed":
+        raise EventEditError("ההשלמה הזו לא במצב שאפשר לבטל (כבר בוטלה, נכשלה או לא הסתיימה)")
+    later = [j for j in jobs.jobs_for_event(target["event_id"], "complete")
+             if j["created"] > target["created"] and j["status"] in ("completed", "queued", "writing", "partially_undone")]
+    if later:
+        raise EventEditError("יש השלמה מאוחרת יותר לאירוע הזה. אפשר לבטל רק את ההשלמה האחרונה.")
+    catalog = _catalog(target["catalog"])
+    entries = _undo_entries(target)
+
+    def work(_job_id: str):
+        db = open_readonly(catalog)
+        try:
+            state = writer.develop_state(db, [e["image"] for e in entries])
+            revertible, kept = [], {}
+            for e in entries:
+                now = state.get(e["image"])
+                same = (now is not None and now["historySettingsID"] == e["history_id"]
+                        and now.get("last_step") == e["history_id"])
+                if same:
+                    try:
+                        current = writer.read_settings(now["text"])
+                    except ValueError:
+                        current = {}
+                    same = all(current.get(k) == v for k, v in e["values"].items())
+                if same:
+                    revertible.append(e)
+                else:
+                    kept["changed_after_prographer"] = kept.get("changed_after_prographer", 0) + 1
+            fp = fingerprint(db, {e["image"] for e in entries})
+        finally:
+            db.close()
+        return ({"event_id": target["event_id"], "target_job": job_id, "will_revert": len(revertible),
+                 "kept": kept, "entries": revertible, "images": sorted(e["image"] for e in entries),
+                 "backup_folder": str(catalog.parent / BACKUP_FOLDER), "blocking": []}, fp)
+    return _start("undo", catalog, target["scope"], work, wait, parent=job_id)
+
+
+# --- executing a confirmed plan ------------------------------------------------------------------------------------
+
+def confirm(job_id: str, wait: bool = False) -> dict[str, Any]:
+    job = jobs.get(job_id)
+    if job is None:
+        raise EventEditError("הפעולה לא נמצאה")
+    if job["status"] != "planned":
+        raise EventEditError("אפשר לאשר רק תוכנית שהוכנה ועוד לא בוצעה")
+    plan = job["plan"] or {}
+    if plan.get("blocking"):
+        raise EventEditError("התוכנית חסומה: " + ", ".join(b["reason"] for b in plan["blocking"]))
+    catalog = _catalog(job["catalog"])
+    busy = [j for j in jobs.jobs_for_catalog(catalog, ("queued", "writing")) if j["job_id"] != job_id]
+    if busy:
+        raise EventEditError("כבר מתבצעת כתיבה לקטלוג הזה")
+    if not jobs.transition(job_id, ("planned",), "queued"):
+        raise EventEditError("התוכנית כבר אושרה")
+    images = set(plan.get("images", []))
+    collection = plan.get("fp_collection")
+
+    def check(db: sqlite3.Connection) -> None:
+        if fingerprint(db, images, collection) != job["fingerprint"]:
+            raise PlanOutdated("האירוע השתנה מאז הבדיקה. לא נכתב דבר; יש להכין תוכנית חדשה.")
+
+    def execute() -> None:
+        if not jobs.transition(job_id, ("queued",), "writing"):
+            return
+        stage = {"committed": False}
+        try:
+            result = _execute(job, catalog, images, check, stage)
+            jobs.update(job_id, status="completed", result=result)
+        except PlanOutdated as exc:
+            jobs.update(job_id, status="outdated", error=str(exc), result={"nothing_written": True})
+        except writer.CatalogWriteError as exc:  # raised by the writer before COMMIT, or after restoring the backup
+            jobs.update(job_id, status="failed", error=_hebrew(str(exc)), result={"nothing_written": True})
+        except Exception as exc:  # noqa: BLE001
+            if stage["committed"]:
+                jobs.update(job_id, status="failed", result={"nothing_written": False},
+                            error=f"הכתיבה לקטלוג הסתיימה אבל שמירת המצב נכשלה ({type(exc).__name__}). "
+                                  "אל תכתוב שוב; בדוק את הקטלוג.")
+            else:  # the writer rolled back: its session never commits after an exception
+                jobs.update(job_id, status="failed", result={"nothing_written": True},
+                            error=f"שגיאה לא צפויה בכתיבה ({type(exc).__name__}). לא נכתב דבר.")
+    jobs.run(job_id, execute, wait)
+    return get_job(job_id)
+
+
+def _hebrew(message: str) -> str:
+    if "already writing" in message:
+        return "כבר מתבצעת כתיבה לקטלוג הזה. לא נכתב דבר."
+    if "Lightroom" in message and ("open" in message or "opened" in message):
+        return "Lightroom פתח את הקטלוג. לא נכתב דבר; סגור את Lightroom ונסה שוב."
+    if "in use" in message:
+        return "הקטלוג תפוס על ידי תוכנה אחרת. לא נכתב דבר."
+    return message
+
+
+def _execute(job: dict[str, Any], catalog: Path, images: set[int], check, stage: dict[str, bool]) -> dict[str, Any]:
+    plan, kind = job["plan"], job["kind"]
+    if kind == "anchors":
+        event = jobs.get_event(plan["event_id"]) or {}
+        out = writer.mark_photos(catalog, plan["anchors"], collection_name=plan["collection_name"],
+                                 owned_collection=plan.get("owned_collection"),
+                                 expected_members=event.get("anchors") if plan.get("reuse_collection") else None,
+                                 allowed_images=images, check=check)
+        stage["committed"] = out["backup"] is not None
+        if out["collection"] is None:
+            raise PlanOutdated("התמונות שתוכננו לסימון כבר לא בקטלוג. לא נכתב דבר; יש להכין תוכנית חדשה.")
+        labelled = sorted(set(event.get("labelled", [])) | set(out["labelled"]))
+        jobs.save_event(plan["event_id"], catalog, job["scope"], collection_id=out["collection"],
+                        collection_name=out["collection_name"], anchors=out["marked"], labelled=labelled)
+        return {"backup": out["backup"], "marked": len(out["marked"]), "labelled": len(out["labelled"]),
+                "collection_name": out["collection_name"], "created_collection": out["created"]}
+    if kind == "complete":
+        edits = {int(k): v for k, v in plan["edits"].items()}
+        history = {int(k): v for k, v in plan["history_ids"].items()}
+        jobs.update(job["job_id"], progress_total=len(edits))
+        out = writer.write_edits(catalog, edits, allowed_images=images, history_ids=history, check=check)
+        stage["committed"] = out["backup"] is not None
+        reasons: dict[str, int] = {}
+        for s in out["skipped"]:
+            reasons[s["reason"]] = reasons.get(s["reason"], 0) + 1
+        jobs.update(job["job_id"], progress_done=len(out["written"]))
+        return {"backup": out["backup"], "written": len(out["written"]), "skipped_at_write": reasons,
+                "written_images": [w["image"] for w in out["written"]], "seconds": round(out["seconds"], 1)}
+    if plan.get("kind") == "unmark":
+        out = writer.unmark_photos(catalog, plan["collection_id"], collection_name=plan["collection_name"],
+                                   expected_members=plan["expected_members"], labelled=plan["labelled"], check=check)
+        stage["committed"] = True
+        _after_undo(job, plan, out=out)
+        return {"backup": out["backup"], "collection_removed": out["collection_removed"],
+                "labels_cleared": len(out["labels_cleared"]), "labels_kept": len(out["labels_kept"])}
+    out = writer.revert_edits(catalog, plan["entries"], check=check)
+    stage["committed"] = True
+    _after_undo(job, plan, out=out)
+    return {"backup": out["backup"], "reverted": len(out["reverted"]), "kept": len(out["kept"])}
+
+
+# --- automatic exposure (opt-in, only for moments without an edited anchor) -----------------------------------------
+
+def _automatic_exposure(catalog: Path, db: sqlite3.Connection, anchors: list[Photo], moments: list[list[Photo]],
+                        job_id: str) -> tuple[dict[int, float], dict[str, Any]]:
     from app.event_edit import exposure_target as et
     from app.learning_intake.decoder_vendor import load_decoder_package
     from app.learning_intake.smart_preview_render import find_adobe_color_look
@@ -141,13 +578,15 @@ def _automatic_exposure(catalog: Path, photos: list[Photo], anchors: list[Photo]
         decoder = load_decoder_package()
     except Exception:  # noqa: BLE001
         return {}, {"state": "off", "reason": "decoder_unavailable"}
-    db = sqlite3.connect(f"file:{catalog}?mode=ro", uri=True)
-    uuid_of = {i: (g or "").upper() for i, g in db.execute("SELECT id_local, id_global FROM Adobe_images")}
-    db.close()
+    edited = [a for a in anchors if a.edited_by_photographer and "Exposure2012" in a.develop]
+    edited_ids = {a.image for a in edited}
+    targets = [p for m in moments if not any(q.image in edited_ids for q in m) for p in m if not p.edited_by_photographer]
+    todo = edited + targets
+    uuid_of = {i: (g or "").upper() for i, g in _column(
+        db, "SELECT id_local, id_global FROM Adobe_images WHERE id_local IN ({})", [p.image for p in todo]).items()}
     dngs = {p.stem.upper(): p for p in previews.rglob("*.dng")}
     look, curve = find_adobe_color_look(decoder), decoder.load_tone_curve()
-    edited = [a for a in anchors if a.edited_by_photographer and "Exposure2012" in a.develop]
-    todo = edited + targets
+    jobs.update(job_id, progress_total=len(todo))
     measured: dict[int, dict] = {}
     for n, photo in enumerate(todo, start=1):
         path = dngs.get(uuid_of.get(photo.image, ""))
@@ -157,8 +596,8 @@ def _automatic_exposure(catalog: Path, photos: list[Photo], anchors: list[Photo]
                                                         look, detector, curve)
             except Exception:  # noqa: BLE001  (one unreadable Smart Preview must not stop the event)
                 pass
-        if progress:
-            progress(n, len(todo))
+        if n % 25 == 0:
+            jobs.update(job_id, progress_done=n)
     style = et.learn_style([{**measured[a.image], "exposure": a.develop["Exposure2012"]}
                             for a in edited if measured.get(a.image)], curve)
     if style is None:
@@ -167,45 +606,13 @@ def _automatic_exposure(catalog: Path, photos: list[Photo], anchors: list[Photo]
     return autos, {"state": "on", "reason": None, "photos": len(autos)}
 
 
-def complete(catalog_path: str | Path, *, automatic_exposure: bool = True,
-             progress: Callable[[int, int], None] | None = None) -> dict[str, Any]:
-    catalog = _catalog(catalog_path)
-    started = time.perf_counter()
-    photos = read_event(catalog)
-    ids = set(anchor_ids(catalog))
-    if not ids:
-        raise EventEditError("קודם צריך לבחור תמונות לעריכה (אין Collection בשם 'ProGrapher - Edit these')")
-    anchors = [p for p in photos if p.image in ids]
-    if not any(a.edited_by_photographer for a in anchors):
-        raise EventEditError("עדיין לא נערכה אף תמונה מתוך 'ProGrapher - Edit these'")
-    moments = brain.make_moments(photos)
-    status: dict[str, Any] = {"state": "off", "reason": "disabled"}
-    autos: dict[int, float] = {}
-    if automatic_exposure:
-        edited_ids = {a.image for a in anchors if a.edited_by_photographer}
-        targets = [p for m in moments if not any(q.image in edited_ids for q in m)
-                   for p in m if not p.edited_by_photographer]
-        autos, status = _automatic_exposure(catalog, photos, anchors, targets, progress)
-    plan = brain.complete_event(moments, anchors, auto_exposure=lambda p: autos.get(p.image))
-    try:
-        written = writer.write_edits(catalog, plan["edits"])
-    except writer.CatalogWriteError as exc:
-        raise EventEditError(str(exc)) from exc
-    reasons: dict[str, int] = {}
-    for item in written["skipped"]:
-        reasons[item["reason"]] = reasons.get(item["reason"], 0) + 1
-    return {**plan["summary"], "automatic_exposure": status, "written": len(written["written"]),
-            "skipped": reasons, "backup": written["backup"], "seconds": round(time.perf_counter() - started, 1)}
-
-
-def undo(catalog_path: str | Path, backup: str | Path) -> dict[str, Any]:
-    catalog = _catalog(catalog_path)
-    backup = Path(backup)
-    if (backup.suffix != ".lrcat-backup" or backup.parent != catalog.parent / "ProGrapher Backups"
-            or not backup.name.startswith(f"{catalog.stem}-")):
-        raise EventEditError("זה לא גיבוי של ProGrapher לקטלוג הזה")
-    try:
-        writer.restore_backup(backup, catalog)
-    except writer.CatalogWriteError as exc:
-        raise EventEditError(str(exc)) from exc
-    return {"restored": True}
+def event_status(catalog_path: str | Path, folder_keys: list[str]) -> dict[str, Any]:
+    """Where an event stands, so the screen can resume: its anchors and its latest completion."""
+    catalog = Path(catalog_path).expanduser().resolve()
+    eid = event_id(catalog, folder_keys)
+    event = jobs.get_event(eid) or {}
+    completions = [j for j in jobs.jobs_for_event(eid, "complete") if j["status"] in ("completed", "partially_undone",
+                                                                                    "undone")]
+    return {"event_id": eid, "collection_name": event.get("collection_name"),
+            "anchors": len(event.get("anchors", [])),
+            "latest_completion": _public(completions[-1]) if completions else None}

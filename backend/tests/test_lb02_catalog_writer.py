@@ -105,6 +105,11 @@ def _catalog(path: Path, photos=(("IMG_1", "CR3"), ("IMG_2", "NEF"), ("IMG_3", "
     return path
 
 
+@pytest.fixture(autouse=True)
+def _private_data_dir(tmp_path: Path, monkeypatch):
+    monkeypatch.setenv("PROGRAPHER_DATA_DIR", str(tmp_path / "data"))
+
+
 @pytest.fixture
 def catalog(tmp_path: Path) -> Path:
     return _catalog(tmp_path / "Wedding.lrcat")
@@ -248,12 +253,41 @@ def test_mark_photos_adds_collection_and_labels(catalog: Path, tmp_path: Path):
     db.close()
 
 
-def test_mark_photos_refills_existing_collection(catalog: Path, tmp_path: Path):
-    writer.mark_photos(catalog, [101, 102], backup_dir=tmp_path / "b")
-    writer.mark_photos(catalog, [103], backup_dir=tmp_path / "b")
+def test_mark_photos_reuses_only_an_owned_untouched_collection(catalog: Path, tmp_path: Path):
+    first = writer.mark_photos(catalog, [101, 102], backup_dir=tmp_path / "b")
+    again = writer.mark_photos(catalog, [103], owned_collection=first["collection"], expected_members=[101, 102],
+                               backup_dir=tmp_path / "b")
+    assert again["collection"] == first["collection"] and not again["created"]
     db = sqlite3.connect(catalog)
-    assert db.execute("SELECT COUNT(*) FROM AgLibraryCollection WHERE name = ?", (writer.ANCHOR_COLLECTION,)).fetchone()[0] == 1
-    assert [r[0] for r in db.execute("SELECT image FROM AgLibraryCollectionImage")] == [103]
+    assert writer.collection_members(db, first["collection"]) == [103]
+    db.close()
+    empty = writer.mark_photos(catalog, [424242], backup_dir=tmp_path / "b")
+    assert empty["collection"] is None and empty["collection_name"] is None and empty["created"] is False
+    db = sqlite3.connect(catalog)
+    db.close()
+
+
+def test_mark_photos_never_touches_the_photographers_collections(catalog: Path, tmp_path: Path):
+    db = sqlite3.connect(catalog)
+    db.execute("INSERT INTO AgLibraryCollection VALUES (90, 'com.adobe.ag.library.collection', '/290', NULL, ?, "
+               "NULL, 0)", (writer.ANCHOR_COLLECTION,))
+    db.execute("INSERT INTO AgLibraryCollectionImage VALUES (91, 90, 103, 0, NULL)")
+    db.commit()
+    db.close()
+    ours = writer.mark_photos(catalog, [101], backup_dir=tmp_path / "b")
+    assert ours["created"] and ours["collection"] != 90
+    assert ours["collection_name"] == f"{writer.ANCHOR_COLLECTION} (2)"
+    # the photographer changed our collection: re-marking makes a new one and leaves theirs as it is
+    db = sqlite3.connect(catalog)
+    db.execute("INSERT INTO AgLibraryCollectionImage VALUES (92, ?, 102, 0, NULL)", (ours["collection"],))
+    db.commit()
+    db.close()
+    again = writer.mark_photos(catalog, [103], collection_name=ours["collection_name"],
+                               owned_collection=ours["collection"], expected_members=[101], backup_dir=tmp_path / "b")
+    assert again["created"] and again["collection"] != ours["collection"]
+    db = sqlite3.connect(catalog)
+    assert writer.collection_members(db, 90) == [103]
+    assert sorted(writer.collection_members(db, ours["collection"])) == [101, 102]
     db.close()
 
 
@@ -261,3 +295,70 @@ def test_mark_photos_refuses_while_open(catalog: Path):
     Path(f"{catalog}.lock").write_text("")
     with pytest.raises(writer.CatalogWriteError):
         writer.mark_photos(catalog, [101])
+
+
+def _digest(path: Path) -> str:
+    import hashlib
+
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def test_photos_outside_the_allow_list_stop_the_write(catalog: Path, tmp_path: Path):
+    before = _digest(catalog)
+    with pytest.raises(writer.CatalogWriteError):
+        writer.write_edits(catalog, {101: {"Exposure2012": 0.5}, 102: {"Exposure2012": 0.5}}, allowed_images={101},
+                           backup_dir=tmp_path / "b")
+    assert _digest(catalog) == before
+
+
+def test_two_writers_on_one_catalog_are_refused(catalog: Path, tmp_path: Path):
+    with writer.catalog_lock(catalog):
+        with pytest.raises(writer.CatalogWriteError, match="already writing"):
+            writer.write_edits(catalog, {101: {"Exposure2012": 0.5}}, backup_dir=tmp_path / "b")
+    assert writer.write_edits(catalog, {101: {"Exposure2012": 0.5}}, backup_dir=tmp_path / "b")["written"]
+
+
+def test_lightroom_opening_during_the_write_rolls_back(catalog: Path, tmp_path: Path, monkeypatch):
+    before = _digest(catalog)
+    calls = iter([False, False, False, True])  # closed for the checks before writing, open just before COMMIT
+    monkeypatch.setattr(writer, "catalog_in_use", lambda _c: next(calls, True))
+    with pytest.raises(writer.CatalogWriteError, match="opened"):
+        writer.write_edits(catalog, {101: {"Exposure2012": 0.5}}, backup_dir=tmp_path / "b")
+    assert _digest(catalog) == before
+
+
+def test_failure_in_the_middle_leaves_the_catalog_untouched(catalog: Path, tmp_path: Path, monkeypatch):
+    before = _digest(catalog)
+    real, seen = writer._encode_history, []
+
+    def flaky(method, text):
+        seen.append(1)
+        if len(seen) == 2:
+            raise RuntimeError("simulated crash in the middle of the write")
+        return real(method, text)
+    monkeypatch.setattr(writer, "_encode_history", flaky)
+    with pytest.raises(RuntimeError):
+        writer.write_edits(catalog, {101: {"Exposure2012": 0.5}, 102: {"Exposure2012": 0.5}}, backup_dir=tmp_path / "b")
+    assert _digest(catalog) == before
+
+
+def test_revert_puts_back_only_photos_untouched_since(catalog: Path, tmp_path: Path):
+    result = writer.write_edits(catalog, {101: {"Exposure2012": 0.5}, 102: {"Exposure2012": 0.5}},
+                                backup_dir=tmp_path / "b")
+    # the photographer edits 102 in Lightroom afterwards
+    db = sqlite3.connect(catalog)
+    text = db.execute("SELECT text FROM Adobe_imageDevelopSettings WHERE image = 102").fetchone()[0]
+    db.execute("UPDATE Adobe_imageDevelopSettings SET text = ?, historySettingsID = 'LR-NEW' WHERE image = 102",
+               (writer.set_settings(text, {"Exposure2012": 0.9}),))
+    db.execute("INSERT INTO Adobe_libraryImageDevelopHistoryStep (id_local, id_global, image, name) "
+               "VALUES (9000, 'LR-NEW', 102, 'Exposure')")
+    db.commit()
+    db.close()
+    undo = writer.revert_edits(catalog, result["written"], backup_dir=tmp_path / "b")
+    assert undo["reverted"] == [101] and undo["kept"] == [{"image": 102, "reason": "changed_after_prographer"}]
+    assert _row(catalog, 101)[:3] == (SETTINGS, "old", "H1")
+    assert writer.read_settings(_row(catalog, 102)[0])["Exposure2012"] == "0.9"
+    db = sqlite3.connect(catalog)
+    assert db.execute("SELECT COUNT(*) FROM Adobe_libraryImageDevelopHistoryStep WHERE image = 101 AND "
+                      "name = 'ProGrapher'").fetchone()[0] == 0
+    db.close()

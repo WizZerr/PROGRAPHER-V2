@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "test:ui": "node --test --experimental-strip-types src/features/events/eventFlow.test.ts",
     "start": "next start",
     "lint": "eslint",
     "tauri": "tauri"

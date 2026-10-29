@@ -1,65 +1,49 @@
 import { apiRequest } from "@/lib/api";
+import type { EventFolder, EventJob } from "./eventFlow";
 
-export type AnchorPlan = {
-  photos: number;
-  moments: number;
-  anchors: number;
-  photos_in_anchored_moments: number;
-  collection: string;
-  label: string;
-  labelled: number;
-  backup: string | null;
-};
-
-export type AutomaticExposure = {
-  state: "on" | "off";
-  reason:
-    | "disabled"
-    | "face_model_missing"
-    | "no_smart_previews"
-    | "decoder_unavailable"
-    | "too_few_anchor_faces"
-    | null;
-  photos?: number;
-};
-
-export type CompleteResult = {
-  photos: number;
-  moments: number;
-  anchors: number;
-  anchors_edited: number;
-  from_anchor: number;
-  automatic: number;
-  event_level: number;
-  skipped_edited: number;
-  no_exposure: number;
-  automatic_exposure: AutomaticExposure;
-  written: number;
-  skipped: Record<string, number>;
-  backup: string | null;
-  seconds: number;
-};
-
-export function chooseAnchors(catalogPath: string): Promise<AnchorPlan> {
-  return apiRequest<AnchorPlan>("/api/event-edit/anchors", {
+export function listCatalogFolders(
+  catalogPath: string,
+): Promise<{ catalog: string; folders: EventFolder[] }> {
+  return apiRequest("/api/event-edit/folders", {
     method: "POST",
     body: JSON.stringify({ catalog_path: catalogPath }),
   });
 }
 
-export function completeEvent(catalogPath: string): Promise<CompleteResult> {
-  return apiRequest<CompleteResult>("/api/event-edit/complete", {
+export function planAnchors(catalogPath: string, folderKeys: string[]): Promise<EventJob> {
+  return apiRequest("/api/event-edit/plan/anchors", {
     method: "POST",
-    body: JSON.stringify({ catalog_path: catalogPath, automatic_exposure: true }),
+    body: JSON.stringify({ catalog_path: catalogPath, folder_keys: folderKeys }),
   });
 }
 
-export function undoEventStep(
-  catalogPath: string,
-  backup: string,
-): Promise<{ restored: boolean }> {
-  return apiRequest<{ restored: boolean }>("/api/event-edit/undo", {
+export function planCompletion(catalogPath: string, folderKeys: string[]): Promise<EventJob> {
+  return apiRequest("/api/event-edit/plan/complete", {
     method: "POST",
-    body: JSON.stringify({ catalog_path: catalogPath, backup }),
+    body: JSON.stringify({ catalog_path: catalogPath, folder_keys: folderKeys }),
+  });
+}
+
+export function planUndo(jobId: string): Promise<EventJob> {
+  return apiRequest("/api/event-edit/plan/undo", {
+    method: "POST",
+    body: JSON.stringify({ job_id: jobId }),
+  });
+}
+
+export function getEventJob(jobId: string): Promise<EventJob> {
+  return apiRequest(`/api/event-edit/jobs/${encodeURIComponent(jobId)}`);
+}
+
+export function confirmEventJob(jobId: string): Promise<EventJob> {
+  return apiRequest(`/api/event-edit/jobs/${encodeURIComponent(jobId)}/confirm`, {
+    method: "POST",
+    body: JSON.stringify({ confirm: true }),
+  });
+}
+
+export function cancelEventJob(jobId: string): Promise<EventJob> {
+  return apiRequest(`/api/event-edit/jobs/${encodeURIComponent(jobId)}/cancel`, {
+    method: "POST",
   });
 }

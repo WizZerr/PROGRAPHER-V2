@@ -6,19 +6,34 @@ recomputed the real digest after we stored a new one, refreshed the thumbnails, 
 "ProGrapher" History step. Writing only the settings text (old digest) left stale thumbnails, so a new digest,
 historySettingsID and History step are always written together.
 
-Safety: refuses while Lightroom has the catalog open, backs the catalog up before writing, validates every value
-before touching anything, writes in one transaction, never changes keys other than the global sliders, leaves
-photos the photographer edited alone unless asked, and restores the backup if SQLite reports damage afterwards.
+Safety (every write goes through _write_session):
+- one ProGrapher writer per catalog: an OS-level exclusive lock file (released by the OS if the process dies) plus an
+  in-process lock, so two ProGrapher writes on one catalog cannot overlap;
+- refuses while Lightroom has the catalog open (.lock file or unsaved -wal), checks again right before COMMIT;
+- backup before writing (kept, never deleted by ProGrapher);
+- one SQLite EXCLUSIVE transaction (busy timeout 0: if anything else holds the database the write stops at once);
+  an optional `check` re-validates the catalog inside the transaction (e.g. "unchanged since the dry run");
+- validation of every value before the first change; an optional allow-list refuses any photo outside the event;
+- never changes keys other than the global sliders; leaves photos the photographer edited alone unless asked;
+- integrity check after COMMIT, restoring the backup if SQLite reports damage.
+Lightroom's own behaviour while ProGrapher holds the lock is not documented by Adobe: ProGrapher only promises to
+stop, not that Lightroom cannot interfere.
 """
 from __future__ import annotations
 
+import hashlib
+import os
 import sqlite3
+import threading
 import time
 import uuid
 import zlib
+from contextlib import contextmanager
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Mapping
+from typing import Any, Callable, Iterator, Mapping
+
+from app.platform.paths import user_data_dir
 
 STEP_NAME = "ProGrapher"
 COCOA_EPOCH = 978307200  # Lightroom stores times as seconds since 2001-01-01 UTC
@@ -241,16 +256,166 @@ def _edited_by_photographer(db: sqlite3.Connection, image: int, step_name: str) 
     return any(not (name.startswith(AUTOMATIC_STEPS) or name == step_name) for name in names)
 
 
+def develop_state(db: sqlite3.Connection, images) -> dict[int, dict[str, Any]]:
+    """What undo needs to put a photo back: its Develop row and the id of its latest History step."""
+    images = list(images)
+    out: dict[int, dict[str, Any]] = {}
+    for start in range(0, len(images), 500):
+        chunk = images[start:start + 500]
+        marks = ",".join("?" * len(chunk))
+        for image, settings_id, text, digest, hist, wb, adj in db.execute(
+                f"SELECT image, id_local, text, digest, historySettingsID, whiteBalance, hasDevelopAdjustmentsEx "
+                f"FROM Adobe_imageDevelopSettings WHERE image IN ({marks})", chunk):
+            out[image] = {"settings_id": settings_id, "text": text or "", "digest": digest, "historySettingsID": hist,
+                          "whiteBalance": wb, "hasDevelopAdjustmentsEx": adj}
+        for image, last in db.execute(
+                f"SELECT image, id_global FROM Adobe_libraryImageDevelopHistoryStep h WHERE image IN ({marks}) "
+                f"AND id_local = (SELECT MAX(id_local) FROM Adobe_libraryImageDevelopHistoryStep "
+                f"WHERE image = h.image)", chunk):
+            if image in out:
+                out[image]["last_step"] = last
+    return out
+
+
+# --- exclusive write session -------------------------------------------------------------------------------------
+
+_process_locks: dict[str, threading.Lock] = {}
+_process_locks_guard = threading.Lock()
+
+
+def _catalog_key(catalog: Path) -> str:
+    return hashlib.sha256(str(Path(catalog).resolve()).casefold().encode("utf-8")).hexdigest()[:32]
+
+
+@contextmanager
+def catalog_lock(catalog: Path) -> Iterator[None]:
+    """Exclusive ProGrapher lock for one catalog: fails at once (never waits) if another write holds it."""
+    key = _catalog_key(catalog)
+    with _process_locks_guard:
+        local = _process_locks.setdefault(key, threading.Lock())
+    if not local.acquire(blocking=False):
+        raise CatalogWriteError("another ProGrapher operation is already writing this catalog")
+    folder = user_data_dir() / "locks"
+    folder.mkdir(parents=True, exist_ok=True)
+    fd = os.open(folder / f"{key}.lock", os.O_RDWR | os.O_CREAT, 0o600)
+    try:
+        try:
+            if os.name == "nt":
+                import msvcrt
+
+                msvcrt.locking(fd, msvcrt.LK_NBLCK, 1)
+            else:
+                import fcntl
+
+                fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except OSError as exc:
+            raise CatalogWriteError("another ProGrapher operation is already writing this catalog") from exc
+        try:
+            yield
+        finally:
+            if os.name == "nt":
+                import msvcrt
+
+                os.lseek(fd, 0, os.SEEK_SET)
+                msvcrt.locking(fd, msvcrt.LK_UNLCK, 1)
+            else:
+                import fcntl
+
+                fcntl.flock(fd, fcntl.LOCK_UN)
+    finally:
+        os.close(fd)
+        local.release()
+
+
+@contextmanager
+def _write_session(catalog: Path, backup_dir: Path | None,
+                   check: Callable[[sqlite3.Connection], None] | None) -> Iterator[tuple[sqlite3.Connection, Path]]:
+    with catalog_lock(catalog):
+        _require_closed(catalog)
+        if check is not None:  # read-only pre-check: a plan that is already outdated never costs a backup
+            ro = sqlite3.connect(f"file:{catalog}?mode=ro", uri=True)
+            try:
+                check(ro)
+            finally:
+                ro.close()
+        # The backup is taken before BEGIN (SQLite cannot back up from inside the exclusive transaction); `check`
+        # runs again inside the transaction, so the write still only happens on the state the plan was made on.
+        backup = backup_catalog(catalog, backup_dir)
+        db = sqlite3.connect(catalog, isolation_level=None, timeout=0)
+        committed = False
+        try:
+            db.execute("PRAGMA busy_timeout = 0")
+            try:
+                db.execute("BEGIN EXCLUSIVE")
+            except sqlite3.OperationalError as exc:
+                raise CatalogWriteError("the catalog is in use by another program; nothing was written") from exc
+            if check is not None:
+                check(db)
+            yield db, backup
+            if catalog_in_use(catalog):
+                raise CatalogWriteError("Lightroom opened the catalog during the write; nothing was written")
+            db.execute("COMMIT")
+            committed = True
+            if db.execute("PRAGMA quick_check").fetchone()[0] != "ok":
+                raise CatalogWriteError("SQLite integrity check failed after writing; the backup was restored")
+        except BaseException:
+            if not committed and db.in_transaction:
+                db.execute("ROLLBACK")  # nothing of this write reaches the catalog
+            db.close()
+            if committed:
+                restore_backup(backup, catalog)
+            raise
+        db.close()
+
+
+def _next_ids(db: sqlite3.Connection, count: int) -> list[int]:
+    counter = int(float(db.execute(
+        "SELECT value FROM Adobe_variablesTable WHERE name = 'Adobe_entityIDCounter'").fetchone()[0]))
+    db.execute("UPDATE Adobe_variablesTable SET value = ? WHERE name = 'Adobe_entityIDCounter'", (counter + count,))
+    return list(range(counter + 1, counter + count + 1))
+
+
+def _bump_change_counters(db: sqlite3.Connection, images: list[int], stamp: str) -> None:
+    tables = {row[0] for row in db.execute("SELECT name FROM sqlite_master WHERE type = 'table'")}
+    if not {"LrMobileSyncChangeCounter", "AgLibraryImageChangeCounter"} <= tables:
+        return
+    row = db.execute("SELECT changeCounter FROM LrMobileSyncChangeCounter").fetchone()
+    if not row:
+        return
+    change = int(row[0])
+    for image in images:
+        change += 1
+        db.execute("UPDATE AgLibraryImageChangeCounter SET changeCounter = ?, changedAtTime = ? WHERE image = ?",
+                   (change, stamp, image))
+    db.execute("UPDATE LrMobileSyncChangeCounter SET changeCounter = ?", (change,))
+
+
+def _stamp() -> tuple[float, str]:
+    return time.time() - COCOA_EPOCH, datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z"
+
+
+# --- writing Develop settings ------------------------------------------------------------------------------------
+
 def write_edits(catalog: Path, edits: Mapping[int, Mapping[str, Any]], *, step_name: str = STEP_NAME,
-                overwrite_photographer_edits: bool = False, backup_dir: Path | None = None) -> dict[str, Any]:
+                overwrite_photographer_edits: bool = False, backup_dir: Path | None = None,
+                allowed_images: set[int] | None = None, history_ids: Mapping[int, str] | None = None,
+                check: Callable[[sqlite3.Connection], None] | None = None) -> dict[str, Any]:
     """Write per-photo slider values ({Adobe_images.id_local: {"Exposure2012": 0.4, ...}}) into a closed catalog.
 
-    Returns {"backup", "written", "skipped", "seconds"}; skipped photos carry a reason and are left unchanged.
+    allowed_images: every photo must be in it, or nothing is written (event isolation).
+    history_ids: the History step id to use per photo (lets a job prove afterwards what was written).
+    check: called inside the write transaction before any change; raise to stop (e.g. catalog changed since plan).
+    Returns {"backup", "written": [{image, file, history_id, before, values}], "skipped", "seconds"}; skipped photos
+    carry a reason and are left unchanged; "before" is what undo needs.
     """
     catalog = Path(catalog)
+    if allowed_images is not None:
+        outside = sorted(set(edits) - set(allowed_images))
+        if outside:
+            raise CatalogWriteError(f"{len(outside)} photos are outside the event; nothing was written")
     _require_closed(catalog)
     started = time.perf_counter()
-    db = sqlite3.connect(catalog)
+    db = sqlite3.connect(f"file:{catalog}?mode=ro", uri=True)
     try:
         _check_schema(db)
         method = _history_format(db)
@@ -279,54 +444,69 @@ def write_edits(catalog: Path, edits: Mapping[int, Mapping[str, Any]], *, step_n
                     reason = "unreadable_settings"
             if reason:
                 skipped.append({"image": image, "file": file_name, "reason": reason})
-    except BaseException:
+    finally:
         db.close()
-        raise
     if not planned:
-        db.close()
         return {"backup": None, "written": [], "skipped": skipped, "seconds": time.perf_counter() - started}
-    backup = backup_catalog(catalog, backup_dir)
-    try:
-        now = time.time() - COCOA_EPOCH
-        stamp = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z"
-        written = []
-        with db:
-            counter = int(float(db.execute(
-                "SELECT value FROM Adobe_variablesTable WHERE name = 'Adobe_entityIDCounter'").fetchone()[0]))
-            has_change_counters = {"LrMobileSyncChangeCounter", "AgLibraryImageChangeCounter"} <= {
-                row[0] for row in db.execute("SELECT name FROM sqlite_master WHERE type = 'table'")}
-            change = db.execute("SELECT changeCounter FROM LrMobileSyncChangeCounter").fetchone() \
-                if has_change_counters else None
-            change = int(change[0]) if change else None
-            for image, settings_id, file_name, new_text, values in planned:
-                digest, history_id = uuid.uuid4().hex, str(uuid.uuid4()).upper()
-                db.execute("UPDATE Adobe_imageDevelopSettings SET text = ?, digest = ?, historySettingsID = ?, "
-                           "hasDevelopAdjustmentsEx = 1, whiteBalance = COALESCE(?, whiteBalance) "
-                           "WHERE id_local = ?",
-                           (new_text, digest, history_id, values.get("WhiteBalance"), settings_id))
-                counter += 1
-                db.execute("INSERT INTO Adobe_libraryImageDevelopHistoryStep (id_local, id_global, dateCreated, "
-                           "digest, hasBigData, hasDevelopAdjustments, image, name, relValueString, text, "
-                           "valueString) VALUES (?, ?, ?, ?, 0, 1, ?, ?, NULL, ?, NULL)",
-                           (counter, history_id, now, digest, image, step_name, _encode_history(method, new_text)))
-                db.execute("UPDATE Adobe_images SET touchCount = COALESCE(touchCount, 0) + 1, touchTime = ? "
-                           "WHERE id_local = ?", (now, image))
-                if change is not None:
-                    change += 1
-                    db.execute("UPDATE AgLibraryImageChangeCounter SET changeCounter = ?, changedAtTime = ? "
-                               "WHERE image = ?", (change, stamp, image))
-                written.append({"image": image, "file": file_name})
-            db.execute("UPDATE Adobe_variablesTable SET value = ? WHERE name = 'Adobe_entityIDCounter'", (counter,))
-            if change is not None:
-                db.execute("UPDATE LrMobileSyncChangeCounter SET changeCounter = ?", (change,))
-        if db.execute("PRAGMA quick_check").fetchone()[0] != "ok":
-            raise CatalogWriteError("SQLite integrity check failed after writing")
-    except BaseException:
-        db.close()
-        restore_backup(backup, catalog)
-        raise
-    db.close()
+    written = []
+    with _write_session(catalog, backup_dir, check) as (db, backup):
+        before = develop_state(db, [p[0] for p in planned])
+        now, stamp = _stamp()
+        step_ids = _next_ids(db, len(planned))
+        for (image, settings_id, file_name, new_text, values), step_id in zip(planned, step_ids):
+            digest = uuid.uuid4().hex
+            history_id = (history_ids or {}).get(image) or str(uuid.uuid4()).upper()
+            db.execute("UPDATE Adobe_imageDevelopSettings SET text = ?, digest = ?, historySettingsID = ?, "
+                       "hasDevelopAdjustmentsEx = 1, whiteBalance = COALESCE(?, whiteBalance) WHERE id_local = ?",
+                       (new_text, digest, history_id, values.get("WhiteBalance"), settings_id))
+            db.execute("INSERT INTO Adobe_libraryImageDevelopHistoryStep (id_local, id_global, dateCreated, "
+                       "digest, hasBigData, hasDevelopAdjustments, image, name, relValueString, text, "
+                       "valueString) VALUES (?, ?, ?, ?, 0, 1, ?, ?, NULL, ?, NULL)",
+                       (step_id, history_id, now, digest, image, step_name, _encode_history(method, new_text)))
+            db.execute("UPDATE Adobe_images SET touchCount = COALESCE(touchCount, 0) + 1, touchTime = ? "
+                       "WHERE id_local = ?", (now, image))
+            written.append({"image": image, "file": file_name, "history_id": history_id,
+                            "before": before.get(image), "values": {k: _lua(v) for k, v in values.items()}})
+        _bump_change_counters(db, [w["image"] for w in written], stamp)
     return {"backup": str(backup), "written": written, "skipped": skipped, "seconds": time.perf_counter() - started}
+
+
+def revert_edits(catalog: Path, entries: list[Mapping[str, Any]], *, backup_dir: Path | None = None,
+                 check: Callable[[sqlite3.Connection], None] | None = None) -> dict[str, Any]:
+    """Selective undo of a write_edits result: a photo is put back only if it is exactly as ProGrapher left it
+    (its latest History step and historySettingsID are ProGrapher's, and every value written is still there).
+    Anything changed since (an edit in Lightroom, another tool) is kept and reported, never overwritten."""
+    catalog = Path(catalog)
+    reverted, kept = [], []
+    with _write_session(catalog, backup_dir, check) as (db, backup):
+        state = develop_state(db, [e["image"] for e in entries])
+        for entry in entries:
+            image, now = entry["image"], state.get(entry["image"])
+            before = entry.get("before") or {}
+            reason = None
+            if now is None or not before:
+                reason = "missing"
+            elif now["historySettingsID"] != entry["history_id"] or now.get("last_step") != entry["history_id"]:
+                reason = "changed_after_prographer"
+            else:
+                try:
+                    current = read_settings(now["text"])
+                except ValueError:
+                    current = {}
+                if any(current.get(k) != v for k, v in entry["values"].items()):
+                    reason = "changed_after_prographer"
+            if reason:
+                kept.append({"image": image, "reason": reason})
+                continue
+            db.execute("UPDATE Adobe_imageDevelopSettings SET text = ?, digest = ?, historySettingsID = ?, "
+                       "whiteBalance = ?, hasDevelopAdjustmentsEx = ? WHERE image = ?",
+                       (before["text"], before["digest"], before["historySettingsID"], before["whiteBalance"],
+                        before["hasDevelopAdjustmentsEx"], image))
+            db.execute("DELETE FROM Adobe_libraryImageDevelopHistoryStep WHERE image = ? AND id_global = ?",
+                       (image, entry["history_id"]))
+            reverted.append(image)
+        _bump_change_counters(db, reverted, _stamp()[1])
+    return {"backup": str(backup), "reverted": reverted, "kept": kept}
 
 
 ANCHOR_COLLECTION = "ProGrapher - Edit these"
@@ -338,66 +518,91 @@ MARK_REQUIRED = {
 }
 
 
+def collection_members(db: sqlite3.Connection, collection: int) -> list[int]:
+    return [r[0] for r in db.execute("SELECT image FROM AgLibraryCollectionImage WHERE collection = ? ORDER BY "
+                                     "id_local", (collection,))]
+
+
 def mark_photos(catalog: Path, images: list[int], *, collection_name: str = ANCHOR_COLLECTION,
-                label: str = ANCHOR_LABEL, backup_dir: Path | None = None) -> dict[str, Any]:
-    """Show the photographer which photos to edit: a top-level collection holding exactly these photos (an existing
-    one of the same name is refilled) and a colour label on those without one (a photographer's label is kept).
-    Verified in Lightroom Classic (experiment 3): both appear as written. Same safety as write_edits."""
+                owned_collection: int | None = None, expected_members: list[int] | None = None,
+                label: str = ANCHOR_LABEL, backup_dir: Path | None = None, allowed_images: set[int] | None = None,
+                check: Callable[[sqlite3.Connection], None] | None = None) -> dict[str, Any]:
+    """Show the photographer which photos to edit: a top-level collection holding these photos, and a colour label
+    on those without one (a label the photographer set is never changed). Verified in Lightroom Classic.
+
+    A collection is reused only when ProGrapher owns it (`owned_collection`, recorded when ProGrapher created it)
+    and it still holds exactly `expected_members`; otherwise a new collection is created and nothing existing is
+    touched. A collection of the same name that ProGrapher did not create is never used: the new one gets a suffix.
+    """
     catalog = Path(catalog)
+    if allowed_images is not None and set(images) - set(allowed_images):
+        raise CatalogWriteError("some photos are outside the event; nothing was written")
     _require_closed(catalog)
-    db = sqlite3.connect(catalog)
+    db = sqlite3.connect(f"file:{catalog}?mode=ro", uri=True)
     try:
         for table, cols in MARK_REQUIRED.items():
             found = {row[1] for row in db.execute(f'PRAGMA table_info("{table}")')}
             if not cols <= found:
                 raise CatalogWriteError(f"unsupported catalog layout: {table} lacks {sorted(cols - found)}")
         known = {row[0] for row in db.execute("SELECT id_local FROM Adobe_images")}
-        wanted = list(dict.fromkeys(i for i in images if i in known))
-        missing = [i for i in images if i not in known]
-    except BaseException:
+    finally:
         db.close()
-        raise
+    wanted = list(dict.fromkeys(i for i in images if i in known))
+    missing = [i for i in images if i not in known]
     if not wanted:
-        db.close()
-        return {"backup": None, "collection": None, "marked": [], "labelled": [], "not_in_catalog": missing}
-    db.close()
-    backup = backup_catalog(catalog, backup_dir)
-    db = sqlite3.connect(catalog)
-    try:
-        with db:
-            counter = int(float(db.execute(
-                "SELECT value FROM Adobe_variablesTable WHERE name = 'Adobe_entityIDCounter'").fetchone()[0]))
-            row = db.execute("SELECT id_local FROM AgLibraryCollection WHERE name = ? AND parent IS NULL AND "
-                             "creationId = 'com.adobe.ag.library.collection'", (collection_name,)).fetchone()
-            if row:
-                collection = row[0]
-                db.execute("DELETE FROM AgLibraryCollectionImage WHERE collection = ?", (collection,))
-            else:
-                counter += 1
-                collection = counter
-                db.execute("INSERT INTO AgLibraryCollection (id_local, creationId, genealogy, name, parent, systemOnly) "
-                           "VALUES (?, 'com.adobe.ag.library.collection', ?, ?, NULL, 0)",
-                           (collection, f"/{len(str(collection))}{collection}", collection_name))
-            for image in wanted:
-                counter += 1
-                db.execute("INSERT INTO AgLibraryCollectionImage (id_local, collection, image, pick) VALUES (?, ?, ?, 0)",
-                           (counter, collection, image))
-            labelled = [image for image in wanted if not (db.execute(
-                "SELECT colorLabels FROM Adobe_images WHERE id_local = ?", (image,)).fetchone()[0] or "")]
-            db.executemany("UPDATE Adobe_images SET colorLabels = ? WHERE id_local = ?",
-                           [(label, image) for image in labelled])
-            db.execute("UPDATE Adobe_variablesTable SET value = ? WHERE name = 'Adobe_entityIDCounter'", (counter,))
-        if db.execute("PRAGMA quick_check").fetchone()[0] != "ok":
-            raise CatalogWriteError("SQLite integrity check failed after writing")
-    except BaseException:
-        db.close()
-        restore_backup(backup, catalog)
-        raise
-    db.close()
-    return {"backup": str(backup), "collection": collection, "marked": wanted, "labelled": labelled,
-            "not_in_catalog": missing}
+        return {"backup": None, "collection": None, "collection_name": None, "created": False, "marked": [],
+                "labelled": [], "not_in_catalog": missing}
+    with _write_session(catalog, backup_dir, check) as (db, backup):
+        reuse = None
+        if owned_collection is not None:
+            row = db.execute("SELECT name FROM AgLibraryCollection WHERE id_local = ? AND parent IS NULL AND "
+                             "creationId = 'com.adobe.ag.library.collection'", (owned_collection,)).fetchone()
+            if row and row[0] == collection_name and collection_members(db, owned_collection) == list(expected_members or []):
+                reuse = owned_collection
+        if reuse is not None:
+            collection, created = reuse, False
+            db.execute("DELETE FROM AgLibraryCollectionImage WHERE collection = ?", (collection,))
+        else:
+            taken = {r[0] for r in db.execute("SELECT name FROM AgLibraryCollection")}
+            name, n = collection_name, 2
+            while name in taken:
+                name, n = f"{collection_name} ({n})", n + 1
+            collection_name, created = name, True
+            collection = _next_ids(db, 1)[0]
+            db.execute("INSERT INTO AgLibraryCollection (id_local, creationId, genealogy, name, parent, systemOnly) "
+                       "VALUES (?, 'com.adobe.ag.library.collection', ?, ?, NULL, 0)",
+                       (collection, f"/{len(str(collection))}{collection}", collection_name))
+        for image, member_id in zip(wanted, _next_ids(db, len(wanted))):
+            db.execute("INSERT INTO AgLibraryCollectionImage (id_local, collection, image, pick) VALUES (?, ?, ?, 0)",
+                       (member_id, collection, image))
+        labelled = [image for image in wanted if not (db.execute(
+            "SELECT colorLabels FROM Adobe_images WHERE id_local = ?", (image,)).fetchone()[0] or "")]
+        db.executemany("UPDATE Adobe_images SET colorLabels = ? WHERE id_local = ?",
+                       [(label, image) for image in labelled])
+    return {"backup": str(backup), "collection": collection, "collection_name": collection_name,
+            "created": created, "marked": wanted, "labelled": labelled, "not_in_catalog": missing}
+
+
+def unmark_photos(catalog: Path, collection: int, *, collection_name: str, expected_members: list[int],
+                  labelled: list[int], label: str = ANCHOR_LABEL, backup_dir: Path | None = None,
+                  check: Callable[[sqlite3.Connection], None] | None = None) -> dict[str, Any]:
+    """Undo mark_photos: remove ProGrapher's collection only while it still has the name and exactly the photos
+    ProGrapher put in it; clear only the labels ProGrapher set that still carry ProGrapher's label."""
+    catalog = Path(catalog)
+    with _write_session(catalog, backup_dir, check) as (db, backup):
+        row = db.execute("SELECT name FROM AgLibraryCollection WHERE id_local = ?", (collection,)).fetchone()
+        removed = bool(row and row[0] == collection_name
+                       and sorted(collection_members(db, collection)) == sorted(expected_members))
+        if removed:
+            db.execute("DELETE FROM AgLibraryCollectionImage WHERE collection = ?", (collection,))
+            db.execute("DELETE FROM AgLibraryCollection WHERE id_local = ?", (collection,))
+        cleared = [i for i in labelled if (db.execute("SELECT colorLabels FROM Adobe_images WHERE id_local = ?",
+                                                      (i,)).fetchone() or [""])[0] == label]
+        db.executemany("UPDATE Adobe_images SET colorLabels = '' WHERE id_local = ?", [(i,) for i in cleared])
+    return {"backup": str(backup), "collection_removed": removed, "labels_cleared": cleared,
+            "labels_kept": sorted(set(labelled) - set(cleared))}
 
 
 __all__ = ["ANCHOR_COLLECTION", "ANCHOR_LABEL", "CatalogWriteError", "STEP_NAME", "WRITABLE", "backup_catalog",
-           "catalog_in_use", "mark_photos", "normalize_edit", "parse_settings", "read_settings", "restore_backup",
-           "set_settings", "write_edits"]
+           "catalog_in_use", "catalog_lock", "collection_members", "develop_state", "mark_photos", "normalize_edit",
+           "parse_settings", "read_settings", "restore_backup", "revert_edits", "set_settings", "unmark_photos", "write_edits"]

@@ -322,7 +322,7 @@ export default function EventsScreen() {
         <LightroomEventPanel
           key={lightroom.catalogPath}
           catalogPath={lightroom.catalogPath}
-          initial={lightroom.saved}
+          saved={lightroom.saved}
           onClose={() => setLightroom(null)}
         />
       ) : null}

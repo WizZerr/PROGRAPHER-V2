@@ -70,6 +70,20 @@ The module is `app/lightroom_bridge/catalog_writer.py`. Its entry point is `writ
 7. **JPEG/TIFF:** receive tone values but no white balance, because they use a different scale that is not yet learned.
 8. **Layout check:** the catalog layout is verified first. Missing tables or columns, or an unknown History format, means the write is refused.
 
+**Write session (safety round):**
+- Every write (`write_edits`, `revert_edits`, `mark_photos`, `unmark_photos`) goes through `_write_session`. It holds:
+  - A ProGrapher lock per catalog (OS file lock + in-process).
+  - The Lightroom-closed check.
+  - An optional `check(db)`, run read-only before the backup and again inside the transaction.
+  - The backup.
+  - `BEGIN EXCLUSIVE` with busy timeout 0.
+  - A Lightroom check before COMMIT.
+  - The integrity check after COMMIT.
+- An exception before COMMIT rolls back, so the catalog is untouched; it is not restored from the backup.
+- `write_edits(allowed_images=...)` refuses photos outside the event.
+- `write_edits(history_ids=...)` lets a job prove afterwards what was written. It returns each photo's before-state for undo.
+- `revert_edits` puts back only photos still exactly as ProGrapher left them.
+
 **Tests:** `tests/test_lb02_catalog_writer.py`, on a synthetic catalog. They cover:
 - Settings round trip and the Lightroom-identical edit.
 - Range checks and the lock refusal.

@@ -1,5 +1,8 @@
-"""Event flow v1: choose the anchors, complete the event, undo. Lightroom must be closed; see app.event_edit."""
+"""Event flow v1 (Lightroom catalog). Every catalog change is a planned job: dry run first, then explicit confirm.
+See app.event_edit.service for the safety rules."""
 from __future__ import annotations
+
+from typing import Literal
 
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
@@ -10,43 +13,79 @@ from app.event_edit.service import EventEditError
 router = APIRouter(prefix="/api/event-edit", tags=["event-edit"])
 
 
-class AnchorRequest(BaseModel):
+class CatalogRequest(BaseModel):
     catalog_path: str = Field(min_length=1)
+
+
+class ScopeRequest(CatalogRequest):
+    folder_keys: list[str] = Field(min_length=1, max_length=200)
+
+
+class AnchorPlanRequest(ScopeRequest):
     anchor_count: int | None = Field(default=None, ge=5, le=500)
 
 
-class CompleteRequest(BaseModel):
-    catalog_path: str = Field(min_length=1)
-    automatic_exposure: bool = True
+class CompletionPlanRequest(ScopeRequest):
+    fill_unanchored: bool = False
+    automatic_exposure: bool = False
 
 
-class UndoRequest(BaseModel):
-    catalog_path: str = Field(min_length=1)
-    backup: str = Field(min_length=1)
+class UndoPlanRequest(BaseModel):
+    job_id: str = Field(min_length=1)
 
 
-@router.post("/anchors")
-def choose_anchors(payload: AnchorRequest) -> dict:
-    """Mark the photos the photographer edits (collection + purple label). Backs the catalog up first."""
+class ConfirmRequest(BaseModel):
+    confirm: Literal[True]
+
+
+def _call(fn, *args, **kwargs) -> dict:
     try:
-        return service.plan_anchors(payload.catalog_path, payload.anchor_count)
+        return fn(*args, **kwargs)
     except EventEditError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
 
 
-@router.post("/complete")
-def complete_event(payload: CompleteRequest) -> dict:
-    """Write every photo the photographer did not edit, from the edited anchors. Backs the catalog up first."""
-    try:
-        return service.complete(payload.catalog_path, automatic_exposure=payload.automatic_exposure)
-    except EventEditError as exc:
-        raise HTTPException(status_code=422, detail=str(exc)) from exc
+@router.post("/folders")
+def list_folders(payload: CatalogRequest) -> dict:
+    """The catalog's folders with photos, to choose the event (read-only)."""
+    return _call(service.folders, payload.catalog_path)
 
 
-@router.post("/undo")
-def undo_event(payload: UndoRequest) -> dict:
-    """Put the catalog back exactly as it was before the step that made this backup."""
-    try:
-        return service.undo(payload.catalog_path, payload.backup)
-    except EventEditError as exc:
-        raise HTTPException(status_code=422, detail=str(exc)) from exc
+@router.post("/status")
+def event_status(payload: ScopeRequest) -> dict:
+    return _call(service.event_status, payload.catalog_path, payload.folder_keys)
+
+
+@router.post("/plan/anchors")
+def plan_anchors(payload: AnchorPlanRequest) -> dict:
+    """Dry run: which photos would be marked for editing. Nothing is written."""
+    return _call(service.plan_anchors, payload.catalog_path, payload.folder_keys, payload.anchor_count)
+
+
+@router.post("/plan/complete")
+def plan_completion(payload: CompletionPlanRequest) -> dict:
+    """Dry run: what completing the event would write, skip and why. Nothing is written."""
+    return _call(service.plan_completion, payload.catalog_path, payload.folder_keys,
+                 fill_unanchored=payload.fill_unanchored, automatic_exposure=payload.automatic_exposure)
+
+
+@router.post("/plan/undo")
+def plan_undo(payload: UndoPlanRequest) -> dict:
+    """Dry run: which photos of a completion can be put back (only those untouched since). Nothing is written."""
+    return _call(service.plan_undo, payload.job_id)
+
+
+@router.get("/jobs/{job_id}")
+def get_job(job_id: str) -> dict:
+    return _call(service.get_job, job_id)
+
+
+@router.post("/jobs/{job_id}/confirm")
+def confirm_job(job_id: str, payload: ConfirmRequest) -> dict:
+    """Carry out a planned job after explicit confirmation; re-checked against the catalog before writing."""
+    return _call(service.confirm, job_id)
+
+
+@router.post("/jobs/{job_id}/cancel")
+def cancel_job(job_id: str) -> dict:
+    return _call(service.cancel, job_id)
