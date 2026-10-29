@@ -494,6 +494,53 @@
   box-shadow: 0 24px 80px rgba(0, 0, 0, 0.5);
 }
 
+.chooserDialog {
+  display: grid;
+  gap: 12px;
+  width: min(100%, 520px);
+  padding: 26px;
+  border: 1px solid var(--pg-border-strong);
+  border-radius: 16px;
+  background: #111823;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.5);
+}
+
+.chooserDialog h3 {
+  margin: 0 0 4px;
+  font-size: 22px;
+}
+
+.chooserOption {
+  display: grid;
+  gap: 4px;
+  padding: 16px 18px;
+  border: 1px solid #2b3850;
+  border-radius: 12px;
+  background: #0d141f;
+  color: var(--pg-text);
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+
+.chooserOption:hover {
+  border-color: rgba(138, 123, 255, 0.7);
+}
+
+.chooserOption strong {
+  font-size: 16px;
+}
+
+.chooserOption span {
+  color: var(--pg-text-secondary);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.chooserDialog .dialogCancel {
+  min-height: 42px;
+}
+
 .dialogEyebrow {
   display: block;
   margin-bottom: 8px;

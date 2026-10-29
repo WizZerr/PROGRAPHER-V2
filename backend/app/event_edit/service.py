@@ -29,9 +29,9 @@ class EventEditError(ValueError):
 def _catalog(path: str | Path) -> Path:
     catalog = Path(path).expanduser()
     if catalog.suffix.lower() != ".lrcat" or not catalog.is_file():
-        raise EventEditError("choose a Lightroom catalog file (.lrcat)")
+        raise EventEditError("יש לבחור קובץ קטלוג של Lightroom (.lrcat)")
     if writer.catalog_in_use(catalog):
-        raise EventEditError("Lightroom has this catalog open; close Lightroom and try again")
+        raise EventEditError("הקטלוג פתוח ב-Lightroom. סגור את Lightroom ונסה שוב.")
     return catalog
 
 
@@ -79,7 +79,7 @@ def read_event(catalog: Path) -> list[Photo]:
                 "SELECT image, dateCreated, name, text FROM Adobe_libraryImageDevelopHistoryStep"):
             steps.setdefault(image, []).append((created or 0.0, name or "", blob))
     except sqlite3.Error as exc:
-        raise EventEditError("unsupported catalog layout") from exc
+        raise EventEditError("מבנה הקטלוג לא נתמך") from exc
     finally:
         db.close()
     photos = []
@@ -110,7 +110,7 @@ def plan_anchors(catalog_path: str | Path, anchor_count: int | None = None) -> d
     catalog = _catalog(catalog_path)
     photos = read_event(catalog)
     if not photos:
-        raise EventEditError("the catalog has no photos")
+        raise EventEditError("אין תמונות בקטלוג")
     moments = brain.make_moments(photos)
     count = anchor_count or brain.default_anchor_count(len(photos))
     anchors = brain.choose_anchors(moments, count)
@@ -125,7 +125,7 @@ def plan_anchors(catalog_path: str | Path, anchor_count: int | None = None) -> d
 
 
 def _automatic_exposure(catalog: Path, photos: list[Photo], anchors: list[Photo], targets: list[Photo],
-                        progress: Callable[[int, int], None] | None) -> tuple[dict[int, float], str]:
+                        progress: Callable[[int, int], None] | None) -> tuple[dict[int, float], dict[str, Any]]:
     """Target-method exposure for `targets`, calibrated on the edited anchors of this event."""
     from app.event_edit import exposure_target as et
     from app.learning_intake.decoder_vendor import load_decoder_package
@@ -133,14 +133,14 @@ def _automatic_exposure(catalog: Path, photos: list[Photo], anchors: list[Photo]
 
     detector = et.load_face_detector()
     if detector is None:
-        return {}, "off: face model not installed"
+        return {}, {"state": "off", "reason": "face_model_missing"}
     previews = catalog.with_name(f"{catalog.stem} Smart Previews.lrdata")
     if not previews.is_dir():
-        return {}, "off: no Smart Previews next to the catalog"
+        return {}, {"state": "off", "reason": "no_smart_previews"}
     try:
         decoder = load_decoder_package()
     except Exception:  # noqa: BLE001
-        return {}, "off: Smart Preview decoder unavailable"
+        return {}, {"state": "off", "reason": "decoder_unavailable"}
     db = sqlite3.connect(f"file:{catalog}?mode=ro", uri=True)
     uuid_of = {i: (g or "").upper() for i, g in db.execute("SELECT id_local, id_global FROM Adobe_images")}
     db.close()
@@ -162,9 +162,9 @@ def _automatic_exposure(catalog: Path, photos: list[Photo], anchors: list[Photo]
     style = et.learn_style([{**measured[a.image], "exposure": a.develop["Exposure2012"]}
                             for a in edited if measured.get(a.image)], curve)
     if style is None:
-        return {}, "off: fewer than 20 edited anchors with a face"
+        return {}, {"state": "off", "reason": "too_few_anchor_faces"}
     autos = et.automatic_exposures({p.image: measured[p.image] for p in targets if p.image in measured}, style, curve)
-    return autos, f"on: {len(autos)} photos"
+    return autos, {"state": "on", "reason": None, "photos": len(autos)}
 
 
 def complete(catalog_path: str | Path, *, automatic_exposure: bool = True,
@@ -174,12 +174,12 @@ def complete(catalog_path: str | Path, *, automatic_exposure: bool = True,
     photos = read_event(catalog)
     ids = set(anchor_ids(catalog))
     if not ids:
-        raise EventEditError("choose the photos to edit first (no 'ProGrapher - Edit these' collection)")
+        raise EventEditError("קודם צריך לבחור תמונות לעריכה (אין Collection בשם 'ProGrapher - Edit these')")
     anchors = [p for p in photos if p.image in ids]
     if not any(a.edited_by_photographer for a in anchors):
-        raise EventEditError("none of the photos in 'ProGrapher - Edit these' has been edited yet")
+        raise EventEditError("עדיין לא נערכה אף תמונה מתוך 'ProGrapher - Edit these'")
     moments = brain.make_moments(photos)
-    status = "off"
+    status: dict[str, Any] = {"state": "off", "reason": "disabled"}
     autos: dict[int, float] = {}
     if automatic_exposure:
         edited_ids = {a.image for a in anchors if a.edited_by_photographer}
@@ -203,7 +203,7 @@ def undo(catalog_path: str | Path, backup: str | Path) -> dict[str, Any]:
     backup = Path(backup)
     if (backup.suffix != ".lrcat-backup" or backup.parent != catalog.parent / "ProGrapher Backups"
             or not backup.name.startswith(f"{catalog.stem}-")):
-        raise EventEditError("not a ProGrapher backup of this catalog")
+        raise EventEditError("זה לא גיבוי של ProGrapher לקטלוג הזה")
     try:
         writer.restore_backup(backup, catalog)
     except writer.CatalogWriteError as exc:

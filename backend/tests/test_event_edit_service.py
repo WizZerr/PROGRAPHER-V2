@@ -86,7 +86,7 @@ def test_event_flow_end_to_end(event: Path):
     _edit_like_photographer(event, 114, Exposure2012=0.1, Highlights2012=-50)
 
     result = service.complete(event, automatic_exposure=False)
-    assert result["written"] == 16 and result["automatic_exposure"] == "off"
+    assert result["written"] == 16 and result["automatic_exposure"] == {"state": "off", "reason": "disabled"}
     assert result["from_anchor"] == 14 and result["event_level"] == 2
     moment_photo = _values(event, 101)
     assert moment_photo["Exposure2012"] == "0.5" and moment_photo["Highlights2012"] == "-30"
