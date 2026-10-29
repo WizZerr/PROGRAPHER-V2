@@ -329,5 +329,75 @@ def write_edits(catalog: Path, edits: Mapping[int, Mapping[str, Any]], *, step_n
     return {"backup": str(backup), "written": written, "skipped": skipped, "seconds": time.perf_counter() - started}
 
 
-__all__ = ["CatalogWriteError", "STEP_NAME", "WRITABLE", "backup_catalog", "catalog_in_use", "normalize_edit",
-           "parse_settings", "read_settings", "restore_backup", "set_settings", "write_edits"]
+ANCHOR_COLLECTION = "ProGrapher - Edit these"
+ANCHOR_LABEL = "Purple"
+MARK_REQUIRED = {
+    "AgLibraryCollection": {"id_local", "creationId", "genealogy", "name", "parent", "systemOnly"},
+    "AgLibraryCollectionImage": {"id_local", "collection", "image", "pick"},
+    "Adobe_images": {"id_local", "colorLabels"},
+}
+
+
+def mark_photos(catalog: Path, images: list[int], *, collection_name: str = ANCHOR_COLLECTION,
+                label: str = ANCHOR_LABEL, backup_dir: Path | None = None) -> dict[str, Any]:
+    """Show the photographer which photos to edit: a top-level collection holding exactly these photos (an existing
+    one of the same name is refilled) and a colour label on those without one (a photographer's label is kept).
+    Verified in Lightroom Classic (experiment 3): both appear as written. Same safety as write_edits."""
+    catalog = Path(catalog)
+    _require_closed(catalog)
+    db = sqlite3.connect(catalog)
+    try:
+        for table, cols in MARK_REQUIRED.items():
+            found = {row[1] for row in db.execute(f'PRAGMA table_info("{table}")')}
+            if not cols <= found:
+                raise CatalogWriteError(f"unsupported catalog layout: {table} lacks {sorted(cols - found)}")
+        known = {row[0] for row in db.execute("SELECT id_local FROM Adobe_images")}
+        wanted = list(dict.fromkeys(i for i in images if i in known))
+        missing = [i for i in images if i not in known]
+    except BaseException:
+        db.close()
+        raise
+    if not wanted:
+        db.close()
+        return {"backup": None, "collection": None, "marked": [], "labelled": [], "not_in_catalog": missing}
+    db.close()
+    backup = backup_catalog(catalog, backup_dir)
+    db = sqlite3.connect(catalog)
+    try:
+        with db:
+            counter = int(float(db.execute(
+                "SELECT value FROM Adobe_variablesTable WHERE name = 'Adobe_entityIDCounter'").fetchone()[0]))
+            row = db.execute("SELECT id_local FROM AgLibraryCollection WHERE name = ? AND parent IS NULL AND "
+                             "creationId = 'com.adobe.ag.library.collection'", (collection_name,)).fetchone()
+            if row:
+                collection = row[0]
+                db.execute("DELETE FROM AgLibraryCollectionImage WHERE collection = ?", (collection,))
+            else:
+                counter += 1
+                collection = counter
+                db.execute("INSERT INTO AgLibraryCollection (id_local, creationId, genealogy, name, parent, systemOnly) "
+                           "VALUES (?, 'com.adobe.ag.library.collection', ?, ?, NULL, 0)",
+                           (collection, f"/{len(str(collection))}{collection}", collection_name))
+            for image in wanted:
+                counter += 1
+                db.execute("INSERT INTO AgLibraryCollectionImage (id_local, collection, image, pick) VALUES (?, ?, ?, 0)",
+                           (counter, collection, image))
+            labelled = [image for image in wanted if not (db.execute(
+                "SELECT colorLabels FROM Adobe_images WHERE id_local = ?", (image,)).fetchone()[0] or "")]
+            db.executemany("UPDATE Adobe_images SET colorLabels = ? WHERE id_local = ?",
+                           [(label, image) for image in labelled])
+            db.execute("UPDATE Adobe_variablesTable SET value = ? WHERE name = 'Adobe_entityIDCounter'", (counter,))
+        if db.execute("PRAGMA quick_check").fetchone()[0] != "ok":
+            raise CatalogWriteError("SQLite integrity check failed after writing")
+    except BaseException:
+        db.close()
+        restore_backup(backup, catalog)
+        raise
+    db.close()
+    return {"backup": str(backup), "collection": collection, "marked": wanted, "labelled": labelled,
+            "not_in_catalog": missing}
+
+
+__all__ = ["ANCHOR_COLLECTION", "ANCHOR_LABEL", "CatalogWriteError", "STEP_NAME", "WRITABLE", "backup_catalog",
+           "catalog_in_use", "mark_photos", "normalize_edit", "parse_settings", "read_settings", "restore_backup",
+           "set_settings", "write_edits"]

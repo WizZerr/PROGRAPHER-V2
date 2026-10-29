@@ -73,7 +73,14 @@ def _catalog(path: Path, photos=(("IMG_1", "CR3"), ("IMG_2", "NEF"), ("IMG_3", "
     db.executescript("""
         CREATE TABLE Adobe_variablesTable (id_local INTEGER PRIMARY KEY, id_global, name, value);
         INSERT INTO Adobe_variablesTable VALUES (1, 'v', 'Adobe_entityIDCounter', 500.0);
-        CREATE TABLE Adobe_images (id_local INTEGER PRIMARY KEY, rootFile, masterImage, touchCount, touchTime);
+        CREATE TABLE Adobe_images (id_local INTEGER PRIMARY KEY, rootFile, masterImage, touchCount, touchTime,
+            colorLabels NOT NULL DEFAULT '');
+        CREATE TABLE AgLibraryCollection (id_local INTEGER PRIMARY KEY, creationId NOT NULL, genealogy NOT NULL,
+            imageCount, name NOT NULL, parent INTEGER, systemOnly NOT NULL);
+        INSERT INTO AgLibraryCollection VALUES (7, 'com.adobe.ag.library.collection', '/17', NULL, 'quick collection',
+            NULL, 1);
+        CREATE TABLE AgLibraryCollectionImage (id_local INTEGER PRIMARY KEY, collection INTEGER NOT NULL,
+            image INTEGER NOT NULL, pick NOT NULL, positionInCollection);
         CREATE TABLE AgLibraryFile (id_local INTEGER PRIMARY KEY, baseName, extension);
         CREATE TABLE Adobe_imageDevelopSettings (id_local INTEGER PRIMARY KEY, image, text, digest,
             historySettingsID, hasDevelopAdjustmentsEx, whiteBalance, processVersion);
@@ -87,7 +94,7 @@ def _catalog(path: Path, photos=(("IMG_1", "CR3"), ("IMG_2", "NEF"), ("IMG_3", "
     for n, (base, ext) in enumerate(photos, start=1):
         image = 100 + n
         db.execute("INSERT INTO AgLibraryFile VALUES (?, ?, ?)", (10 + n, base, ext))
-        db.execute("INSERT INTO Adobe_images VALUES (?, ?, NULL, 1, 0)", (image, 10 + n))
+        db.execute("INSERT INTO Adobe_images VALUES (?, ?, NULL, 1, 0, '')", (image, 10 + n))
         db.execute("INSERT INTO Adobe_imageDevelopSettings VALUES (?, ?, ?, 'old', ?, -1, 'As Shot', '15.4')",
                    (200 + n, image, SETTINGS, f"H{n}"))
         db.execute("INSERT INTO Adobe_libraryImageDevelopHistoryStep VALUES (?, ?, 0, 'old', 0, -1, ?, "
@@ -222,3 +229,35 @@ def test_unsupported_catalog_is_refused(tmp_path: Path):
     sqlite3.connect(path).execute("CREATE TABLE Adobe_images (id_local INTEGER PRIMARY KEY)").connection.close()
     with pytest.raises(writer.CatalogWriteError):
         writer.write_edits(path, {1: {"Exposure2012": 0.5}})
+
+
+def test_mark_photos_adds_collection_and_labels(catalog: Path, tmp_path: Path):
+    db = sqlite3.connect(catalog)
+    db.execute("UPDATE Adobe_images SET colorLabels = 'Red' WHERE id_local = 102")
+    db.commit()
+    db.close()
+    report = writer.mark_photos(catalog, [101, 102, 999], backup_dir=tmp_path / "b")
+    assert report["marked"] == [101, 102] and report["labelled"] == [101] and report["not_in_catalog"] == [999]
+    db = sqlite3.connect(catalog)
+    coll = db.execute("SELECT id_local, creationId, genealogy, name, parent, systemOnly FROM AgLibraryCollection "
+                      "WHERE name = ?", (writer.ANCHOR_COLLECTION,)).fetchone()
+    assert coll == (501, "com.adobe.ag.library.collection", "/3501", writer.ANCHOR_COLLECTION, None, 0)
+    assert [r[0] for r in db.execute("SELECT image FROM AgLibraryCollectionImage WHERE collection = 501")] == [101, 102]
+    assert dict(db.execute("SELECT id_local, colorLabels FROM Adobe_images")) == {101: "Purple", 102: "Red", 103: ""}
+    assert db.execute("SELECT value FROM Adobe_variablesTable WHERE name='Adobe_entityIDCounter'").fetchone()[0] == 503
+    db.close()
+
+
+def test_mark_photos_refills_existing_collection(catalog: Path, tmp_path: Path):
+    writer.mark_photos(catalog, [101, 102], backup_dir=tmp_path / "b")
+    writer.mark_photos(catalog, [103], backup_dir=tmp_path / "b")
+    db = sqlite3.connect(catalog)
+    assert db.execute("SELECT COUNT(*) FROM AgLibraryCollection WHERE name = ?", (writer.ANCHOR_COLLECTION,)).fetchone()[0] == 1
+    assert [r[0] for r in db.execute("SELECT image FROM AgLibraryCollectionImage")] == [103]
+    db.close()
+
+
+def test_mark_photos_refuses_while_open(catalog: Path):
+    Path(f"{catalog}.lock").write_text("")
+    with pytest.raises(writer.CatalogWriteError):
+        writer.mark_photos(catalog, [101])
