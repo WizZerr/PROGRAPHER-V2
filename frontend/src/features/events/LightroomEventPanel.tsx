@@ -406,7 +406,13 @@ function AutomaticSummary({ job }: { job: EventJob }) {
         <li>{matchingText((plan.exposure ?? {}) as Record<string, never>)}</li>
       ) : null}
       <li>איזון לבן: נשאר As Shot, כמו שהמצלמה צילמה.</li>
-      <li>הסגנון נלמד מ-{n(style.photos)} תמונות ערוכות בפרופיל.</li>
+      <li>
+        הסגנון נלמד מ-{n(style.photos)} תמונות ערוכות בצבע בפרופיל
+        {Number(style.black_and_white_excluded) > 0
+          ? ` (${n(style.black_and_white_excluded)} תמונות שהעורך הפך לשחור-לבן לא נכללו)`
+          : ""}
+        .
+      </li>
       <li>
         גיבוי יישמר ב-<bdi dir="ltr">{String(plan.backup_folder ?? "")}</bdi>
       </li>

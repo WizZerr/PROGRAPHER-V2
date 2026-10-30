@@ -353,8 +353,8 @@ class LearningProfileStore:
                 continue
             _counts, dngs = _count_dng_files(source)
             pairs += build_pairs(build_links(dngs, records)["links"])["pairs"]
-        if not pairs:
-            raise LearningIntakeError("No edited photos with Smart Previews in this profile to learn from.")
+        if not any(not p["other_edits"]["black_and_white"] for p in pairs):
+            raise LearningIntakeError("No edited colour photos with Smart Previews in this profile to learn from.")
         measure, curve, _reason = et.face_measurer()
         return self.save_style(profile_id, event_style.learn(pairs, measure, curve, progress))
 

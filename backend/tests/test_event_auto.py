@@ -29,7 +29,7 @@ def catalog(tmp_path: Path) -> Path:
 def profile() -> str:
     store = LearningProfileStore()
     pid = store.create(name="Editor", photography_type="wedding", color_mode="color", consent=True)["profile_id"]
-    store.save_style(pid, {"version": 1, "photos": 3000, "faces": 250, "white_balance": "as_shot",
+    store.save_style(pid, {"version": event_style.STYLE_VERSION, "photos": 3000, "faces": 250, "white_balance": "as_shot",
                            "base": {"Highlights2012": -41, "Shadows2012": 18, "Texture": -18, "Clarity2012": -16},
                            "exposure_level": -0.35, "exposure_style": {"target_face_lightness": 53.3, "slope": -0.17}})
     return pid
@@ -50,6 +50,44 @@ def test_style_is_learnt_from_the_profiles_pairs():
     assert style["exposure_style"] is not None and style["white_balance"] == "as_shot"
     without_faces = event_style.learn(pairs, None, None)
     assert without_faces["exposure_style"] is None and without_faces["exposure_level"] == pytest.approx(-0.29)
+
+
+def test_black_and_white_photos_are_left_out_of_the_colour_style():
+    """The editor turned some photos black & white with a different look (strong contrast, no saturation, darker):
+    they must not pull the base sliders or the exposure of every colour photo."""
+    colour = [{"dng": i, "targets": {"Exposure2012": -0.3, "Contrast2012": 10, "Saturation": 0, "Clarity2012": -16},
+               "other_edits": {"black_and_white": False}} for i in range(60)]
+    mono = [{"dng": 100 + i, "targets": {"Exposure2012": -1.0, "Contrast2012": 60, "Saturation": -100,
+                                         "Clarity2012": 30},
+             "other_edits": {"black_and_white": True}} for i in range(70)]  # more B&W than colour
+    measured = []
+
+    def measure(dng):
+        measured.append(dng)
+        return {"face_rgb": np.array([0.12, 0.09, 0.07]), "face_stops": -3.5}
+    curve = {"x": np.linspace(-14, 2, 200), "y": np.clip((np.linspace(-14, 2, 200) + 10) / 11, 0, 1) ** 0.8}
+    style = event_style.learn(colour + mono, measure, curve)
+    assert style["base"] == {"Contrast2012": 10, "Clarity2012": -16, "Saturation": 0}
+    assert style["exposure_level"] == pytest.approx(-0.3)
+    assert style["photos"] == 60 and style["black_and_white_excluded"] == 70
+    assert measured and all(dng < 100 for dng in measured)  # faces measured on colour photos only
+    assert style["version"] == event_style.STYLE_VERSION
+
+
+def test_a_style_learnt_by_an_older_rule_is_learnt_again(catalog: Path, profile: str, monkeypatch):
+    store = LearningProfileStore()
+    old = {k: v for k, v in store.get_style(profile).items() if k != "learned_at"}
+    store.save_style(profile, {**old, "version": 1})  # learnt before black & white photos were left out
+    calls = []
+
+    def learn_style(self, profile_id, progress=None):
+        calls.append(profile_id)
+        return self.save_style(profile_id, {**old, "version": event_style.STYLE_VERSION, "black_and_white_excluded": 7})
+    monkeypatch.setattr(LearningProfileStore, "learn_style", learn_style)
+    plan = service.plan_automatic(catalog, _keys(catalog, "EventA"), profile, wait=True)
+    assert calls == [profile] and plan["plan"]["style"]["black_and_white_excluded"] == 7
+    service.plan_automatic(catalog, _keys(catalog, "EventA"), profile, wait=True)
+    assert calls == [profile]  # the new style is kept
 
 
 def test_whole_event_is_edited_automatically_without_anchors(catalog: Path, profile: str):

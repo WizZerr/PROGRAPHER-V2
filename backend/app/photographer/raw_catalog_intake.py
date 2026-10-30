@@ -351,6 +351,7 @@ def inspect_catalog(catalog: str | Path, *, include_private: bool = False) -> tu
                     "virtual_copy_candidate": row["master_image"] is not None or bool(row["copy_name"]),
                     "pick": row["pick"], "rating": row["rating"],
                     "develop": develop, "complex": complex_fields,
+                    "grayscale": develop.get("ConvertToGrayscale") is True or row["grayscale"] == 1,
                     "unsupported_fields": sorted(set(present)-(NUMERIC | TEXT | BOOL | COMPLEX | COLOR_FIELDS)),
                     "color_semantics_validated": False,
                     "opaque_edit_review_required": any(

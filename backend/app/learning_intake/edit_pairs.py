@@ -36,7 +36,7 @@ def _other_edits(rec: dict) -> dict[str, bool]:
                           for c in CURVES),
         "color_adjustments": any(v != 0 for v in numeric_color),
         "local_or_opaque_edits": bool(rec.get("opaque_edit_review_required")),
-        "black_and_white": develop.get("ConvertToGrayscale") is True,
+        "black_and_white": develop.get("ConvertToGrayscale") is True or rec.get("grayscale") is True,
     }
 
 

@@ -73,6 +73,7 @@ def test_aggregate_privacy_and_candidate_grouping(tmp_path: Path):
     assert report['color_field_coverage']['ColorGradeGlobalSat'] == {'nonzero': 1, 'present': 1}
     assert report['training_ready_samples'] == 0
     assert private is not None and len(private['records']) == 2
+    assert sorted(r['grayscale'] for r in private['records']) == [False, True]  # the editor's black & white photo
     assert {r['event_group_id'] for r in private['records']} == {'G0001'}
     assert all(not r['training_eligible'] and not r['source_raw_verified'] for r in private['records'])
     assert private['records'][0]['develop']['CameraProfile'] == 'Adobe, Standard'

@@ -675,6 +675,14 @@ def test_build_pairs_keeps_only_clean_linked_edits():
     assert "shooter" not in json.dumps({k: v for k, v in result.items() if k != "pairs"})
 
 
+def test_black_and_white_is_flagged_from_the_settings_or_the_catalog_column():
+    from app.learning_intake.edit_pairs import _other_edits
+
+    assert _other_edits({"develop": {"ConvertToGrayscale": True}})["black_and_white"] is True
+    assert _other_edits({"develop": {"Exposure2012": 0.2}, "grayscale": True})["black_and_white"] is True
+    assert _other_edits({"develop": {"ConvertToGrayscale": False}, "grayscale": False})["black_and_white"] is False
+
+
 def test_edit_pairs_api_returns_before_image_with_photographer_values(tmp_path, monkeypatch, fresh_decoder,
                                                                       jpegxl_codec, no_cached_look):
     from fastapi.testclient import TestClient

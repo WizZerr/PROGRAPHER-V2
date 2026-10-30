@@ -388,7 +388,7 @@ def plan_automatic(catalog_path: str | Path, folder_keys: list[str], profile_id:
     """Dry run of editing the whole event automatically from a learning profile's style (as Imagen does): base
     sliders from the profile, exposure by the face "target" method (or the profile's level), white balance As Shot.
     Photos the photographer already edited are left alone. Nothing is written."""
-    from app.event_edit import exposure_target as et
+    from app.event_edit import style as event_style
     from app.learning_intake.service import LearningIntakeError, LearningProfileStore
 
     catalog = _catalog(catalog_path)
@@ -403,13 +403,13 @@ def plan_automatic(catalog_path: str | Path, folder_keys: list[str], profile_id:
     def work(job_id: str):
         eid = event_id(catalog, folder_keys)
         style = None if relearn else store.get_style(profile_id)
-        if style is None:
+        if style is None or style.get("version") != event_style.STYLE_VERSION:  # learnt by an older rule: again
             jobs.update(job_id, phase="learning", progress_done=0, progress_total=0)
             try:
                 style = store.learn_style(profile_id, progress=lambda d, t: jobs.update(
                     job_id, progress_done=d, progress_total=t))
             except LearningIntakeError as exc:
-                raise EventEditError("אין בפרופיל תמונות ערוכות עם Smart Previews ללמוד מהן") from exc
+                raise EventEditError("אין בפרופיל תמונות ערוכות בצבע עם Smart Previews ללמוד מהן") from exc
         db = open_readonly(catalog)
         try:
             images = scope_images(db, folder_keys)
@@ -450,6 +450,7 @@ def plan_automatic(catalog_path: str | Path, folder_keys: list[str], profile_id:
                  "will_write": len(edits), "skipped": reasons, "sliders": sorted({k for v in edits.values() for k in v}),
                  "exposure": exposure, "white_balance": "as_shot",
                  "style": {"photos": style.get("photos"), "faces": style.get("faces"),
+                           "black_and_white_excluded": style.get("black_and_white_excluded", 0),
                            "learned_at": style.get("learned_at"), "base": style.get("base")},
                  "warnings": warnings, "blocking": [] if edits else [{"reason": "nothing_to_write"}],
                  "requires_acknowledgement": acknowledgements if edits else [],
