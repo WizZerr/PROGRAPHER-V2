@@ -320,8 +320,7 @@ def test_two_writers_on_one_catalog_are_refused(catalog: Path, tmp_path: Path):
 
 def test_lightroom_opening_during_the_write_rolls_back(catalog: Path, tmp_path: Path, monkeypatch):
     before = _digest(catalog)
-    calls = iter([False, False, False, True])  # closed for the checks before writing, open just before COMMIT
-    monkeypatch.setattr(writer, "catalog_in_use", lambda _c: next(calls, True))
+    monkeypatch.setattr(writer, "lightroom_lock_present", lambda _c: True)  # Lightroom appears just before COMMIT
     with pytest.raises(writer.CatalogWriteError, match="opened"):
         writer.write_edits(catalog, {101: {"Exposure2012": 0.5}}, backup_dir=tmp_path / "b")
     assert _digest(catalog) == before
@@ -380,3 +379,30 @@ def test_a_catalog_without_any_history_uses_the_verified_format_for_its_version(
     assert report["written"] and zlib.decompress(blob[4:]).decode() == _row(catalog, 101)[0]
     with pytest.raises(writer.CatalogWriteError, match="History-step format"):  # an unverified version: refused
         writer.write_edits(catalog, {102: {"Exposure2012": 0.5}}, backup_dir=tmp_path / "b")
+
+
+def test_a_wal_mode_catalog_like_lightrooms_is_written(catalog: Path, tmp_path: Path):
+    """Lightroom catalogs use WAL journaling: ProGrapher's own write fills the -wal file before COMMIT, which must
+    not be mistaken for Lightroom opening the catalog."""
+    db = sqlite3.connect(catalog)
+    assert db.execute("PRAGMA journal_mode=WAL").fetchone()[0] == "wal"
+    db.close()
+    report = writer.write_edits(catalog, {101: {"Exposure2012": 0.5}}, backup_dir=tmp_path / "b")
+    assert report["written"] and writer.read_settings(_row(catalog, 101)[0])["Exposure2012"] == "0.5"
+    undo = writer.revert_edits(catalog, report["written"], backup_dir=tmp_path / "b")
+    assert undo["reverted"] == [101]
+    marked = writer.mark_photos(catalog, [102], backup_dir=tmp_path / "b")
+    assert marked["marked"] == [102]
+
+
+def test_a_large_write_to_a_wal_catalog_is_not_mistaken_for_lightroom(tmp_path: Path):
+    """3,000 photos: the transaction spills into the -wal file before COMMIT (the real-catalog failure)."""
+    from tests.test_event_edit_service import _build
+
+    big = _build(tmp_path / "Big.lrcat", {"EventA": 3000})
+    db = sqlite3.connect(big)
+    db.execute("PRAGMA journal_mode=WAL")
+    db.close()
+    report = writer.write_edits(big, {1000 + i: {"Exposure2012": 0.5, "Highlights2012": -40} for i in range(1, 3001)},
+                                backup_dir=tmp_path / "b")
+    assert len(report["written"]) == 3000

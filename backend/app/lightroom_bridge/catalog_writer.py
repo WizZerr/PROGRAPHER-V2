@@ -166,6 +166,12 @@ def catalog_in_use(catalog: Path) -> bool:
     return Path(f"{catalog}.lock").exists() or (wal.exists() and wal.stat().st_size > 0)
 
 
+def lightroom_lock_present(catalog: Path) -> bool:
+    """Only Lightroom creates '<catalog>.lock'. Used while ProGrapher writes: its own transaction fills the -wal file
+    of a WAL catalog before COMMIT, so the -wal size says nothing about Lightroom at that point."""
+    return Path(f"{catalog}.lock").exists()
+
+
 def _require_closed(catalog: Path) -> None:
     if not catalog.is_file():
         raise CatalogWriteError(f"catalog not found: {catalog}")
@@ -365,7 +371,7 @@ def _write_session(catalog: Path, backup_dir: Path | None,
             if check is not None:
                 check(db)
             yield db, backup
-            if catalog_in_use(catalog):
+            if lightroom_lock_present(catalog):
                 raise CatalogWriteError("Lightroom opened the catalog during the write; nothing was written")
             db.execute("COMMIT")
             committed = True
@@ -617,5 +623,5 @@ def unmark_photos(catalog: Path, collection: int, *, collection_name: str, expec
 
 
 __all__ = ["ANCHOR_COLLECTION", "ANCHOR_LABEL", "CatalogWriteError", "STEP_NAME", "WRITABLE", "backup_catalog",
-           "catalog_in_use", "catalog_lock", "collection_members", "develop_state", "mark_photos", "normalize_edit",
+           "catalog_in_use", "catalog_lock", "lightroom_lock_present", "collection_members", "develop_state", "mark_photos", "normalize_edit",
            "parse_settings", "read_settings", "restore_backup", "revert_edits", "set_settings", "unmark_photos", "write_edits"]

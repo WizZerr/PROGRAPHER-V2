@@ -296,8 +296,7 @@ def test_lightroom_open_stops_planning_and_writing(catalog: Path, monkeypatch):
         service.plan_completion(catalog, keys)
     Path(f"{catalog}.lock").unlink()
     before = _digest(catalog)
-    calls = iter([False] * 4 + [True])  # Lightroom opens while ProGrapher is writing
-    monkeypatch.setattr(writer, "catalog_in_use", lambda _c: next(calls, True))
+    monkeypatch.setattr(writer, "lightroom_lock_present", lambda _c: True)  # Lightroom opens during the write
     done = service.confirm(plan["job_id"], wait=True)
     assert done["status"] == "failed" and "Lightroom" in done["error"]
     assert _digest(catalog) == before
