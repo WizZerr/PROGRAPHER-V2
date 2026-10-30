@@ -117,3 +117,26 @@ def test_exposure_follows_faces_when_the_event_has_smart_previews(catalog: Path,
     brighter = [v["Exposure2012"] for k, v in edits.items() if not int(k) % 2]
     assert len(set(darker)) == 1 and len(set(brighter)) == 1
     assert darker[0] - brighter[0] == pytest.approx(0.17, abs=0.02)  # slope -0.17 per stop of face
+
+
+def test_smart_previews_of_an_exported_catalog_are_matched_by_raw_file_name(catalog: Path, profile: str, monkeypatch):
+    """Export as Catalog gives photos new ids: the Smart Previews are found through the RAW name inside them."""
+    from app.event_edit import exposure_target as et
+    from app.learning_intake import dng_diagnostics
+
+    previews = catalog.with_name("Studio Smart Previews.lrdata") / "A"
+    previews.mkdir(parents=True)
+    names = {}
+    for n, image in enumerate(_images_of(catalog, "EventA")):
+        path = previews / f"OTHER-UUID-{n}.dng"
+        path.write_bytes(b"")
+        names[path.name] = f"EventA_{n}.CR3"
+    monkeypatch.setattr(dng_diagnostics, "read_original_raw_file_name", lambda p: names.get(Path(p).name))
+    rgb = np.array([0.12, 0.09, 0.07])
+    monkeypatch.setattr(et, "face_measurer", lambda long_edge=480: (
+        lambda path: {"face_rgb": rgb, "face_stops": float(np.log2(rgb @ et.LUMA))}, np.array([0]), None))
+    monkeypatch.setattr(et, "solve_level", lambda faces, style, curve: (0.2, 0.0) if len(faces) >= 5 else None)
+    monkeypatch.setattr(et, "automatic_exposures", lambda measured, style, curve: {i: 0.2 for i in measured})
+    plan = service.plan_automatic(catalog, _keys(catalog, "EventA"), profile, wait=True)
+    exposure = plan["plan"]["exposure"]
+    assert exposure["mode"] == "faces" and exposure["matched"] == 30 and exposure["measured"] == 30

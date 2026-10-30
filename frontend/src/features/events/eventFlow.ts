@@ -62,11 +62,13 @@ export function progressText(job: EventJob): string {
   const count = total ? ` ${done.toLocaleString("he-IL")} / ${total.toLocaleString("he-IL")}` : "";
   if (isActive(job.status) && phase === "learning") return `לומד את הסגנון מהפרופיל…${count}`;
   if (isActive(job.status) && phase === "measuring") return `מנתח את תמונות האירוע…${count}`;
+  if (isActive(job.status) && phase === "matching") return `מחפש את ה-Smart Previews של התמונות…${count}`;
   return `${statusText(job.status)}${count}`;
 }
 
 const EXPOSURE_REASON: Record<string, string> = {
   no_smart_previews: "אין Smart Previews לתמונות האירוע",
+  smart_previews_not_matched: "לא נמצאה התאמה בין ה-Smart Previews לתמונות האירוע",
   face_model_missing: "קובץ זיהוי הפנים לא מותקן",
   decoder_unavailable: "פענוח ה-Smart Previews לא זמין",
   profile_has_no_face_style: "בפרופיל אין מספיק תמונות עם פנים",
@@ -74,9 +76,14 @@ const EXPOSURE_REASON: Record<string, string> = {
 };
 
 /** How the exposure of an automatic plan was decided. */
-export function exposureText(exposure: { mode?: string; reason?: string | null; level?: number; faces?: number }): string {
+export function exposureText(exposure: {
+  mode?: string; reason?: string | null; level?: number; faces?: number; measured?: number;
+}): string {
   if (exposure.mode === "faces") {
     return `חשיפה לכל תמונה לפי הפנים בה (נמצאו פנים ב-${(exposure.faces ?? 0).toLocaleString("he-IL")} תמונות).`;
+  }
+  if (exposure.reason === "too_few_faces_in_event" && typeof exposure.measured === "number") {
+    return `חשיפה אחידה לפי הפרופיל, כי מתוך ${exposure.measured.toLocaleString("he-IL")} תמונות שנבדקו נמצאו מעט מדי פנים.`;
   }
   const why = EXPOSURE_REASON[exposure.reason ?? ""] ?? "";
   const level = typeof exposure.level === "number" ? ` (${exposure.level > 0 ? "+" : ""}${exposure.level})` : "";

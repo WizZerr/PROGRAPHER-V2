@@ -473,12 +473,13 @@ def _event_exposures(catalog: Path, db: sqlite3.Connection, targets: list[Photo]
     measure, curve, reason = et.face_measurer(long_edge=480)
     if measure is None:
         return fallback, {"mode": "profile_level", "reason": reason, "level": level}
-    uuid_of = _column(db, "SELECT id_local, id_global FROM Adobe_images WHERE id_local IN ({})", [p.image for p in targets])
-    dngs = {p.stem.upper(): p for p in previews.rglob("*.dng")}
+    paths = _match_smart_previews(db, previews, [p.image for p in targets], job_id)
+    if not paths:
+        return fallback, {"mode": "profile_level", "reason": "smart_previews_not_matched", "level": level}
     jobs.update(job_id, phase="measuring", progress_done=0, progress_total=len(targets))
     measured: dict[int, dict] = {}
     for n, photo in enumerate(targets, start=1):
-        path = dngs.get((uuid_of.get(photo.image) or "").upper())
+        path = paths.get(photo.image)
         if path is not None:
             m = measure(path)
             if m is not None:
@@ -494,7 +495,43 @@ def _event_exposures(catalog: Path, db: sqlite3.Connection, targets: list[Photo]
     event_level = solved[0]
     faces = sum(1 for m in measured.values() if m.get("face_rgb") is not None)
     return ({p.image: autos.get(p.image, event_level) for p in targets},
-            {"mode": "faces", "level": round(event_level, 2), "faces": faces, "measured": len(measured)})
+            {"mode": "faces", "level": round(event_level, 2), "faces": faces, "measured": len(measured),
+             "matched": len(paths)})
+
+
+def _match_smart_previews(db: sqlite3.Connection, previews: Path, images: list[int], job_id: str) -> dict[int, Path]:
+    """Smart Preview of each photo: by the photo's or file's catalog UUID (the DNG's name), else - e.g. in a catalog
+    made with "Export as Catalog" - by the RAW file name stored inside each Smart Preview (DNG tag 50827)."""
+    from app.learning_intake.dng_diagnostics import read_original_raw_file_name
+
+    dngs = {p.stem.upper(): p for p in previews.rglob("*.dng")}
+    ids = _column(db, "SELECT i.id_local, i.id_global FROM Adobe_images i WHERE i.id_local IN ({})", images)
+    file_cols = {r[1] for r in db.execute("PRAGMA table_info(AgLibraryFile)")}
+    file_ids = _column(db, "SELECT i.id_local, f.id_global FROM Adobe_images i JOIN AgLibraryFile f "
+                           "ON f.id_local = i.rootFile WHERE i.id_local IN ({})", images) if "id_global" in file_cols else {}
+    paths = {}
+    for image in images:
+        path = dngs.get((ids.get(image) or "").upper()) or dngs.get((file_ids.get(image) or "").upper())
+        if path is not None:
+            paths[image] = path
+    if len(paths) >= len(images) // 2:
+        return paths
+    names = _column(db, "SELECT i.id_local, f.baseName || '.' || f.extension FROM Adobe_images i JOIN AgLibraryFile f "
+                        "ON f.id_local = i.rootFile WHERE i.id_local IN ({})", images)
+    jobs.update(job_id, phase="matching", progress_done=0, progress_total=len(dngs))
+    by_name: dict[str, Path | None] = {}
+    for n, path in enumerate(dngs.values(), start=1):
+        name = (read_original_raw_file_name(path) or "").upper()
+        if name:
+            by_name[name] = None if name in by_name else path  # the same name twice: never guess
+        if n % 200 == 0:
+            jobs.update(job_id, progress_done=n)
+    for image in images:
+        if image not in paths:
+            path = by_name.get((names.get(image) or "").upper())
+            if path is not None:
+                paths[image] = path
+    return paths
 
 
 def _undo_entries(job: dict[str, Any]) -> list[dict[str, Any]]:
