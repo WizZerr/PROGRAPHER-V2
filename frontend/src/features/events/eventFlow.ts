@@ -43,9 +43,21 @@ export function isActive(status: JobStatus): boolean {
   return ACTIVE.includes(status);
 }
 
-/** A plan may be confirmed only once it is planned and nothing blocks it. */
-export function canConfirm(job: EventJob | null): boolean {
-  return !!job && job.status === "planned" && !(job.plan?.blocking?.length);
+/** Dedicated confirmations the plan needs on top of the usual one (e.g. "uniform_exposure"). */
+export function requiredAcknowledgements(job: EventJob | null): string[] {
+  const value = job?.plan?.requires_acknowledgement;
+  return Array.isArray(value) ? value.filter((v): v is string => typeof v === "string") : [];
+}
+
+/** A plan may be confirmed only once it is planned, nothing blocks it, and each dedicated confirmation it needs
+ *  was given. */
+export function canConfirm(job: EventJob | null, acknowledged: string[] = []): boolean {
+  return (
+    !!job &&
+    job.status === "planned" &&
+    !(job.plan?.blocking?.length) &&
+    requiredAcknowledgements(job).every((a) => acknowledged.includes(a))
+  );
 }
 
 /** Planning again is offered only when the engine knows nothing was written; otherwise the catalog must be
@@ -88,6 +100,31 @@ export function exposureText(exposure: {
   const why = EXPOSURE_REASON[exposure.reason ?? ""] ?? "";
   const level = typeof exposure.level === "number" ? ` (${exposure.level > 0 ? "+" : ""}${exposure.level})` : "";
   return `חשיפה אחידה לפי הפרופיל${level}${why ? `, כי ${why}` : ""}.`;
+}
+
+/** The warning shown, with its own checkbox, when photos would get one exposure instead of one measured on them. */
+export function uniformExposureWarning(exposure: { mode?: string; photos?: number; analysed?: number }): string {
+  const total = exposure.photos ?? 0;
+  const without = total - (exposure.analysed ?? 0);
+  const who = exposure.mode === "faces"
+    ? `${without.toLocaleString("he-IL")} מתוך ${total.toLocaleString("he-IL")} התמונות לא נותחו`
+    : `אף תמונה מתוך ${total.toLocaleString("he-IL")} לא נותחה`;
+  return `לתשומת לב: ${who}, והן יקבלו את אותה חשיפה. במקומות שבהם האור משתנה (חוץ/פנים, רחבה, ערב) ` +
+    "החשיפה עלולה לצאת בהירה או כהה מדי. הכתיבה ניתנת לביטול, אבל כדאי לבדוק את התמונות ב-Lightroom.";
+}
+
+type Matching = { by_id?: number; by_name?: number; ambiguous?: number; unmatched?: number };
+
+/** How many of the event's photos were matched to their Smart Preview, and how many were not and why. */
+export function matchingText(exposure: { photos?: number; matching?: Matching }): string {
+  const m = exposure.matching;
+  if (!m) return "";
+  const he = (v: number) => v.toLocaleString("he-IL");
+  const matched = (m.by_id ?? 0) + (m.by_name ?? 0);
+  const parts = [`Smart Previews הותאמו ל-${he(matched)} מתוך ${he(exposure.photos ?? matched)} תמונות`];
+  if (m.unmatched) parts.push(`ל-${he(m.unmatched)} לא נמצא Smart Preview`);
+  if (m.ambiguous) parts.push(`${he(m.ambiguous)} לא הותאמו כי שם הקובץ מופיע ביותר ממצלמה אחת`);
+  return parts.join("; ") + ".";
 }
 
 export function statusText(status: JobStatus): string {

@@ -20,6 +20,24 @@
 
 The dry run says which exposure mode was used and why.
 
+**Matching each photo to its Smart Preview:**
+- First by the photo's or file's catalog UUID (the DNG's name).
+- Every photo still unmatched is then looked up by the RAW file name stored in the Smart Preview (DNG tag 50827). This is the "Export as Catalog" case.
+- A name is used only when it is unambiguous:
+  - exactly one file in the **whole catalog** has it (two cameras both write `IMG_0001.CR3`);
+  - exactly one Smart Preview carries it;
+  - that Smart Preview is not already owned by another photo's UUID.
+- Anything else stays unmatched; ProGrapher never guesses.
+- The plan reports `exposure.matching` = `{by_id, by_name, ambiguous, unmatched}`.
+
+**Uniform exposure needs its own confirmation:**
+- The plan lists `requires_acknowledgement: ["uniform_exposure"]` and a warning when photos would get one exposure instead of one measured on the photo. That happens when:
+  - there are no Smart Previews, no face model, or too few faces (the whole event); or
+  - more than 10% of the photos had no Smart Preview measured (`MAX_UNANALYSED_SHARE`).
+- `confirm` refuses (nothing written, the plan stays `planned`) unless `{"confirm": true, "acknowledge": ["uniform_exposure"]}` is sent.
+- The screen shows the warning with its own checkbox, and the write button stays disabled until it is ticked.
+- 10% or fewer unanalysed photos give a warning (`photos_without_analysis`) only.
+
 **Expected quality (wedding A, a shooter the model had not seen):** about 15% of photos exactly as the editor would leave them (strict limits), and about 25% more within a small fix. The exposure level is close; per-photo exposure is about 0.25 stop off. It improves with more edited events, which is the plan.
 
 **Anchors** (the flow below) remain in the backend as an optional "refine" path and are no longer in the screen.

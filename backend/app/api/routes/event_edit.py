@@ -41,6 +41,8 @@ class UndoPlanRequest(BaseModel):
 
 class ConfirmRequest(BaseModel):
     confirm: Literal[True]
+    # Dedicated confirmations a plan lists in `requires_acknowledgement` (e.g. a uniform exposure).
+    acknowledge: list[Literal["uniform_exposure"]] = Field(default_factory=list, max_length=5)
 
 
 def _call(fn, *args, **kwargs) -> dict:
@@ -95,7 +97,7 @@ def get_job(job_id: str) -> dict:
 @router.post("/jobs/{job_id}/confirm")
 def confirm_job(job_id: str, payload: ConfirmRequest) -> dict:
     """Carry out a planned job after explicit confirmation; re-checked against the catalog before writing."""
-    return _call(service.confirm, job_id)
+    return _call(service.confirm, job_id, acknowledged=payload.acknowledge)
 
 
 @router.post("/jobs/{job_id}/cancel")

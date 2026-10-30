@@ -32,10 +32,10 @@ export function getEventJob(jobId: string): Promise<EventJob> {
   return apiRequest(`/api/event-edit/jobs/${encodeURIComponent(jobId)}`);
 }
 
-export function confirmEventJob(jobId: string): Promise<EventJob> {
+export function confirmEventJob(jobId: string, acknowledge: string[] = []): Promise<EventJob> {
   return apiRequest(`/api/event-edit/jobs/${encodeURIComponent(jobId)}/confirm`, {
     method: "POST",
-    body: JSON.stringify({ confirm: true }),
+    body: JSON.stringify({ confirm: true, acknowledge }),
   });
 }
 

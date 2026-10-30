@@ -8,10 +8,13 @@ import {
   exposureText,
   progressText,
   isActive,
+  matchingText,
   parseSaved,
+  requiredAcknowledgements,
   skipLines,
   sliderList,
   statusText,
+  uniformExposureWarning,
   type EventJob,
 } from "./eventFlow.ts";
 
@@ -77,4 +80,25 @@ test("automatic plans explain how exposure was decided and what is running", () 
   const running = { ...job("planning"), progress: { done: 40, total: 400, phase: "learning" } };
   assert.match(progressText(running), /לומד את הסגנון מהפרופיל/);
   assert.match(progressText({ ...running, progress: { done: 5, total: 9, phase: "measuring" } }), /מנתח/);
+});
+
+test("a uniform exposure needs its own confirmation before the plan can be written", () => {
+  const plan = { blocking: [], requires_acknowledgement: ["uniform_exposure"] };
+  assert.deepEqual(requiredAcknowledgements(job("planned", plan)), ["uniform_exposure"]);
+  assert.equal(canConfirm(job("planned", plan)), false);
+  assert.equal(canConfirm(job("planned", plan), ["something_else"]), false);
+  assert.equal(canConfirm(job("planned", plan), ["uniform_exposure"]), true);
+  assert.equal(canConfirm(job("writing", plan), ["uniform_exposure"]), false);
+  assert.deepEqual(requiredAcknowledgements(job("planned", {})), []);
+  assert.match(uniformExposureWarning({ mode: "profile_level", photos: 3184, analysed: 0 }), /אף תמונה/);
+  assert.match(uniformExposureWarning({ mode: "faces", photos: 1000, analysed: 600 }), /400 מתוך 1,000/);
+});
+
+test("the plan says how many photos were matched to a Smart Preview and why the rest were not", () => {
+  assert.equal(matchingText({}), "");
+  assert.equal(matchingText({ photos: 10, matching: { by_id: 4, by_name: 4, ambiguous: 0, unmatched: 0 } }).includes("לא"), false);
+  const text = matchingText({ photos: 10, matching: { by_id: 2, by_name: 4, ambiguous: 3, unmatched: 1 } });
+  assert.match(text, /הותאמו ל-6 מתוך 10/);
+  assert.match(text, /ל-1 לא נמצא/);
+  assert.match(text, /3 לא הותאמו כי שם הקובץ/);
 });

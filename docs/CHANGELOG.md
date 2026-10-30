@@ -24,3 +24,9 @@
 - Added `catalog_writer`: writes per-photo global sliders (incl. Custom white balance) into a closed Lightroom Classic catalog with a new digest, historySettingsID and a "ProGrapher" History step; backup/restore, validation, single transaction, photographer-edit protection.
 - Verified on a 25-photo test catalog (5 camera makers): values, digest recompute, thumbnails, History step and crops all as Lightroom's own edits; 0.02 s write.
 - Decision D-022 supersedes the earlier no-direct-write rule for event delivery under these safety conditions.
+
+## Event automatic editing: Smart Preview matching and uniform-exposure confirmation — 2026-10-30
+- Fixed: Smart Preview matching stopped once half the photos matched by UUID; every unmatched photo is now looked up by RAW name, and the plan reports matched/ambiguous/unmatched counts.
+- RAW names shared by more than one file in the catalog (several cameras), carried by two Smart Previews, or belonging to a Smart Preview another photo owns are never used to match.
+- A plan in which photos get one uniform exposure (no Smart Previews / face model / faces, or >10% unanalysed) needs a dedicated `uniform_exposure` acknowledgement before writing; the screen shows a warning with its own checkbox.
+- Tests: two cameras with the same names, a 6,000-photo catalog, duplicate previews, the 50% case, and the confirmation gate in the service and the API (synthetic catalogs only).

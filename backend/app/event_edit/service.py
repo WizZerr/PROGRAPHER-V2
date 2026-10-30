@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import sqlite3
 import uuid
+from collections.abc import Iterable
 from datetime import datetime
 from pathlib import Path
 from typing import Any
@@ -28,6 +29,10 @@ from app.event_edit.scope import ScopeError, event_id, fingerprint, list_folders
 from app.lightroom_bridge import catalog_writer as writer
 
 BACKUP_FOLDER = "ProGrapher Backups"
+# Confirmation a plan needs, on top of the usual one, when photos get one exposure for the whole event instead of
+# one measured on the photo (no Smart Previews, no face model, too few faces, or many photos left unanalysed).
+UNIFORM_EXPOSURE = "uniform_exposure"
+MAX_UNANALYSED_SHARE = 0.10
 
 
 class EventEditError(ValueError):
@@ -440,15 +445,14 @@ def plan_automatic(catalog_path: str | Path, folder_keys: list[str], profile_id:
         reasons: dict[str, int] = {}
         for reason in skipped.values():
             reasons[reason] = reasons.get(reason, 0) + 1
-        warnings = []
-        if exposure["mode"] != "faces":
-            warnings.append({"reason": "exposure_from_profile_level", "detail": exposure.get("reason")})
+        warnings, acknowledgements = _exposure_acknowledgements(exposure)
         return ({"event_id": eid, "mode": "automatic", "profile_id": profile_id, "photos": len(photos),
                  "will_write": len(edits), "skipped": reasons, "sliders": sorted({k for v in edits.values() for k in v}),
                  "exposure": exposure, "white_balance": "as_shot",
                  "style": {"photos": style.get("photos"), "faces": style.get("faces"),
                            "learned_at": style.get("learned_at"), "base": style.get("base")},
                  "warnings": warnings, "blocking": [] if edits else [{"reason": "nothing_to_write"}],
+                 "requires_acknowledgement": acknowledgements if edits else [],
                  "backup_folder": str(catalog.parent / BACKUP_FOLDER), "fp_collection": None,
                  "images": sorted(images), "edits": {str(k): v for k, v in edits.items()},
                  "history_ids": {str(k): str(uuid.uuid4()).upper() for k in edits},
@@ -460,22 +464,27 @@ def plan_automatic(catalog_path: str | Path, folder_keys: list[str], profile_id:
 def _event_exposures(catalog: Path, db: sqlite3.Connection, targets: list[Photo], style: dict, job_id: str
                      ) -> tuple[dict[int, float], dict[str, Any]]:
     """Exposure for every target photo: the face "target" method on this event's Smart Previews when possible,
-    otherwise the profile's typical level."""
+    otherwise the profile's typical level. `analysed` counts the photos whose own Smart Preview was measured; every
+    other photo gets one uniform value (see UNIFORM_EXPOSURE)."""
     from app.event_edit import exposure_target as et
 
     level = float(style.get("exposure_level") or 0.0)
     fallback = {p.image: level for p in targets}
+
+    def uniform(reason: str, **extra) -> tuple[dict[int, float], dict[str, Any]]:
+        return fallback, {"mode": "profile_level", "reason": reason, "level": level, "photos": len(targets),
+                          "analysed": 0, **extra}
     if not style.get("exposure_style"):
-        return fallback, {"mode": "profile_level", "reason": "profile_has_no_face_style", "level": level}
+        return uniform("profile_has_no_face_style")
     previews = catalog.with_name(f"{catalog.stem} Smart Previews.lrdata")
     if not previews.is_dir():
-        return fallback, {"mode": "profile_level", "reason": "no_smart_previews", "level": level}
+        return uniform("no_smart_previews")
     measure, curve, reason = et.face_measurer(long_edge=480)
     if measure is None:
-        return fallback, {"mode": "profile_level", "reason": reason, "level": level}
-    paths = _match_smart_previews(db, previews, [p.image for p in targets], job_id)
+        return uniform(reason)
+    paths, matching = _match_smart_previews(db, previews, [p.image for p in targets], job_id)
     if not paths:
-        return fallback, {"mode": "profile_level", "reason": "smart_previews_not_matched", "level": level}
+        return uniform("smart_previews_not_matched", matching=matching)
     jobs.update(job_id, phase="measuring", progress_done=0, progress_total=len(targets))
     measured: dict[int, dict] = {}
     for n, photo in enumerate(targets, start=1):
@@ -489,19 +498,38 @@ def _event_exposures(catalog: Path, db: sqlite3.Connection, targets: list[Photo]
     exposure_style = et.ExposureStyle(**style["exposure_style"])
     solved = et.solve_level(list(measured.values()), exposure_style, curve)
     if solved is None:
-        return fallback, {"mode": "profile_level", "reason": "too_few_faces_in_event", "level": level,
-                          "measured": len(measured)}
+        return uniform("too_few_faces_in_event", measured=len(measured), matched=len(paths), matching=matching)
     autos = et.automatic_exposures(measured, exposure_style, curve)
     event_level = solved[0]
     faces = sum(1 for m in measured.values() if m.get("face_rgb") is not None)
     return ({p.image: autos.get(p.image, event_level) for p in targets},
             {"mode": "faces", "level": round(event_level, 2), "faces": faces, "measured": len(measured),
-             "matched": len(paths)})
+             "matched": len(paths), "matching": matching, "photos": len(targets), "analysed": len(measured)})
 
 
-def _match_smart_previews(db: sqlite3.Connection, previews: Path, images: list[int], job_id: str) -> dict[int, Path]:
+def _exposure_acknowledgements(exposure: dict[str, Any]) -> tuple[list[dict], list[str]]:
+    """Warnings, and the dedicated confirmations a plan needs, when photos get a uniform exposure instead of one
+    measured on the photo: one value for the whole event is wrong wherever the light changes."""
+    warnings: list[dict] = []
+    total = exposure.get("photos") or 0
+    unanalysed = total - (exposure.get("analysed") or 0)
+    if exposure["mode"] != "faces":
+        warnings.append({"reason": "exposure_from_profile_level", "detail": exposure.get("reason"),
+                         "photos": total})
+        return warnings, ([UNIFORM_EXPOSURE] if total else [])
+    if unanalysed:
+        warnings.append({"reason": "photos_without_analysis", "photos": unanalysed, "of": total})
+    return warnings, ([UNIFORM_EXPOSURE] if total and unanalysed / total > MAX_UNANALYSED_SHARE else [])
+
+
+def _match_smart_previews(db: sqlite3.Connection, previews: Path, images: list[int], job_id: str
+                          ) -> tuple[dict[int, Path], dict[str, int]]:
     """Smart Preview of each photo: by the photo's or file's catalog UUID (the DNG's name), else - e.g. in a catalog
-    made with "Export as Catalog" - by the RAW file name stored inside each Smart Preview (DNG tag 50827)."""
+    made with "Export as Catalog" - by the RAW file name stored inside each Smart Preview (DNG tag 50827).
+
+    Every photo the UUIDs leave unmatched is looked up by name. A name is used only when it is unambiguous: exactly
+    one file in the whole catalog has it (two cameras both write IMG_0001.CR3) and exactly one Smart Preview not
+    already owned by another photo carries it. Anything else stays unmatched: never guess."""
     from app.learning_intake.dng_diagnostics import read_original_raw_file_name
 
     dngs = {p.stem.upper(): p for p in previews.rglob("*.dng")}
@@ -514,24 +542,38 @@ def _match_smart_previews(db: sqlite3.Connection, previews: Path, images: list[i
         path = dngs.get((ids.get(image) or "").upper()) or dngs.get((file_ids.get(image) or "").upper())
         if path is not None:
             paths[image] = path
-    if len(paths) >= len(images) // 2:
-        return paths
-    names = _column(db, "SELECT i.id_local, f.baseName || '.' || f.extension FROM Adobe_images i JOIN AgLibraryFile f "
-                        "ON f.id_local = i.rootFile WHERE i.id_local IN ({})", images)
-    jobs.update(job_id, phase="matching", progress_done=0, progress_total=len(dngs))
+    stats = {"by_id": len(paths), "by_name": 0, "ambiguous": 0, "unmatched": 0}
+    missing = [image for image in images if image not in paths]
+    if not missing:
+        return paths, stats
+    # Smart Previews named after any photo or file of the catalog belong to that photo, even outside the event.
+    owned = {(r[0] or "").upper() for r in db.execute("SELECT id_global FROM Adobe_images")}
+    if "id_global" in file_cols:
+        owned |= {(r[0] or "").upper() for r in db.execute("SELECT id_global FROM AgLibraryFile")}
+    free = [p for stem, p in dngs.items() if stem not in owned]
+    files_per_name: dict[str, int] = {}
+    for (name,) in db.execute("SELECT UPPER(baseName || '.' || COALESCE(extension, '')) FROM AgLibraryFile"):
+        files_per_name[name] = files_per_name.get(name, 0) + 1
+    names = _column(db, "SELECT i.id_local, UPPER(f.baseName || '.' || COALESCE(f.extension, '')) FROM Adobe_images i "
+                        "JOIN AgLibraryFile f ON f.id_local = i.rootFile WHERE i.id_local IN ({})", missing)
+    jobs.update(job_id, phase="matching", progress_done=0, progress_total=len(free))
     by_name: dict[str, Path | None] = {}
-    for n, path in enumerate(dngs.values(), start=1):
+    for n, path in enumerate(free, start=1):
         name = (read_original_raw_file_name(path) or "").upper()
         if name:
-            by_name[name] = None if name in by_name else path  # the same name twice: never guess
-        if n % 200 == 0:
+            by_name[name] = None if name in by_name else path  # the same name in two Smart Previews: never guess
+        if n % 200 == 0 or n == len(free):
             jobs.update(job_id, progress_done=n)
-    for image in images:
-        if image not in paths:
-            path = by_name.get((names.get(image) or "").upper())
-            if path is not None:
-                paths[image] = path
-    return paths
+    for image in missing:
+        name = names.get(image) or ""
+        if files_per_name.get(name, 0) > 1 or (name in by_name and by_name[name] is None):
+            stats["ambiguous"] += 1
+        elif by_name.get(name) is not None:
+            paths[image] = by_name[name]
+            stats["by_name"] += 1
+        else:
+            stats["unmatched"] += 1
+    return paths, stats
 
 
 def _undo_entries(job: dict[str, Any]) -> list[dict[str, Any]]:
@@ -620,7 +662,7 @@ def plan_undo(job_id: str, wait: bool = False) -> dict[str, Any]:
 
 # --- executing a confirmed plan ------------------------------------------------------------------------------------
 
-def confirm(job_id: str, wait: bool = False) -> dict[str, Any]:
+def confirm(job_id: str, wait: bool = False, acknowledged: Iterable[str] = ()) -> dict[str, Any]:
     job = jobs.get(job_id)
     if job is None:
         raise EventEditError("הפעולה לא נמצאה")
@@ -629,6 +671,9 @@ def confirm(job_id: str, wait: bool = False) -> dict[str, Any]:
     plan = job["plan"] or {}
     if plan.get("blocking"):
         raise EventEditError("התוכנית חסומה: " + ", ".join(b["reason"] for b in plan["blocking"]))
+    if set(plan.get("requires_acknowledgement") or []) - set(acknowledged):
+        raise EventEditError("בתוכנית הזו תמונות יקבלו חשיפה אחידה שלא נמדדה עליהן. "
+                             "יש לאשר במפורש את החשיפה האחידה לפני הכתיבה. לא נכתב דבר.")
     catalog = _catalog(job["catalog"])
     busy = [j for j in jobs.jobs_for_catalog(catalog, ("queued", "writing")) if j["job_id"] != job_id]
     if busy:

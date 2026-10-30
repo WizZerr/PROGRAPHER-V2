@@ -16,11 +16,14 @@ import {
   canRetry,
   exposureText,
   isActive,
+  matchingText,
   parseSaved,
   progressText,
+  requiredAcknowledgements,
   skipLines,
   sliderList,
   statusText,
+  uniformExposureWarning,
   type EventFolder,
   type EventJob,
   type SavedEvent,
@@ -71,6 +74,8 @@ export default function LightroomEventPanel({
   const [chosen, setChosen] = useState<string[]>([]);
   const [jobsById, setJobs] = useState<Record<string, EventJob>>({});
   const [busy, setBusy] = useState(false);
+  // Dedicated confirmations given for one plan (job id), e.g. "uniform_exposure"; a new plan starts with none.
+  const [acknowledged, setAcknowledged] = useState<{ job: string; given: string[] }>({ job: "", given: [] });
   const [error, setError] = useState("");
   const alive = useRef(true);
   const polling = useRef(new Set<string>());
@@ -149,7 +154,7 @@ export default function LightroomEventPanel({
 
   const confirm = (job: EventJob) =>
     act(async () => {
-      await confirmEventJob(job.job_id);
+      await confirmEventJob(job.job_id, acknowledgedFor(job));
       const done = await follow(job.job_id);
       if (done?.kind === "undo" && done.status === "completed" && done.parent_job) await follow(done.parent_job);
     });
@@ -172,11 +177,37 @@ export default function LightroomEventPanel({
     state.profileId &&
     void startPlan("completeJob", () => planAutomatic(catalogPath, state.folderKeys, state.profileId as string));
 
+  function acknowledgedFor(job: EventJob): string[] {
+    return acknowledged.job === job.job_id ? acknowledged.given : [];
+  }
+
+  function toggleAcknowledgement(job: EventJob, name: string, on: boolean) {
+    const given = acknowledgedFor(job).filter((a) => a !== name);
+    setAcknowledged({ job: job.job_id, given: on ? [...given, name] : given });
+  }
+
   function planButtons(slot: Slot, job: EventJob, confirmLabel: string) {
+    const needed = requiredAcknowledgements(job);
     return (
       <div className={styles.actions}>
-        {canConfirm(job) ? (
-          <button type="button" className={styles.primary} onClick={() => void confirm(job)} disabled={busy}>
+        {needed.includes("uniform_exposure") && !job.plan?.blocking?.length ? (
+          <label className={styles.warn}>
+            <input
+              type="checkbox"
+              checked={acknowledgedFor(job).includes("uniform_exposure")}
+              onChange={(e) => toggleAcknowledgement(job, "uniform_exposure", e.target.checked)}
+              disabled={busy}
+            />{" "}
+            {uniformExposureWarning((job.plan?.exposure ?? {}) as Record<string, never>)} <b>מאשר/ת לכתוב בכל זאת.</b>
+          </label>
+        ) : null}
+        {job.status === "planned" && !job.plan?.blocking?.length ? (
+          <button
+            type="button"
+            className={styles.primary}
+            onClick={() => void confirm(job)}
+            disabled={busy || !canConfirm(job, acknowledgedFor(job))}
+          >
             {confirmLabel}
           </button>
         ) : null}
@@ -371,6 +402,9 @@ function AutomaticSummary({ job }: { job: EventJob }) {
         <li key={line}>לא ישתנו – {line}</li>
       ))}
       <li>{exposureText((plan.exposure ?? {}) as Record<string, never>)}</li>
+      {matchingText((plan.exposure ?? {}) as Record<string, never>) ? (
+        <li>{matchingText((plan.exposure ?? {}) as Record<string, never>)}</li>
+      ) : null}
       <li>איזון לבן: נשאר As Shot, כמו שהמצלמה צילמה.</li>
       <li>הסגנון נלמד מ-{n(style.photos)} תמונות ערוכות בפרופיל.</li>
       <li>
