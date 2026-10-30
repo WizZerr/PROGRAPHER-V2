@@ -672,6 +672,8 @@ def _hebrew(message: str) -> str:
         return "Lightroom פתח את הקטלוג. לא נכתב דבר; סגור את Lightroom ונסה שוב."
     if "in use" in message:
         return "הקטלוג תפוס על ידי תוכנה אחרת. לא נכתב דבר."
+    if "History-step format" in message:
+        return "גרסת הקטלוג לא מוכרת ל-ProGrapher (פורמט ההיסטוריה). לא נכתב דבר."
     return message
 
 

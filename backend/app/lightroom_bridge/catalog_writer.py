@@ -225,13 +225,26 @@ def _decode_history(blob: Any) -> tuple[str | None, str | None]:
     return None, None
 
 
+# Catalog schema versions whose History-step format was verified in Lightroom (experiments 1-2, LB-02).
+VERIFIED_HISTORY_FORMAT = {"1504001": "qcompress"}
+
+
 def _history_format(db: sqlite3.Connection) -> str:
-    """History steps keep a full settings copy; Lightroom 15 stores it Qt-qCompress style (length + zlib)."""
+    """History steps keep a full settings copy; Lightroom 15 stores it Qt-qCompress style (length + zlib).
+    Learnt from the catalog's own steps; a catalog with no step at all (e.g. after Clear History) uses the format
+    verified for its schema version, and any other catalog is refused."""
+    found_any = False
     for (blob,) in db.execute("SELECT text FROM Adobe_libraryImageDevelopHistoryStep WHERE text IS NOT NULL "
                               "ORDER BY id_local DESC LIMIT 20"):
+        found_any = True
         method, _ = _decode_history(blob)
         if method:
             return method
+    if not found_any:
+        row = db.execute("SELECT value FROM Adobe_variablesTable WHERE name = 'Adobe_DBVersion'").fetchone()
+        version = str(row[0]).split(".")[0] if row and row[0] is not None else ""
+        if version in VERIFIED_HISTORY_FORMAT:
+            return VERIFIED_HISTORY_FORMAT[version]
     raise CatalogWriteError("unknown History-step format; nothing written")
 
 

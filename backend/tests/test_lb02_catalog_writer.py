@@ -362,3 +362,21 @@ def test_revert_puts_back_only_photos_untouched_since(catalog: Path, tmp_path: P
     assert db.execute("SELECT COUNT(*) FROM Adobe_libraryImageDevelopHistoryStep WHERE image = 101 AND "
                       "name = 'ProGrapher'").fetchone()[0] == 0
     db.close()
+
+
+def test_a_catalog_without_any_history_uses_the_verified_format_for_its_version(catalog: Path, tmp_path: Path):
+    db = sqlite3.connect(catalog)
+    db.execute("DELETE FROM Adobe_libraryImageDevelopHistoryStep")  # what Clear History on every photo leaves
+    db.execute("INSERT INTO Adobe_variablesTable (id_local, name, value) VALUES (2, 'Adobe_DBVersion', '1504001')")
+    db.commit()
+    db.close()
+    report = writer.write_edits(catalog, {101: {"Exposure2012": 0.5}}, backup_dir=tmp_path / "b")
+    db = sqlite3.connect(catalog)
+    blob = db.execute("SELECT text FROM Adobe_libraryImageDevelopHistoryStep WHERE image = 101").fetchone()[0]
+    db.execute("UPDATE Adobe_variablesTable SET value = '1700000' WHERE name = 'Adobe_DBVersion'")
+    db.execute("DELETE FROM Adobe_libraryImageDevelopHistoryStep")
+    db.commit()
+    db.close()
+    assert report["written"] and zlib.decompress(blob[4:]).decode() == _row(catalog, 101)[0]
+    with pytest.raises(writer.CatalogWriteError, match="History-step format"):  # an unverified version: refused
+        writer.write_edits(catalog, {102: {"Exposure2012": 0.5}}, backup_dir=tmp_path / "b")
