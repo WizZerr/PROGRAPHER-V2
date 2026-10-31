@@ -77,6 +77,7 @@ def build_pairs(links: list[dict]) -> dict[str, Any]:
             "other_edits": _other_edits(rec),
             "pick": rec.get("pick"),
             "rating": rec.get("rating"),
+            "flash": rec.get("flash"),
         })
 
     # Folder groups get neutral labels (folder names can hold the couple's names), largest first.

@@ -24,6 +24,7 @@ from pathlib import Path
 from typing import Any
 
 from app.event_edit import brain, jobs
+from app.event_edit import style as event_style
 from app.event_edit.brain import Photo
 from app.event_edit.scope import ScopeError, event_id, fingerprint, list_folders, open_readonly, scope_images
 from app.lightroom_bridge import catalog_writer as writer
@@ -388,7 +389,6 @@ def plan_automatic(catalog_path: str | Path, folder_keys: list[str], profile_id:
     """Dry run of editing the whole event automatically from a learning profile's style (as Imagen does): base
     sliders from the profile, exposure by the face "target" method (or the profile's level), white balance As Shot.
     Photos the photographer already edited are left alone. Nothing is written."""
-    from app.event_edit import style as event_style
     from app.learning_intake.service import LearningIntakeError, LearningProfileStore
 
     catalog = _catalog(catalog_path)
@@ -417,11 +417,15 @@ def plan_automatic(catalog_path: str | Path, folder_keys: list[str], profile_id:
                 raise EventEditError("אין תמונות בתיקיות שנבחרו")
             photos = read_photos(db, images)
             targets = [p for p in photos if not p.edited_by_photographer]
-            exposures, exposure = _event_exposures(catalog, db, targets, style, job_id)
+            exposures, exposure, paths = _event_exposures(catalog, db, targets, style, job_id)
+            flash = _event_flash(db, [p.image for p in targets])
+            _apply_flash_offsets(exposures, exposure, flash, style)
+            balance, white_balance = _event_white_balance(catalog, db, targets, style, flash, paths, job_id)
             edits_all = {}
             for photo in targets:
                 values = {k: v for k, v in style["base"].items()}
                 values["Exposure2012"] = round(min(max(exposures[photo.image], -5.0), 5.0), 2)
+                values.update(balance.get(photo.image, {}))
                 edits_all[photo.image] = values
             ids = list(edits_all)
             texts = _column(db, "SELECT image, COALESCE(text, '') FROM Adobe_imageDevelopSettings WHERE image IN ({})", ids)
@@ -448,7 +452,7 @@ def plan_automatic(catalog_path: str | Path, folder_keys: list[str], profile_id:
         warnings, acknowledgements = _exposure_acknowledgements(exposure)
         return ({"event_id": eid, "mode": "automatic", "profile_id": profile_id, "photos": len(photos),
                  "will_write": len(edits), "skipped": reasons, "sliders": sorted({k for v in edits.values() for k in v}),
-                 "exposure": exposure, "white_balance": "as_shot",
+                 "exposure": exposure, "white_balance": "as_shot", "white_balance_rules": white_balance,
                  "style": {"photos": style.get("photos"), "faces": style.get("faces"),
                            "black_and_white_excluded": style.get("black_and_white_excluded", 0),
                            "learned_at": style.get("learned_at"), "base": style.get("base")},
@@ -463,18 +467,20 @@ def plan_automatic(catalog_path: str | Path, folder_keys: list[str], profile_id:
 
 
 def _event_exposures(catalog: Path, db: sqlite3.Connection, targets: list[Photo], style: dict, job_id: str
-                     ) -> tuple[dict[int, float], dict[str, Any]]:
+                     ) -> tuple[dict[int, float], dict[str, Any], dict[int, Path] | None]:
     """Exposure for every target photo: the face "target" method on this event's Smart Previews when possible,
     otherwise the profile's typical level. `analysed` counts the photos whose own Smart Preview was measured; every
-    other photo gets one uniform value (see UNIFORM_EXPOSURE)."""
+    other photo gets one uniform value (see UNIFORM_EXPOSURE). Also returns the matched Smart Previews, if it
+    looked for them."""
     from app.event_edit import exposure_target as et
 
     level = float(style.get("exposure_level") or 0.0)
     fallback = {p.image: level for p in targets}
+    paths: dict[int, Path] | None = None
 
-    def uniform(reason: str, **extra) -> tuple[dict[int, float], dict[str, Any]]:
+    def uniform(reason: str, **extra) -> tuple[dict[int, float], dict[str, Any], dict[int, Path] | None]:
         return fallback, {"mode": "profile_level", "reason": reason, "level": level, "photos": len(targets),
-                          "analysed": 0, **extra}
+                          "analysed": 0, **extra}, paths
     if not style.get("exposure_style"):
         return uniform("profile_has_no_face_style")
     previews = catalog.with_name(f"{catalog.stem} Smart Previews.lrdata")
@@ -505,7 +511,66 @@ def _event_exposures(catalog: Path, db: sqlite3.Connection, targets: list[Photo]
     faces = sum(1 for m in measured.values() if m.get("face_rgb") is not None)
     return ({p.image: autos.get(p.image, event_level) for p in targets},
             {"mode": "faces", "level": round(event_level, 2), "faces": faces, "measured": len(measured),
-             "matched": len(paths), "matching": matching, "photos": len(targets), "analysed": len(measured)})
+             "matched": len(paths), "matching": matching, "photos": len(targets), "analysed": len(measured)}, paths)
+
+
+def _event_flash(db: sqlite3.Connection, images: list[int]) -> dict[int, bool]:
+    """Whether the flash fired, per photo, from the EXIF Lightroom harvested (absent: unknown)."""
+    columns = {r[1] for r in db.execute("PRAGMA table_info(AgHarvestedExifMetadata)")}
+    if not {"image", "flashFired"} <= columns:
+        return {}
+    return {image: bool(value) for image, value in _column(
+        db, "SELECT image, flashFired FROM AgHarvestedExifMetadata WHERE flashFired IS NOT NULL AND image IN ({})",
+        images).items()}
+
+
+def _apply_flash_offsets(exposures: dict[int, float], exposure: dict[str, Any], flash: dict[int, bool],
+                         style: dict) -> None:
+    """The editor's correction on top of the face method, for photos with and without flash (faces mode only: the
+    corrections were learnt against the face method)."""
+    offsets = style.get("exposure_flash_offsets") or {}
+    if exposure["mode"] != "faces" or not offsets:
+        return
+    corrected = 0
+    for image in exposures:
+        key = event_style.flash_key(flash.get(image))
+        if key in offsets:
+            exposures[image] += offsets[key]
+            corrected += 1
+    exposure.update(flash_offsets=offsets, flash_corrected=corrected)
+
+
+def _event_white_balance(catalog: Path, db: sqlite3.Connection, targets: list[Photo], style: dict,
+                         flash: dict[int, bool], paths: dict[int, Path] | None, job_id: str
+                         ) -> tuple[dict[int, dict[str, float]], dict[str, Any]]:
+    """Temperature/Tint for photos in a kind of light where the editor nearly always moved the camera's As Shot; every
+    other photo keeps As Shot. Needs the photo's Smart Preview (the camera's As Shot) and whether the flash fired."""
+    from app.learning_intake.white_balance import as_shot_temperature_tint, read_wb_tags
+
+    rules = style.get("white_balance_rules") or []
+    info: dict[str, Any] = {"rules": rules, "photos": 0}
+    if not rules:
+        return {}, info
+    if paths is None:
+        previews = catalog.with_name(f"{catalog.stem} Smart Previews.lrdata")
+        paths = _match_smart_previews(db, previews, [p.image for p in targets], job_id)[0] if previews.is_dir() else {}
+    out: dict[int, dict[str, float]] = {}
+    for photo in targets:
+        key, path = event_style.flash_key(flash.get(photo.image)), paths.get(photo.image)
+        if key is None or path is None:
+            continue
+        try:
+            kelvin, tint = as_shot_temperature_tint(read_wb_tags(path))
+        except Exception:  # noqa: BLE001, S112  (unreadable white-balance tags: the photo keeps As Shot)
+            continue
+        light = event_style.kelvin_bin(kelvin)
+        rule = next((r for r in rules if light == (r["kelvin_min"], r["kelvin_max"]) and r["flash"] == key), None)
+        if rule is None:
+            continue
+        out[photo.image] = {"Temperature": round(min(max(1e6 / (1e6 / kelvin + rule["mired"]), 2000), 50000)),
+                            "Tint": round(min(max(tint, -150), 150))}
+    info["photos"] = len(out)
+    return out, info
 
 
 def _exposure_acknowledgements(exposure: dict[str, Any]) -> tuple[list[dict], list[str]]:

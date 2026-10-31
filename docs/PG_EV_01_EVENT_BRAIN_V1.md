@@ -11,14 +11,18 @@
 **The style (`style.py`)** is learnt once per profile from its catalogs' before/after pairs and stored with the profile, numbers only (`learning_intake_style`). It holds:
 - **Base sliders:** the median of each base slider over the editor's photos.
 - **Exposure:** the face target method (`target_face_lightness`, `slope`) from up to 400 photos with faces. The profile's median exposure is kept as the fallback.
-- **White balance:** As Shot, kept.
+- **White balance:** As Shot, except where a white-balance rule applies (see below).
+- **Exposure correction by flash** (style version 4): the median of what the editor did on top of the face method, separately for photos with and without flash. Each event day of the profile is solved on its own, like a new event. On wedding A: flash +0.12 stop, no flash −0.15.
+- **White-balance rules** (style version 4): per kind of light (the camera's As Shot temperature in bins 0–3,800 / 3,800–4,600 / 4,600–5,400 / 5,400–6,200 / 6,200+ K) and flash. A group gets a rule only when the editor moved the white balance (more than 5 mired) on at least 75% of its 20+ photos; the rule is his median move. On wedding A: warm light (3,800–4,600 K) was cooled by about 13 mired without flash and 32 with. Elsewhere As Shot stays.
+- **Evidence for both rules:** `camera_test_kit/rule_simulation.py` on wedding A, with the rules learnt on the even hours and scored on the odd hours, and the other way round. Exactly as the editor: 12.7% → 16.1%. Within a small fix: 37.4% → 46.2%. One wedding only.
 - **Rarely used sliders are left out:** a base slider is part of the style only if the editor set it on at least half of the photos (`MIN_SHARE_PRESENT`, style version 3). Before this, Dehaze +19 set on 1 photo of 3,184 was written to every event photo.
 - **Black & white photos are left out** (`ConvertToGrayscale` in the settings, or the catalog's grayscale column). Their contrast, clarity, saturation and exposure serve a monochrome look and would pull every colour photo towards it. The style records `black_and_white_excluded`. The profile page's style summary (catalog analysis v2) also leaves them out, and asks for "נתח מחדש" on an older analysis. A profile style learnt by version 1 is learnt again automatically on the next plan. Which photos to turn black & white is a separate decision, not learnt yet.
 
 **For each event photo the photographer has not edited:**
 - Base sliders come from the profile.
 - Exposure: the face target method on the event's own Smart Previews (level solved for the event, plus the per-photo rule), or the profile's typical level when there are no Smart Previews, no face model, or too few faces.
-- White balance is left As Shot.
+- Exposure: the flash correction is added (faces mode only; needs the EXIF flash Lightroom harvested).
+- White balance is left As Shot, except photos in a kind of light with a rule: Custom, at the camera's As Shot moved by the rule (tint kept). This needs the photo's Smart Preview and its flash.
 
 The dry run says which exposure mode was used and why.
 

@@ -82,6 +82,81 @@ def test_a_slider_the_editor_rarely_used_is_not_part_of_the_style():
     assert style["base"] == {"Highlights2012": -41, "Vibrance": 10}  # Vibrance on half of the photos: kept
 
 
+def test_white_balance_rule_only_where_the_editor_nearly_always_moved_it():
+    """Warm light without flash: the editor cooled 27 of 30 photos by about 13 mired -> a rule. Neutral light: he
+    moved half of them -> no rule (As Shot stays). Too few photos, or flash unknown -> no rule."""
+    shots = {}
+
+    def pair(i, kelvin, flash, editor_kelvin=None):
+        shots[i] = (kelvin, 5.0)
+        moved = editor_kelvin is not None
+        return {"dng": i, "flash": flash, "white_balance": "Custom" if moved else "As Shot",
+                "targets": {"Exposure2012": 0.0, **({"Temperature": editor_kelvin, "Tint": 5.0} if moved else {})}}
+    warm = [pair(i, 4200, False, round(1e6 / (1e6 / 4200 + 13 + (i % 3)))) for i in range(27)]
+    warm += [pair(27 + i, 4200, False) for i in range(3)]
+    neutral = [pair(100 + i, 5600, False, 5000 if i % 2 else None) for i in range(40)]
+    few = [pair(200 + i, 4200, True, 3800) for i in range(10)]
+    unknown = [pair(300 + i, 4200, None, 3800) for i in range(30)]
+    rules = event_style.white_balance_rules(warm + neutral + few + unknown, lambda dng: shots[dng])
+    assert len(rules) == 1
+    rule = rules[0]
+    assert (rule["kelvin_min"], rule["kelvin_max"], rule["flash"], rule["photos"]) == (3800, 4600, "no_flash", 30)
+    assert rule["mired"] == pytest.approx(14.0, abs=0.6)  # + = the editor made it bluer
+
+
+def test_exposure_correction_is_learnt_separately_with_and_without_flash(monkeypatch):
+    from app.event_edit import exposure_target as et
+
+    monkeypatch.setattr(et, "automatic_exposures", lambda measured, style, curve: {i: -0.3 for i in measured})
+    faces = ([{"exposure": -0.18, "flash": True, "day": "d1"} for _ in range(25)]
+             + [{"exposure": -0.45, "flash": False, "day": "d1"} for _ in range(25)]
+             + [{"exposure": -0.45, "flash": None, "day": "d2"} for _ in range(25)]  # flash unknown: not counted
+             + [{"exposure": 0.5, "flash": True, "day": "d2"} for _ in range(5)])   # too few to move the median
+    offsets = event_style.exposure_flash_offsets(faces, None, None)
+    assert offsets == {"flash": 0.12, "no_flash": -0.15}
+
+
+def test_event_gets_the_flash_and_white_balance_rules(catalog: Path, profile: str, monkeypatch):
+    """Photos without flash in warm light get the editor's cooler white balance (Custom); photos with flash keep As
+    Shot. Exposure moves by the flash correction on top of the face method."""
+    from app.learning_intake.white_balance import as_shot_temperature_tint, read_wb_tags
+    from tests.test_smart_preview_probe import write_synthetic_smart_preview
+
+    folder = _previews(catalog)
+    event = _images_of(catalog, "EventA")
+    for image in event:
+        write_synthetic_smart_preview(folder / f"UUID-{image}.dng")
+    kelvin, tint = as_shot_temperature_tint(read_wb_tags(folder / f"UUID-{event[0]}.dng"))
+    db = sqlite3.connect(catalog)
+    db.execute("CREATE TABLE AgHarvestedExifMetadata (id_local INTEGER PRIMARY KEY, image INTEGER, flashFired INTEGER)")
+    db.executemany("INSERT INTO AgHarvestedExifMetadata VALUES(?,?,?)",
+                   [(5000 + i, image, int(i % 2)) for i, image in enumerate(event[:-1])])  # last photo: unknown
+    db.commit()
+    db.close()
+    store = LearningProfileStore()
+    style = {k: v for k, v in store.get_style(profile).items() if k != "learned_at"}
+    light = event_style.kelvin_bin(kelvin)
+    store.save_style(profile, {**style, "exposure_flash_offsets": {"flash": 0.12, "no_flash": -0.15},
+                               "white_balance_rules": [{"kelvin_min": light[0], "kelvin_max": light[1],
+                                                        "flash": "no_flash", "mired": 13.0, "photos": 300}]})
+    _faces_everywhere(monkeypatch)
+    job = service.plan_automatic(catalog, _keys(catalog, "EventA"), profile, wait=True)
+    plan = jobs.get(job["job_id"])["plan"]
+    assert plan["exposure"]["flash_corrected"] == 29 and plan["white_balance_rules"]["photos"] == 15
+    edits = {int(k): v for k, v in plan["edits"].items()}
+    no_flash, with_flash, unknown = event[:-1][0::2], event[:-1][1::2], event[-1]
+    cooler = round(1e6 / (1e6 / kelvin + 13.0))
+    assert all(edits[i]["Temperature"] == cooler and edits[i]["Tint"] == round(min(max(tint, -150), 150))
+               for i in no_flash)
+    assert all("Temperature" not in edits[i] for i in with_flash + [unknown])  # As Shot kept
+    assert {edits[i]["Exposure2012"] for i in no_flash} == {0.05} and {edits[i]["Exposure2012"] for i in with_flash} == {0.32}
+    assert edits[unknown]["Exposure2012"] == 0.2  # flash unknown: no correction
+    assert service.confirm(job["job_id"], wait=True)["status"] == "completed"
+    written = writer.read_settings(_rows(catalog, [no_flash[0]])[0][2])
+    assert written["WhiteBalance"] == '"Custom"' and written["Temperature"] == str(cooler)
+    assert writer.read_settings(_rows(catalog, [with_flash[0]])[0][2])["WhiteBalance"] == '"As Shot"'
+
+
 def test_a_style_learnt_by_an_older_rule_is_learnt_again(catalog: Path, profile: str, monkeypatch):
     store = LearningProfileStore()
     old = {k: v for k, v in store.get_style(profile).items() if k != "learned_at"}

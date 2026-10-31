@@ -342,6 +342,7 @@ class LearningProfileStore:
         from app.learning_intake.edit_pairs import build_pairs
         from app.learning_intake.smart_preview_link import build_links
         from app.learning_intake.smart_preview_probe import _count_dng_files
+        from app.learning_intake.white_balance import as_shot_temperature_tint, read_wb_tags
 
         pairs: list[dict] = []
         for entry in self.get(profile_id)["catalogs"]:
@@ -356,7 +357,13 @@ class LearningProfileStore:
         if not any(not p["other_edits"]["black_and_white"] for p in pairs):
             raise LearningIntakeError("No edited colour photos with Smart Previews in this profile to learn from.")
         measure, curve, _reason = et.face_measurer()
-        return self.save_style(profile_id, event_style.learn(pairs, measure, curve, progress))
+
+        def as_shot(dng):
+            try:
+                return as_shot_temperature_tint(read_wb_tags(dng))
+            except Exception:  # noqa: BLE001  (a Smart Preview without readable white-balance tags: no rule input)
+                return None
+        return self.save_style(profile_id, event_style.learn(pairs, measure, curve, progress, as_shot))
 
     def _smart_preview_sources(self, profile_id: str, catalog_path: str, sample_size: int):
         """Smart Previews folder + private catalog RAW records for a catalog linked to this profile."""

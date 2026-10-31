@@ -220,6 +220,10 @@ def inspect_catalog(catalog: str | Path, *, include_private: bool = False) -> tu
         flag_columns = ", ".join(
             f"i.{name} {name}" if name in image_columns else f"NULL {name}" for name in ("pick", "rating")
         )
+        # Flash (EXIF, harvested by Lightroom) is optional too: one value per photo, never a join that could repeat rows.
+        exif_columns = {r[1] for r in db.execute("PRAGMA table_info(AgHarvestedExifMetadata)")}
+        flash_column = ("(SELECT e.flashFired FROM AgHarvestedExifMetadata e WHERE e.image = i.id_local LIMIT 1)"
+                        if {"image", "flashFired"} <= exif_columns else "NULL")
         query = """
             SELECT i.id_local image_id, i.id_global global_image_id, i.fileFormat file_format,
                    i.masterImage master_image, i.copyName copy_name, """ + flag_columns + """,
@@ -228,7 +232,8 @@ def inspect_catalog(catalog: str | Path, *, include_private: bool = False) -> tu
                    f.extension extension, f.folder folder_id,
                    folder.pathFromRoot folder_name, folder.rootFolder root_id,
                    root.name root_name,
-                   d.id_local develop_id, d.text develop_text, d.grayscale grayscale
+                   d.id_local develop_id, d.text develop_text, d.grayscale grayscale,
+                   """ + flash_column + """ flash_fired
             FROM Adobe_images i
             LEFT JOIN AgLibraryFile f ON f.id_local = i.rootFile
             LEFT JOIN AgLibraryFolder folder ON folder.id_local = f.folder
@@ -350,6 +355,7 @@ def inspect_catalog(catalog: str | Path, *, include_private: bool = False) -> tu
                     "capture_time": row["photo_time"] if isinstance(row["photo_time"], str) else None,
                     "virtual_copy_candidate": row["master_image"] is not None or bool(row["copy_name"]),
                     "pick": row["pick"], "rating": row["rating"],
+                    "flash": None if row["flash_fired"] is None else bool(row["flash_fired"]),
                     "develop": develop, "complex": complex_fields,
                     "grayscale": develop.get("ConvertToGrayscale") is True or row["grayscale"] == 1,
                     "unsupported_fields": sorted(set(present)-(NUMERIC | TEXT | BOOL | COMPLEX | COLOR_FIELDS)),

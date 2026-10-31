@@ -6,6 +6,7 @@ import {
   canConfirm,
   canRetry,
   exposureText,
+  flashText,
   progressText,
   isActive,
   matchingText,
@@ -15,6 +16,7 @@ import {
   sliderList,
   statusText,
   uniformExposureWarning,
+  whiteBalanceText,
   type EventJob,
 } from "./eventFlow.ts";
 
@@ -101,4 +103,14 @@ test("the plan says how many photos were matched to a Smart Preview and why the 
   assert.match(text, /הותאמו ל-6 מתוך 10/);
   assert.match(text, /ל-1 לא נמצא/);
   assert.match(text, /3 לא הותאמו כי שם הקובץ/);
+});
+
+test("the plan shows the profile's flash correction and white-balance rule", () => {
+  assert.equal(flashText({}), "");
+  assert.equal(flashText({ flash_offsets: { flash: 0.12 }, flash_corrected: 0 }), "");
+  assert.equal(flashText({ flash_offsets: { flash: 0.12, no_flash: -0.15 }, flash_corrected: 2865 }),
+    "תיקון חשיפה כמו של העורך: עם פלאש +0.12, בלי פלאש −0.15 (ב-2,865 תמונות).");
+  assert.equal(whiteBalanceText(undefined), "איזון לבן: נשאר As Shot, כמו שהמצלמה צילמה.");
+  assert.equal(whiteBalanceText({ photos: 0 }), "איזון לבן: נשאר As Shot, כמו שהמצלמה צילמה.");
+  assert.match(whiteBalanceText({ photos: 446 }), /חוץ מ-446 תמונות/);
 });

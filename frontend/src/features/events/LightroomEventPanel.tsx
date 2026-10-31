@@ -15,6 +15,7 @@ import {
   canConfirm,
   canRetry,
   exposureText,
+  flashText,
   isActive,
   matchingText,
   parseSaved,
@@ -24,6 +25,7 @@ import {
   sliderList,
   statusText,
   uniformExposureWarning,
+  whiteBalanceText,
   type EventFolder,
   type EventJob,
   type SavedEvent,
@@ -405,7 +407,10 @@ function AutomaticSummary({ job }: { job: EventJob }) {
       {matchingText((plan.exposure ?? {}) as Record<string, never>) ? (
         <li>{matchingText((plan.exposure ?? {}) as Record<string, never>)}</li>
       ) : null}
-      <li>איזון לבן: נשאר As Shot, כמו שהמצלמה צילמה.</li>
+      {flashText((plan.exposure ?? {}) as Record<string, never>) ? (
+        <li>{flashText((plan.exposure ?? {}) as Record<string, never>)}</li>
+      ) : null}
+      <li>{whiteBalanceText(plan.white_balance_rules as { photos?: number } | undefined)}</li>
       <li>
         הסגנון נלמד מ-{n(style.photos)} תמונות ערוכות בצבע בפרופיל
         {Number(style.black_and_white_excluded) > 0

@@ -113,6 +113,26 @@ export function uniformExposureWarning(exposure: { mode?: string; photos?: numbe
     "החשיפה עלולה לצאת בהירה או כהה מדי. הכתיבה ניתנת לביטול, אבל כדאי לבדוק את התמונות ב-Lightroom.";
 }
 
+/** The profile's flash correction of the exposure, as one Hebrew line ("" when there is none). */
+export function flashText(exposure: { flash_offsets?: Record<string, number>; flash_corrected?: number }): string {
+  const o = exposure.flash_offsets;
+  if (!o || !exposure.flash_corrected) return "";
+  const signed = (v: number) => `${v > 0 ? "+" : v < 0 ? "−" : ""}${Math.abs(v).toFixed(2)}`;
+  const parts = [
+    typeof o.flash === "number" ? `עם פלאש ${signed(o.flash)}` : "",
+    typeof o.no_flash === "number" ? `בלי פלאש ${signed(o.no_flash)}` : "",
+  ].filter(Boolean);
+  return `תיקון חשיפה כמו של העורך: ${parts.join(", ")} (ב-${exposure.flash_corrected.toLocaleString("he-IL")} תמונות).`;
+}
+
+/** White balance of the plan: As Shot, except where a profile rule moves it. */
+export function whiteBalanceText(rules: { photos?: number } | undefined): string {
+  const moved = rules?.photos ?? 0;
+  if (!moved) return "איזון לבן: נשאר As Shot, כמו שהמצלמה צילמה.";
+  return `איזון לבן: As Shot, חוץ מ-${moved.toLocaleString("he-IL")} תמונות בסוג אור שבו העורך כמעט תמיד מתקן; ` +
+    "בהן התיקון שלו.";
+}
+
 type Matching = { by_id?: number; by_name?: number; ambiguous?: number; unmatched?: number };
 
 /** How many of the event's photos were matched to their Smart Preview, and how many were not and why. */
