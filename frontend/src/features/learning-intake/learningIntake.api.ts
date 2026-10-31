@@ -106,6 +106,8 @@ export type CatalogAnalysisSummary = {
   linked: number;
   link_status_counts: Record<string, number>;
   pairs: number;
+  /** Photos the editor turned black & white, left out of the style (schema v2 and later). */
+  black_and_white_pairs?: number;
   pair_exclusions: Record<string, number>;
   other_edit_counts: Record<string, number>;
   folder_groups: number;

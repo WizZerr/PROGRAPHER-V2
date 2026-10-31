@@ -81,6 +81,12 @@ function CatalogSummary({ catalog, summary, samples, busy, onReanalyze }: {
         {summary.linked.toLocaleString("he-IL")} תמונות מקוריות נמצאו{missing ? ` · ל־${missing.toLocaleString("he-IL")} אין Smart Preview` : ""}
       </li>
       <li className={styles.done}>{summary.pairs.toLocaleString("he-IL")} עריכות שלך נקראו</li>
+      {summary.black_and_white_pairs ? <li className={styles.done}>
+        {summary.black_and_white_pairs.toLocaleString("he-IL")} תמונות שהפכת לשחור־לבן לא נכללו בסגנון הצבע
+      </li> : null}
+      {summary.schema.endsWith(".v1") && <li className={styles.partial}>
+        הניתוח הזה נעשה לפני שהפרדנו תמונות שחור־לבן. לחץ &quot;נתח מחדש&quot; כדי לעדכן את הסגנון.
+      </li>}
     </ul>
 
     {savings.untouched_pct !== undefined && savings.proposed_photos !== undefined && <div className={styles.savings}>

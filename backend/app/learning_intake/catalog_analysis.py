@@ -72,16 +72,17 @@ def analyze(preview_root, records: list[dict], *, anchors: int = DEFAULT_ANCHORS
                 "height": (decoded.get("reset_render") or {}).get("height"),
             })
     summary = {
-        "schema": "prographer.learning_intake.catalog_analysis.v1",
+        "schema": "prographer.learning_intake.catalog_analysis.v2",  # v2: black & white left out of the style
         "photos": len(records),
         "smart_preview_files": len(dngs),
         "linked": links["status_counts"].get(LINKED_VERIFIED, 0),
         "link_status_counts": links["status_counts"],
-        "pairs": pairs_result["pairs_for_review"],
+        "pairs": pairs_result["colour_pairs"],
+        "black_and_white_pairs": pairs_result["pairs_for_review"] - pairs_result["colour_pairs"],
         "pair_exclusions": pairs_result["excluded_counts"],
         "other_edit_counts": pairs_result["other_edit_counts"],
         "folder_groups": len(pairs_result["folder_groups"]),
-        "style": _style(pairs_result["target_coverage"], pairs_result["pairs_for_review"]),
+        "style": _style(pairs_result["target_coverage"], pairs_result["colour_pairs"]),
         "backtest_exclusions": excluded,
         "as_shot_conversion_check": check,
         "savings": savings,

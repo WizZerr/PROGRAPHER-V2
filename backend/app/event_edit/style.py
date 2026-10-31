@@ -7,6 +7,7 @@ Learnt from the profile's catalogs (before/after pairs, PG-LI-04) and stored wit
   exposure darker faces get, plus the median exposure as a fallback for events without faces/Smart Previews;
 - white balance: As Shot. On wedding A no rule from camera data beat As Shot (53-66% within limits), and aiming at a
   face colour was worse, so the camera's white balance is kept.
+A slider the editor set on fewer than half of the photos is not part of the style (it stays as Lightroom left it).
 Photos the editor turned black & white are left out: their sliders (contrast, clarity, saturation, exposure) serve a
 monochrome look and would pull the colour style of every event photo towards it. Which photos to turn black & white
 is a separate decision, not learnt yet.
@@ -20,7 +21,10 @@ from typing import Any, Callable
 
 from app.event_edit.brain import BASE_SLIDERS
 
-STYLE_VERSION = 2  # 2: black & white photos left out of the colour style
+STYLE_VERSION = 3  # 2: black & white photos left out of the colour style; 3: rarely used sliders left out
+# A base slider is part of the style only if the editor set it on at least this share of the photos (Dehaze on 1 photo
+# of 3,184 must not reach every photo of an event); as the profile page's "rare" sliders.
+MIN_SHARE_PRESENT = 0.5
 MAX_FACE_SAMPLES = 400
 
 
@@ -34,7 +38,7 @@ def learn(pairs: list[dict[str, Any]], measure: Callable[[Any], dict | None] | N
     base = {}
     for key in BASE_SLIDERS:
         values = [p["targets"][key] for p in pairs if isinstance(p["targets"].get(key), (int, float))]
-        if values:
+        if values and len(values) >= MIN_SHARE_PRESENT * len(pairs):  # a slider the editor rarely touches stays off
             base[key] = statistics.median(values)
     exposures = [p["targets"]["Exposure2012"] for p in pairs if "Exposure2012" in p["targets"]]
     style: dict[str, Any] = {"version": STYLE_VERSION, "photos": len(pairs),

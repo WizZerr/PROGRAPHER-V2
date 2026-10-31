@@ -669,8 +669,11 @@ def test_build_pairs_keeps_only_clean_linked_edits():
     groups = {g["folder_group"]: g for g in result["folder_groups"]}
     assert groups["F01"]["pairs"] == 2 and groups["F01"]["exposure_median"] == 0.4  # shooter-a, largest first
     assert groups["F01"]["temperature_mired_median"] == 225.0
-    assert groups["F02"]["pairs"] == 1 and groups["F02"]["exposure_median"] == -0.5
-    assert result["target_coverage"]["Exposure2012"]["present"] == 4
+    # shooter-b has only a black & white photo: it is kept for review but is not part of the colour style numbers.
+    assert groups["F02"]["pairs"] == 0 and groups["F02"]["exposure_median"] is None
+    assert result["colour_pairs"] == 3
+    assert result["target_coverage"]["Exposure2012"]["present"] == 3  # the black & white photo is left out
+    assert result["target_coverage"]["Exposure2012"]["median"] == 0.3
     assert result["target_coverage"]["Dehaze"] == {"present": 0}
     assert "shooter" not in json.dumps({k: v for k, v in result.items() if k != "pairs"})
 
@@ -865,6 +868,7 @@ def test_analyze_catalog_one_step_summary_is_stored_without_images(tmp_path, mon
         stored = client.get(f"/api/learning-intake/profiles/{owner['profile_id']}", headers=headers).json()
     summary = result["summary"]
     assert summary["photos"] == 10 and summary["linked"] == 10 and summary["pairs"] == 10
+    assert summary["black_and_white_pairs"] == 0 and summary["schema"].endswith(".v2")
     style = {s["key"]: s["kind"] for s in summary["style"]}
     assert style["Exposure2012"] == "per_photo" and style["Tint"] == "fixed"
     assert summary["savings"]["anchors"] == 2 and summary["savings"]["untouched_pct"] == 100.0

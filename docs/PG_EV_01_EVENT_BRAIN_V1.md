@@ -12,7 +12,8 @@
 - **Base sliders:** the median of each base slider over the editor's photos.
 - **Exposure:** the face target method (`target_face_lightness`, `slope`) from up to 400 photos with faces. The profile's median exposure is kept as the fallback.
 - **White balance:** As Shot, kept.
-- **Black & white photos are left out** (`ConvertToGrayscale` in the settings, or the catalog's grayscale column). Their contrast, clarity, saturation and exposure serve a monochrome look and would pull every colour photo towards it. The style records `black_and_white_excluded`; style version 2. A profile style learnt by version 1 is learnt again automatically on the next plan. Which photos to turn black & white is a separate decision, not learnt yet.
+- **Rarely used sliders are left out:** a base slider is part of the style only if the editor set it on at least half of the photos (`MIN_SHARE_PRESENT`, style version 3). Before this, Dehaze +19 set on 1 photo of 3,184 was written to every event photo.
+- **Black & white photos are left out** (`ConvertToGrayscale` in the settings, or the catalog's grayscale column). Their contrast, clarity, saturation and exposure serve a monochrome look and would pull every colour photo towards it. The style records `black_and_white_excluded`. The profile page's style summary (catalog analysis v2) also leaves them out, and asks for "נתח מחדש" on an older analysis. A profile style learnt by version 1 is learnt again automatically on the next plan. Which photos to turn black & white is a separate decision, not learnt yet.
 
 **For each event photo the photographer has not edited:**
 - Base sliders come from the profile.

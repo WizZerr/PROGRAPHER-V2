@@ -92,11 +92,13 @@ def build_pairs(links: list[dict]) -> dict[str, Any]:
         return {"median": round(median(v), 3), "p10": round(v[int(0.1 * (len(v) - 1))], 3),
                 "p90": round(v[int(0.9 * (len(v) - 1))], 3)}
 
-    coverage = {k: {"present": sum(k in p["targets"] for p in pairs),
-                    **(stats([p["targets"][k] for p in pairs if k in p["targets"]]) or {})} for k in TARGETS}
+    # The style numbers describe the colour edits: photos turned black & white serve another look.
+    colour = [p for p in pairs if not p["other_edits"]["black_and_white"]]
+    coverage = {k: {"present": sum(k in p["targets"] for p in colour),
+                    **(stats([p["targets"][k] for p in colour if k in p["targets"]]) or {})} for k in TARGETS}
     groups = []
     for key, label in sorted(labels.items(), key=lambda kv: kv[1]):
-        members = [p for p in pairs if p["folder_key"] == key]
+        members = [p for p in colour if p["folder_key"] == key]
         groups.append({
             "folder_group": label,
             "pairs": len(members),
@@ -109,6 +111,7 @@ def build_pairs(links: list[dict]) -> dict[str, Any]:
     return {
         "pairs": pairs,
         "pairs_for_review": len(pairs),
+        "colour_pairs": len(colour),
         "excluded_counts": dict(sorted(excluded.items())),
         "target_coverage": coverage,
         "other_edit_counts": {k: sum(p["other_edits"][k] for p in pairs)

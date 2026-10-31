@@ -74,6 +74,14 @@ def test_black_and_white_photos_are_left_out_of_the_colour_style():
     assert style["version"] == event_style.STYLE_VERSION
 
 
+def test_a_slider_the_editor_rarely_used_is_not_part_of_the_style():
+    """Dehaze +19 on 1 photo of 3,184 in the editor's catalog must not be written to every photo of an event."""
+    pairs = [{"dng": i, "targets": {"Exposure2012": -0.3, "Highlights2012": -41, **({"Dehaze": 19} if i == 0 else {}),
+                                    **({"Vibrance": 10} if i % 2 else {})}} for i in range(100)]
+    style = event_style.learn(pairs, None, None)
+    assert style["base"] == {"Highlights2012": -41, "Vibrance": 10}  # Vibrance on half of the photos: kept
+
+
 def test_a_style_learnt_by_an_older_rule_is_learnt_again(catalog: Path, profile: str, monkeypatch):
     store = LearningProfileStore()
     old = {k: v for k, v in store.get_style(profile).items() if k != "learned_at"}
