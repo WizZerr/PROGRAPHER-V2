@@ -6,6 +6,7 @@ return {
     LrPluginName = 'ProGrapher Bridge — LB-01 Research Only',
     LrLibraryMenuItems = {
         { title = 'ProGrapher LB-01 Full Recipe Test (Research ONLY)', file = 'RunBridgeTest.lua' },
+        { title = 'ProGrapher Smart Preview Link Readback (Research ONLY)', file = 'InspectSmartPreviewLinks.lua' },
     },
-    VERSION = { major = 0, minor = 4, revision = 0, build = 1 },
+    VERSION = { major = 0, minor = 4, revision = 1, build = 1 },
 }

@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import argparse
 from collections import Counter
+from contextlib import closing
 from datetime import date, datetime, timezone
 import json
 import math
@@ -205,22 +206,34 @@ def inspect_catalog(catalog: str | Path, *, include_private: bool = False) -> tu
     records: list[dict[str, Any]] = []
     private_group_keys: list[tuple[Any, ...]] = []
     uri = path.as_uri() + "?mode=ro&immutable=1"
-    with sqlite3.connect(uri, uri=True) as db:
+    # sqlite3.Connection.__exit__ commits/rolls back but does not close.
+    # Windows keeps snapshot.lrcat locked until close(), so close explicitly.
+    with closing(sqlite3.connect(uri, uri=True)) as db:
         db.row_factory = sqlite3.Row
         db.execute("PRAGMA query_only=ON")
         if db.execute("PRAGMA quick_check").fetchone()[0] != "ok":
             raise CatalogIntakeError("catalog SQLite integrity check failed")
         _assert_schema(db)
         report_counts["catalog_photo_records"] = db.execute("SELECT COUNT(*) FROM Adobe_images").fetchone()[0]
+        # Pick flag (-1 rejected, 0 none, 1 picked) and star rating are optional: read them only if present.
+        image_columns = {r[1] for r in db.execute("PRAGMA table_info(Adobe_images)")}
+        flag_columns = ", ".join(
+            f"i.{name} {name}" if name in image_columns else f"NULL {name}" for name in ("pick", "rating")
+        )
+        # Flash (EXIF, harvested by Lightroom) is optional too: one value per photo, never a join that could repeat rows.
+        exif_columns = {r[1] for r in db.execute("PRAGMA table_info(AgHarvestedExifMetadata)")}
+        flash_column = ("(SELECT e.flashFired FROM AgHarvestedExifMetadata e WHERE e.image = i.id_local LIMIT 1)"
+                        if {"image", "flashFired"} <= exif_columns else "NULL")
         query = """
             SELECT i.id_local image_id, i.id_global global_image_id, i.fileFormat file_format,
-                   i.masterImage master_image, i.copyName copy_name,
+                   i.masterImage master_image, i.copyName copy_name, """ + flag_columns + """,
                    COALESCE(i.originalCaptureTime, i.captureTime) photo_time,
                    f.id_local file_id, f.id_global global_file_id, f.baseName base_name,
                    f.extension extension, f.folder folder_id,
                    folder.pathFromRoot folder_name, folder.rootFolder root_id,
                    root.name root_name,
-                   d.id_local develop_id, d.text develop_text, d.grayscale grayscale
+                   d.id_local develop_id, d.text develop_text, d.grayscale grayscale,
+                   """ + flash_column + """ flash_fired
             FROM Adobe_images i
             LEFT JOIN AgLibraryFile f ON f.id_local = i.rootFile
             LEFT JOIN AgLibraryFolder folder ON folder.id_local = f.folder
@@ -339,8 +352,12 @@ def inspect_catalog(catalog: str | Path, *, include_private: bool = False) -> tu
                     "file_stem": row["base_name"], "extension": extension,
                     "catalog_root_name": row["root_name"], "catalog_folder": row["folder_name"],
                     "capture_day": group_key[2], "event_group_id": None,
+                    "capture_time": row["photo_time"] if isinstance(row["photo_time"], str) else None,
                     "virtual_copy_candidate": row["master_image"] is not None or bool(row["copy_name"]),
+                    "pick": row["pick"], "rating": row["rating"],
+                    "flash": None if row["flash_fired"] is None else bool(row["flash_fired"]),
                     "develop": develop, "complex": complex_fields,
+                    "grayscale": develop.get("ConvertToGrayscale") is True or row["grayscale"] == 1,
                     "unsupported_fields": sorted(set(present)-(NUMERIC | TEXT | BOOL | COMPLEX | COLOR_FIELDS)),
                     "color_semantics_validated": False,
                     "opaque_edit_review_required": any(

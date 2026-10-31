@@ -4,4 +4,5 @@ export type WorkspaceView =
   | "gallery"
   | "darkroom"
   | "profile"
-  | "training";
+  | "training"
+  | "learning-intake";

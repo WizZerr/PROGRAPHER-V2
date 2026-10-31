@@ -3,6 +3,7 @@ from __future__ import annotations
 import os
 import platform
 import sqlite3
+from contextlib import closing
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -206,7 +207,8 @@ def probe_catalog(path: str | Path) -> LightroomCatalogProbe:
 
     try:
         uri = catalog.resolve().as_uri() + "?mode=ro"
-        with sqlite3.connect(uri, uri=True) as db:
+        # Close the read-only catalog connection deterministically on Windows.
+        with closing(sqlite3.connect(uri, uri=True)) as db:
             db.execute("PRAGMA query_only = ON")
 
             row = db.execute(

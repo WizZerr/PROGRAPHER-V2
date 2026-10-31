@@ -3,6 +3,8 @@ from fastapi import APIRouter
 from app.api.routes.dataset import router as dataset_router
 from app.api.routes.events import router as events_router
 from app.api.routes.health import router as health_router
+from app.api.routes.event_edit import router as event_edit_router
+from app.api.routes.learning_intake import router as learning_intake_router
 from app.api.routes.jpeg_render import router as jpeg_render_router
 from app.api.routes.jpeg_export import router as jpeg_export_router
 from app.api.routes.jpeg_controls import router as jpeg_controls_router
@@ -25,6 +27,8 @@ api_router.include_router(jpeg_render_router)
 api_router.include_router(jpeg_export_router)
 api_router.include_router(jpeg_controls_router)
 api_router.include_router(photographer_router)
+api_router.include_router(learning_intake_router)
+api_router.include_router(event_edit_router)
 api_router.include_router(dataset_router)
 api_router.include_router(reference_router)
 api_router.include_router(testing_router)

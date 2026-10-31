@@ -73,6 +73,7 @@ def test_aggregate_privacy_and_candidate_grouping(tmp_path: Path):
     assert report['color_field_coverage']['ColorGradeGlobalSat'] == {'nonzero': 1, 'present': 1}
     assert report['training_ready_samples'] == 0
     assert private is not None and len(private['records']) == 2
+    assert sorted(r['grayscale'] for r in private['records']) == [False, True]  # the editor's black & white photo
     assert {r['event_group_id'] for r in private['records']} == {'G0001'}
     assert all(not r['training_eligible'] and not r['source_raw_verified'] for r in private['records'])
     assert private['records'][0]['develop']['CameraProfile'] == 'Adobe, Standard'
@@ -144,3 +145,16 @@ def test_01e_nested_unknown_curve_stays_undecoded_and_non_training(tmp_path: Pat
     assert meta['decoded'] is False
     assert 'points' not in meta
     assert private['records'][0]['training_eligible'] is False
+
+
+def test_flash_is_read_per_photo_when_lightroom_harvested_it(tmp_path: Path):
+    catalog = tmp_path/'test.lrcat'
+    synthetic_catalog(catalog)
+    _report, private = inspect_catalog(catalog, include_private=True)
+    assert [r['flash'] for r in private['records']] == [None, None]  # no EXIF table: unknown, never guessed
+    with sqlite3.connect(catalog) as db:
+        db.execute("CREATE TABLE AgHarvestedExifMetadata (id_local INTEGER PRIMARY KEY, image INTEGER, flashFired INTEGER)")
+        db.executemany("INSERT INTO AgHarvestedExifMetadata VALUES(?,?,?)", [(31, 1, 1), (32, 2, 0)])
+    report, private = inspect_catalog(catalog, include_private=True)
+    assert {r['catalog_image_id']: r['flash'] for r in private['records']} == {1: True, 2: False}
+    assert report['totals']['catalog_raw_records'] == 2

@@ -198,7 +198,11 @@ Required event workflow: `ingest → analyze → predict → apply → verify �
 
 ## D-021 — Lightweight local Lightroom Bridge and source safety (2026-10-12)
 **Security and product direction, rollout not yet verified.**
-The Lua plugin is a minimal executor and must not contain proprietary learning algorithms/secrets. Use local allowlisted and authenticated communication, source checks, job receipts, and retry safety. Never mutate photographer RAWs or write directly to a live `.lrcat` database. Validate installer, Adobe SDK/OS compatibility, licensing, macOS, and privacy before release.
+The Lua plugin is a minimal executor and must not contain proprietary learning algorithms/secrets. Use local allowlisted and authenticated communication, source checks, job receipts, and retry safety. Never mutate photographer RAWs or write directly to a live `.lrcat` database (catalog writes superseded by D-022). Validate installer, Adobe SDK/OS compatibility, licensing, macOS, and privacy before release.
+
+## D-022 — Direct catalog write for event delivery (2026-10-26)
+**Owner decision; engineering building block verified on one test catalog, not yet a customer feature.**
+Edits are delivered by writing directly into the photographer's Lightroom Classic catalog while Lightroom is closed (Imagen's model), not by applying them through the Lua plugin (about an hour per event, Lightroom busy). This supersedes the "never write directly to a live `.lrcat`" parts of D-021, the Master Plan (3.1, 4.3) and the Execution Board rule 2, under these conditions: Lightroom closed (lock/WAL check), backup before every write with one-step restore, validation before the first write, one transaction plus integrity check with automatic restore, only global sliders changed, photographer-edited photos protected by default, and a visible "ProGrapher" History step. RAWs and their XMP are still never modified. Evidence and limits: `LB_02_DIRECT_CATALOG_WRITE.md`.
 
 ### Decision identifier clarification
 `D_015_RAW_FIRST_SCOPE.md` and `D_016_PHOTOGRAPHER_FIDELITY_FIRST.md` are separate scope amendments and must be cited by pathname. This log already had other D-015 and D-016 headings and D-017 (Profile Learning UX). Those existing entries remain unchanged; v4 decisions use D-018–D-021.

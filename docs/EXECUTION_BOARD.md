@@ -65,7 +65,7 @@ This board is an execution view, never a second master plan. One active Part per
 
 ## Non-negotiable rules
 1. No private photographer RAW, catalogs, XMP, filenames, manifests or private previews in GitHub.
-2. No original RAW mutation or direct SQLite writes into a live Lightroom `.lrcat` file.
+2. No original RAW mutation. Direct `.lrcat` writes only through `catalog_writer` under D-022 (Lightroom closed, backup first, photographer edits protected).
 3. Keep all model candidates/baselines; retired V1 stays retired.
 4. Maintain source-only inference: no Lightroom targets or post-edited pixels in inputs.
 5. Record SHA, test results, platform, assumptions and failure reason for each Part.

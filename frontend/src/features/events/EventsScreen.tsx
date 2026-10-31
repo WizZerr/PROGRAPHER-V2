@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { open } from "@tauri-apps/plugin-dialog";
 import { useTestingNav } from "@/features/testing/TestingNav";
 import EventCover from "./EventCover";
+import LightroomEventPanel, { loadSavedLightroomEvent } from "./LightroomEventPanel";
 import {
   deleteEvent,
   getEventAvailability,
@@ -41,6 +42,29 @@ export default function EventsScreen() {
   const [message, setMessage] = useState<string>("");
   const [error, setError] = useState<string>("");
   const [deleteTarget, setDeleteTarget] = useState<EventSummary | null>(null);
+  const [chooser, setChooser] = useState(false);
+  const [lightroom, setLightroom] = useState<{
+    catalogPath: string;
+    saved: ReturnType<typeof loadSavedLightroomEvent>;
+  } | null>(null);
+
+  useEffect(() => {
+    const saved = loadSavedLightroomEvent();
+    if (saved?.catalogPath) setLightroom({ catalogPath: saved.catalogPath, saved });
+  }, []);
+
+  async function chooseCatalog() {
+    setChooser(false);
+    setError("");
+    const selected = await open({
+      directory: false,
+      multiple: false,
+      title: "בחר קטלוג Lightroom",
+      filters: [{ name: "Lightroom Catalog", extensions: ["lrcat"] }],
+    });
+    if (!selected || Array.isArray(selected)) return;
+    setLightroom({ catalogPath: selected, saved: null });
+  }
 
   const refreshAvailability = useCallback(async (items: EventSummary[]) => {
     const pairs = await Promise.all(
@@ -104,6 +128,7 @@ export default function EventsScreen() {
   }
 
   async function chooseFolder() {
+    setChooser(false);
     setError("");
     setMessage("");
     setNotice(null);
@@ -285,13 +310,22 @@ export default function EventsScreen() {
           <button
             type="button"
             className={styles.primaryButton}
-            onClick={() => void chooseFolder()}
+            onClick={() => setChooser(true)}
             disabled={busy}
           >
             {busy ? "מוסיף אירוע…" : "＋ אירוע חדש"}
           </button>
         </div>
       </div>
+
+      {lightroom ? (
+        <LightroomEventPanel
+          key={lightroom.catalogPath}
+          catalogPath={lightroom.catalogPath}
+          saved={lightroom.saved}
+          onClose={() => setLightroom(null)}
+        />
+      ) : null}
 
       {scan ? (
         <div className={styles.scanPanel}>
@@ -416,6 +450,31 @@ export default function EventsScreen() {
           })}
         </div>
       )}
+
+      {chooser ? (
+        <div className={styles.modalBackdrop} onClick={() => setChooser(false)}>
+          <div
+            className={styles.chooserDialog}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="new-event-title"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <h3 id="new-event-title">איפה התמונות?</h3>
+            <button type="button" className={styles.chooserOption} onClick={() => void chooseCatalog()}>
+              <strong>קטלוג Lightroom Classic</strong>
+              <span>ProGrapher עורך את כל האירוע לפי הפרופיל שלך וכותב את העריכות ישר לקטלוג.</span>
+            </button>
+            <button type="button" className={styles.chooserOption} onClick={() => void chooseFolder()}>
+              <strong>תיקייה</strong>
+              <span>קליטת תיקיית RAW / JPEG לגלריה של ProGrapher.</span>
+            </button>
+            <button type="button" className={styles.dialogCancel} onClick={() => setChooser(false)}>
+              ביטול
+            </button>
+          </div>
+        </div>
+      ) : null}
 
       {deleteTarget ? (
         <div className={styles.modalBackdrop}>

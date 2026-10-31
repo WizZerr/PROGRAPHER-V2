@@ -10,15 +10,9 @@ import {
 import { open } from "@tauri-apps/plugin-dialog";
 import { useAccountIdentity } from "@/features/account/AccountIdentity";
 import {
-  getTestingProfile,
-  type TestingProfile,
-} from "@/features/testing/testing.api";
-import {
-  loadCatalogBindings,
-  writeTrainingEntry,
-  type CatalogBinding,
-  type LearningMedia,
-} from "@/features/training/learning-state";
+  listLearningProfiles,
+  type LearningProfile,
+} from "@/features/learning-intake/learningIntake.api";
 import { useWorkspaceNav } from "@/features/workspace/workspace-nav";
 import {
   getPhotographerSetup,
@@ -29,57 +23,21 @@ import styles from "./ProfileScreen.module.css";
 
 type RouteState = "idle" | "pending" | "ready";
 
-function routeState(profile: TestingProfile | null): RouteState {
-  if (!profile) return "idle";
-  return profile.usable_pairs > 0 ? "ready" : "pending";
-}
+type LearningCatalogRef = {
+  profile: LearningProfile;
+  catalog: LearningProfile["catalogs"][number];
+};
 
-function jpegPairStatus(profile: TestingProfile | null): string {
-  if (!profile) return "לא הוגדר";
-  if (profile.usable_pairs <= 0) return "נבדק · אין חומר שמיש";
-  return `${profile.usable_pairs.toLocaleString("he-IL")} זוגות מוכנים`;
-}
-
-function catalogStatus(binding?: CatalogBinding): string {
-  if (!binding) return "לא הוגדר";
-  return binding.catalogPhotoRecords !== null
-    ? `${binding.catalogPhotoRecords.toLocaleString("he-IL")} רשומות בקטלוג`
-    : "קטלוג הוגדר";
-}
-
-function rawStatus(
-  profile: TestingProfile | null,
-  catalog?: CatalogBinding,
-): { state: RouteState; label: string; source: string } {
-  if (profile?.usable_pairs && profile.usable_pairs > 0) {
-    return {
-      state: "ready",
-      label: `${profile.usable_pairs.toLocaleString("he-IL")} זוגות RAW/XMP`,
-      source: "עריכות דרך XMP",
-    };
-  }
-
-  if (catalog) {
-    return {
-      state: "ready",
-      label: catalogStatus(catalog),
-      source: "עריכות דרך Lightroom Catalog",
-    };
-  }
-
-  if (profile) {
-    return {
-      state: "pending",
-      label: "נבדק · אין חומר שמיש",
-      source: "עריכות דרך XMP",
-    };
-  }
-
-  return {
-    state: "idle",
-    label: "לא הוגדר",
-    source: "XMP או Lightroom Catalog",
-  };
+function latestAnalyzedCatalog(profiles: LearningProfile[]): LearningCatalogRef | null {
+  const analyzed = profiles.flatMap((profile) =>
+    profile.catalogs
+      .filter((catalog) => catalog.analysis !== null)
+      .map((catalog) => ({ profile, catalog })),
+  );
+  analyzed.sort((a, b) =>
+    (b.catalog.analyzed_at ?? "").localeCompare(a.catalog.analyzed_at ?? ""),
+  );
+  return analyzed[0] ?? null;
 }
 
 function StatusPill({
@@ -255,11 +213,8 @@ export default function ProfileScreen() {
     updateIdentity,
   } = useAccountIdentity();
 
-  const [jpegProfile, setJpegProfile] = useState<TestingProfile | null>(null);
-  const [rawProfile, setRawProfile] = useState<TestingProfile | null>(null);
-  const [catalogBindings, setCatalogBindings] = useState<
-    Partial<Record<LearningMedia, CatalogBinding>>
-  >({});
+  const [learningProfiles, setLearningProfiles] = useState<LearningProfile[]>([]);
+  const [learningLoading, setLearningLoading] = useState(true);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -284,22 +239,18 @@ export default function ProfileScreen() {
 
   const refresh = useCallback(async () => {
     setError("");
-
+    setLearningLoading(true);
     try {
-      const [setup, jpeg, raw] = await Promise.all([
+      const [setup, learning] = await Promise.all([
         getPhotographerSetup(),
-        getTestingProfile("jpeg").catch(() => null),
-        getTestingProfile("raw").catch(() => null),
+        listLearningProfiles(),
       ]);
-
       applyOverview(setup);
-      setJpegProfile(jpeg);
-      setRawProfile(raw);
-      setCatalogBindings(loadCatalogBindings());
+      setLearningProfiles(learning);
     } catch (cause) {
-      setError(
-        cause instanceof Error ? cause.message : "לא ניתן לטעון את הפרופיל.",
-      );
+      setError(cause instanceof Error ? cause.message : "לא ניתן לטעון את הפרופיל.");
+    } finally {
+      setLearningLoading(false);
     }
   }, [applyOverview]);
 
@@ -307,9 +258,8 @@ export default function ProfileScreen() {
     void refresh();
   }, [refresh]);
 
-  function openLearning(media: LearningMedia) {
-    writeTrainingEntry({ media });
-    openView("training");
+  function openLearning() {
+    openView("learning-intake");
   }
 
   function openSettings() {
@@ -365,22 +315,30 @@ export default function ProfileScreen() {
     }
   }
 
-  const jpegCatalog = catalogBindings.jpeg;
-  const rawCatalog = catalogBindings.raw;
-  const rawLearning = rawStatus(rawProfile, rawCatalog);
-
-  const jpegConfigured =
-    Number(Boolean(jpegProfile)) + Number(Boolean(jpegCatalog));
-  const rawConfigured = Number(Boolean(rawProfile) || Boolean(rawCatalog));
-  const totalConfigured = jpegConfigured + rawConfigured;
-
-  const profileStatus = useMemo(() => {
-    if (totalConfigured === 0) return "עדיין לא הוגדר";
-    if (jpegConfigured === 2 && rawConfigured === 1) {
-      return "כל מסלולי הלמידה הוגדרו";
-    }
-    return "בתהליך בנייה";
-  }, [jpegConfigured, rawConfigured, totalConfigured]);
+  const activeCatalog = useMemo(
+    () => latestAnalyzedCatalog(learningProfiles),
+    [learningProfiles],
+  );
+  const catalogCount = learningProfiles.reduce(
+    (count, item) => count + item.catalogs.length, 0,
+  );
+  const analyzedCount = learningProfiles.reduce(
+    (count, item) => count + item.catalogs.filter((c) => c.analysis !== null).length, 0,
+  );
+  const analysis = activeCatalog?.catalog.analysis ?? null;
+  const photoCount = analysis?.photos ?? 0;
+  const linkedCount = analysis?.linked ?? 0;
+  const pairCount = analysis?.pairs ?? 0;
+  const linkCoverage = photoCount > 0 ? Math.round(100 * linkedCount / photoCount) : 0;
+  const routeStatus: RouteState = linkedCount > 0
+    ? "ready" : catalogCount > 0 ? "pending" : "idle";
+  const profileStatus = learningLoading
+    ? "טוען נתונים"
+    : analysis && pairCount > 0 ? "ניתוח הסגנון הושלם"
+      : analysis ? "הניתוח הושלם ללא זוגות מתאימים"
+        : catalogCount > 0 ? "ממתין לניתוח הקטלוג"
+        : learningProfiles.length > 0 ? "ממתין להוספת קטלוג"
+          : "עדיין לא הוגדר";
 
   return (
     <section className={styles.screen}>
@@ -392,8 +350,8 @@ export default function ProfileScreen() {
           <span className={styles.eyebrow}>הפרופיל שלי</span>
           <h1>סגנון העריכה של {profileOwnerLabel}</h1>
           <p>
-            כאן רואים את מצב הלמידה שלך. JPEG ו־RAW נשמרים בנפרד,
-            וכל מסלול מציג רק מידע שבאמת נמדד.
+            מסלול הלמידה הפעיל מבוסס על קטלוג Lightroom ו־Smart Previews.
+            ניתן לנהל כאן את הפרופילים ולראות רק נתונים שנמדדו בפועל.
           </p>
         </div>
 
@@ -416,7 +374,7 @@ export default function ProfileScreen() {
               <strong>{profileStatus}</strong>
             </div>
             <span
-              className={totalConfigured > 0 ? styles.readyDot : styles.pendingDot}
+              className={analysis && pairCount > 0 ? styles.readyDot : styles.pendingDot}
               aria-hidden="true"
             />
           </div>
@@ -426,74 +384,39 @@ export default function ProfileScreen() {
       {error ? <div className={styles.error}>{error}</div> : null}
       {saved ? <div className={styles.success}>{saved}</div> : null}
 
-      <section className={styles.coveragePanel} aria-label="מצב מסלולי הלמידה">
+      <section className={styles.coveragePanel} aria-label="מצב למידה מקטלוג Lightroom">
         <div className={styles.coverageSummary}>
           <div className={styles.coverageSummaryCopy}>
-            <span className={styles.sectionKicker}>LEARNING COVERAGE</span>
+            <span className={styles.sectionKicker}>LIGHTROOM COVERAGE</span>
             <div className={styles.coverageValue}>
-              <strong>{totalConfigured}</strong>
-              <span>/ 3</span>
+              <strong>{analysis ? `${linkCoverage}%` : "—"}</strong>
             </div>
-            <small>יכולות למידה הוגדרו</small>
+            <small>התאמת Smart Previews לקטלוג · לא מדד אימון AI</small>
           </div>
-          <CoverageRing value={totalConfigured} total={3} />
+          <CoverageRing value={linkedCount} total={photoCount} />
         </div>
-
         <div className={styles.coverageRail}>
-          <div
-            className={
-              routeState(jpegProfile) === "ready"
-                ? styles.coverageItemReady
-                : styles.coverageItem
-            }
-          >
-            <span className={styles.coverageIcon}>
-              <VisualGlyph kind="sliders" />
-            </span>
+          <div className={catalogCount ? styles.coverageItemReady : styles.coverageItem}>
+            <span className={styles.coverageIcon}><VisualGlyph kind="database" /></span>
             <div className={styles.coverageText}>
-              <div>
-                <strong>JPEG · לפני + אחרי</strong>
-                <span className={styles.coverageIndex}>01</span>
-              </div>
-              <small>{jpegPairStatus(jpegProfile)}</small>
+              <div><strong>01 · Lightroom Catalog</strong></div>
+              <small>{catalogCount ? `${catalogCount.toLocaleString("he-IL")} קטלוגים מחוברים` : "עדיין לא נוסף קטלוג"}</small>
             </div>
             <span className={styles.coverageDot} aria-hidden="true" />
           </div>
-
-          <div
-            className={
-              jpegCatalog ? styles.coverageItemReady : styles.coverageItem
-            }
-          >
-            <span className={styles.coverageIcon}>
-              <VisualGlyph kind="camera" />
-            </span>
+          <div className={analysis && linkedCount > 0 ? styles.coverageItemReady : styles.coverageItem}>
+            <span className={styles.coverageIcon}><VisualGlyph kind="camera" /></span>
             <div className={styles.coverageText}>
-              <div>
-                <strong>JPEG · Lightroom</strong>
-                <span className={styles.coverageIndex}>02</span>
-              </div>
-              <small>{catalogStatus(jpegCatalog)}</small>
+              <div><strong>02 · Smart Previews</strong></div>
+              <small>{analysis ? `${linkedCount.toLocaleString("he-IL")} מתוך ${photoCount.toLocaleString("he-IL")} קישורים לפי UUID ושם` : "ממתין לניתוח המקורות"}</small>
             </div>
             <span className={styles.coverageDot} aria-hidden="true" />
           </div>
-
-          <div
-            className={
-              rawLearning.state === "ready"
-                ? styles.coverageItemReady
-                : styles.coverageItem
-            }
-          >
-            <span className={styles.coverageIcon}>
-              <VisualGlyph kind="layers" />
-            </span>
+          <div className={pairCount > 0 ? styles.coverageItemReady : styles.coverageItem}>
+            <span className={styles.coverageIcon}><VisualGlyph kind="chart" /></span>
             <div className={styles.coverageText}>
-              <div>
-                <strong>RAW · Lightroom</strong>
-                <span className={styles.coverageIndex}>03</span>
-              </div>
-              <small>{rawLearning.label}</small>
+              <div><strong>03 · ניתוח סגנון</strong></div>
+              <small>{analysis ? `${pairCount.toLocaleString("he-IL")} זוגות לניתוח · ${analyzedCount} קטלוגים נותחו` : "עדיין לא נותח סגנון"}</small>
             </div>
             <span className={styles.coverageDot} aria-hidden="true" />
           </div>
@@ -501,139 +424,109 @@ export default function ProfileScreen() {
       </section>
 
       <section className={styles.learningSurface}>
-        <article className={`${styles.learningPane} ${styles.jpegPane}`}>
-          <header className={styles.paneHeader}>
-            <div className={styles.paneIdentity}>
-              <span className={styles.mediaMonogram}>J</span>
-              <div>
-                <span className={styles.paneEyebrow}>JPEG LEARNING</span>
-                <h2>למידה לפי JPEG</h2>
-                <p>שני מנגנוני למידה עצמאיים לאותו workflow.</p>
-              </div>
-            </div>
-
-            <button
-              className={styles.paneAction}
-              type="button"
-              onClick={() => openLearning("jpeg")}
-            >
-              <span>{jpegConfigured > 0 ? "המשך הגדרה" : "התחל הגדרה"}</span>
-              <span aria-hidden="true">←</span>
-            </button>
-          </header>
-
-          <div className={styles.capabilityTable}>
-            <div className={styles.capabilityRow}>
-              <span className={styles.capabilityIcon}>
-                <VisualGlyph kind="sliders" />
-              </span>
-              <div className={styles.capabilityMain}>
-                <div>
-                  <strong>זוגות לפני + אחרי</strong>
-                  <span className={styles.capabilityNumber}>01</span>
-                </div>
-                <small>JPEG מקור מול JPEG סופי ערוך</small>
-              </div>
-              <div className={styles.capabilityStatus}>
-                <span>PAIRS</span>
-                <StatusPill state={routeState(jpegProfile)}>
-                  {jpegPairStatus(jpegProfile)}
-                </StatusPill>
-              </div>
-            </div>
-
-            <div className={styles.capabilityRow}>
-              <span className={styles.capabilityIcon}>
-                <VisualGlyph kind="database" />
-              </span>
-              <div className={styles.capabilityMain}>
-                <div>
-                  <strong>Lightroom Catalog</strong>
-                  <span className={styles.capabilityNumber}>02</span>
-                </div>
-                <small>JPEG מקור + החלטות עריכה מתוך LRCAT</small>
-              </div>
-              <div className={styles.capabilityStatus}>
-                <span>LRCAT</span>
-                <StatusPill state={jpegCatalog ? "ready" : "idle"}>
-                  {catalogStatus(jpegCatalog)}
-                </StatusPill>
-              </div>
-            </div>
-          </div>
-
-          <footer className={styles.paneFooter}>
-            <div className={styles.footerMetric}>
-              <strong>{jpegConfigured}/2</strong>
-              <small>מסלולים הוגדרו</small>
-            </div>
-            <div className={styles.footerNote}>
-              <span className={styles.footerIcon}><VisualGlyph kind="chart" /></span>
-              <small>כל מסלול נשמר ונמדד בנפרד</small>
-            </div>
-          </footer>
-        </article>
-
         <article className={`${styles.learningPane} ${styles.rawPane}`}>
           <header className={styles.paneHeader}>
             <div className={styles.paneIdentity}>
-              <span className={styles.mediaMonogram}>R</span>
+              <span className={styles.mediaMonogram}>L</span>
               <div>
-                <span className={styles.paneEyebrow}>RAW LEARNING</span>
-                <h2>למידה לפי RAW</h2>
-                <p>Brain אחד שמתבסס על החלטות Lightroom.</p>
+                <span className={styles.paneEyebrow}>LIGHTROOM LEARNING</span>
+                <h2>למידה מקטלוג Lightroom</h2>
+                <p>Lightroom Catalog + Smart Previews · ללא צורך בקובצי RAW מקוריים.</p>
               </div>
             </div>
-
-            <button
-              className={styles.paneAction}
-              type="button"
-              onClick={() => openLearning("raw")}
-            >
-              <span>{rawConfigured ? "המשך הגדרה" : "התחל הגדרה"}</span>
+            <button className={styles.paneAction} type="button" onClick={openLearning}>
+              <span>{learningProfiles.length > 0 ? "ניהול פרופילי למידה" : "התחל הגדרה"}</span>
               <span aria-hidden="true">←</span>
             </button>
           </header>
 
           <div className={styles.capabilityTable}>
             <div className={styles.capabilityRow}>
-              <span className={styles.capabilityIcon}>
-                <VisualGlyph kind="layers" />
-              </span>
+              <span className={styles.capabilityIcon}><VisualGlyph kind="layers" /></span>
               <div className={styles.capabilityMain}>
-                <div>
-                  <strong>RAW + Lightroom</strong>
-                  <span className={styles.capabilityNumber}>01</span>
-                </div>
-                <small>{rawLearning.source}</small>
+                <div><strong>Lightroom Catalog + Smart Previews</strong><span className={styles.capabilityNumber}>01</span></div>
+                <small>תמונת Before משוחזרת + הגדרות Develop מאותו קטלוג</small>
               </div>
               <div className={styles.capabilityStatus}>
-                <span>RAW</span>
-                <StatusPill state={rawLearning.state}>
-                  {rawLearning.label}
+                <span>LRCAT + DNG</span>
+                <StatusPill state={routeStatus}>
+                  {analysis ? `${linkedCount.toLocaleString("he-IL")} קישורים` : catalogCount ? "ממתין לניתוח" : "לא הוגדר"}
+                </StatusPill>
+              </div>
+            </div>
+            <div className={styles.capabilityRow}>
+              <span className={styles.capabilityIcon}><VisualGlyph kind="chart" /></span>
+              <div className={styles.capabilityMain}>
+                <div><strong>ניתוח סגנון העריכה</strong><span className={styles.capabilityNumber}>02</span></div>
+                <small>זוגות לפני/אחרי ו־Backtest של תמונות עוגן · ללא אימון מודל עדיין</small>
+              </div>
+              <div className={styles.capabilityStatus}>
+                <span>ANALYSIS</span>
+                <StatusPill state={pairCount > 0 ? "ready" : analysis ? "pending" : "idle"}>
+                  {analysis ? `${pairCount.toLocaleString("he-IL")} זוגות נותחו` : "טרם נותח"}
                 </StatusPill>
               </div>
             </div>
           </div>
 
           <div className={styles.sourceStrip}>
-            <span className={styles.sourceLabel}>מקורות עריכה</span>
-            <span className={rawProfile ? styles.sourceActive : styles.sourceChip}>
-              XMP
-            </span>
-            <span className={rawCatalog ? styles.sourceActive : styles.sourceChip}>
-              LRCAT
-            </span>
+            <span className={styles.sourceLabel}>מקורות הלמידה</span>
+            <span className={catalogCount ? styles.sourceActive : styles.sourceChip}>LRCAT</span>
+            <span className={analysis && linkedCount > 0 ? styles.sourceActive : styles.sourceChip}>SMART PREVIEWS</span>
           </div>
-
           <footer className={styles.paneFooter}>
             <div className={styles.footerMetric}>
-              <strong>{rawConfigured}/1</strong>
-              <small>מסלול הוגדר</small>
+              <strong>{pairCount > 0 ? "ניתוח בוצע" : analysis ? "לא נמצאו זוגות" : "ממתין להגדרה"}</strong>
+              <small>{activeCatalog ? `פרופיל: ${activeCatalog.profile.name}` : `${learningProfiles.length} פרופילי למידה`}</small>
             </div>
             <div className={styles.footerNote}>
               <span className={styles.footerIcon}><VisualGlyph kind="chart" /></span>
-              <small>XMP ו־LRCAT הם מקורות לאותו Brain</small>
+              <small>{analysis ? "הנתונים מהקטלוג האחרון שנותח; עדיין אין דוגמאות מאושרות לאימון." : "ההתקדמות מבוססת על נתוני למידה אמיתיים."}</small>
+            </div>
+          </footer>
+        </article>
+
+        <article className={`${styles.learningPane} ${styles.jpegPane}`}>
+          <header className={styles.paneHeader}>
+            <div className={styles.paneIdentity}>
+              <span className={styles.mediaMonogram}>J</span>
+              <div>
+                <span className={styles.paneEyebrow}>JPEG LEARNING · PAUSED</span>
+                <h2>למידה לפי JPEG</h2>
+                <p>מסלול הלמידה הזה מושהה בשלב הנוכחי של הפיתוח.</p>
+              </div>
+            </div>
+            <button className={styles.paneAction} type="button" disabled aria-label="למידה לפי JPEG מושהית">
+              <span>מושהה</span><span aria-hidden="true">○</span>
+            </button>
+          </header>
+          <div className={styles.capabilityTable}>
+            <div className={styles.capabilityRow}>
+              <span className={styles.capabilityIcon}><VisualGlyph kind="sliders" /></span>
+              <div className={styles.capabilityMain}>
+                <div><strong>JPEG · לפני + אחרי</strong><span className={styles.capabilityNumber}>01</span></div>
+                <small>מסלול JPEG נפרד · אינו פעיל כרגע</small>
+              </div>
+              <div className={styles.capabilityStatus}>
+                <span>PAUSED</span><StatusPill state="idle">לא זמין כרגע</StatusPill>
+              </div>
+            </div>
+            <div className={styles.capabilityRow}>
+              <span className={styles.capabilityIcon}><VisualGlyph kind="database" /></span>
+              <div className={styles.capabilityMain}>
+                <div><strong>JPEG · Lightroom</strong><span className={styles.capabilityNumber}>02</span></div>
+                <small>נשמר לעתיד · לא נכלל בכיסוי הלמידה הנוכחי</small>
+              </div>
+              <div className={styles.capabilityStatus}>
+                <span>PAUSED</span><StatusPill state="idle">לא זמין כרגע</StatusPill>
+              </div>
+            </div>
+          </div>
+          <footer className={styles.paneFooter}>
+            <div className={styles.footerMetric}><strong>מושהה</strong><small>ללא שינוי בנתונים הקיימים</small></div>
+            <div className={styles.footerNote}>
+              <span className={styles.footerIcon}><VisualGlyph kind="settings" /></span>
+              <small>המסלול יוכל לחזור בפיתוח עתידי.</small>
             </div>
           </footer>
         </article>
